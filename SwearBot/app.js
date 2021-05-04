@@ -76,12 +76,12 @@ client.on('message', msg => {
         return;
     }
     if (!msg.content.startsWith(prefix)) {
-        if (msg.content.indexOf('swear')) {
+        if (msg.content.indexOf('swear') != -1) {
             msg.reply(data['blacklist']['swears'][Math.floor(Math.random() * data['blacklist']['swears'].length)]);
             return;
         }
         for (const swear of data['blacklist']['swears']) {
-            if (msg.content.indexOf(swear)) {
+            if (msg.content.indexOf(swear) != -1) {
                 msg.reply('Good job swearing! Heck yeah!');
                 return;
             }
