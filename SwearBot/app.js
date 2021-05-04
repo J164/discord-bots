@@ -1,3 +1,12 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 const Discord = require('discord.js');
 const fs = require('fs');
 const client = new Discord.Client();
@@ -24,29 +33,58 @@ client.on('ready', () => {
         }
     }, 60000);
 });
+function play(msg) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let songNum;
+        let vc = msg.member.voice.channel;
+        if (!vc) {
+            msg.reply('This command can only be used while in a voice channel!');
+            return;
+        }
+        try {
+            if (parseInt(msg.content.split(" ")[1]) <= data['swearSongs'].length && parseInt(msg.content.split(" ")[1]) > 0) {
+                songNum = parseInt(msg.content.split(" ")[1]) - 1;
+            }
+            else {
+                songNum = Math.floor(Math.random() * data['swearSongs'].length);
+            }
+        }
+        catch (_a) {
+            songNum = Math.floor(Math.random() * data['swearSongs'].length);
+        }
+        if (!(msg.guild.toString() in guildStatus)) {
+            guildStatus[msg.guild.toString()] = {};
+        }
+        guildStatus[msg.guild.toString()]['audio'] = true;
+        let voice = yield vc.join();
+        guildStatus[msg.guild.toString()]['voice'] = voice;
+        if ('dispatcher' in guildStatus[msg.guild.toString()]) {
+            try {
+                guildStatus[msg.guild.toString()]['dispatcher'].destroy();
+            }
+            catch (_b) { }
+        }
+        guildStatus[msg.guild.toString()]['dispatcher'] = voice.play('C:/Users/jacob/Downloads/Bot Resources/music_files/swear_songs/' + data['swearSongs'][songNum]);
+        guildStatus[msg.guild.toString()]['dispatcher'].on('finish', () => {
+            guildStatus[msg.guild.toString()]['dispatcher'].destroy();
+            guildStatus[msg.guild.toString()]['audio'] = false;
+        });
+    });
+}
 client.on('message', msg => {
     if (msg.author.bot) {
         return;
     }
     if (!msg.content.startsWith(prefix)) {
-        let messageArray = msg.content.toLowerCase().replace(/[.,!*+?^${}()|[\]\\]/g, ' ').split(" ");
-        let mentionSwear = false;
-        for (const word of messageArray) {
-            if (word == 'swear') {
-                msg.reply(data['blacklist']['swears'][Math.floor(Math.random() * data['blacklist']['swears'].length)]);
-                break;
-            }
-            else if (!mentionSwear) {
-                for (const swear of data['blacklist']['swears']) {
-                    if (word == swear) {
-                        mentionSwear = true;
-                        break;
-                    }
-                }
-            }
+        if (msg.content.indexOf('swear')) {
+            msg.reply(data['blacklist']['swears'][Math.floor(Math.random() * data['blacklist']['swears'].length)]);
+            return;
         }
-        if (mentionSwear) {
-            msg.reply('Good job swearing! Heck yeah!');
+        for (const swear of data['blacklist']['swears']) {
+            if (msg.content.indexOf(swear)) {
+                msg.reply('Good job swearing! Heck yeah!');
+                return;
+            }
         }
         return;
     }
@@ -54,45 +92,7 @@ client.on('message', msg => {
     try {
         switch (messageStart) {
             case 'play':
-                let vc;
-                let songNum;
-                try {
-                    vc = msg.member.voice.channel;
-                }
-                catch (_a) {
-                    msg.reply('This command can only be used while in a voice channel!');
-                    return;
-                }
-                try {
-                    if (parseInt(msg.content.split(" ")[1]) <= data['swearSongs'].length && parseInt(msg.content.split(" ")[1]) > 0) {
-                        songNum = parseInt(msg.content.split(" ")[1]) - 1;
-                    }
-                    else {
-                        songNum = Math.floor(Math.random() * data['swearSongs'].length);
-                    }
-                }
-                catch (err) {
-                    songNum = Math.floor(Math.random() * data['swearSongs'].length);
-                }
-                if (!(msg.guild.toString() in guildStatus)) {
-                    guildStatus[msg.guild.toString()] = {};
-                }
-                guildStatus[msg.guild.toString()]['audio'] = true;
-                vc.join()
-                    .then(voice => {
-                    guildStatus[msg.guild.toString()]['voice'] = voice;
-                    if ('dispatcher' in guildStatus[msg.guild.toString()]) {
-                        try {
-                            guildStatus[msg.guild.toString()]['dispatcher'].destroy();
-                        }
-                        catch (_a) { }
-                    }
-                    guildStatus[msg.guild.toString()]['dispatcher'] = voice.play('C:/Users/jacob/Downloads/Bot Resources/music_files/swear_songs/' + data['swearSongs'][songNum]);
-                    guildStatus[msg.guild.toString()]['dispatcher'].on('finish', () => {
-                        guildStatus[msg.guild.toString()]['dispatcher'].destroy();
-                        guildStatus[msg.guild.toString()]['audio'] = false;
-                    });
-                });
+                play(msg);
                 break;
             case 'pause':
                 if (msg.guild.toString() in guildStatus && 'dispatcher' in guildStatus[msg.guild.toString()]) {

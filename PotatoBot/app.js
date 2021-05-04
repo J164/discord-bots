@@ -1,4 +1,3 @@
-//TODO
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,14 +7,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-/* GENERAL IMPROVEMENTS
- * Change swear bot and playQueue to work even if youtube_dl downloads a non mp3 file (changes needed here and in swear bot)
- * Implement slash commands (check GitHub)
- */
-/* NEW FEATURES
- * funtranslations.com
- * dog.ceo
- */
 const Discord = require('discord.js'); // Discord api library
 const fs = require('fs'); // Filesystem
 const axios = require('axios'); // Used to make http requests
