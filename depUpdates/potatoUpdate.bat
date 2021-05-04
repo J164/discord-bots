@@ -1,0 +1,2 @@
+cd ../PotatoBot
+npm install

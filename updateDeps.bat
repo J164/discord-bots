@@ -1,6 +1,4 @@
-cd KrenkoBot
-npm install
-cd ../PotatoBot
-npm install
-cd ../SwearBot
-npm install
+cd depUpdates
+krenkoUpdate.bat
+potatoIpdate.bat
+swearUpdate.bat

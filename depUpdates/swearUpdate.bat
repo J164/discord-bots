@@ -1,0 +1,2 @@
+cd ../SwearBot
+npm install
