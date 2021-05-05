@@ -7,11 +7,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+process.on('uncaughtException', err => {
+    console.log(err);
+    setInterval(function () { }, 1000);
+});
 const Discord = require('discord.js');
 const fs = require('fs');
 const client = new Discord.Client();
 const prefix = '?';
-var data = require('C:/Users/jacob/OneDrive/Documents/DiscordBots/files/bots.json');
+var data = require('../files/bots.json');
 var guildStatus = {};
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
@@ -21,7 +25,7 @@ client.on('ready', () => {
     console.log('We have logged in as ' + client.user.tag);
     client.user.setActivity(data['swearStatus'][Math.floor(Math.random() * data['swearStatus'].length)]);
     setInterval(function () {
-        refreshData('C:/Users/jacob/OneDrive/Documents/DiscordBots/files/bots.json');
+        refreshData('../files/bots.json');
         client.user.setActivity(data['swearStatus'][Math.floor(Math.random() * data['swearStatus'].length)]);
         for (const key in guildStatus) {
             if ('audio' in guildStatus[key] && !guildStatus[key]['audio']) {

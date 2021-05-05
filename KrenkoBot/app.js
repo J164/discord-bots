@@ -1,8 +1,12 @@
+process.on('uncaughtException', err => {
+    console.log(err);
+    setInterval(function () { }, 1000);
+});
 const Discord = require('discord.js');
 const fs = require('fs');
 const client = new Discord.Client();
 const prefix = '$';
-var data = require('C:/Users/jacob/OneDrive/Documents/DiscordBots/files/bots.json');
+var data = require('../files/bots.json');
 var guildStatus = {};
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
@@ -18,7 +22,7 @@ client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`);
     client.user.setActivity(data['krenkoStatus'][Math.floor(Math.random() * data['krenkoStatus'].length)]);
     setInterval(function () {
-        refreshData('C:/Users/jacob/OneDrive/Documents/DiscordBots/files/bots.json');
+        refreshData('../files/bots.json');
         client.user.setActivity(data['krenkoStatus'][Math.floor(Math.random() * data['krenkoStatus'].length)]);
     }, 60000);
 });

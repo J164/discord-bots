@@ -7,6 +7,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+process.on('uncaughtException', err => {
+    console.log(err);
+    setInterval(function () { }, 1000);
+});
 const Discord = require('discord.js'); // Discord api library
 const fs = require('fs'); // Filesystem
 const axios = require('axios'); // Used to make http requests
@@ -16,7 +20,7 @@ const uriToBuffer = require('data-uri-to-buffer'); // Converts merge-images outp
 const youtubedl = require('youtube-dl-exec'); // Youtube video downloader
 const client = new Discord.Client(); // Represents the bot client
 const prefix = '&'; // Bot command prefix
-var data = require('C:/Users/jacob/OneDrive/Documents/DiscordBots/files/bots.json'); // Loads persistant info into memory
+var data = require('../files/bots.json'); // Loads persistant info into memory
 var admins = {}; // Stores admin users
 var guildStatus = {}; // Stores guild specific information to allow bot to act independent in different guilds
 class Euchre {
@@ -538,7 +542,7 @@ client.on('ready', () => {
     });
     // Defines tasks that must be executed periodically
     setInterval(function () {
-        refreshData('C:/Users/jacob/OneDrive/Documents/DiscordBots/files/bots.json'); // Refresh data variable
+        refreshData('../files/bots.json'); // Refresh data variable
         client.user.setActivity(data['potatoStatus'][Math.floor(Math.random() * data['potatoStatus'].length)]); // Reset bot status
         // Disconnects bot if it is inactive in a voice channel
         for (const key in guildStatus) {
@@ -633,10 +637,10 @@ function newSwearSong(msg) {
             format: 'bestaudio',
             output: 'C:/Users/jacob/Downloads/Bot Resources/music_files/swear_songs/song' + (data['swearSongs'].length + 1) + '.mp3'
         });
-        refreshData('C:/Users/jacob/OneDrive/Documents/DiscordBots/files/bots.json');
+        refreshData('../files/bots.json');
         data['swearSongs'].push(`song${(data['swearSongs'].length + 1)}.mp3`);
         const jsonString = JSON.stringify(data);
-        fs.writeFileSync('C:/Users/jacob/OneDrive/Documents/DiscordBots/files/bots.json', jsonString);
+        fs.writeFileSync('../files/bots.json', jsonString);
         msg.reply('Success!');
     });
 }
@@ -929,7 +933,7 @@ client.on('message', msg => {
                 msg.reply(playlists);
                 break;
             case 'quote':
-                const quotes = fs.readFileSync('C:/Users/jacob/OneDrive/Documents/DiscordBots/files/quotes.txt', 'utf8').split("}");
+                const quotes = fs.readFileSync('../files/quotes.txt', 'utf8').split("}");
                 msg.channel.send(quotes[Math.floor(Math.random() * quotes.length)], { 'tts': true });
                 break;
             case 'euchre':
