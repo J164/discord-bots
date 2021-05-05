@@ -9,33 +9,77 @@ const prefix = '$';
 var data = require('../files/bots.json');
 var guildStatus = {};
 class MagicGame {
-    constructor(playerList) {
+    constructor(playerList, channel) {
+        this.channel = channel;
+        this.numAlive = playerList.length;
         this.playerInfo = {};
         for (const player of playerList) {
-            this.playerInfo = {
-                player: player,
+            this.playerInfo[player.id] = {
+                playerName: player.username,
                 lifeTotal: 20,
-                poison: 0
+                poison: 0,
+                isAlive: true
             };
         }
     }
     changeLife(player, amount) {
+        this.playerInfo[player.id]['lifeTotal'] += amount;
+        if (this.checkStatus(player)) {
+            this.printStandings();
+            return;
+        }
     }
     addPoison(player, amount) {
+        this.playerInfo[player.id]['poison'] += amount;
+        if (this.checkStatus(player)) {
+            this.printStandings();
+            return;
+        }
     }
     checkStatus(player) {
+        if (this.playerInfo[player.id]['lifeTotal'] < 1 || this.playerInfo[player.id]['poison'] >= 10) {
+            this.playerInfo[player.id]['isAlive'] = false;
+            this.numAlive--;
+            if (this.numAlive < 2) {
+                this.finishGame();
+            }
+            return false;
+        }
+        return true;
     }
     printStandings() {
+        const embedVar = genericEmbedResponse('Current Standings');
+        for (const player of this.playerInfo) {
+            if (player['isAlive']) {
+                embedVar.addField(`${player['playerName']}:`, `Life Total: ${player['lifeTotal']}\nPoison Counters: ${player['poison']}`);
+            }
+            else {
+                embedVar.addField(`${player['playerName']}:`, 'ELIMINATED');
+            }
+        }
+        this.channel.send(embedVar);
+    }
+    finishGame() {
+        for (const player of this.playerInfo) {
+            if (player['isAlive']) {
+                const embedVar = genericEmbedResponse(`${player['playerName']} Wins!!`);
+                embedVar.addField(`${player['playerName']}:`, `Life Total: ${player['lifeTotal']}\nPoison Counters: ${player['poison']}`);
+                this.channel.send(embedVar);
+                break;
+            }
+        }
     }
 }
 class CommanderGame extends MagicGame {
-    constructor(playerList, commanderList) {
-        super(playerList);
+    constructor(playerList, channel, commanderList) {
+        super(playerList, channel);
         //Make changes for commander (life total, times commander cast, commander damage)
     }
     changeLife(player, amount, commander = null) {
     }
     checkStatus(player) {
+        return true;
+        //returns true if they are alive
     }
     printStandings() {
     }
