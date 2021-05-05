@@ -11,6 +11,65 @@ const prefix = '$'
 var data = require('../files/bots.json')
 var guildStatus = {}
 
+class MagicGame {
+
+    playerInfo
+
+    constructor(playerList) {
+        this.playerInfo = {}
+        for (const player of playerList) {
+            this.playerInfo = {
+                player: player,
+                lifeTotal: 20,
+                poison: 0
+            }
+        }
+    }
+
+    changeLife(player, amount) {
+
+    }
+
+    addPoison(player, amount) {
+
+    }
+
+    checkStatus(player) {
+
+    }
+
+    printStandings() {
+
+    }
+}
+
+class CommanderGame extends MagicGame {
+    constructor(playerList, commanderList) {
+        super(playerList)
+        //Make changes for commander (life total, times commander cast, commander damage)
+    }
+
+    changeLife(player, amount, commander = null) {
+
+    }
+
+    checkStatus(player) {
+
+    }
+
+    printStandings() {
+
+    }
+
+    addCast(commander) {
+
+    }
+
+    getCasts(commander) {
+
+    }
+}
+
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' })
     data = JSON.parse(jsonString)
