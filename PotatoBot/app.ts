@@ -6,9 +6,7 @@ process.on('uncaughtException', err => {
 const Discord = require('discord.js') // Discord api library
 const fs = require('fs') // Filesystem
 const axios = require('axios') // Used to make http requests
-const { Canvas, Image } = require('canvas') // Prereq for merge-images
-const mergeImages = require('merge-images') // Uses canvas to merge images
-const uriToBuffer = require('data-uri-to-buffer') // Converts merge-images output to image buffer
+const canvas = require('canvas') // Allows the manipulation of images
 const youtubedl = require('youtube-dl-exec') // Youtube video downloader
 
 const client = new Discord.Client() // Represents the bot client
@@ -73,7 +71,7 @@ class Euchre {
             await this.startRound()
         }
         const results = genericEmbedResponse('Game Over!')
-        results.addField('Players', `${this.players[0]['player']['id']}, ${this.players[1]['player']['id']}, ${this.players[2]['player']['id']}, ${this.players[3]['player']['id']}`)
+        results.addField('Players', `${this.players[0]['id']}, ${this.players[1]['id']}, ${this.players[2]['id']}, ${this.players[3]['id']}`)
         if (this.team1['score'] > 10) {
             results.addField('Team 1 Wins!', `${this.team1['score']} - ${this.team2['score']}`)
         } else {
@@ -403,8 +401,9 @@ class Euchre {
     async sendHand(player) {
         let filePaths = []
         const hand = genericEmbedResponse('^ Your Hand:')
-        for (let [i, card] of player['hand'].entries()) {
-            filePaths.push({ src: `C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${card['code']}.png`, x: i * 224, y: 0})
+        for (const card of player['hand']) {
+            //filePaths.push({ src: `C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${card['code']}.png`, x: i * 226, y: 0})
+            filePaths.push(`C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${card['code']}.png`)
         }
         if (filePaths.length == 1) {
             hand.attachFiles([{
@@ -415,15 +414,19 @@ class Euchre {
             await channel.send(hand)
             return
         }
-        const mergedImage = await mergeImages(filePaths, {
+        /*const mergedImage = await mergeImages(filePaths, {
             Canvas: Canvas,
             Image: Image,
             width: 1120
         })
-        const image = uriToBuffer(mergedImage)
+        const image = uriToBuffer(mergedImage)*/
+        const image = await mergeImages(filePaths, {
+            width: filePaths.length * 226,
+            height: 314
+        })
         hand.attachFiles([{
-                attachment: image,
-                name: 'hand.png'
+            attachment: image,
+            name: 'hand.png'
         }])
         const channel = await player['player'].createDM()
         await channel.send(hand)
@@ -439,24 +442,39 @@ class Euchre {
         } else {
             let filePaths = []
             for (let i = 0; i < cards.length; i++) {
-                filePaths.push({ src: `C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${cards[i]['code']}.png`, x: i * 224, y: 0 })
+                //filePaths.push({ src: `C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${cards[i]['code']}.png`, x: i * 226, y: 0 })
+                filePaths.push(`C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${cards[i]['code']}.png`)
             }
-            const mergedImage = await mergeImages(filePaths, {
+            /*const mergedImage = await mergeImages(filePaths, {
                 Canvas: Canvas,
                 Image: Image,
                 width: 1120
             })
-            const image = uriToBuffer(mergedImage)
+            const image = uriToBuffer(mergedImage)*/
+            const image = await mergeImages(filePaths, {
+                width: filePaths.length * 226,
+                height: 314
+            })
             response.attachFiles([{
                 attachment: image,
                 name: `${message}.png`
             }])
         }
         for (const player of this.players) {
-                const channel = await player['player'].createDM()
-                await channel.send(response)
+            const channel = await player['player'].createDM()
+            await channel.send(response)
         }
     }
+}
+
+async function mergeImages(filePaths, options) {
+    const activeCanvas = canvas.createCanvas(options['width'], options['height'])
+    const ctx = activeCanvas.getContext('2d')
+    for (const [i, path] of filePaths.entries()) {
+        const image = await canvas.loadImage(path)
+        ctx.drawImage(image, i * (options['width'] / filePaths.length), 0)
+    }
+    return activeCanvas.toBuffer()
 }
 
 // Creates a commonly used discord embed
@@ -665,6 +683,10 @@ async function play(msg) {
         msg.reply('This command can only be used while in a voice channel!')
         return
     }
+    if (!voiceChannel.joinable) {
+        msg.reply('I can\'t join this voice channel!')
+        return
+    }
     try {
         url = msg.content.split(" ")[1]
     } catch {
@@ -749,6 +771,11 @@ async function setupEuchre(msg) {
 
 // This block executes when a message is sent
 client.on('message', msg => {
+
+    // If message is not in a guild return
+    if (!msg.guild) {
+        return
+    }
 
     // Creates a key in GuildStatus for the current guild
     if (!(msg.guild.id in guildStatus)) {
