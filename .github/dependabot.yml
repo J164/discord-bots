@@ -16,7 +16,7 @@
      schedule:
        interval: "daily"
 
-   - package-ecosystem: "composer"
+   - package-ecosystem: "npm"
      directory: "/KrenkoBot"
      schedule:
        interval: "daily"
