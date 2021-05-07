@@ -1,2 +1,0 @@
-cd ../KrenkoBot
-npm install
