@@ -11,7 +11,7 @@ const youtubedl = require('youtube-dl-exec') // Youtube video downloader
 
 const client = new Discord.Client() // Represents the bot client
 const prefix = '&' // Bot command prefix
-var data = require('../files/bots.json') // Loads persistant info into memory
+var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json') // Loads persistant info into memory
 var admins = {} // Stores admin users
 var guildStatus = {} // Stores guild specific information to allow bot to act independent in different guilds
 
@@ -552,7 +552,7 @@ client.on('ready', () => {
 
     // Defines tasks that must be executed periodically
     setInterval(function () {
-        refreshData('../files/bots.json') // Refresh data variable
+        refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json') // Refresh data variable
         client.user.setActivity(data['potatoStatus'][Math.floor(Math.random() * data['potatoStatus'].length)]) // Reset bot status
 
         // Disconnects bot if it is inactive in a voice channel
@@ -643,10 +643,10 @@ async function newSwearSong(msg) {
         format: 'bestaudio',
         output: 'C:/Users/jacob/Downloads/Bot Resources/music_files/swear_songs/song' + (data['swearSongs'].length + 1) + '.mp3'
     })
-    refreshData('../files/bots.json')
+    refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json')
     data['swearSongs'].push(`song${(data['swearSongs'].length + 1)}.mp3`)
     const jsonString = JSON.stringify(data)
-    fs.writeFileSync('../files/bots.json', jsonString)
+    fs.writeFileSync('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json', jsonString)
     msg.reply('Success!')
 }
 
@@ -939,7 +939,7 @@ client.on('message', msg => {
                 msg.reply(playlists)
                 break
             case 'quote':
-                const quotes = fs.readFileSync('../files/quotes.txt', 'utf8').split("}")
+                const quotes = fs.readFileSync('C:/Users/jacob/Downloads/Bot Resources/sys_files/quotes.txt', 'utf8').split("}")
                 msg.channel.send(quotes[Math.floor(Math.random() * quotes.length)], { 'tts': true })
                 break
             case 'euchre':

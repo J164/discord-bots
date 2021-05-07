@@ -8,7 +8,7 @@ const fs = require('fs')
 
 const client = new Discord.Client()
 const prefix = '?'
-var data = require('../files/bots.json')
+var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json')
 var guildStatus = {}
 
 function refreshData(location) {
@@ -20,7 +20,7 @@ client.on('ready', () => {
     console.log('We have logged in as ' + client.user.tag)
     client.user.setActivity(data['swearStatus'][Math.floor(Math.random() * data['swearStatus'].length)])
     setInterval(function () {
-        refreshData('../files/bots.json')
+        refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json')
         client.user.setActivity(data['swearStatus'][Math.floor(Math.random() * data['swearStatus'].length)])
         for (const key in guildStatus) {
             if ('audio' in guildStatus[key] && !guildStatus[key]['audio']) {

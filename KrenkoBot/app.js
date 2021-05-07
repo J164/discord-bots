@@ -6,7 +6,7 @@ const Discord = require('discord.js');
 const fs = require('fs');
 const client = new Discord.Client();
 const prefix = '$';
-var data = require('../files/bots.json');
+var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
 var guildStatus = {};
 class MagicGame {
     constructor(playerList, channel) {
@@ -102,7 +102,7 @@ client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`);
     client.user.setActivity(data['krenkoStatus'][Math.floor(Math.random() * data['krenkoStatus'].length)]);
     setInterval(function () {
-        refreshData('../files/bots.json');
+        refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
         client.user.setActivity(data['krenkoStatus'][Math.floor(Math.random() * data['krenkoStatus'].length)]);
     }, 60000);
 });
