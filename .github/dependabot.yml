@@ -5,17 +5,18 @@
 
 version: 2
 updates:
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/PotatoBot" # Location of package manifests
+
+  - package-ecosystem: "npm"
+    directory: "/PotatoBot"
     schedule:
       interval: "daily"
-      
- - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/SwearBot" # Location of package manifests
+
+  - package-ecosystem: "npm"
+    directory: "/SwearBot"
     schedule:
       interval: "daily"
-      
- - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/KrenkoBot" # Location of package manifests
+
+  - package-ecosystem: "composer"
+    directory: "/KrenkoBot"
     schedule:
       interval: "daily"
