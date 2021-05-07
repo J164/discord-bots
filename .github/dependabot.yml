@@ -7,16 +7,16 @@
  updates:
 
    - package-ecosystem: "npm"
-     directory: "/PotatoBot/package.json"
+     directory: "/PotatoBot"
      schedule:
        interval: "daily"
 
    - package-ecosystem: "npm"
-     directory: "/SwearBot/package.json"
+     directory: "/SwearBot"
      schedule:
        interval: "daily"
 
    - package-ecosystem: "composer"
-     directory: "/KrenkoBot/package.json"
+     directory: "/KrenkoBot"
      schedule:
        interval: "daily"
