@@ -402,7 +402,6 @@ class Euchre {
         let filePaths = []
         const hand = genericEmbedResponse('^ Your Hand:')
         for (const card of player['hand']) {
-            //filePaths.push({ src: `C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${card['code']}.png`, x: i * 226, y: 0})
             filePaths.push(`C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${card['code']}.png`)
         }
         if (filePaths.length == 1) {
@@ -414,12 +413,6 @@ class Euchre {
             await channel.send(hand)
             return
         }
-        /*const mergedImage = await mergeImages(filePaths, {
-            Canvas: Canvas,
-            Image: Image,
-            width: 1120
-        })
-        const image = uriToBuffer(mergedImage)*/
         const image = await mergeImages(filePaths, {
             width: filePaths.length * 226,
             height: 314
@@ -442,15 +435,8 @@ class Euchre {
         } else {
             let filePaths = []
             for (let i = 0; i < cards.length; i++) {
-                //filePaths.push({ src: `C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${cards[i]['code']}.png`, x: i * 226, y: 0 })
                 filePaths.push(`C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${cards[i]['code']}.png`)
             }
-            /*const mergedImage = await mergeImages(filePaths, {
-                Canvas: Canvas,
-                Image: Image,
-                width: 1120
-            })
-            const image = uriToBuffer(mergedImage)*/
             const image = await mergeImages(filePaths, {
                 width: filePaths.length * 226,
                 height: 314
