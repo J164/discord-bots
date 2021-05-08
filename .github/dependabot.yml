@@ -7,6 +7,11 @@
  updates:
 
    - package-ecosystem: "npm"
+     directory: "/"
+     schedule:
+       interval: "daily"
+
+   - package-ecosystem: "npm"
      directory: "/PotatoBot"
      schedule:
        interval: "daily"
