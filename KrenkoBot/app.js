@@ -107,7 +107,7 @@ client.on('ready', () => {
     }, 60000);
 });
 client.on('message', msg => {
-    if (msg.author.bot || !msg.content.startsWith(prefix)) {
+    if (msg.author.bot || !msg.content.startsWith(prefix) || !msg.guild) {
         return;
     }
     let messageStart = msg.content.split(" ")[0].slice(1);

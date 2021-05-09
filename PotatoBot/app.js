@@ -19,7 +19,7 @@ const youtubedl = require('youtube-dl-exec'); // Youtube video downloader
 const client = new Discord.Client(); // Represents the bot client
 const prefix = '&'; // Bot command prefix
 var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json'); // Loads persistant info into memory
-var admins = {}; // Stores admin users
+var users = {}; // Stores specific users
 var guildStatus = {}; // Stores guild specific information to allow bot to act independent in different guilds
 class Euchre {
     constructor(players) {
@@ -138,7 +138,7 @@ class Euchre {
             }
             let availableSuits = ['Hearts', 'Diamonds', 'Clubs', 'Spades', 'Pass'];
             availableSuits.splice(availableSuits.indexOf(`${this.gameState['top']['suit'][0]}${this.gameState['top']['suit'].slice(1).toLowerCase()}`), 1);
-            for (let [i, player] of this.players.entries()) {
+            for (const [i, player] of this.players.entries()) {
                 if (i == 3) {
                     availableSuits.splice(availableSuits.length - 1, 1);
                 }
@@ -183,7 +183,7 @@ class Euchre {
                     let handIndices = [];
                     let hasLead = false;
                     if (lead != null) {
-                        for (let [i, card] of player['hand'].entries()) {
+                        for (const [i, card] of player['hand'].entries()) {
                             if (this.realSuit(card) == lead) {
                                 availableHand.push(card);
                                 handIndices.push(i);
@@ -465,6 +465,7 @@ class Euchre {
         });
     }
 }
+// Merges multiple images into one image
 function mergeImages(filePaths, options) {
     return __awaiter(this, void 0, void 0, function* () {
         const activeCanvas = canvas.createCanvas(options['width'], options['height']);
@@ -530,6 +531,14 @@ function playQueue(channel, guild, vc) {
         });
     });
 }
+// Fetches a user from a specific guild using their ID
+function getUser(guildId, userId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const guild = yield client.guilds.fetch(guildId);
+        const user = yield guild.members.fetch({ user: userId });
+        return user;
+    });
+}
 // This block executes when the bot is launched
 client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`);
@@ -540,20 +549,19 @@ client.on('ready', () => {
     fs.mkdirSync('C:/Users/jacob/Downloads/Bot Resources/temp'); // Creates a temp folder for this session
     client.user.setActivity(data['potatoStatus'][Math.floor(Math.random() * data['potatoStatus'].length)]); // Sets bot status
     // Fetches any necessary user objects
-    client.guilds.fetch('619975185029922817')
-        .then(guild => {
-        guild.members.fetch({ user: '609826125501169723' })
-            .then(host => { admins['host'] = host; });
-    });
+    getUser('619975185029922817', '609826125501169723')
+        .then(admin => { users['admin'] = admin; });
+    getUser('619975185029922817', '633046187506794527')
+        .then(swear => { users['swear'] = swear; });
     // Defines tasks that must be executed periodically
     setInterval(function () {
         refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json'); // Refresh data variable
         client.user.setActivity(data['potatoStatus'][Math.floor(Math.random() * data['potatoStatus'].length)]); // Reset bot status
         // Disconnects bot if it is inactive in a voice channel
-        for (const key in guildStatus) {
-            if ('audio' in guildStatus[key] && !guildStatus[key]['audio']) {
+        for (const guild in guildStatus) {
+            if ('audio' in guildStatus[guild] && !guildStatus[guild]['audio']) {
                 try {
-                    guildStatus[key]['voice'].disconnect();
+                    guildStatus[guild]['voice'].disconnect();
                 }
                 catch (_a) { }
             }
@@ -605,6 +613,10 @@ function wynncraftStats(msg) {
 }
 function newSwearSong(msg) {
     return __awaiter(this, void 0, void 0, function* () {
+        if (msg.author != users['admin'] && msg.author != users['swear']) {
+            msg.reply('You don\'t have permission to use this command!');
+            return;
+        }
         if (msg.content.split(" ").length < 2) {
             msg.reply('Please enter a video url');
             return;
@@ -651,8 +663,8 @@ function newSwearSong(msg) {
 }
 function download(msg) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (msg.author != admins['host']) {
-            msg.reply("You don't have permission to use this command!");
+        if (msg.author != users['admin']) {
+            msg.reply('You don\'t have permission to use this command!');
             return;
         }
         if (msg.content.split(" ").length < 2) {
@@ -787,12 +799,12 @@ client.on('message', msg => {
     }
     if (msg.author.bot) {
         // Disconnects rythm bot if it attempts to play a rickroll
-        if (msg.content.split('`')[1] == 'Rick Astley - Never Gonna Give You Up (Video)') {
+        if (msg.content.indexOf('Never Gonna Give You Up') != -1) {
             msg.guild.members.fetch({ user: '235088799074484224' })
-                .then(Rythm => {
+                .then(rythm => {
                 function kickRythm(count) {
-                    if (Rythm.voice.channelID) {
-                        Rythm.voice.kick();
+                    if (rythm.voice.channelID) {
+                        rythm.voice.kick();
                     }
                     else if (count > 5) {
                         return;
@@ -859,81 +871,65 @@ client.on('message', msg => {
                 play(msg);
                 break;
             case 'pause':
-                if ('dispatcher' in guildStatus[msg.guild.id]) {
-                    guildStatus[msg.guild.id]['dispatcher'].pause();
-                    msg.reply('Paused!');
-                }
-                else {
+                if (!('dispatcher' in guildStatus[msg.guild.id])) {
                     msg.reply('Nothing is playing!');
+                    return;
                 }
+                guildStatus[msg.guild.id]['dispatcher'].pause();
+                msg.reply('Paused!');
                 break;
             case 'resume':
-                if ('dispatcher' in guildStatus[msg.guild.id]) {
-                    guildStatus[msg.guild.id]['dispatcher'].resume();
-                    msg.reply('Resumed!');
-                }
-                else {
+                if (!('dispatcher' in guildStatus[msg.guild.id])) {
                     msg.reply('Nothing is playing!');
                 }
+                guildStatus[msg.guild.id]['dispatcher'].resume();
+                msg.reply('Resumed!');
                 break;
             case 'queue':
-                if ('queue' in guildStatus[msg.guild.id]) {
-                    if (guildStatus[msg.guild.id]['queue'].length == 0) {
-                        msg.reply('There is no queue!');
-                        return;
-                    }
-                    const queueMessage = genericEmbedResponse('Queue');
-                    for (const [i, entry] of guildStatus[msg.guild.id]['queue'].entries()) {
-                        queueMessage.addField(`${i + 1}.`, `${entry['title']}\n${entry['webpage_url']}`);
-                    }
-                    msg.reply(queueMessage);
-                }
-                else {
+                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id]['queue'].length < 1) {
                     msg.reply('There is no queue!');
+                    return;
                 }
+                const queueMessage = genericEmbedResponse('Queue');
+                for (const [i, entry] of guildStatus[msg.guild.id]['queue'].entries()) {
+                    queueMessage.addField(`${i + 1}.`, `${entry['title']}\n${entry['webpage_url']}`);
+                }
+                msg.reply(queueMessage);
                 break;
             case 'clear':
-                if ('queue' in guildStatus[msg.guild.id]) {
-                    guildStatus[msg.guild.id]['queue'] = [];
-                    msg.reply('The queue has been cleared!');
-                }
-                else {
+                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id]['queue'].length < 1) {
                     msg.reply('There is no queue!');
+                    return;
                 }
+                guildStatus[msg.guild.id]['queue'] = [];
+                msg.reply('The queue has been cleared!');
                 break;
             case 'shuffle':
-                if ('queue' in guildStatus[msg.guild.id]) {
-                    if (guildStatus[msg.guild.id]['queue'].length == 0) {
-                        msg.reply('There is no queue!');
-                        return;
-                    }
-                    guildStatus[msg.guild.id]['queue'].sort(() => Math.random() - 0.5);
-                    msg.reply('The queue has been shuffled');
-                }
-                else {
+                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id]['queue'].length < 1) {
                     msg.reply('There is no queue!');
+                    return;
                 }
+                guildStatus[msg.guild.id]['queue'].sort(() => Math.random() - 0.5);
+                msg.reply('The queue has been shuffled');
                 break;
             case 'stop':
-                if ('dispatcher' in guildStatus[msg.guild.id]) {
-                    if ('queue' in guildStatus[msg.guild.id]) {
-                        guildStatus[msg.guild.id]['queue'] = [];
-                    }
-                    guildStatus[msg.guild.id]['dispatcher'].destroy();
-                    guildStatus[msg.guild.id]['audio'] = false;
-                    msg.reply('Success');
-                }
-                else {
+                if (!('dispatcher' in guildStatus[msg.guild.id])) {
                     msg.reply('There is nothing playing!');
+                    return;
                 }
+                if ('queue' in guildStatus[msg.guild.id]) {
+                    guildStatus[msg.guild.id]['queue'] = [];
+                }
+                guildStatus[msg.guild.id]['dispatcher'].destroy();
+                guildStatus[msg.guild.id]['audio'] = false;
+                msg.reply('Success');
                 break;
             case 'np':
-                if ('nowPlaying' in guildStatus[msg.guild.id]) {
-                    msg.reply(guildStatus[msg.guild.id]['nowPlaying']);
-                }
-                else {
+                if (!('nowPlaying' in guildStatus[msg.guild.id])) {
                     msg.reply('Nothing has played yet!');
+                    return;
                 }
+                msg.reply(guildStatus[msg.guild.id]['nowPlaying']);
                 break;
             case 'playlists':
                 const playlists = genericEmbedResponse('Playlists');

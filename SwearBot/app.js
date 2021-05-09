@@ -76,7 +76,7 @@ function play(msg) {
     });
 }
 client.on('message', msg => {
-    if (msg.author.bot) {
+    if (msg.author.bot || !msg.guild) {
         return;
     }
     if (!msg.content.startsWith(prefix)) {
@@ -99,32 +99,29 @@ client.on('message', msg => {
                 play(msg);
                 break;
             case 'pause':
-                if (msg.guild.toString() in guildStatus && 'dispatcher' in guildStatus[msg.guild.toString()]) {
-                    guildStatus[msg.guild.toString()]['dispatcher'].pause();
-                    msg.reply('Paused!');
-                }
-                else {
+                if (!(msg.guild.toString() in guildStatus) || !('dispatcher' in guildStatus[msg.guild.toString()])) {
                     msg.reply('Nothing is playing!');
+                    return;
                 }
+                guildStatus[msg.guild.toString()]['dispatcher'].pause();
+                msg.reply('Paused!');
                 break;
             case 'resume':
-                if (msg.guild.toString() in guildStatus && 'dispatcher' in guildStatus[msg.guild.toString()]) {
-                    guildStatus[msg.guild.toString()]['dispatcher'].resume();
-                    msg.reply('Resumed!');
-                }
-                else {
+                if (!(msg.guild.toString() in guildStatus) || !('dispatcher' in guildStatus[msg.guild.toString()])) {
                     msg.reply('Nothing is playing!');
+                    return;
                 }
+                guildStatus[msg.guild.toString()]['dispatcher'].resume();
+                msg.reply('Resumed!');
                 break;
             case 'stop':
-                if (msg.guild.toString() in guildStatus && 'dispatcher' in guildStatus[msg.guild.toString()]) {
-                    guildStatus[msg.guild.toString()]['dispatcher'].destroy();
-                    guildStatus[msg.guild.toString()]['audio'] = false;
-                    msg.reply('Success');
-                }
-                else {
+                if (!(msg.guild.toString() in guildStatus) || !('dispatcher' in guildStatus[msg.guild.toString()])) {
                     msg.reply('There is nothing playing!');
+                    return;
                 }
+                guildStatus[msg.guild.toString()]['dispatcher'].destroy();
+                guildStatus[msg.guild.toString()]['audio'] = false;
+                msg.reply('Success');
                 break;
         }
     }

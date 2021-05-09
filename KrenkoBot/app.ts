@@ -133,7 +133,7 @@ client.on('ready', () => {
 })
 
 client.on('message', msg => {
-    if (msg.author.bot || !msg.content.startsWith(prefix)) {
+    if (msg.author.bot || !msg.content.startsWith(prefix) || !msg.guild) {
         return
     }
 
