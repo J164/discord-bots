@@ -1,13 +1,86 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 process.on('uncaughtException', err => {
     console.log(err);
     setInterval(function () { }, 1000);
 });
 const Discord = require('discord.js');
 const fs = require('fs');
+const axios = require('axios');
 const client = new Discord.Client();
 const prefix = '$';
 var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
 var guildStatus = {};
+var deck;
+function makeGetRequest(path) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const response = yield axios.get(path);
+        return response.data;
+    });
+}
+function findKey(object, property) {
+    let result;
+    if (object instanceof Array) {
+        for (let i = 0; i < object.length; i++) {
+            result = findKey(object[i], property);
+            if (result) {
+                break;
+            }
+        }
+    }
+    else {
+        for (let prop in object) {
+            if (prop == property) {
+                if (object[prop]) {
+                    return object;
+                }
+            }
+            if (object[prop] instanceof Object || object[prop] instanceof Array) {
+                result = findKey(object[prop], property);
+                if (result) {
+                    break;
+                }
+            }
+        }
+    }
+    return result;
+}
+class Deck {
+    constructor(url) {
+        this.url = url;
+        const fields = url.split("/");
+        const authorID = fields[4];
+        const deckID = fields[5].split('-')[0];
+        this.apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`;
+        makeGetRequest(this.apiUrl + 'json')
+            .then(deckJson => {
+            this.name = deckJson['name'];
+            let commander = findKey(deckJson, 'isCommander');
+            commander = commander['name'];
+            console.log(commander);
+            this.image = null; // https://scryfall.com/docs/api/cards/search  use encodeURIComponent(string) to encode name of commander
+        });
+    }
+    getPreview() {
+        const preview = genericEmbedResponse(this.name);
+        preview.setImage(this.image);
+        preview.addField('Deckstats URL:', this.url);
+        return preview;
+    }
+    getList() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const decklist = yield makeGetRequest(this.apiUrl + 'list');
+            return decklist.list;
+        });
+    }
+}
 class MagicGame {
     constructor(playerList, channel) {
         this.channel = channel;
@@ -99,6 +172,7 @@ function genericEmbedResponse(title) {
     return embedVar;
 }
 client.on('ready', () => {
+    deck = new Deck('https://deckstats.net/decks/162326/2048957-artifacts-troll-');
     console.log(`We have logged in as ${client.user.tag}`);
     client.user.setActivity(data['krenkoStatus'][Math.floor(Math.random() * data['krenkoStatus'].length)]);
     setInterval(function () {
@@ -113,6 +187,13 @@ client.on('message', msg => {
     let messageStart = msg.content.split(" ")[0].slice(1);
     try {
         switch (messageStart) {
+            case 'test':
+                msg.channel.send(deck.getPreview());
+                deck.getList()
+                    .then(list => {
+                    msg.channel.send(list);
+                });
+                break;
             case 'roll':
                 let dice = 6;
                 if (msg.content.split(" ").length > 1) {
