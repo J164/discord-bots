@@ -63,13 +63,23 @@ function findKey(object, property) {
     return result;
 }
 class Deck {
-    constructor(url, authorId) {
+    constructor(url = null, authorId = null) {
+        if (!url) {
+            return;
+        }
         this.authorId = authorId;
         this.url = url;
         const fields = url.split('/');
         const authorID = fields[4];
         const deckID = fields[5].split('-')[0];
         this.apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`;
+    }
+    fill(json) {
+        this.image = json.image;
+        this.name = json.name;
+        this.url = json.url;
+        this.apiUrl = json.url;
+        this.authorId = json.authorId;
     }
     getInfo() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -197,6 +207,47 @@ function add(msg) {
         fs.writeFileSync('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json', jsonString);
     });
 }
+function deckPreview(i, msg) {
+    return __awaiter(this, void 0, void 0, function* () {
+        deck = new Deck();
+        deck.fill(data['decks'][i]);
+        const message = yield msg.channel.send(deck.getPreview());
+        let emojiList = ['\uD83D\uDCC4']; // Page emoji
+        if (i != 0) {
+            emojiList.unshift('\u2B05\uFE0F'); // Left arrow
+        }
+        if (msg.author.id == data['decks'][i].authorId) {
+            emojiList.push('\u274C'); // X
+        }
+        if (i != (data['decks'].length - 1)) {
+            emojiList.push('\u27A1\uFE0F'); // Right arrow
+        }
+        for (const emoji of emojiList) {
+            yield message.react(emoji);
+        }
+        const filter = reaction => reaction.client === client;
+        let reaction = yield message.awaitReactions(filter, { max: 1 });
+        reaction = reaction.first();
+        /*for (let i = 0; i < emojiList.length; i++) {
+            if (reaction.emoji.name === emojiList[i]) {
+                return i
+            }
+        }*/
+        if (reaction.emoji.name == '\uD83D\uDCC4') {
+            msg.reply(yield deck.getList());
+            return;
+        }
+        if (reaction.emoji.name == '\u274C') {
+            if (msg.author.id == deck.authorId) {
+                data.splice(i, 1);
+                msg.reply('Deck deleted!');
+                return;
+            }
+            msg.reply('Only the owner of the deck can remove it!');
+            return;
+        }
+    });
+}
 client.on('message', msg => {
     if (msg.author.bot || !msg.content.startsWith(prefix) || !msg.guild) {
         return;
@@ -207,16 +258,8 @@ client.on('message', msg => {
             case 'add':
                 add(msg);
                 break;
-            case 'remove':
-                break;
             case 'decks':
-                break;
-            case 'test':
-                msg.channel.send(deck.getPreview());
-                deck.getList()
-                    .then(list => {
-                    msg.channel.send(list);
-                });
+                deckPreview(0, msg);
                 break;
             case 'roll':
                 let dice = 6;
