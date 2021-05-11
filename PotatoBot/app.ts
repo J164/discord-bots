@@ -542,10 +542,10 @@ client.on('ready', () => {
 
     // Fetches any necessary user objects
     getUser('619975185029922817', '609826125501169723')
-        .then(admin => { users['admin'] = admin })
+        .then(admin => { users['admin'] = admin.user })
 
     getUser('619975185029922817', '633046187506794527')
-        .then(swear => { users['swear'] = swear })
+        .then(swear => { users['swear'] = swear.user })
 
     // Defines tasks that must be executed periodically
     setInterval(function () {

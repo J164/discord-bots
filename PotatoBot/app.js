@@ -550,9 +550,9 @@ client.on('ready', () => {
     client.user.setActivity(data['potatoStatus'][Math.floor(Math.random() * data['potatoStatus'].length)]); // Sets bot status
     // Fetches any necessary user objects
     getUser('619975185029922817', '609826125501169723')
-        .then(admin => { users['admin'] = admin; });
+        .then(admin => { users['admin'] = admin.user; });
     getUser('619975185029922817', '633046187506794527')
-        .then(swear => { users['swear'] = swear; });
+        .then(swear => { users['swear'] = swear.user; });
     // Defines tasks that must be executed periodically
     setInterval(function () {
         refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json'); // Refresh data variable
