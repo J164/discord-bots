@@ -19,6 +19,16 @@ const prefix = '$';
 var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
 var guildStatus = {};
 var deck;
+function refreshData(location) {
+    const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
+    data = JSON.parse(jsonString);
+}
+function genericEmbedResponse(title) {
+    const embedVar = new Discord.MessageEmbed();
+    embedVar.setTitle(title);
+    embedVar.setColor(0xffff00);
+    return embedVar;
+}
 function makeGetRequest(path) {
     return __awaiter(this, void 0, void 0, function* () {
         const response = yield axios.get(path);
@@ -53,19 +63,22 @@ function findKey(object, property) {
     return result;
 }
 class Deck {
-    constructor(url) {
+    constructor(url, authorId) {
+        this.authorId = authorId;
         this.url = url;
-        const fields = url.split("/");
+        const fields = url.split('/');
         const authorID = fields[4];
         const deckID = fields[5].split('-')[0];
         this.apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`;
-        makeGetRequest(this.apiUrl + 'json')
-            .then(deckJson => {
+    }
+    getInfo() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const deckJson = yield makeGetRequest(this.apiUrl + 'json');
             this.name = deckJson['name'];
             let commander = findKey(deckJson, 'isCommander');
             commander = commander['name'];
-            console.log(commander);
-            this.image = null; // https://scryfall.com/docs/api/cards/search  use encodeURIComponent(string) to encode name of commander
+            const cardInfo = yield makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(commander)}`);
+            this.image = cardInfo['data'][0]['image_uris']['large'];
         });
     }
     getPreview() {
@@ -161,18 +174,8 @@ class CommanderGame extends MagicGame {
     getCasts(commander) {
     }
 }
-function refreshData(location) {
-    const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
-    data = JSON.parse(jsonString);
-}
-function genericEmbedResponse(title) {
-    const embedVar = new Discord.MessageEmbed();
-    embedVar.setTitle(title);
-    embedVar.setColor(0xffff00);
-    return embedVar;
-}
 client.on('ready', () => {
-    deck = new Deck('https://deckstats.net/decks/162326/2048957-artifacts-troll-');
+    //deck = new Deck('https://deckstats.net/decks/162326/2048957-artifacts-troll-', 123)
     console.log(`We have logged in as ${client.user.tag}`);
     client.user.setActivity(data['krenkoStatus'][Math.floor(Math.random() * data['krenkoStatus'].length)]);
     setInterval(function () {
@@ -180,6 +183,20 @@ client.on('ready', () => {
         client.user.setActivity(data['krenkoStatus'][Math.floor(Math.random() * data['krenkoStatus'].length)]);
     }, 60000);
 });
+function add(msg) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (msg.content.split(" ").length < 2) {
+            msg.reply('Please enter a deckstats URL!');
+            return;
+        }
+        refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
+        const deck = new Deck(msg.content.split(" ")[1], msg.author.id);
+        yield deck.getInfo();
+        data['decks'].push(deck);
+        const jsonString = JSON.stringify(data);
+        fs.writeFileSync('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json', jsonString);
+    });
+}
 client.on('message', msg => {
     if (msg.author.bot || !msg.content.startsWith(prefix) || !msg.guild) {
         return;
@@ -187,6 +204,13 @@ client.on('message', msg => {
     let messageStart = msg.content.split(" ")[0].slice(1);
     try {
         switch (messageStart) {
+            case 'add':
+                add(msg);
+                break;
+            case 'remove':
+                break;
+            case 'decks':
+                break;
             case 'test':
                 msg.channel.send(deck.getPreview());
                 deck.getList()
