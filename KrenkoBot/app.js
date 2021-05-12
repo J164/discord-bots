@@ -78,7 +78,7 @@ class Deck {
         this.image = json.image;
         this.name = json.name;
         this.url = json.url;
-        this.apiUrl = json.url;
+        this.apiUrl = json.apiUrl;
         this.authorId = json.authorId;
     }
     getInfo() {
@@ -100,7 +100,7 @@ class Deck {
     getList() {
         return __awaiter(this, void 0, void 0, function* () {
             const decklist = yield makeGetRequest(this.apiUrl + 'list');
-            return decklist.list;
+            return '\n' + decklist.list;
         });
     }
 }
@@ -212,12 +212,9 @@ function deckPreview(i, msg) {
         deck = new Deck();
         deck.fill(data['decks'][i]);
         const message = yield msg.channel.send(deck.getPreview());
-        let emojiList = ['\uD83D\uDCC4']; // Page emoji
+        let emojiList = ['\uD83D\uDCC4', '\u274C']; // Page and X emoji
         if (i != 0) {
             emojiList.unshift('\u2B05\uFE0F'); // Left arrow
-        }
-        if (msg.author.id == data['decks'][i].authorId) {
-            emojiList.push('\u274C'); // X
         }
         if (i != (data['decks'].length - 1)) {
             emojiList.push('\u27A1\uFE0F'); // Right arrow
@@ -228,23 +225,26 @@ function deckPreview(i, msg) {
         const filter = reaction => reaction.client === client;
         let reaction = yield message.awaitReactions(filter, { max: 1 });
         reaction = reaction.first();
-        /*for (let i = 0; i < emojiList.length; i++) {
-            if (reaction.emoji.name === emojiList[i]) {
-                return i
-            }
-        }*/
-        if (reaction.emoji.name == '\uD83D\uDCC4') {
-            msg.reply(yield deck.getList());
-            return;
-        }
-        if (reaction.emoji.name == '\u274C') {
-            if (msg.author.id == deck.authorId) {
-                data.splice(i, 1);
-                msg.reply('Deck deleted!');
+        switch (reaction.emoji.name) {
+            case '\uD83D\uDCC4':
+                const deckList = yield deck.getList();
+                msg.reply(deckList);
+                message.delete();
                 return;
-            }
-            msg.reply('Only the owner of the deck can remove it!');
-            return;
+            case '\u274C':
+                message.delete();
+                return;
+            case '\u2B05\uFE0F':
+                message.delete();
+                deckPreview((i - 1), msg);
+                return;
+            case '\u27A1\uFE0F':
+                message.delete();
+                deckPreview((i + 1), msg);
+                return;
+            default:
+                message.delete();
+                return;
         }
     });
 }
@@ -256,7 +256,8 @@ client.on('message', msg => {
     try {
         switch (messageStart) {
             case 'add':
-                add(msg);
+                add(msg)
+                    .then(msg.reply('Success!'));
                 break;
             case 'decks':
                 deckPreview(0, msg);
