@@ -19,7 +19,10 @@ const youtubedl = require('youtube-dl-exec'); // Youtube video downloader
 const client = new Discord.Client(); // Represents the bot client
 const prefix = '&'; // Bot command prefix
 var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json'); // Loads persistant info into memory
-var users = {}; // Stores specific users
+var users = {
+    admin: null,
+    swear: null
+}; // Stores specific users
 var guildStatus = {}; // Stores guild specific information to allow bot to act independent in different guilds
 class Euchre {
     constructor(players) {
@@ -33,25 +36,25 @@ class Euchre {
         };
         this.players = [{
                 'id': 0,
-                'player': players[0],
+                'user': players[0],
                 'hand': [],
                 'team': this.team1
             },
             {
                 'id': 1,
-                'player': players[1],
+                'user': players[1],
                 'hand': [],
                 'team': this.team2
             },
             {
                 'id': 2,
-                'player': players[2],
+                'user': players[2],
                 'hand': [],
                 'team': this.team1
             },
             {
                 'id': 3,
-                'player': players[3],
+                'user': players[3],
                 'hand': [],
                 'team': this.team2
             }];
@@ -65,18 +68,18 @@ class Euchre {
     startGame() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.startRound();
-            while (this.team1['score'] < 10 && this.team2['score'] < 10) {
+            while (this.team1.score < 10 && this.team2.score < 10) {
                 const newOrder = [this.players[3], this.players[0], this.players[1], this.players[2]];
                 this.players = newOrder;
                 yield this.startRound();
             }
             const results = genericEmbedResponse('Game Over!');
-            results.addField('Players', `${this.players[0]['id']}, ${this.players[1]['id']}, ${this.players[2]['id']}, ${this.players[3]['id']}`);
-            if (this.team1['score'] > 10) {
-                results.addField('Team 1 Wins!', `${this.team1['score']} - ${this.team2['score']}`);
+            results.addField('Players', `${this.players[0].id}, ${this.players[1].id}, ${this.players[2].id}, ${this.players[3].id}`);
+            if (this.team1.score > 10) {
+                results.addField('Team 1 Wins!', `${this.team1.score} - ${this.team2.score}`);
             }
             else {
-                results.addField('Team 2 Wins!', `${this.team2['score']} - ${this.team1['score']}`);
+                results.addField('Team 2 Wins!', `${this.team2.score} - ${this.team1.score}`);
             }
             return results;
         });
@@ -89,33 +92,33 @@ class Euchre {
             while (!success) {
                 try {
                     deck = yield axios.post('https://deckofcardsapi.com/api/deck/new/shuffle?cards=9S,9D,9C,9H,0S,0D,0C,0H,JS,JD,JC,JH,QS,QD,QC,QH,KS,KD,KC,KH,AS,AD,AC,AH');
-                    draws = yield axios.post(`https://deckofcardsapi.com/api/deck/${deck['data']['deck_id']}/draw?count=21`);
+                    draws = yield axios.post(`https://deckofcardsapi.com/api/deck/${deck.data.deck_id}/draw?count=21`);
                     success = true;
                 }
                 catch (_a) { }
             }
-            const output = draws['data'];
-            this.players[0]['hand'] = [output['cards'][0], output['cards'][4], output['cards'][8], output['cards'][12], output['cards'][16]];
-            this.players[1]['hand'] = [output['cards'][1], output['cards'][5], output['cards'][9], output['cards'][13], output['cards'][17]];
-            this.players[2]['hand'] = [output['cards'][2], output['cards'][6], output['cards'][10], output['cards'][14], output['cards'][18]];
-            this.players[3]['hand'] = [output['cards'][3], output['cards'][7], output['cards'][11], output['cards'][15], output['cards'][19]];
-            this.gameState['top'] = output['cards'][20];
+            const output = draws.data;
+            this.players[0].hand = [output.cards[0], output.cards[4], output.cards[8], output.cards[12], output.cards[16]];
+            this.players[1].hand = [output.cards[1], output.cards[5], output.cards[9], output.cards[13], output.cards[17]];
+            this.players[2].hand = [output.cards[2], output.cards[6], output.cards[10], output.cards[14], output.cards[18]];
+            this.players[3].hand = [output.cards[3], output.cards[7], output.cards[11], output.cards[15], output.cards[19]];
+            this.gameState.top = output.cards[20];
             for (const player of this.players) {
                 yield this.sendHand(player);
             }
-            yield this.sendCards(`C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${this.gameState['top']['code']}.png`, 'Top of Stack:');
+            yield this.sendCards(`C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${this.gameState.top.code}.png`, 'Top of Stack:');
             let playerUsers = [];
             for (const player of this.players) {
                 playerUsers.push(player);
             }
             for (const player of this.players) {
-                const response = yield this.askPlayer(player['player'], `Would you like to pass or have ${this.players[3]['player'].username} pick it up?`, ['Pick it up', 'Pass']);
+                const response = yield this.askPlayer(player.user, `Would you like to pass or have ${this.players[3].player.username} pick it up?`, ['Pick it up', 'Pass']);
                 if (response == 0) {
-                    this.gameState['trump'] = this.gameState['top']['suit'];
-                    this.players[3]['hand'][yield this.askPlayer(this.players[3]['player'], 'What card would you like to replace?', this.getCardNames(this.players[3]['hand']))] = this.gameState['top'];
+                    this.gameState.trump = this.gameState.top.suit;
+                    this.players[3].hand[yield this.askPlayer(this.players[3].user, 'What card would you like to replace?', this.getCardNames(this.players[3].hand))] = this.gameState.top;
                     this.sendHand(this.players[3]);
-                    if ((yield this.askPlayer(player['player'], 'Would you like to go alone?', ['Yes', 'No'])) == 0) {
-                        switch (player['id']) {
+                    if ((yield this.askPlayer(player.user, 'Would you like to go alone?', ['Yes', 'No'])) == 0) {
+                        switch (player.id) {
                             case 0:
                                 playerUsers.splice(2, 1);
                                 break;
@@ -129,24 +132,24 @@ class Euchre {
                                 playerUsers.splice(1, 1);
                                 break;
                         }
-                        yield this.tricks(playerUsers, player['team'], true);
+                        yield this.tricks(playerUsers, player.team, true);
                         return;
                     }
-                    yield this.tricks(playerUsers, player['team'], false);
+                    yield this.tricks(playerUsers, player.team, false);
                     return;
                 }
             }
             let availableSuits = ['Hearts', 'Diamonds', 'Clubs', 'Spades', 'Pass'];
-            availableSuits.splice(availableSuits.indexOf(`${this.gameState['top']['suit'][0]}${this.gameState['top']['suit'].slice(1).toLowerCase()}`), 1);
+            availableSuits.splice(availableSuits.indexOf(`${this.gameState.top.suit[0]}${this.gameState.top.suit.slice(1).toLowerCase()}`), 1);
             for (const [i, player] of this.players.entries()) {
                 if (i == 3) {
                     availableSuits.splice(availableSuits.length - 1, 1);
                 }
-                const response = yield this.askPlayer(player['player'], 'What would you like to be trump?', availableSuits);
+                const response = yield this.askPlayer(player.user, 'What would you like to be trump?', availableSuits);
                 if (response != 3) {
-                    this.gameState['trump'] = availableSuits[response].toUpperCase();
-                    if ((yield this.askPlayer(player['player'], 'Would you like to go alone?', ['Yes', 'No'])) == 0) {
-                        switch (player['id']) {
+                    this.gameState.trump = availableSuits[response].toUpperCase();
+                    if ((yield this.askPlayer(player.user, 'Would you like to go alone?', ['Yes', 'No'])) == 0) {
+                        switch (player.id) {
                             case 0:
                                 playerUsers.splice(2, 1);
                                 break;
@@ -160,10 +163,10 @@ class Euchre {
                                 playerUsers.splice(1, 1);
                                 break;
                         }
-                        yield this.tricks(playerUsers, player['team'], true);
+                        yield this.tricks(playerUsers, player.team, true);
                         return;
                     }
-                    yield this.tricks(playerUsers, player['team'], false);
+                    yield this.tricks(playerUsers, player.team, false);
                     return;
                 }
             }
@@ -177,13 +180,13 @@ class Euchre {
                 for (const player of activePlayers) {
                     yield this.sendHand(player);
                     if (lead == null && table.length > 0) {
-                        lead = table[0]['suit'];
+                        lead = table[0].suit;
                     }
                     let availableHand = [];
                     let handIndices = [];
                     let hasLead = false;
                     if (lead != null) {
-                        for (const [i, card] of player['hand'].entries()) {
+                        for (const [i, card] of player.hand.entries()) {
                             if (this.realSuit(card) == lead) {
                                 availableHand.push(card);
                                 handIndices.push(i);
@@ -191,29 +194,29 @@ class Euchre {
                             }
                         }
                         if (!hasLead) {
-                            availableHand = player['hand'];
+                            availableHand = player.hand;
                             for (let i = 0; i < availableHand.length; i++) {
                                 handIndices.push(i);
                             }
                         }
                     }
                     else {
-                        availableHand = player['hand'];
+                        availableHand = player.hand;
                         for (let i = 0; i < availableHand.length; i++) {
                             handIndices.push(i);
                         }
                     }
-                    const response = yield this.askPlayer(player['player'], 'What would you like to play?', this.getCardNames(availableHand));
+                    const response = yield this.askPlayer(player.user, 'What would you like to play?', this.getCardNames(availableHand));
                     table.push(availableHand[response]);
-                    player['hand'].splice(handIndices[response], 1);
+                    player.hand.splice(handIndices[response], 1);
                     yield this.sendHand(player);
                     yield this.sendCards(table, 'Table:');
                 }
                 let leadingPlayer;
                 let leadingScore = 0;
                 for (const [i, card] of table.entries()) {
-                    if (this.realSuit(card) == this.gameState['trump']) {
-                        switch (card['code'][0]) {
+                    if (this.realSuit(card) == this.gameState.trump) {
+                        switch (card.code[0]) {
                             case '9':
                                 if (7 > leadingScore) {
                                     leadingScore = 7;
@@ -245,7 +248,7 @@ class Euchre {
                                 }
                                 break;
                             case 'J':
-                                if (this.realSuit(card) == card['suit'] && 13 > leadingScore) {
+                                if (this.realSuit(card) == card.suit && 13 > leadingScore) {
                                     leadingScore = 13;
                                     leadingPlayer = activePlayers[i];
                                 }
@@ -256,8 +259,8 @@ class Euchre {
                                 break;
                         }
                     }
-                    else if (card['suit'] == lead) {
-                        switch (card['code'][0]) {
+                    else if (card.suit == lead) {
+                        switch (card.code[0]) {
                             case '9':
                                 if (1 > leadingScore) {
                                     leadingScore = 1;
@@ -297,17 +300,17 @@ class Euchre {
                         }
                     }
                 }
-                if (leadingPlayer['id'] % 2 == 0) {
-                    this.team1['tricks']++;
+                if (leadingPlayer.id % 2 == 0) {
+                    this.team1.tricks++;
                 }
                 else {
-                    this.team2['tricks']++;
+                    this.team2.tricks++;
                 }
                 const tricksWon = genericEmbedResponse('Tricks Won:');
-                tricksWon.addField('Team 1:', this.team1['tricks']);
-                tricksWon.addField('Team 2:', this.team2['tricks']);
+                tricksWon.addField('Team 1:', this.team1.tricks);
+                tricksWon.addField('Team 2:', this.team2.tricks);
                 for (const player of this.players) {
-                    const channel = yield player['player'].createDM();
+                    const channel = yield player.user.createDM();
                     yield channel.send(tricksWon);
                 }
             }
@@ -318,70 +321,70 @@ class Euchre {
             * solo sweep (4)
             */
             let winningTeam;
-            if (this.team1['tricks'] > this.team2['tricks']) {
+            if (this.team1.tricks > this.team2.tricks) {
                 winningTeam = this.team1;
             }
             else {
                 winningTeam = this.team2;
             }
             if (winningTeam == leader) {
-                if (winningTeam['tricks'] == 5) {
+                if (winningTeam.tricks == 5) {
                     if (solo) {
-                        winningTeam['score'] += 4;
+                        winningTeam.score += 4;
                     }
                     else {
-                        winningTeam['score'] += 2;
+                        winningTeam.score += 2;
                     }
                 }
                 else {
-                    winningTeam['score']++;
+                    winningTeam.score++;
                 }
             }
             else {
-                winningTeam['score'] += 2;
+                winningTeam.score += 2;
             }
             const standings = genericEmbedResponse('Tricks Won:');
-            standings.addField('Team 1:', this.team1['score']);
-            standings.addField('Team 2:', this.team2['score']);
+            standings.addField('Team 1:', this.team1.score);
+            standings.addField('Team 2:', this.team2.score);
             for (const player of this.players) {
-                const channel = yield player['player'].createDM();
+                const channel = yield player.user.createDM();
                 yield channel.send(standings);
             }
         });
     }
     //used to check for left bower
     realSuit(card) {
-        if (card['code'][0] != 'J') {
-            return card['suit'];
+        if (card.code[0] != 'J') {
+            return card.suit;
         }
-        switch (card['suit']) {
+        switch (card.suit) {
             case 'CLUBS':
-                if (this.gameState['trump'] == 'SPADES') {
+                if (this.gameState.trump == 'SPADES') {
                     return 'SPADES';
                 }
                 break;
             case 'SPADES':
-                if (this.gameState['trump'] == 'CLUBS') {
+                if (this.gameState.trump == 'CLUBS') {
                     return 'CLUBS';
                 }
                 break;
             case 'HEARTS':
-                if (this.gameState['trump'] == 'DIAMONDS') {
+                if (this.gameState.trump == 'DIAMONDS') {
                     return 'DIAMOND';
                 }
                 break;
             case 'DIAMONDS':
-                if (this.gameState['trump'] == 'HEARTS') {
+                if (this.gameState.trump == 'HEARTS') {
                     return 'HEARTS';
                 }
                 break;
         }
-        return card['suit'];
+        return card.suit;
     }
     getCardNames(hand) {
         let names = [];
         for (const card of hand) {
-            names.push(`${card['value'][0]}${card['value'].slice(1).toLowerCase()} of ${card['suit'][0]}${card['suit'].slice(1).toLowerCase()}`);
+            names.push(`${card.value[0]}${card.value.slice(1).toLowerCase()} of ${card.suit[0]}${card.suit.slice(1).toLowerCase()}`);
         }
         return names;
     }
@@ -411,15 +414,15 @@ class Euchre {
         return __awaiter(this, void 0, void 0, function* () {
             let filePaths = [];
             const hand = genericEmbedResponse('^ Your Hand:');
-            for (const card of player['hand']) {
-                filePaths.push(`C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${card['code']}.png`);
+            for (const card of player.hand) {
+                filePaths.push(`C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${card.code}.png`);
             }
             if (filePaths.length == 1) {
                 hand.attachFiles([{
                         attachment: filePaths[0],
                         name: 'hand.png'
                     }]);
-                const channel = yield player['player'].createDM();
+                const channel = yield player.user.createDM();
                 yield channel.send(hand);
                 return;
             }
@@ -431,7 +434,7 @@ class Euchre {
                     attachment: image,
                     name: 'hand.png'
                 }]);
-            const channel = yield player['player'].createDM();
+            const channel = yield player.user.createDM();
             yield channel.send(hand);
         });
     }
@@ -447,7 +450,7 @@ class Euchre {
             else {
                 let filePaths = [];
                 for (let i = 0; i < cards.length; i++) {
-                    filePaths.push(`C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${cards[i]['code']}.png`);
+                    filePaths.push(`C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${cards[i].code}.png`);
                 }
                 const image = yield mergeImages(filePaths, {
                     width: filePaths.length * 226,
@@ -459,7 +462,7 @@ class Euchre {
                     }]);
             }
             for (const player of this.players) {
-                const channel = yield player['player'].createDM();
+                const channel = yield player.user.createDM();
                 yield channel.send(response);
             }
         });
@@ -468,11 +471,11 @@ class Euchre {
 // Merges multiple images into one image
 function mergeImages(filePaths, options) {
     return __awaiter(this, void 0, void 0, function* () {
-        const activeCanvas = canvas.createCanvas(options['width'], options['height']);
+        const activeCanvas = canvas.createCanvas(options.width, options.height);
         const ctx = activeCanvas.getContext('2d');
         for (const [i, path] of filePaths.entries()) {
             const image = yield canvas.loadImage(path);
-            ctx.drawImage(image, i * (options['width'] / filePaths.length), 0);
+            ctx.drawImage(image, i * (options.width / filePaths.length), 0);
         }
         return activeCanvas.toBuffer();
     });
@@ -502,14 +505,14 @@ function playQueue(channel, guild, vc) {
         if (fs.existsSync(`C:/Users/jacob/Downloads/Bot Resources/temp/${guild.id}/song.mp3`)) {
             fs.unlinkSync(`C:/Users/jacob/Downloads/Bot Resources/temp/${guild.id}/song.mp3`);
         }
-        if (guildStatus[guild.id]['queue'].length < 1) {
+        if (guildStatus[guild.id].queue.length < 1) {
             return;
         }
-        guildStatus[guild.id]['audio'] = true;
+        guildStatus[guild.id].audio = true;
         const voice = yield vc.join();
-        guildStatus[guild.id]['voice'] = voice;
-        const currentSong = guildStatus[guild.id]['queue'].shift();
-        yield youtubedl(currentSong['webpage_url'], {
+        guildStatus[guild.id].voice = voice;
+        const currentSong = guildStatus[guild.id].queue.shift();
+        yield youtubedl(currentSong.webpage_url, {
             noWarnings: true,
             noCallHome: true,
             noCheckCertificate: true,
@@ -519,14 +522,14 @@ function playQueue(channel, guild, vc) {
             format: 'bestaudio',
             output: `C:/Users/jacob/Downloads/Bot Resources/temp/${guild.id}/song.mp3`
         });
-        guildStatus[guild.id]['dispatcher'] = voice.play(`C:/Users/jacob/Downloads/Bot Resources/temp/${guild.id}/song.mp3`);
-        guildStatus[guild.id]['nowPlaying'] = genericEmbedResponse(`Now Playing: ${currentSong['title']}`);
-        guildStatus[guild.id]['nowPlaying'].setImage(currentSong['thumbnail']);
-        guildStatus[guild.id]['nowPlaying'].addField('URL:', currentSong['webpage_url']);
-        channel.send(guildStatus[guild.id]['nowPlaying']);
-        guildStatus[guild.id]['dispatcher'].on('finish', () => {
-            guildStatus[guild.id]['dispatcher'].destroy();
-            guildStatus[guild.id]['audio'] = false;
+        guildStatus[guild.id].dispatcher = voice.play(`C:/Users/jacob/Downloads/Bot Resources/temp/${guild.id}/song.mp3`);
+        guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong['title']}`);
+        guildStatus[guild.id].nowPlaying.setImage(currentSong['thumbnail']);
+        guildStatus[guild.id].nowPlaying.addField('URL:', currentSong['webpage_url']);
+        channel.send(guildStatus[guild.id].nowPlaying);
+        guildStatus[guild.id].dispatcher.on('finish', () => {
+            guildStatus[guild.id].dispatcher.destroy();
+            guildStatus[guild.id].audio = false;
             playQueue(channel, guild, vc);
         });
     });
@@ -547,21 +550,21 @@ client.on('ready', () => {
         fs.rmdirSync('C:/Users/jacob/Downloads/Bot Resources/temp', { recursive: true });
     }
     fs.mkdirSync('C:/Users/jacob/Downloads/Bot Resources/temp'); // Creates a temp folder for this session
-    client.user.setActivity(data['potatoStatus'][Math.floor(Math.random() * data['potatoStatus'].length)]); // Sets bot status
+    client.user.setActivity(data.potatoStatus[Math.floor(Math.random() * data.potatoStatus.length)]); // Sets bot status
     // Fetches any necessary user objects
     getUser('619975185029922817', '609826125501169723')
-        .then(admin => { users['admin'] = admin.user; });
+        .then(admin => { users.admin = admin.user; });
     getUser('619975185029922817', '633046187506794527')
-        .then(swear => { users['swear'] = swear.user; });
+        .then(swear => { users.swear = swear.user; });
     // Defines tasks that must be executed periodically
     setInterval(function () {
         refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json'); // Refresh data variable
-        client.user.setActivity(data['potatoStatus'][Math.floor(Math.random() * data['potatoStatus'].length)]); // Reset bot status
+        client.user.setActivity(data.potatoStatus[Math.floor(Math.random() * data.potatoStatus.length)]); // Reset bot status
         // Disconnects bot if it is inactive in a voice channel
         for (const guild in guildStatus) {
-            if ('audio' in guildStatus[guild] && !guildStatus[guild]['audio']) {
+            if ('audio' in guildStatus[guild] && !guildStatus[guild].audio) {
                 try {
-                    guildStatus[guild]['voice'].disconnect();
+                    guildStatus[guild].voice.disconnect();
                 }
                 catch (_a) { }
             }
@@ -580,9 +583,9 @@ function wynncraftStats(msg) {
         let playtimeStr;
         let hPlaytimeStr;
         const embedVar = new Discord.MessageEmbed();
-        embedVar.setTitle(f['data'][0]['username']);
-        if (f['data'][0]['meta']['location']['online']) {
-            current = `Online at: ${f['data'][0]['meta']['location']['server']}`;
+        embedVar.setTitle(f.data[0].username);
+        if (f.data[0].meta.location.online) {
+            current = `Online at: ${f.data[0].meta.location.server}`;
             embedVar.setColor(0x33cc33);
         }
         else {
@@ -590,8 +593,8 @@ function wynncraftStats(msg) {
             embedVar.setColor(0xff0000);
         }
         embedVar.addField('Current Status', current);
-        for (let i = 0; i < f['data'][0]['classes'].length; i++) {
-            let playtime = f['data'][0]['classes'][i]['playtime'];
+        for (let i = 0; i < f.data[0].classes.length; i++) {
+            let playtime = f.data[0].classes[i].playtime;
             const hPlaytime = Math.floor(playtime / 60);
             playtime = playtime % 60;
             if (playtime < 10) {
@@ -606,14 +609,14 @@ function wynncraftStats(msg) {
             else {
                 hPlaytimeStr = hPlaytime.toString();
             }
-            embedVar.addField(`Profile ${(i + 1)}`, `Class: ${f['data'][0]['classes'][i]['name']}\nPlaytime: ${hPlaytimeStr}:${playtimeStr}\nCombat Level: ${f['data'][0]['classes'][i]['professions']['combat']['level']}`);
+            embedVar.addField(`Profile ${(i + 1)}`, `Class: ${f.data[0].classes[i].name}\nPlaytime: ${hPlaytimeStr}:${playtimeStr}\nCombat Level: ${f.data[0].classes[i].professions.combat.level}`);
         }
         msg.reply(embedVar);
     });
 }
 function newSwearSong(msg) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (msg.author != users['admin'] && msg.author != users['swear']) {
+        if (msg.author != users.admin && msg.author != users.swear) {
             msg.reply('You don\'t have permission to use this command!');
             return;
         }
@@ -636,7 +639,7 @@ function newSwearSong(msg) {
                 msg.reply('Please only enter a single video at a time');
                 return;
             }
-            if (output['duration'] > 1200) {
+            if (output.duration > 1200) {
                 msg.reply('The video length limit is 20 minutes! Aborting...');
                 return;
             }
@@ -655,7 +658,7 @@ function newSwearSong(msg) {
             output: 'C:/Users/jacob/Downloads/Bot Resources/music_files/swear_songs/song' + (data['swearSongs'].length + 1) + '.mp3'
         });
         refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
-        data['swearSongs'].push(`song${(data['swearSongs'].length + 1)}.mp3`);
+        data.swearSongs.push(`song${(data.swearSongs.length + 1)}.mp3`);
         const jsonString = JSON.stringify(data);
         fs.writeFileSync('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json', jsonString);
         msg.reply('Success!');
@@ -663,7 +666,7 @@ function newSwearSong(msg) {
 }
 function download(msg) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (msg.author != users['admin']) {
+        if (msg.author != users.admin) {
             msg.reply('You don\'t have permission to use this command!');
             return;
         }
@@ -681,7 +684,7 @@ function download(msg) {
             ignoreErrors: true
         };
         if (msg.content.split(" ").length < 3 || msg.content.split(" ")[2][0].toLowerCase() != 'a') {
-            options['format'] = 'bestvideo,bestaudio';
+            options.format = 'bestvideo,bestaudio';
         }
         msg.channel.send('Downloading...');
         yield youtubedl(msg.content.split(" ")[1], options);
@@ -740,23 +743,23 @@ function play(msg) {
             noPlaylist: true
         });
         if (!('queue' in guildStatus[msg.guild.id])) {
-            guildStatus[msg.guild.id]['queue'] = [];
+            guildStatus[msg.guild.id].queue = [];
         }
         function addToQueue(entry) {
-            if (entry['duration'] < 1200) {
-                guildStatus[msg.guild.id]['queue'].push({
-                    'webpage_url': entry['webpage_url'],
-                    'title': entry['title'],
-                    'thumbnail': entry['thumbnails'][0]['url']
+            if (entry.duration < 1200) {
+                guildStatus[msg.guild.id].queue.push({
+                    'webpage_url': entry.webpage_url,
+                    'title': entry.title,
+                    'thumbnail': entry.thumbnails[0].url
                 });
             }
             else {
-                msg.reply(`${entry['title']} is longer than 20 minutes and cannot be added to queue`);
+                msg.reply(`${entry.title} is longer than 20 minutes and cannot be added to queue`);
                 return;
             }
         }
         if ('entries' in output) {
-            for (const entry of output['entries']) {
+            for (const entry of output.entries) {
                 addToQueue(entry);
             }
         }
@@ -764,9 +767,9 @@ function play(msg) {
             addToQueue(output);
         }
         if (!('audio' in guildStatus[msg.guild.id])) {
-            guildStatus[msg.guild.id]['audio'] = false;
+            guildStatus[msg.guild.id].audio = false;
         }
-        if (!guildStatus[msg.guild.id]['audio']) {
+        if (!guildStatus[msg.guild.id].audio) {
             playQueue(msg.channel, msg.guild, voiceChannel);
         }
     });
@@ -778,10 +781,10 @@ function setupEuchre(msg) {
         const player3 = yield msg.guild.members.fetch({ query: msg.content.split(" ")[3], limit: 1 });
         const player4 = yield msg.guild.members.fetch({ query: msg.content.split(" ")[4], limit: 1 });
         const players = genericEmbedResponse('Teams');
-        players.addField('Team 1:', `${player1.first()['user'].username}, ${player3.first()['user'].username}`);
-        players.addField('Team 2:', `${player2.first()['user'].username}, ${player4.first()['user'].username}`);
+        players.addField('Team 1:', `${player1.first().user.username}, ${player3.first().user.username}`);
+        players.addField('Team 2:', `${player2.first().user.username}, ${player4.first().user.username}`);
         msg.channel.send(players);
-        const game = new Euchre([player1.first()['user'], player2.first()['user'], player3.first()['user'], player4.first()['user']]);
+        const game = new Euchre([player1.first().user, player2.first().user, player3.first().user, player4.first().user]);
         const results = yield game.startGame();
         msg.channel.send(results);
     });
@@ -828,13 +831,13 @@ client.on('message', msg => {
         if (message.indexOf('potato') != -1) {
             mentionPotato = true;
         }
-        for (const swear of data['blacklist']['swears']) {
+        for (const swear of data.blacklist.swears) {
             if (message.indexOf(swear) != -1) {
                 mentionSwear = true;
                 break;
             }
         }
-        for (const insult of data['blacklist']['insults']) {
+        for (const insult of data.blacklist.insults) {
             if (message.indexOf(insult) != -1) {
                 mentionInsult = true;
                 break;
@@ -875,41 +878,41 @@ client.on('message', msg => {
                     msg.reply('Nothing is playing!');
                     return;
                 }
-                guildStatus[msg.guild.id]['dispatcher'].pause();
+                guildStatus[msg.guild.id].dispatcher.pause();
                 msg.reply('Paused!');
                 break;
             case 'resume':
                 if (!('dispatcher' in guildStatus[msg.guild.id])) {
                     msg.reply('Nothing is playing!');
                 }
-                guildStatus[msg.guild.id]['dispatcher'].resume();
+                guildStatus[msg.guild.id].dispatcher.resume();
                 msg.reply('Resumed!');
                 break;
             case 'queue':
-                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id]['queue'].length < 1) {
+                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id].queue.length < 1) {
                     msg.reply('There is no queue!');
                     return;
                 }
                 const queueMessage = genericEmbedResponse('Queue');
-                for (const [i, entry] of guildStatus[msg.guild.id]['queue'].entries()) {
-                    queueMessage.addField(`${i + 1}.`, `${entry['title']}\n${entry['webpage_url']}`);
+                for (const [i, entry] of guildStatus[msg.guild.id].queue.entries()) {
+                    queueMessage.addField(`${i + 1}.`, `${entry.title}\n${entry.webpage_url}`);
                 }
                 msg.reply(queueMessage);
                 break;
             case 'clear':
-                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id]['queue'].length < 1) {
+                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id].queue.length < 1) {
                     msg.reply('There is no queue!');
                     return;
                 }
-                guildStatus[msg.guild.id]['queue'] = [];
+                guildStatus[msg.guild.id].queue = [];
                 msg.reply('The queue has been cleared!');
                 break;
             case 'shuffle':
-                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id]['queue'].length < 1) {
+                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id].queue.length < 1) {
                     msg.reply('There is no queue!');
                     return;
                 }
-                guildStatus[msg.guild.id]['queue'].sort(() => Math.random() - 0.5);
+                guildStatus[msg.guild.id].queue.sort(() => Math.random() - 0.5);
                 msg.reply('The queue has been shuffled');
                 break;
             case 'stop':
@@ -918,10 +921,10 @@ client.on('message', msg => {
                     return;
                 }
                 if ('queue' in guildStatus[msg.guild.id]) {
-                    guildStatus[msg.guild.id]['queue'] = [];
+                    guildStatus[msg.guild.id].queue = [];
                 }
-                guildStatus[msg.guild.id]['dispatcher'].destroy();
-                guildStatus[msg.guild.id]['audio'] = false;
+                guildStatus[msg.guild.id].dispatcher.destroy();
+                guildStatus[msg.guild.id].audio = false;
                 msg.reply('Success');
                 break;
             case 'np':
@@ -929,7 +932,7 @@ client.on('message', msg => {
                     msg.reply('Nothing has played yet!');
                     return;
                 }
-                msg.reply(guildStatus[msg.guild.id]['nowPlaying']);
+                msg.reply(guildStatus[msg.guild.id].nowPlaying);
                 break;
             case 'playlists':
                 const playlists = genericEmbedResponse('Playlists');
@@ -954,5 +957,5 @@ client.on('message', msg => {
         console.log(err);
     }
 });
-client.login(data['potatoKey']);
+client.login(data.potatoKey);
 //# sourceMappingURL=app.js.map

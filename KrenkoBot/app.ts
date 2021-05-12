@@ -13,6 +13,156 @@ var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json')
 var guildStatus = {}
 var deck
 
+class Deck {
+
+    image
+    name
+    url
+    apiUrl
+    authorId
+
+    constructor(url = null, authorId = null) {
+        if (!url) {
+            return
+        }
+        this.authorId = authorId
+        this.url = url
+        const fields = url.split('/')
+        const authorID = fields[4]
+        const deckID = fields[5].split('-')[0]
+        this.apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`
+    }
+
+    fill(json) {
+        this.image = json.image
+        this.name = json.name
+        this.url = json.url
+        this.apiUrl = json.apiUrl
+        this.authorId = json.authorId
+    }
+
+    async getInfo() {
+        const deckJson = await makeGetRequest(this.apiUrl + 'json')
+        this.name = deckJson.name
+        let commander = findKey(deckJson, 'isCommander')
+        commander = commander.name
+        const cardInfo = await makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(commander)}`)
+        this.image = cardInfo.data[0].image_uris.large
+    }
+
+    getPreview() {
+        const preview = genericEmbedResponse(this.name)
+        preview.setImage(this.image)
+        preview.addField('Deckstats URL:', this.url)
+        return preview
+    }
+
+    async getList() {
+        const decklist = await makeGetRequest(this.apiUrl + 'list')
+        return '\n' + decklist.list
+    }
+}
+
+class MagicGame {
+
+    playerInfo
+    channel
+    numAlive
+
+    constructor(playerList, channel) {
+        this.channel = channel
+        this.numAlive = playerList.length
+        this.playerInfo = {}
+        for (const player of playerList) {
+            this.playerInfo[player.id] = {
+                playerName: player.username,
+                lifeTotal: 20,
+                poison: 0,
+                isAlive: true
+            }
+        }
+    }
+
+    changeLife(player, amount) {
+        this.playerInfo[player.id].lifeTotal += amount
+        if (this.checkStatus(player)) {
+            this.printStandings()
+            return
+        }
+    }
+
+    addPoison(player, amount) {
+        this.playerInfo[player.id].poison += amount
+        if (this.checkStatus(player)) {
+            this.printStandings()
+            return
+        }
+    }
+
+    checkStatus(player) {
+        if (this.playerInfo[player.id].lifeTotal < 1 || this.playerInfo[player.id].poison >= 10) {
+            this.playerInfo[player.id].isAlive = false
+            this.numAlive--
+            if (this.numAlive < 2) {
+                this.finishGame()
+            }
+            return false
+        }
+        return true
+    }
+
+    printStandings() {
+        const embedVar = genericEmbedResponse('Current Standings')
+        for (const player of this.playerInfo) {
+            if (player.isAlive) {
+                embedVar.addField(`${player.playerName}:`, `Life Total: ${player.lifeTotal}\nPoison Counters: ${player.poison}`)
+            } else {
+                embedVar.addField(`${player.playerName}:`, 'ELIMINATED')
+            }
+        }
+        this.channel.send(embedVar)
+    }
+
+    finishGame() {
+        for (const player of this.playerInfo) {
+            if (player.isAlive) {
+                const embedVar = genericEmbedResponse(`${player.playerName} Wins!!`)
+                embedVar.addField(`${player.playerName}:`, `Life Total: ${player.lifeTotal}\nPoison Counters: ${player.poison}`)
+                this.channel.send(embedVar)
+                break
+            }
+        }
+    }
+}
+
+class CommanderGame extends MagicGame {
+    constructor(playerList, channel, commanderList) {
+        super(playerList, channel)
+        //Make changes for commander (life total, times commander cast, commander damage)
+    }
+
+    changeLife(player, amount, commander = null) {
+
+    }
+
+    checkStatus(player) {
+        return true
+        //returns true if they are alive
+    }
+
+    printStandings() {
+
+    }
+
+    addCast(commander) {
+
+    }
+
+    getCasts(commander) {
+
+    }
+}
+
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' })
     data = JSON.parse(jsonString)
@@ -58,163 +208,13 @@ function findKey(object, property) {
     return result;
 }
 
-class Deck {
-
-    image
-    name
-    url
-    apiUrl
-    authorId
-
-    constructor(url = null, authorId = null) {
-        if (!url) {
-            return
-        }
-        this.authorId = authorId
-        this.url = url
-        const fields = url.split('/')
-        const authorID = fields[4]
-        const deckID = fields[5].split('-')[0]
-        this.apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`
-    }
-
-    fill(json) {
-        this.image = json.image
-        this.name = json.name
-        this.url = json.url
-        this.apiUrl = json.apiUrl
-        this.authorId = json.authorId
-    }
-
-    async getInfo() {
-        const deckJson = await makeGetRequest(this.apiUrl + 'json')
-        this.name = deckJson['name']
-        let commander = findKey(deckJson, 'isCommander')
-        commander = commander['name']
-        const cardInfo = await makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(commander)}`)
-        this.image = cardInfo['data'][0]['image_uris']['large']
-    }
-
-    getPreview() {
-        const preview = genericEmbedResponse(this.name)
-        preview.setImage(this.image)
-        preview.addField('Deckstats URL:', this.url)
-        return preview
-    }
-
-    async getList() {
-        const decklist = await makeGetRequest(this.apiUrl + 'list')
-        return '\n' + decklist.list
-    }
-}
-
-class MagicGame {
-
-    playerInfo
-    channel
-    numAlive
-
-    constructor(playerList, channel) {
-        this.channel = channel
-        this.numAlive = playerList.length
-        this.playerInfo = {}
-        for (const player of playerList) {
-            this.playerInfo[player.id] = {
-                playerName: player.username,
-                lifeTotal: 20,
-                poison: 0,
-                isAlive: true
-            }
-        }
-    }
-
-    changeLife(player, amount) {
-        this.playerInfo[player.id]['lifeTotal'] += amount
-        if (this.checkStatus(player)) {
-            this.printStandings()
-            return
-        }
-    }
-
-    addPoison(player, amount) {
-        this.playerInfo[player.id]['poison'] += amount
-        if (this.checkStatus(player)) {
-            this.printStandings()
-            return
-        }
-    }
-
-    checkStatus(player) {
-        if (this.playerInfo[player.id]['lifeTotal'] < 1 || this.playerInfo[player.id]['poison'] >= 10) {
-            this.playerInfo[player.id]['isAlive'] = false
-            this.numAlive--
-            if (this.numAlive < 2) {
-                this.finishGame()
-            }
-            return false
-        }
-        return true
-    }
-
-    printStandings() {
-        const embedVar = genericEmbedResponse('Current Standings')
-        for (const player of this.playerInfo) {
-            if (player['isAlive']) {
-                embedVar.addField(`${player['playerName']}:`, `Life Total: ${player['lifeTotal']}\nPoison Counters: ${player['poison']}`)
-            } else {
-                embedVar.addField(`${player['playerName']}:`, 'ELIMINATED')
-            }
-        }
-        this.channel.send(embedVar)
-    }
-
-    finishGame() {
-        for (const player of this.playerInfo) {
-            if (player['isAlive']) {
-                const embedVar = genericEmbedResponse(`${player['playerName']} Wins!!`)
-                embedVar.addField(`${player['playerName']}:`, `Life Total: ${player['lifeTotal']}\nPoison Counters: ${player['poison']}`)
-                this.channel.send(embedVar)
-                break
-            }
-        }
-    }
-}
-
-class CommanderGame extends MagicGame {
-    constructor(playerList, channel, commanderList) {
-        super(playerList, channel)
-        //Make changes for commander (life total, times commander cast, commander damage)
-    }
-
-    changeLife(player, amount, commander = null) {
-
-    }
-
-    checkStatus(player) {
-        return true
-        //returns true if they are alive
-    }
-
-    printStandings() {
-
-    }
-
-    addCast(commander) {
-
-    }
-
-    getCasts(commander) {
-
-    }
-}
-
 client.on('ready', () => {
     //deck = new Deck('https://deckstats.net/decks/162326/2048957-artifacts-troll-', 123)
     console.log(`We have logged in as ${client.user.tag}`)
-    client.user.setActivity(data['krenkoStatus'][Math.floor(Math.random() * data['krenkoStatus'].length)])
+    client.user.setActivity(data.krenkoStatus[Math.floor(Math.random() * data.krenkoStatus.length)])
     setInterval(function () {
         refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json')
-        client.user.setActivity(data['krenkoStatus'][Math.floor(Math.random() * data['krenkoStatus'].length)])
+        client.user.setActivity(data.krenkoStatus[Math.floor(Math.random() * data.krenkoStatus.length)])
     }, 60000)
 })
 
@@ -226,20 +226,20 @@ async function add(msg) {
     refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json')
     const deck = new Deck(msg.content.split(" ")[1], msg.author.id)
     await deck.getInfo()
-    data['decks'].push(deck)
+    data.decks.push(deck)
     const jsonString = JSON.stringify(data)
     fs.writeFileSync('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json', jsonString)
 }
 
 async function deckPreview(i, msg) {
     deck = new Deck()
-    deck.fill(data['decks'][i])
+    deck.fill(data.decks[i])
     const message = await msg.channel.send(deck.getPreview())
     let emojiList = ['\uD83D\uDCC4', '\u274C'] // Page and X emoji
     if (i != 0) {
         emojiList.unshift('\u2B05\uFE0F') // Left arrow
     }
-    if (i != (data['decks'].length - 1)) {
+    if (i != (data.decks.length - 1)) {
         emojiList.push('\u27A1\uFE0F') // Right arrow
     }
     for (const emoji of emojiList) {
@@ -316,4 +316,4 @@ client.on('message', msg => {
     }
 })
 
-client.login(data['krenkoKey'])
+client.login(data.krenkoKey)

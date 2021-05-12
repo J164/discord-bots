@@ -23,14 +23,14 @@ function refreshData(location) {
 }
 client.on('ready', () => {
     console.log('We have logged in as ' + client.user.tag);
-    client.user.setActivity(data['swearStatus'][Math.floor(Math.random() * data['swearStatus'].length)]);
+    client.user.setActivity(data.swearStatus[Math.floor(Math.random() * data.swearStatus.length)]);
     setInterval(function () {
         refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
-        client.user.setActivity(data['swearStatus'][Math.floor(Math.random() * data['swearStatus'].length)]);
+        client.user.setActivity(data.swearStatus[Math.floor(Math.random() * data.swearStatus.length)]);
         for (const key in guildStatus) {
-            if ('audio' in guildStatus[key] && !guildStatus[key]['audio']) {
+            if ('audio' in guildStatus[key] && !guildStatus[key].audio) {
                 try {
-                    guildStatus[key]['voice'].disconnect();
+                    guildStatus[key].voice.disconnect();
                 }
                 catch (_a) { }
             }
@@ -46,32 +46,32 @@ function play(msg) {
             return;
         }
         try {
-            if (parseInt(msg.content.split(" ")[1]) <= data['swearSongs'].length && parseInt(msg.content.split(" ")[1]) > 0) {
+            if (parseInt(msg.content.split(" ")[1]) <= data.swearSongs.length && parseInt(msg.content.split(" ")[1]) > 0) {
                 songNum = parseInt(msg.content.split(" ")[1]) - 1;
             }
             else {
-                songNum = Math.floor(Math.random() * data['swearSongs'].length);
+                songNum = Math.floor(Math.random() * data.swearSongs.length);
             }
         }
         catch (_a) {
-            songNum = Math.floor(Math.random() * data['swearSongs'].length);
+            songNum = Math.floor(Math.random() * data.swearSongs.length);
         }
         if (!(msg.guild.toString() in guildStatus)) {
             guildStatus[msg.guild.toString()] = {};
         }
-        guildStatus[msg.guild.toString()]['audio'] = true;
+        guildStatus[msg.guild.toString()].audio = true;
         let voice = yield vc.join();
-        guildStatus[msg.guild.toString()]['voice'] = voice;
+        guildStatus[msg.guild.toString()].voice = voice;
         if ('dispatcher' in guildStatus[msg.guild.toString()]) {
             try {
-                guildStatus[msg.guild.toString()]['dispatcher'].destroy();
+                guildStatus[msg.guild.toString()].dispatcher.destroy();
             }
             catch (_b) { }
         }
-        guildStatus[msg.guild.toString()]['dispatcher'] = voice.play('C:/Users/jacob/Downloads/Bot Resources/music_files/swear_songs/' + data['swearSongs'][songNum]);
-        guildStatus[msg.guild.toString()]['dispatcher'].on('finish', () => {
-            guildStatus[msg.guild.toString()]['dispatcher'].destroy();
-            guildStatus[msg.guild.toString()]['audio'] = false;
+        guildStatus[msg.guild.toString()].dispatcher = voice.play('C:/Users/jacob/Downloads/Bot Resources/music_files/swear_songs/' + data.swearSongs[songNum]);
+        guildStatus[msg.guild.toString()].dispatcher.on('finish', () => {
+            guildStatus[msg.guild.toString()].dispatcher.destroy();
+            guildStatus[msg.guild.toString()].audio = false;
         });
     });
 }
@@ -81,10 +81,10 @@ client.on('message', msg => {
     }
     if (!msg.content.startsWith(prefix)) {
         if (msg.content.indexOf('swear') != -1) {
-            msg.reply(data['blacklist']['swears'][Math.floor(Math.random() * data['blacklist']['swears'].length)]);
+            msg.reply(data.blacklist.swears[Math.floor(Math.random() * data.blacklist.swears.length)]);
             return;
         }
-        for (const swear of data['blacklist']['swears']) {
+        for (const swear of data.blacklist.swears) {
             if (msg.content.indexOf(swear) != -1) {
                 msg.reply('Good job swearing! Heck yeah!');
                 return;
@@ -103,7 +103,7 @@ client.on('message', msg => {
                     msg.reply('Nothing is playing!');
                     return;
                 }
-                guildStatus[msg.guild.toString()]['dispatcher'].pause();
+                guildStatus[msg.guild.toString()].dispatcher.pause();
                 msg.reply('Paused!');
                 break;
             case 'resume':
@@ -111,7 +111,7 @@ client.on('message', msg => {
                     msg.reply('Nothing is playing!');
                     return;
                 }
-                guildStatus[msg.guild.toString()]['dispatcher'].resume();
+                guildStatus[msg.guild.toString()].dispatcher.resume();
                 msg.reply('Resumed!');
                 break;
             case 'stop':
@@ -119,8 +119,8 @@ client.on('message', msg => {
                     msg.reply('There is nothing playing!');
                     return;
                 }
-                guildStatus[msg.guild.toString()]['dispatcher'].destroy();
-                guildStatus[msg.guild.toString()]['audio'] = false;
+                guildStatus[msg.guild.toString()].dispatcher.destroy();
+                guildStatus[msg.guild.toString()].audio = false;
                 msg.reply('Success');
                 break;
         }
@@ -129,5 +129,5 @@ client.on('message', msg => {
         console.log(err);
     }
 });
-client.login(data['swearKey']);
+client.login(data.swearKey);
 //# sourceMappingURL=app.js.map
