@@ -15,7 +15,8 @@ const Discord = require('discord.js');
 const fs = require('fs');
 const client = new Discord.Client();
 const prefix = '?';
-var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
+const home = process.env.USERPROFILE;
+var data = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
 var guildStatus = {};
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
@@ -25,7 +26,7 @@ client.on('ready', () => {
     console.log('We have logged in as ' + client.user.tag);
     client.user.setActivity(data.swearStatus[Math.floor(Math.random() * data.swearStatus.length)]);
     setInterval(function () {
-        refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
+        refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
         client.user.setActivity(data.swearStatus[Math.floor(Math.random() * data.swearStatus.length)]);
         for (const key in guildStatus) {
             if ('audio' in guildStatus[key] && !guildStatus[key].audio) {
@@ -68,7 +69,7 @@ function play(msg) {
             }
             catch (_b) { }
         }
-        guildStatus[msg.guild.toString()].dispatcher = voice.play('C:/Users/jacob/Downloads/Bot Resources/music_files/swear_songs/' + data.swearSongs[songNum]);
+        guildStatus[msg.guild.toString()].dispatcher = voice.play(`${home}/Downloads/Bot Resources/music_files/swear_songs/${data.swearSongs[songNum]}`);
         guildStatus[msg.guild.toString()].dispatcher.on('finish', () => {
             guildStatus[msg.guild.toString()].dispatcher.destroy();
             guildStatus[msg.guild.toString()].audio = false;

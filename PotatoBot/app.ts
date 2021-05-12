@@ -11,7 +11,8 @@ const youtubedl = require('youtube-dl-exec') // Youtube video downloader
 
 const client = new Discord.Client() // Represents the bot client
 const prefix = '&' // Bot command prefix
-var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json') // Loads persistant info into memory
+const home = process.env.USERPROFILE // Represents path to user profile
+var data = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`) // Loads persistant info into memory
 var users = {
     admin: null,
     swear: null
@@ -106,7 +107,7 @@ class Euchre {
         for (const player of this.players) {
             await this.sendHand(player)
         }
-        await this.sendCards(`C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${this.gameState.top.code}.png`, 'Top of Stack:')
+        await this.sendCards(`${home}/Downloads/Bot Resources/img_files/cards/${this.gameState.top.code}.png`, 'Top of Stack:')
         let playerUsers = []
         for (const player of this.players) {
             playerUsers.push(player)
@@ -408,7 +409,7 @@ class Euchre {
         let filePaths = []
         const hand = genericEmbedResponse('^ Your Hand:')
         for (const card of player.hand) {
-            filePaths.push(`C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${card.code}.png`)
+            filePaths.push(`${home}/Downloads/Bot Resources/img_files/cards/${card.code}.png`)
         }
         if (filePaths.length == 1) {
             hand.attachFiles([{
@@ -441,7 +442,7 @@ class Euchre {
         } else {
             let filePaths = []
             for (let i = 0; i < cards.length; i++) {
-                filePaths.push(`C:/Users/jacob/Downloads/Bot Resources/img_files/cards/${cards[i].code}.png`)
+                filePaths.push(`${home}/Downloads/Bot Resources/img_files/cards/${cards[i].code}.png`)
             }
             const image = await mergeImages(filePaths, {
                 width: filePaths.length * 226,
@@ -492,8 +493,8 @@ async function makeGetRequest(path) {
 
 // Recursively plays each video in the queue
 async function playQueue(channel, guild, vc) {
-    if (fs.existsSync(`C:/Users/jacob/Downloads/Bot Resources/temp/${guild.id}/song.mp3`)) {
-        fs.unlinkSync(`C:/Users/jacob/Downloads/Bot Resources/temp/${guild.id}/song.mp3`)
+    if (fs.existsSync(`${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`)) {
+        fs.unlinkSync(`${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`)
     }
     if (guildStatus[guild.id].queue.length < 1) {
         return
@@ -510,9 +511,9 @@ async function playQueue(channel, guild, vc) {
         ignoreErrors: true,
         geoBypass: true,
         format: 'bestaudio',
-        output: `C:/Users/jacob/Downloads/Bot Resources/temp/${guild.id}/song.mp3`
+        output: `${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`
     })
-    guildStatus[guild.id].dispatcher = voice.play(`C:/Users/jacob/Downloads/Bot Resources/temp/${guild.id}/song.mp3`)
+    guildStatus[guild.id].dispatcher = voice.play(`${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`)
     guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong['title']}`)
     guildStatus[guild.id].nowPlaying.setImage(currentSong['thumbnail'])
     guildStatus[guild.id].nowPlaying.addField('URL:', currentSong['webpage_url'])
@@ -536,11 +537,11 @@ client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`)
 
     // Removes the temp folder if it exists
-    if (fs.existsSync('C:/Users/jacob/Downloads/Bot Resources/temp')) {
-        fs.rmdirSync('C:/Users/jacob/Downloads/Bot Resources/temp', { recursive: true })
+    if (fs.existsSync(`${home}/Downloads/Bot Resources/temp`)) {
+        fs.rmdirSync(`${home}/Downloads/Bot Resources/temp`, { recursive: true })
     }
 
-    fs.mkdirSync('C:/Users/jacob/Downloads/Bot Resources/temp') // Creates a temp folder for this session
+    fs.mkdirSync(`${home}/Downloads/Bot Resources/temp`) // Creates a temp folder for this session
     client.user.setActivity(data.potatoStatus[Math.floor(Math.random() * data.potatoStatus.length)]) // Sets bot status
 
     // Fetches any necessary user objects
@@ -552,7 +553,7 @@ client.on('ready', () => {
 
     // Defines tasks that must be executed periodically
     setInterval(function () {
-        refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json') // Refresh data variable
+        refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`) // Refresh data variable
         client.user.setActivity(data.potatoStatus[Math.floor(Math.random() * data.potatoStatus.length)]) // Reset bot status
 
         // Disconnects bot if it is inactive in a voice channel
@@ -645,12 +646,12 @@ async function newSwearSong(msg) {
         noCheckCertificate: true,
         preferFreeFormats: true,
         format: 'bestaudio',
-        output: 'C:/Users/jacob/Downloads/Bot Resources/music_files/swear_songs/song' + (data['swearSongs'].length + 1) + '.mp3'
+        output: `${home}/Downloads/Bot Resources/music_files/swear_songs/song${data.swearSongs.length + 1}.mp3`
     })
-    refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json')
+    refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`)
     data.swearSongs.push(`song${(data.swearSongs.length + 1)}.mp3`)
     const jsonString = JSON.stringify(data)
-    fs.writeFileSync('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json', jsonString)
+    fs.writeFileSync(`${home}/Downloads/Bot Resources/sys_files/bots.json`, jsonString)
     msg.reply('Success!')
 }
 
@@ -669,7 +670,7 @@ async function download(msg) {
         noCheckCertificate: true,
         preferFreeFormats: true,
         format: 'bestaudio',
-        output: 'C:/Users/jacob/Downloads/Bot Resources/New Downloads/%(title)s.%(ext)s',
+        output: `${home}/Downloads/Bot Resources/New Downloads/%(title)s.%(ext)s`,
         ignoreErrors: true
     }
     if (msg.content.split(" ").length < 3 || msg.content.split(" ")[2][0].toLowerCase() != 'a') {
@@ -784,7 +785,7 @@ client.on('message', msg => {
     // Creates a key in GuildStatus for the current guild
     if (!(msg.guild.id in guildStatus)) {
         guildStatus[msg.guild.id] = {}
-        fs.mkdirSync(`C:/Users/jacob/Downloads/Bot Resources/temp/${msg.guild.id}`)
+        fs.mkdirSync(`${home}/Downloads/Bot Resources/temp/${msg.guild.id}`)
     }
 
     if (msg.author.bot) {
@@ -934,7 +935,7 @@ client.on('message', msg => {
                 msg.reply(playlists)
                 break
             case 'quote':
-                const quotes = fs.readFileSync('C:/Users/jacob/Downloads/Bot Resources/sys_files/quotes.txt', 'utf8').split("}")
+                const quotes = fs.readFileSync(`${home}/Downloads/Bot Resources/sys_files/quotes.txt`, 'utf8').split("}")
                 msg.channel.send(quotes[Math.floor(Math.random() * quotes.length)], { 'tts': true })
                 break
             case 'euchre':

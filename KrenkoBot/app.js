@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,7 +7,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-Object.defineProperty(exports, "__esModule", { value: true });
 process.on('uncaughtException', err => {
     console.log(err);
     setInterval(function () { }, 1000);
@@ -18,7 +16,8 @@ const fs = require('fs');
 const axios = require('axios');
 const client = new Discord.Client();
 const prefix = '$';
-var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
+const home = process.env.USERPROFILE;
+var data = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
 var guildStatus = {};
 class Deck {
     fill(json) {
@@ -217,7 +216,7 @@ client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`);
     client.user.setActivity(data.krenkoStatus[Math.floor(Math.random() * data.krenkoStatus.length)]);
     setInterval(function () {
-        refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
+        refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
         client.user.setActivity(data.krenkoStatus[Math.floor(Math.random() * data.krenkoStatus.length)]);
     }, 60000);
 });
@@ -229,10 +228,10 @@ function add(msg) {
         }
         const deck = new Deck();
         if (yield deck.getInfo(msg.content.split(" ")[1], msg.author.id)) {
-            refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
+            refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
             data.decks.push(deck);
             const jsonString = JSON.stringify(data);
-            fs.writeFileSync('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json', jsonString);
+            fs.writeFileSync(`${home}/Downloads/Bot Resources/sys_files/bots.json`, jsonString);
             msg.reply('Success!');
             return;
         }

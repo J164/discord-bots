@@ -1,5 +1,3 @@
-import { Guild } from "discord.js"
-
 process.on('uncaughtException', err => {
     console.log(err)
     setInterval(function () { }, 1000)
@@ -11,7 +9,8 @@ const axios = require('axios')
 
 const client = new Discord.Client()
 const prefix = '$'
-var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json')
+const home = process.env.USERPROFILE
+var data = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`)
 var guildStatus = {}
 
 class Deck {
@@ -238,7 +237,7 @@ client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`)
     client.user.setActivity(data.krenkoStatus[Math.floor(Math.random() * data.krenkoStatus.length)])
     setInterval(function () {
-        refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json')
+        refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`)
         client.user.setActivity(data.krenkoStatus[Math.floor(Math.random() * data.krenkoStatus.length)])
     }, 60000)
 })
@@ -250,10 +249,10 @@ async function add(msg) {
     }
     const deck = new Deck()
     if (await deck.getInfo(msg.content.split(" ")[1], msg.author.id)) {
-        refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json')
+        refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`)
         data.decks.push(deck)
         const jsonString = JSON.stringify(data)
-        fs.writeFileSync('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json', jsonString)
+        fs.writeFileSync(`${home}/Downloads/Bot Resources/sys_files/bots.json`, jsonString)
         msg.reply('Success!')
         return
     }
