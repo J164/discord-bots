@@ -57,28 +57,31 @@ function play(msg) {
         catch (_a) {
             songNum = Math.floor(Math.random() * data.swearSongs.length);
         }
-        if (!(msg.guild.toString() in guildStatus)) {
-            guildStatus[msg.guild.toString()] = {};
+        if (!(msg.guild.id in guildStatus)) {
+            guildStatus[msg.guild.id] = {};
         }
-        guildStatus[msg.guild.toString()].audio = true;
+        guildStatus[msg.guild.id].audio = true;
         let voice = yield vc.join();
-        guildStatus[msg.guild.toString()].voice = voice;
-        if ('dispatcher' in guildStatus[msg.guild.toString()]) {
+        guildStatus[msg.guild.id].voice = voice;
+        if ('dispatcher' in guildStatus[msg.guild.id]) {
             try {
-                guildStatus[msg.guild.toString()].dispatcher.destroy();
+                guildStatus[msg.guild.id].dispatcher.destroy();
             }
             catch (_b) { }
         }
-        guildStatus[msg.guild.toString()].dispatcher = voice.play(`${home}/Downloads/Bot Resources/music_files/swear_songs/${data.swearSongs[songNum]}`);
-        guildStatus[msg.guild.toString()].dispatcher.on('finish', () => {
-            guildStatus[msg.guild.toString()].dispatcher.destroy();
-            guildStatus[msg.guild.toString()].audio = false;
+        guildStatus[msg.guild.id].dispatcher = voice.play(`${home}/Downloads/Bot Resources/music_files/swear_songs/${data.swearSongs[songNum]}`);
+        guildStatus[msg.guild.id].dispatcher.on('finish', () => {
+            guildStatus[msg.guild.id].dispatcher.destroy();
+            guildStatus[msg.guild.id].audio = false;
         });
     });
 }
 client.on('message', msg => {
     if (msg.author.bot || !msg.guild) {
         return;
+    }
+    if (!(msg.guild.id in guildStatus)) {
+        guildStatus[msg.guild.id] = {};
     }
     if (!msg.content.startsWith(prefix)) {
         if (msg.content.indexOf('swear') != -1) {
