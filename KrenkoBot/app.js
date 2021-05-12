@@ -1,3 +1,4 @@
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -7,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+Object.defineProperty(exports, "__esModule", { value: true });
 process.on('uncaughtException', err => {
     console.log(err);
     setInterval(function () { }, 1000);
@@ -19,17 +21,6 @@ const prefix = '$';
 var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
 var guildStatus = {};
 class Deck {
-    constructor(url = null, authorId = null) {
-        if (!url) {
-            return;
-        }
-        this.authorId = authorId;
-        this.url = url;
-        const fields = url.split('/');
-        const authorID = fields[4];
-        const deckID = fields[5].split('-')[0];
-        this.apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`;
-    }
     fill(json) {
         this.image = json.image;
         this.name = json.name;
@@ -37,14 +28,39 @@ class Deck {
         this.apiUrl = json.apiUrl;
         this.authorId = json.authorId;
     }
-    getInfo() {
+    getInfo(url, authorId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const deckJson = yield makeGetRequest(this.apiUrl + 'json');
+            this.authorId = authorId;
+            this.url = url;
+            let authorID;
+            let deckID;
+            try {
+                const fields = url.split('/');
+                authorID = fields[4];
+                deckID = fields[5].split('-')[0];
+            }
+            catch (_a) {
+                return false;
+            }
+            this.apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`;
+            let deckJson;
+            try {
+                deckJson = yield makeGetRequest(this.apiUrl + 'json');
+            }
+            catch (_b) {
+                return false;
+            }
+            for (const deck of data.decks) {
+                if (deck.name == deckJson.name) {
+                    return false;
+                }
+            }
             this.name = deckJson.name;
             let commander = findKey(deckJson, 'isCommander');
             commander = commander.name;
             const cardInfo = yield makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(commander)}`);
             this.image = cardInfo.data[0].image_uris.large;
+            return true;
         });
     }
     getPreview() {
@@ -56,7 +72,21 @@ class Deck {
     getList() {
         return __awaiter(this, void 0, void 0, function* () {
             const decklist = yield makeGetRequest(this.apiUrl + 'list');
-            return '\n' + decklist.list;
+            let decklistArray = decklist.list.split("\n");
+            for (let i = 0; i < decklistArray.length; i++) {
+                if (!decklistArray[i] || decklistArray[i].startsWith('//')) {
+                    decklistArray.splice(i, 1);
+                    i--;
+                    continue;
+                }
+                if (decklistArray[i].indexOf('//') != -1) {
+                    decklistArray[i] = decklistArray[i].substr(0, decklistArray[i].indexOf('//'));
+                }
+                if (decklistArray[i].indexOf('#') != -1) {
+                    decklistArray[i] = decklistArray[i].substr(0, decklistArray[i].indexOf('#'));
+                }
+            }
+            return '\n' + decklistArray.join('\n');
         });
     }
 }
@@ -197,12 +227,16 @@ function add(msg) {
             msg.reply('Please enter a deckstats URL!');
             return;
         }
-        refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
-        const deck = new Deck(msg.content.split(" ")[1], msg.author.id);
-        yield deck.getInfo();
-        data.decks.push(deck);
-        const jsonString = JSON.stringify(data);
-        fs.writeFileSync('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json', jsonString);
+        const deck = new Deck();
+        if (yield deck.getInfo(msg.content.split(" ")[1], msg.author.id)) {
+            refreshData('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
+            data.decks.push(deck);
+            const jsonString = JSON.stringify(data);
+            fs.writeFileSync('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json', jsonString);
+            msg.reply('Success!');
+            return;
+        }
+        msg.reply('Something went wrong... (Make sure you are using a valid deck url from deckstats.net and that the deck is not a duplicate)');
     });
 }
 function deckPreview(i, msg) {
@@ -254,8 +288,7 @@ client.on('message', msg => {
     try {
         switch (messageStart) {
             case 'add':
-                add(msg)
-                    .then(msg.reply('Success!'));
+                add(msg);
                 break;
             case 'decks':
                 deckPreview(0, msg);
