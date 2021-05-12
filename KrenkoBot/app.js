@@ -18,7 +18,6 @@ const client = new Discord.Client();
 const prefix = '$';
 var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json');
 var guildStatus = {};
-var deck;
 class Deck {
     constructor(url = null, authorId = null) {
         if (!url) {
@@ -185,7 +184,6 @@ function findKey(object, property) {
     return result;
 }
 client.on('ready', () => {
-    //deck = new Deck('https://deckstats.net/decks/162326/2048957-artifacts-troll-', 123)
     console.log(`We have logged in as ${client.user.tag}`);
     client.user.setActivity(data.krenkoStatus[Math.floor(Math.random() * data.krenkoStatus.length)]);
     setInterval(function () {
@@ -209,7 +207,7 @@ function add(msg) {
 }
 function deckPreview(i, msg) {
     return __awaiter(this, void 0, void 0, function* () {
-        deck = new Deck();
+        const deck = new Deck();
         deck.fill(data.decks[i]);
         const message = yield msg.channel.send(deck.getPreview());
         let emojiList = ['\uD83D\uDCC4', '\u274C']; // Page and X emoji

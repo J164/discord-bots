@@ -11,7 +11,6 @@ const client = new Discord.Client()
 const prefix = '$'
 var data = require('C:/Users/jacob/Downloads/Bot Resources/sys_files/bots.json')
 var guildStatus = {}
-var deck
 
 class Deck {
 
@@ -209,7 +208,6 @@ function findKey(object, property) {
 }
 
 client.on('ready', () => {
-    //deck = new Deck('https://deckstats.net/decks/162326/2048957-artifacts-troll-', 123)
     console.log(`We have logged in as ${client.user.tag}`)
     client.user.setActivity(data.krenkoStatus[Math.floor(Math.random() * data.krenkoStatus.length)])
     setInterval(function () {
@@ -232,7 +230,7 @@ async function add(msg) {
 }
 
 async function deckPreview(i, msg) {
-    deck = new Deck()
+    const deck = new Deck()
     deck.fill(data.decks[i])
     const message = await msg.channel.send(deck.getPreview())
     let emojiList = ['\uD83D\uDCC4', '\u274C'] // Page and X emoji
