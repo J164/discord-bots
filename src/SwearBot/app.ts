@@ -100,28 +100,28 @@ client.on('message', msg => {
                 play(msg)
                 break
             case 'pause':
-                if (!(msg.guild.toString() in guildStatus) || !('dispatcher' in guildStatus[msg.guild.toString()])) {
+                if (!('dispatcher' in guildStatus[msg.guild.id])) {
                     msg.reply('Nothing is playing!')
                     return
                 }
-                guildStatus[msg.guild.toString()].dispatcher.pause()
+                guildStatus[msg.guild.id].dispatcher.pause()
                 msg.reply('Paused!')
                 break
             case 'resume':
-                if (!(msg.guild.toString() in guildStatus) || !('dispatcher' in guildStatus[msg.guild.toString()])) {
+                if (!('dispatcher' in guildStatus[msg.guild.id])) {
                     msg.reply('Nothing is playing!')
                     return
                 }
-                guildStatus[msg.guild.toString()].dispatcher.resume()
+                guildStatus[msg.guild.id].dispatcher.resume()
                 msg.reply('Resumed!')
                 break
             case 'stop':
-                if (!(msg.guild.toString() in guildStatus) || !('dispatcher' in guildStatus[msg.guild.toString()])) {
+                if (!('dispatcher' in guildStatus[msg.guild.id])) {
                     msg.reply('There is nothing playing!')
                     return
                 }
-                guildStatus[msg.guild.toString()].dispatcher.destroy()
-                guildStatus[msg.guild.toString()].audio = false
+                guildStatus[msg.guild.id].dispatcher.destroy()
+                guildStatus[msg.guild.id].audio = false
                 msg.reply('Success')
                 break
         }
