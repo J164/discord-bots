@@ -12,16 +12,16 @@
        interval: "daily"
 
    - package-ecosystem: "npm"
-     directory: "/PotatoBot"
+     directory: "/src/PotatoBot"
      schedule:
        interval: "daily"
 
    - package-ecosystem: "npm"
-     directory: "/SwearBot"
+     directory: "/src/SwearBot"
      schedule:
        interval: "daily"
 
    - package-ecosystem: "npm"
-     directory: "/KrenkoBot"
+     directory: "/src/KrenkoBot"
      schedule:
        interval: "daily"
