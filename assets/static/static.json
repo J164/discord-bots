@@ -1,0 +1,47 @@
+{
+  "potatoKey": "NzgzMTIxNjk1MjQyMTkwODQ4.X8WI6Q.Y_njAUT2hW9XwcssQFlnFB2gg2s",
+  "swearKey": "Nzk0NzEwNzkwMTE1OTUwNjAz.X--yGQ.q-3S8VuKsxFHxdVg5MOz593RV8I",
+  "krenkoKey": "NzgzMDkxOTE3NzA1MTgzMjMz.X8VtLg.fevpRLh1K9Y5Jt-P9rFWmDU2sso",
+  "potatoStatus": [
+    "Eating a baked potato",
+    "Farming potatoes",
+    "Decorating with potatoes",
+    "Looking up potato recipes",
+    "Potato Platformer 3000"
+  ],
+  "swearStatus": [
+    "Reading the Swear Dictionary",
+    "Singing Swears",
+    "Arresting people who don't swear",
+    "Inventing new swears"
+  ],
+  "krenkoStatus": [
+    "Shuffling cards",
+    "Building decks",
+    "Magic: The Gathering",
+    "Searching for new deck ideas"
+  ],
+  "blacklist": {
+    "swears": [
+      "fuck",
+      "shit",
+      "ass",
+      "bitch",
+      "motherfucker",
+      "damn",
+      "dick",
+      "bullshit",
+      "cock",
+      "dipshit"
+    ],
+    "insults": [
+      "bad",
+      "disgusting",
+      "yucky",
+      "gross",
+      "stupid",
+      "dumb",
+      "annoying"
+    ]
+  }
+}

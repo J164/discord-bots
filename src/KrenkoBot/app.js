@@ -17,7 +17,9 @@ const axios = require('axios');
 const client = new Discord.Client();
 const prefix = '$';
 const home = process.env.USERPROFILE;
-var data = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
+const root = '../..';
+var sysData = require(`${root}/assets/static/static.json`);
+var userData = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
 var guildStatus = {};
 class Deck {
     fill(json) {
@@ -49,7 +51,7 @@ class Deck {
             catch (_b) {
                 return false;
             }
-            for (const deck of data.decks) {
+            for (const deck of userData.decks) {
                 if (deck.name == deckJson.name) {
                     return false;
                 }
@@ -171,7 +173,7 @@ class CommanderGame extends MagicGame {
 }
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
-    data = JSON.parse(jsonString);
+    userData = JSON.parse(jsonString);
 }
 function genericEmbedResponse(title) {
     const embedVar = new Discord.MessageEmbed();
@@ -214,10 +216,10 @@ function findKey(object, property) {
 }
 client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`);
-    client.user.setActivity(data.krenkoStatus[Math.floor(Math.random() * data.krenkoStatus.length)]);
+    client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)]);
     setInterval(function () {
         refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
-        client.user.setActivity(data.krenkoStatus[Math.floor(Math.random() * data.krenkoStatus.length)]);
+        client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)]);
     }, 60000);
 });
 function add(msg) {
@@ -229,8 +231,8 @@ function add(msg) {
         const deck = new Deck();
         if (yield deck.getInfo(msg.content.split(" ")[1], msg.author.id)) {
             refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
-            data.decks.push(deck);
-            const jsonString = JSON.stringify(data);
+            userData.decks.push(deck);
+            const jsonString = JSON.stringify(userData);
             fs.writeFileSync(`${home}/Downloads/Bot Resources/sys_files/bots.json`, jsonString);
             msg.reply('Success!');
             return;
@@ -241,13 +243,13 @@ function add(msg) {
 function deckPreview(i, msg) {
     return __awaiter(this, void 0, void 0, function* () {
         const deck = new Deck();
-        deck.fill(data.decks[i]);
+        deck.fill(userData.decks[i]);
         const message = yield msg.channel.send(deck.getPreview());
         let emojiList = ['\uD83D\uDCC4', '\u274C']; // Page and X emoji
         if (i != 0) {
             emojiList.unshift('\u2B05\uFE0F'); // Left arrow
         }
-        if (i != (data.decks.length - 1)) {
+        if (i != (userData.decks.length - 1)) {
             emojiList.push('\u27A1\uFE0F'); // Right arrow
         }
         for (const emoji of emojiList) {
@@ -322,5 +324,5 @@ client.on('message', msg => {
         console.log(err);
     }
 });
-client.login(data.krenkoKey);
+client.login(sysData.krenkoKey);
 //# sourceMappingURL=app.js.map

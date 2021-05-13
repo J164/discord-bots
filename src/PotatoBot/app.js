@@ -19,7 +19,9 @@ const youtubedl = require('youtube-dl-exec'); // Youtube video downloader
 const client = new Discord.Client(); // Represents the bot client
 const prefix = '&'; // Bot command prefix
 const home = process.env.USERPROFILE; // Represents path to user profile
-var data = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`); // Loads persistant info into memory
+const root = '../..';
+var sysData = require(`${root}/assets/static/static.json`); // Loads system info into memory
+var userData = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`); // Loads persistant info into memory
 var users = {
     admin: null,
     swear: null
@@ -107,13 +109,13 @@ class Euchre {
             for (const player of this.players) {
                 yield this.sendHand(player);
             }
-            yield this.sendCards(`${home}/Downloads/Bot Resources/img_files/cards/${this.gameState.top.code}.png`, 'Top of Stack:');
+            yield this.sendCards(`${root}/assets/img/cards/${this.gameState.top.code}.png`, 'Top of Stack:');
             let playerUsers = [];
             for (const player of this.players) {
                 playerUsers.push(player);
             }
             for (const player of this.players) {
-                const response = yield this.askPlayer(player.user, `Would you like to pass or have ${this.players[3].player.username} pick it up?`, ['Pick it up', 'Pass']);
+                const response = yield this.askPlayer(player.user, `Would you like to pass or have ${this.players[3].user.username} pick it up?`, ['Pick it up', 'Pass']);
                 if (response == 0) {
                     this.gameState.trump = this.gameState.top.suit;
                     this.players[3].hand[yield this.askPlayer(this.players[3].user, 'What card would you like to replace?', this.getCardNames(this.players[3].hand))] = this.gameState.top;
@@ -416,7 +418,7 @@ class Euchre {
             let filePaths = [];
             const hand = genericEmbedResponse('^ Your Hand:');
             for (const card of player.hand) {
-                filePaths.push(`${home}/Downloads/Bot Resources/img_files/cards/${card.code}.png`);
+                filePaths.push(`${root}/assets/img/cards/${card.code}.png`);
             }
             if (filePaths.length == 1) {
                 hand.attachFiles([{
@@ -451,7 +453,7 @@ class Euchre {
             else {
                 let filePaths = [];
                 for (let i = 0; i < cards.length; i++) {
-                    filePaths.push(`${home}/Downloads/Bot Resources/img_files/cards/${cards[i].code}.png`);
+                    filePaths.push(`${home}/assets/img/cards/${cards[i].code}.png`);
                 }
                 const image = yield mergeImages(filePaths, {
                     width: filePaths.length * 226,
@@ -491,7 +493,7 @@ function genericEmbedResponse(title) {
 // Refreshes the data variable
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
-    data = JSON.parse(jsonString);
+    userData = JSON.parse(jsonString);
 }
 // Makes a http get request
 function makeGetRequest(path) {
@@ -551,7 +553,7 @@ client.on('ready', () => {
         fs.rmdirSync(`${home}/Downloads/Bot Resources/temp`, { recursive: true });
     }
     fs.mkdirSync(`${home}/Downloads/Bot Resources/temp`); // Creates a temp folder for this session
-    client.user.setActivity(data.potatoStatus[Math.floor(Math.random() * data.potatoStatus.length)]); // Sets bot status
+    client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)]); // Sets bot status
     // Fetches any necessary user objects
     getUser('619975185029922817', '609826125501169723')
         .then(admin => { users.admin = admin.user; });
@@ -559,8 +561,8 @@ client.on('ready', () => {
         .then(swear => { users.swear = swear.user; });
     // Defines tasks that must be executed periodically
     setInterval(function () {
-        refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`); // Refresh data variable
-        client.user.setActivity(data.potatoStatus[Math.floor(Math.random() * data.potatoStatus.length)]); // Reset bot status
+        refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`); // Refresh user data variable
+        client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)]); // Reset bot status
         // Disconnects bot if it is inactive in a voice channel
         for (const guild in guildStatus) {
             if ('audio' in guildStatus[guild] && !guildStatus[guild].audio) {
@@ -656,11 +658,11 @@ function newSwearSong(msg) {
             noCheckCertificate: true,
             preferFreeFormats: true,
             format: 'bestaudio',
-            output: `${home}/Downloads/Bot Resources/music_files/swear_songs/song${data.swearSongs.length + 1}.mp3`
+            output: `${home}/Downloads/Bot Resources/music_files/swear_songs/song${userData.swearSongs.length + 1}.mp3`
         });
         refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
-        data.swearSongs.push(`song${(data.swearSongs.length + 1)}.mp3`);
-        const jsonString = JSON.stringify(data);
+        userData.swearSongs.push(`song${(userData.swearSongs.length + 1)}.mp3`);
+        const jsonString = JSON.stringify(userData);
         fs.writeFileSync(`${home}/Downloads/Bot Resources/sys_files/bots.json`, jsonString);
         msg.reply('Success!');
     });
@@ -832,13 +834,13 @@ client.on('message', msg => {
         if (message.indexOf('potato') != -1) {
             mentionPotato = true;
         }
-        for (const swear of data.blacklist.swears) {
+        for (const swear of sysData.blacklist.swears) {
             if (message.indexOf(swear) != -1) {
                 mentionSwear = true;
                 break;
             }
         }
-        for (const insult of data.blacklist.insults) {
+        for (const insult of sysData.blacklist.insults) {
             if (message.indexOf(insult) != -1) {
                 mentionInsult = true;
                 break;
@@ -958,5 +960,5 @@ client.on('message', msg => {
         console.log(err);
     }
 });
-client.login(data.potatoKey);
+client.login(sysData.potatoKey);
 //# sourceMappingURL=app.js.map

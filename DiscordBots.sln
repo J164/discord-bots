@@ -3,17 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31112.23
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "PotatoBot", "PotatoBot\PotatoBot.njsproj", "{D2B0617B-AA3A-480E-BEDE-916091E5B3E4}"
-EndProject
-Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "SwearBot", "SwearBot\SwearBot.njsproj", "{6CCE4B95-1804-4BCE-84CE-CE5BEC99DBD0}"
-EndProject
-Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "KrenkoBot", "KrenkoBot\KrenkoBot.njsproj", "{C535B79C-73D6-4EE8-B41A-645DAF2B0778}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{52AD466F-F859-4BFD-BAA2-2316BA99DD06}"
 	ProjectSection(SolutionItems) = preProject
-		files\install.bat = files\install.bat
+		assets\install.bat = assets\install.bat
+		launch.bat = launch.bat
 		package.json = package.json
+		assets\static\static.json = assets\static\static.json
 	EndProjectSection
+EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "PotatoBot", "src\PotatoBot\PotatoBot.njsproj", "{D2B0617B-AA3A-480E-BEDE-916091E5B3E4}"
+EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "KrenkoBot", "src\KrenkoBot\KrenkoBot.njsproj", "{C535B79C-73D6-4EE8-B41A-645DAF2B0778}"
+EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "SwearBot", "src\SwearBot\SwearBot.njsproj", "{6CCE4B95-1804-4BCE-84CE-CE5BEC99DBD0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,14 +27,14 @@ Global
 		{D2B0617B-AA3A-480E-BEDE-916091E5B3E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2B0617B-AA3A-480E-BEDE-916091E5B3E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D2B0617B-AA3A-480E-BEDE-916091E5B3E4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6CCE4B95-1804-4BCE-84CE-CE5BEC99DBD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6CCE4B95-1804-4BCE-84CE-CE5BEC99DBD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6CCE4B95-1804-4BCE-84CE-CE5BEC99DBD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6CCE4B95-1804-4BCE-84CE-CE5BEC99DBD0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C535B79C-73D6-4EE8-B41A-645DAF2B0778}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C535B79C-73D6-4EE8-B41A-645DAF2B0778}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C535B79C-73D6-4EE8-B41A-645DAF2B0778}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C535B79C-73D6-4EE8-B41A-645DAF2B0778}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CCE4B95-1804-4BCE-84CE-CE5BEC99DBD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CCE4B95-1804-4BCE-84CE-CE5BEC99DBD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CCE4B95-1804-4BCE-84CE-CE5BEC99DBD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CCE4B95-1804-4BCE-84CE-CE5BEC99DBD0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

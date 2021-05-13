@@ -9,20 +9,22 @@ const fs = require('fs')
 const client = new Discord.Client()
 const prefix = '?'
 const home = process.env.USERPROFILE
-var data = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`)
+const root = '../..'
+var sysData = require(`${root}/assets/static/static.json`)
+var userData = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`)
 var guildStatus = {}
 
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' })
-    data = JSON.parse(jsonString)
+    userData = JSON.parse(jsonString)
 }
 
 client.on('ready', () => {
     console.log('We have logged in as ' + client.user.tag)
-    client.user.setActivity(data.swearStatus[Math.floor(Math.random() * data.swearStatus.length)])
+    client.user.setActivity(sysData.swearStatus[Math.floor(Math.random() * sysData.swearStatus.length)])
     setInterval(function () {
         refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`)
-        client.user.setActivity(data.swearStatus[Math.floor(Math.random() * data.swearStatus.length)])
+        client.user.setActivity(sysData.swearStatus[Math.floor(Math.random() * sysData.swearStatus.length)])
         for (const key in guildStatus) {
             if ('audio' in guildStatus[key] && !guildStatus[key].audio) {
                 try {
@@ -41,13 +43,13 @@ async function play(msg) {
         return
     }
     try {
-        if (parseInt(msg.content.split(" ")[1]) <= data.swearSongs.length && parseInt(msg.content.split(" ")[1]) > 0) {
+        if (parseInt(msg.content.split(" ")[1]) <= userData.swearSongs.length && parseInt(msg.content.split(" ")[1]) > 0) {
             songNum = parseInt(msg.content.split(" ")[1]) - 1
         } else {
-            songNum = Math.floor(Math.random() * data.swearSongs.length)
+            songNum = Math.floor(Math.random() * userData.swearSongs.length)
         }
     } catch {
-        songNum = Math.floor(Math.random() * data.swearSongs.length)
+        songNum = Math.floor(Math.random() * userData.swearSongs.length)
     }
     if (!(msg.guild.id in guildStatus)) {
         guildStatus[msg.guild.id] = {}
@@ -60,7 +62,7 @@ async function play(msg) {
             guildStatus[msg.guild.id].dispatcher.destroy()
         } catch { }
     }
-    guildStatus[msg.guild.id].dispatcher = voice.play(`${home}/Downloads/Bot Resources/music_files/swear_songs/${data.swearSongs[songNum]}`)
+    guildStatus[msg.guild.id].dispatcher = voice.play(`${home}/Downloads/Bot Resources/music_files/swear_songs/${userData.swearSongs[songNum]}`)
     guildStatus[msg.guild.id].dispatcher.on('finish', () => {
         guildStatus[msg.guild.id].dispatcher.destroy()
         guildStatus[msg.guild.id].audio = false
@@ -78,10 +80,10 @@ client.on('message', msg => {
 
     if (!msg.content.startsWith(prefix)) {
         if (msg.content.indexOf('swear') != -1) {
-            msg.reply(data.blacklist.swears[Math.floor(Math.random() * data.blacklist.swears.length)])
+            msg.reply(sysData.blacklist.swears[Math.floor(Math.random() * sysData.blacklist.swears.length)])
             return
         }
-        for (const swear of data.blacklist.swears) {
+        for (const swear of sysData.blacklist.swears) {
             if (msg.content.indexOf(swear) != -1) {
                 msg.reply('Good job swearing! Heck yeah!')
                 return
@@ -128,4 +130,4 @@ client.on('message', msg => {
     }
 })
 
-client.login(data.swearKey)
+client.login(sysData.swearKey)
