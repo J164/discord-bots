@@ -16,14 +16,14 @@ var guildStatus = {}
 
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' })
-    userData = JSON.parse(jsonString)
+    return JSON.parse(jsonString)
 }
 
 client.on('ready', () => {
     console.log('We have logged in as ' + client.user.tag)
     client.user.setActivity(sysData.swearStatus[Math.floor(Math.random() * sysData.swearStatus.length)])
     setInterval(function () {
-        refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`)
+        userData = refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`)
         client.user.setActivity(sysData.swearStatus[Math.floor(Math.random() * sysData.swearStatus.length)])
         for (const key in guildStatus) {
             if ('audio' in guildStatus[key] && !guildStatus[key].audio) {

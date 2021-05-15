@@ -173,7 +173,7 @@ class CommanderGame extends MagicGame {
 }
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
-    userData = JSON.parse(jsonString);
+    return JSON.parse(jsonString);
 }
 function genericEmbedResponse(title) {
     const embedVar = new Discord.MessageEmbed();
@@ -218,7 +218,7 @@ client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`);
     client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)]);
     setInterval(function () {
-        refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
+        userData = refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
         client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)]);
     }, 60000);
 });
@@ -230,7 +230,7 @@ function add(msg) {
         }
         const deck = new Deck();
         if (yield deck.getInfo(msg.content.split(" ")[1], msg.author.id)) {
-            refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
+            userData = refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
             userData.decks.push(deck);
             const jsonString = JSON.stringify(userData);
             fs.writeFileSync(`${home}/Downloads/Bot Resources/sys_files/bots.json`, jsonString);

@@ -484,7 +484,7 @@ function genericEmbedResponse(title) {
 // Refreshes the data variable
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' })
-    userData = JSON.parse(jsonString)
+    return JSON.parse(jsonString)
 }
 
 // Makes a http get request
@@ -516,9 +516,9 @@ async function playQueue(channel, guild, vc) {
         output: `${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`
     })
     guildStatus[guild.id].dispatcher = voice.play(`${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`)
-    guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong['title']}`)
-    guildStatus[guild.id].nowPlaying.setImage(currentSong['thumbnail'])
-    guildStatus[guild.id].nowPlaying.addField('URL:', currentSong['webpage_url'])
+    guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`)
+    guildStatus[guild.id].nowPlaying.setImage(currentSong.thumbnail)
+    guildStatus[guild.id].nowPlaying.addField('URL:', currentSong.webpage_url)
     channel.send(guildStatus[guild.id].nowPlaying)
     guildStatus[guild.id].dispatcher.on('finish', () => {
         guildStatus[guild.id].dispatcher.destroy()
@@ -555,7 +555,7 @@ client.on('ready', () => {
 
     // Defines tasks that must be executed periodically
     setInterval(function () {
-        refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`) // Refresh user data variable
+        userData = refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`) // Refresh user data variable
         client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)]) // Reset bot status
 
         // Disconnects bot if it is inactive in a voice channel
@@ -650,7 +650,7 @@ async function newSwearSong(msg) {
         format: 'bestaudio',
         output: `${home}/Downloads/Bot Resources/music_files/swear_songs/song${userData.swearSongs.length + 1}.mp3`
     })
-    refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`)
+    userData = refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`)
     userData.swearSongs.push(`song${(userData.swearSongs.length + 1)}.mp3`)
     const jsonString = JSON.stringify(userData)
     fs.writeFileSync(`${home}/Downloads/Bot Resources/sys_files/bots.json`, jsonString)
@@ -742,10 +742,9 @@ async function play(msg) {
                 'title': entry.title,
                 'thumbnail': entry.thumbnails[0].url
             })
-        } else {
-            msg.reply(`${entry.title} is longer than 20 minutes and cannot be added to queue`)
             return
         }
+        msg.reply(`${entry.title} is longer than 20 minutes and cannot be added to queue`)
     }
     if ('entries' in output) {
         for (const entry of output.entries) {
