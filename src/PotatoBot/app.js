@@ -1,3 +1,4 @@
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -7,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+Object.defineProperty(exports, "__esModule", { value: true });
 process.on('uncaughtException', err => {
     console.log(err);
     setInterval(function () { }, 1000);
@@ -22,50 +24,47 @@ const home = process.env.USERPROFILE; // Represents path to user profile
 const root = '../..';
 var sysData = require(`${root}/assets/static/static.json`); // Loads system info into memory
 var userData = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`); // Loads persistant info into memory
-var users = {
-    admin: null,
-    swear: null
-}; // Stores specific users
+var users = { admin: null, swear: null }; // Stores specific users
 var guildStatus = {}; // Stores guild specific information to allow bot to act independent in different guilds
 class Euchre {
     constructor(players) {
         this.team1 = {
-            'tricks': 0,
-            'score': 0
+            tricks: 0,
+            score: 0
         };
         this.team2 = {
-            'tricks': 0,
-            'score': 0
+            tricks: 0,
+            score: 0
         };
         this.players = [{
-                'id': 0,
-                'user': players[0],
-                'hand': [],
-                'team': this.team1
+                id: 0,
+                user: players[0],
+                hand: [],
+                team: this.team1
             },
             {
-                'id': 1,
-                'user': players[1],
-                'hand': [],
-                'team': this.team2
+                id: 1,
+                user: players[1],
+                hand: [],
+                team: this.team2
             },
             {
-                'id': 2,
-                'user': players[2],
-                'hand': [],
-                'team': this.team1
+                id: 2,
+                user: players[2],
+                hand: [],
+                team: this.team1
             },
             {
-                'id': 3,
-                'user': players[3],
-                'hand': [],
-                'team': this.team2
+                id: 3,
+                user: players[3],
+                hand: [],
+                team: this.team2
             }];
         this.active = true;
         this.gameState = {
-            'top': {},
-            'inPlay': [],
-            'trump': ''
+            top: null,
+            inPlay: [],
+            trump: ''
         };
     }
     startGame() {
@@ -89,12 +88,11 @@ class Euchre {
     }
     startRound() {
         return __awaiter(this, void 0, void 0, function* () {
-            let deck;
             let draws;
             let success = false;
             while (!success) {
                 try {
-                    deck = yield axios.post('https://deckofcardsapi.com/api/deck/new/shuffle?cards=9S,9D,9C,9H,0S,0D,0C,0H,JS,JD,JC,JH,QS,QD,QC,QH,KS,KD,KC,KH,AS,AD,AC,AH');
+                    const deck = yield axios.post('https://deckofcardsapi.com/api/deck/new/shuffle?cards=9S,9D,9C,9H,0S,0D,0C,0H,JS,JD,JC,JH,QS,QD,QC,QH,KS,KD,KC,KH,AS,AD,AC,AH');
                     draws = yield axios.post(`https://deckofcardsapi.com/api/deck/${deck.data.deck_id}/draw?count=21`);
                     success = true;
                 }
@@ -109,7 +107,7 @@ class Euchre {
             for (const player of this.players) {
                 yield this.sendHand(player);
             }
-            yield this.sendCards(`${root}/assets/img/cards/${this.gameState.top.code}.png`, 'Top of Stack:');
+            yield this.sendCards([this.gameState.top], 'Top of Stack:');
             let playerUsers = [];
             for (const player of this.players) {
                 playerUsers.push(player);
@@ -182,7 +180,7 @@ class Euchre {
                 let lead;
                 for (const player of activePlayers) {
                     yield this.sendHand(player);
-                    if (lead == null && table.length > 0) {
+                    if (!lead && table.length > 0) {
                         lead = table[0].suit;
                     }
                     let availableHand = [];
@@ -403,11 +401,11 @@ class Euchre {
             for (let i = 0; i < responses.length; i++) {
                 yield message.react(emojiList[i]);
             }
-            const filter = reaction => reaction.client === client;
+            function filter(reaction) { return reaction.client === client; }
             let reaction = yield message.awaitReactions(filter, { max: 1 });
-            reaction = reaction.first();
+            let reactionResult = reaction.first();
             for (let i = 0; i < emojiList.length; i++) {
-                if (reaction.emoji.name === emojiList[i]) {
+                if (reactionResult.emoji.name === emojiList[i]) {
                     return i;
                 }
             }
@@ -453,7 +451,7 @@ class Euchre {
             else {
                 let filePaths = [];
                 for (let i = 0; i < cards.length; i++) {
-                    filePaths.push(`${home}/assets/img/cards/${cards[i].code}.png`);
+                    filePaths.push(`${root}/assets/img/cards/${cards[i].code}.png`);
                 }
                 const image = yield mergeImages(filePaths, {
                     width: filePaths.length * 226,
