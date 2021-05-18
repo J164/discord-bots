@@ -508,19 +508,20 @@ function playQueue(channel, guild, vc) {
         if (!guildStatus[guild.id].fullLoop) {
             guildStatus[guild.id].queue.shift();
         }
-        yield youtubedl(currentSong.webpage_url, {
+        const songInfo = yield youtubedl(currentSong.webpage_url, {
             noWarnings: true,
             noCallHome: true,
             noCheckCertificate: true,
             preferFreeFormats: true,
             ignoreErrors: true,
             geoBypass: true,
+            printJson: true,
             format: 'bestaudio',
             output: `${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`
         });
         guildStatus[guild.id].dispatcher = voice.play(`${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`);
         guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`);
-        guildStatus[guild.id].nowPlaying.setImage(currentSong.thumbnail);
+        guildStatus[guild.id].nowPlaying.setImage(songInfo.thumbnails[0].url);
         guildStatus[guild.id].nowPlaying.addField('URL:', currentSong.webpage_url);
         if (!guildStatus[guild.id].singleLoop) {
             channel.send(guildStatus[guild.id].nowPlaying);
@@ -738,26 +739,26 @@ function play(msg) {
             youtubeSkipDashManifest: true,
             ignoreErrors: true,
             geoBypass: true,
-            noPlaylist: true
+            noPlaylist: true,
+            flatPlaylist: true
         });
-        function addToQueue(entry) {
-            if (entry.duration < 1200) {
+        function addToQueue(duration, webpage_url, title) {
+            if (duration < 1200) {
                 guildStatus[msg.guild.id].queue.push({
-                    webpage_url: entry.webpage_url,
-                    title: entry.title,
-                    thumbnail: entry.thumbnails[0].url
+                    webpage_url: webpage_url,
+                    title: title
                 });
                 return;
             }
-            msg.reply(`${entry.title} is longer than 20 minutes and cannot be added to queue`);
+            msg.reply(`${title} is longer than 20 minutes and cannot be added to queue`);
         }
         if ('entries' in output) {
             for (const entry of output.entries) {
-                addToQueue(entry);
+                addToQueue(entry.duration, `https://www.youtube.com/watch?v=${entry.id}`, entry.title);
             }
         }
         else {
-            addToQueue(output);
+            addToQueue(output.duration, output.webpage_url, output.title);
         }
         if (!guildStatus[msg.guild.id].audio) {
             playQueue(msg.channel, msg.guild, voiceChannel);
