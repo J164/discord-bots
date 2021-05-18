@@ -495,20 +495,29 @@ function makeGetRequest(path) {
 // Recursively plays each video in the queue
 function playQueue(channel, guild, vc) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (fs.existsSync(`${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`)) {
-            fs.unlinkSync(`${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`);
-        }
+        console.log('play');
+        /*if (fs.existsSync(`${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`)) {
+            console.log('yes')
+            function removeSong(): void {
+                try {
+                    fs.unlinkSync(`${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`)
+                    console.log('it worked')
+                } catch {
+                    setTimeout(() => removeSong(), 2000)
+                }
+            }
+            removeSong()
+            console.log('moving on')
+        }*/
         if (guildStatus[guild.id].queue.length < 1) {
             return;
         }
         guildStatus[guild.id].audio = true;
         const voice = yield vc.join();
         guildStatus[guild.id].voice = voice;
-        const currentSong = guildStatus[guild.id].queue[0];
-        if (!guildStatus[guild.id].fullLoop) {
-            guildStatus[guild.id].queue.shift();
-        }
-        const songInfo = yield youtubedl(currentSong.webpage_url, {
+        const currentSong = guildStatus[guild.id].queue.shift();
+        console.log(currentSong.title);
+        let options = {
             noWarnings: true,
             noCallHome: true,
             noCheckCertificate: true,
@@ -517,9 +526,13 @@ function playQueue(channel, guild, vc) {
             geoBypass: true,
             printJson: true,
             format: 'bestaudio',
-            output: `${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`
-        });
-        guildStatus[guild.id].dispatcher = voice.play(`${home}/Downloads/Bot Resources/temp/${guild.id}/song.mp3`);
+            output: `${home}/Downloads/Bot Resources/temp/${guild.id}/%(id)s.mp3`
+        };
+        if (fs.existsSync(`${home}/Downloads/Bot Resources/temp/${guild.id}/${currentSong.id}.mp3`)) {
+            options['dumpJson'] = true;
+        }
+        const songInfo = yield youtubedl(currentSong.webpage_url, options);
+        guildStatus[guild.id].dispatcher = voice.play(`${home}/Downloads/Bot Resources/temp/${guild.id}/${currentSong.id}.mp3`);
         guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`);
         guildStatus[guild.id].nowPlaying.setImage(songInfo.thumbnails[0].url);
         guildStatus[guild.id].nowPlaying.addField('URL:', currentSong.webpage_url);
@@ -527,7 +540,11 @@ function playQueue(channel, guild, vc) {
             channel.send(guildStatus[guild.id].nowPlaying);
         }
         guildStatus[guild.id].dispatcher.on('finish', () => {
-            if (guildStatus[guild.id].singleLoop) {
+            console.log('hi');
+            if (guildStatus[guild.id].fullLoop) {
+                guildStatus[guild.id].queue.push(currentSong);
+            }
+            else if (guildStatus[guild.id].singleLoop) {
                 guildStatus[guild.id].queue.unshift(currentSong);
             }
             guildStatus[guild.id].dispatcher.destroy();
@@ -742,11 +759,13 @@ function play(msg) {
             noPlaylist: true,
             flatPlaylist: true
         });
-        function addToQueue(duration, webpage_url, title) {
+        function addToQueue(duration, webpage_url, title, id) {
             if (duration < 1200) {
                 guildStatus[msg.guild.id].queue.push({
                     webpage_url: webpage_url,
-                    title: title
+                    title: title,
+                    id: id,
+                    thumbnail: null
                 });
                 return;
             }
@@ -754,13 +773,15 @@ function play(msg) {
         }
         if ('entries' in output) {
             for (const entry of output.entries) {
-                addToQueue(entry.duration, `https://www.youtube.com/watch?v=${entry.id}`, entry.title);
+                addToQueue(entry.duration, `https://www.youtube.com/watch?v=${entry.id}`, entry.title, entry.id);
             }
         }
         else {
-            addToQueue(output.duration, output.webpage_url, output.title);
+            addToQueue(output.duration, output.webpage_url, output.title, output.id);
         }
+        msg.reply('Added to queue!');
         if (!guildStatus[msg.guild.id].audio) {
+            console.log(guildStatus[msg.guild.id].queue);
             playQueue(msg.channel, msg.guild, voiceChannel);
         }
     });
@@ -920,6 +941,9 @@ client.on('message', msg => {
                 const queueMessage = genericEmbedResponse('Queue');
                 for (const [i, entry] of guildStatus[msg.guild.id].queue.entries()) {
                     queueMessage.addField(`${i + 1}.`, `${entry.title}\n${entry.webpage_url}`);
+                    if (i >= 25) {
+                        break;
+                    }
                 }
                 if (guildStatus[msg.guild.id].fullLoop) {
                     queueMessage.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png');
@@ -953,6 +977,7 @@ client.on('message', msg => {
                 guildStatus[msg.guild.id].audio = false;
                 guildStatus[msg.guild.id].singleLoop = false;
                 guildStatus[msg.guild.id].fullLoop = false;
+                guildStatus[msg.guild.id].voice.disconnect();
                 msg.reply('Success');
                 break;
             case 'np':
