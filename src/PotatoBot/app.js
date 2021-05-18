@@ -442,26 +442,18 @@ class Euchre {
     sendCards(cards, message) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = genericEmbedResponse(`^ ${message}`);
-            if (typeof cards == "string") {
-                response.attachFiles([{
-                        attachment: cards,
-                        name: `${message}.png`
-                    }]);
+            let filePaths = [];
+            for (let i = 0; i < cards.length; i++) {
+                filePaths.push(`${root}/assets/img/cards/${cards[i].code}.png`);
             }
-            else {
-                let filePaths = [];
-                for (let i = 0; i < cards.length; i++) {
-                    filePaths.push(`${root}/assets/img/cards/${cards[i].code}.png`);
-                }
-                const image = yield mergeImages(filePaths, {
-                    width: filePaths.length * 226,
-                    height: 314
-                });
-                response.attachFiles([{
-                        attachment: image,
-                        name: `${message}.png`
-                    }]);
-            }
+            const image = yield mergeImages(filePaths, {
+                width: filePaths.length * 226,
+                height: 314
+            });
+            response.attachFiles([{
+                    attachment: image,
+                    name: `${message}.png`
+                }]);
             for (const player of this.players) {
                 const channel = yield player.user.createDM();
                 yield channel.send(response);
@@ -512,7 +504,10 @@ function playQueue(channel, guild, vc) {
         guildStatus[guild.id].audio = true;
         const voice = yield vc.join();
         guildStatus[guild.id].voice = voice;
-        const currentSong = guildStatus[guild.id].queue.shift();
+        const currentSong = guildStatus[guild.id].queue[0];
+        if (!guildStatus[guild.id].fullLoop) {
+            guildStatus[guild.id].queue.shift();
+        }
         yield youtubedl(currentSong.webpage_url, {
             noWarnings: true,
             noCallHome: true,
@@ -527,8 +522,13 @@ function playQueue(channel, guild, vc) {
         guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`);
         guildStatus[guild.id].nowPlaying.setImage(currentSong.thumbnail);
         guildStatus[guild.id].nowPlaying.addField('URL:', currentSong.webpage_url);
-        channel.send(guildStatus[guild.id].nowPlaying);
+        if (!guildStatus[guild.id].singleLoop) {
+            channel.send(guildStatus[guild.id].nowPlaying);
+        }
         guildStatus[guild.id].dispatcher.on('finish', () => {
+            if (guildStatus[guild.id].singleLoop) {
+                guildStatus[guild.id].queue.unshift(currentSong);
+            }
             guildStatus[guild.id].dispatcher.destroy();
             guildStatus[guild.id].audio = false;
             playQueue(channel, guild, vc);
@@ -563,11 +563,8 @@ client.on('ready', () => {
         client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)]); // Reset bot status
         // Disconnects bot if it is inactive in a voice channel
         for (const guild in guildStatus) {
-            if ('audio' in guildStatus[guild] && !guildStatus[guild].audio) {
-                try {
-                    guildStatus[guild].voice.disconnect();
-                }
-                catch (_a) { }
+            if (!guildStatus[guild].audio && guildStatus[guild].voice) {
+                guildStatus[guild].voice.disconnect();
             }
         }
     }, 60000); // Defines the time between executions in ms
@@ -743,15 +740,12 @@ function play(msg) {
             geoBypass: true,
             noPlaylist: true
         });
-        if (!('queue' in guildStatus[msg.guild.id])) {
-            guildStatus[msg.guild.id].queue = [];
-        }
         function addToQueue(entry) {
             if (entry.duration < 1200) {
                 guildStatus[msg.guild.id].queue.push({
-                    'webpage_url': entry.webpage_url,
-                    'title': entry.title,
-                    'thumbnail': entry.thumbnails[0].url
+                    webpage_url: entry.webpage_url,
+                    title: entry.title,
+                    thumbnail: entry.thumbnails[0].url
                 });
                 return;
             }
@@ -764,9 +758,6 @@ function play(msg) {
         }
         else {
             addToQueue(output);
-        }
-        if (!('audio' in guildStatus[msg.guild.id])) {
-            guildStatus[msg.guild.id].audio = false;
         }
         if (!guildStatus[msg.guild.id].audio) {
             playQueue(msg.channel, msg.guild, voiceChannel);
@@ -796,28 +787,31 @@ client.on('message', msg => {
     }
     // Creates a key in GuildStatus for the current guild
     if (!(msg.guild.id in guildStatus)) {
-        guildStatus[msg.guild.id] = {};
+        guildStatus[msg.guild.id] = {
+            audio: false,
+            queue: [],
+            voice: null,
+            dispatcher: null,
+            nowPlaying: null,
+            fullLoop: false,
+            singleLoop: false
+        };
         fs.mkdirSync(`${home}/Downloads/Bot Resources/temp/${msg.guild.id}`);
     }
     if (msg.author.bot) {
         // Disconnects rythm bot if it attempts to play a rickroll
         if (msg.content.indexOf('Never Gonna Give You Up') != -1) {
-            msg.guild.members.fetch({ user: '235088799074484224' })
-                .then(rythm => {
-                function kickRythm(count) {
-                    if (rythm.voice.channelID) {
-                        rythm.voice.kick();
-                    }
-                    else if (count > 5) {
-                        return;
-                    }
-                    else {
-                        setTimeout(Rythm => kickRythm(count + 1), 2000);
-                    }
+            function kickRickroll(count) {
+                if (msg.member.voice.channelID) {
+                    msg.member.voice.kick();
+                    return;
                 }
-                kickRythm(0);
-            })
-                .catch(err => console.log(err));
+                if (count > 5) {
+                    return;
+                }
+                setTimeout(() => kickRickroll(count + 1), 2000);
+            }
+            kickRickroll(0);
         }
         return; // Message is ignored if sent from a bot
     }
@@ -873,22 +867,52 @@ client.on('message', msg => {
                 play(msg);
                 break;
             case 'pause':
-                if (!('dispatcher' in guildStatus[msg.guild.id])) {
+                if (!guildStatus[msg.guild.id].dispatcher) {
                     msg.reply('Nothing is playing!');
                     return;
                 }
-                guildStatus[msg.guild.id].dispatcher.pause();
+                guildStatus[msg.guild.id].dispatcher.pause(true);
                 msg.reply('Paused!');
                 break;
             case 'resume':
-                if (!('dispatcher' in guildStatus[msg.guild.id])) {
+                if (!guildStatus[msg.guild.id].dispatcher) {
                     msg.reply('Nothing is playing!');
                 }
                 guildStatus[msg.guild.id].dispatcher.resume();
                 msg.reply('Resumed!');
                 break;
+            case 'loop':
+                if (!guildStatus[msg.guild.id].nowPlaying) {
+                    msg.reply('Nothing is playing!');
+                    return;
+                }
+                if (guildStatus[msg.guild.id].singleLoop) {
+                    guildStatus[msg.guild.id].singleLoop = false;
+                    guildStatus[msg.guild.id].nowPlaying.setFooter('');
+                    msg.reply('No longer looping');
+                    return;
+                }
+                guildStatus[msg.guild.id].singleLoop = true;
+                guildStatus[msg.guild.id].fullLoop = false;
+                guildStatus[msg.guild.id].nowPlaying.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png');
+                msg.reply('Now looping!');
+                break;
+            case 'loopqueue':
+                if (guildStatus[msg.guild.id].queue.length < 1) {
+                    msg.reply('There is no queue to loop!');
+                    return;
+                }
+                if (guildStatus[msg.guild.id].fullLoop) {
+                    guildStatus[msg.guild.id].fullLoop = false;
+                    msg.reply('No longer looping queue');
+                    return;
+                }
+                guildStatus[msg.guild.id].fullLoop = true;
+                guildStatus[msg.guild.id].singleLoop = false;
+                msg.reply('Now looping queue!');
+                break;
             case 'queue':
-                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id].queue.length < 1) {
+                if (guildStatus[msg.guild.id].queue.length < 1) {
                     msg.reply('There is no queue!');
                     return;
                 }
@@ -896,18 +920,22 @@ client.on('message', msg => {
                 for (const [i, entry] of guildStatus[msg.guild.id].queue.entries()) {
                     queueMessage.addField(`${i + 1}.`, `${entry.title}\n${entry.webpage_url}`);
                 }
+                if (guildStatus[msg.guild.id].fullLoop) {
+                    queueMessage.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png');
+                }
                 msg.reply(queueMessage);
                 break;
             case 'clear':
-                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id].queue.length < 1) {
+                if (guildStatus[msg.guild.id].queue.length < 1) {
                     msg.reply('There is no queue!');
                     return;
                 }
                 guildStatus[msg.guild.id].queue = [];
+                guildStatus[msg.guild.id].fullLoop = false;
                 msg.reply('The queue has been cleared!');
                 break;
             case 'shuffle':
-                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id].queue.length < 1) {
+                if (guildStatus[msg.guild.id].queue.length < 1) {
                     msg.reply('There is no queue!');
                     return;
                 }
@@ -915,19 +943,19 @@ client.on('message', msg => {
                 msg.reply('The queue has been shuffled');
                 break;
             case 'stop':
-                if (!('dispatcher' in guildStatus[msg.guild.id])) {
+                if (!guildStatus[msg.guild.id].dispatcher) {
                     msg.reply('There is nothing playing!');
                     return;
                 }
-                if ('queue' in guildStatus[msg.guild.id]) {
-                    guildStatus[msg.guild.id].queue = [];
-                }
+                guildStatus[msg.guild.id].queue = [];
                 guildStatus[msg.guild.id].dispatcher.destroy();
                 guildStatus[msg.guild.id].audio = false;
+                guildStatus[msg.guild.id].singleLoop = false;
+                guildStatus[msg.guild.id].fullLoop = false;
                 msg.reply('Success');
                 break;
             case 'np':
-                if (!('nowPlaying' in guildStatus[msg.guild.id])) {
+                if (!guildStatus[msg.guild.id].nowPlaying) {
                     msg.reply('Nothing has played yet!');
                     return;
                 }

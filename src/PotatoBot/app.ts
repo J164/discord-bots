@@ -1,4 +1,4 @@
-import { Channel, Client, Guild, GuildChannel, GuildMember, Message, MessageEmbed, MessageReaction, PartialTextBasedChannelFields, Snowflake, TextBasedChannelFields, TextChannel, User, VoiceChannel } from "discord.js"
+import { Client, Guild, GuildMember, Message, MessageEmbed, MessageReaction, PartialTextBasedChannelFields, Snowflake, StreamDispatcher, User, VoiceChannel, VoiceConnection } from "discord.js"
 
 process.on('uncaughtException', err => {
     console.log(err)
@@ -12,13 +12,29 @@ const canvas = require('canvas') // Allows the manipulation of images
 const youtubedl = require('youtube-dl-exec') // Youtube video downloader
 
 const client: Client = new Discord.Client() // Represents the bot client
-const prefix: string = '&' // Bot command prefix
-const home: string = process.env.USERPROFILE // Represents path to user profile
-const root: string = '../..'
+const prefix = '&' // Bot command prefix
+const home = process.env.USERPROFILE // Represents path to user profile
+const root = '../..'
 var sysData = require(`${root}/assets/static/static.json`) // Loads system info into memory
 var userData = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`) // Loads persistant info into memory
 var users: { admin: User, swear: User } = { admin: null, swear: null } // Stores specific users
-var guildStatus: any = {} // Stores guild specific information to allow bot to act independent in different guilds
+var guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
+
+interface GuildData {
+    queue: Song[],
+    audio: boolean,
+    voice: VoiceConnection,
+    dispatcher: StreamDispatcher,
+    nowPlaying: MessageEmbed,
+    fullLoop: boolean,
+    singleLoop: boolean
+}
+
+interface Song {
+    webpage_url: string,
+    title: string,
+    thumbnail: string
+}
 
 interface Team {
     tricks: number,
@@ -452,25 +468,18 @@ class Euchre {
 
     async sendCards(cards: Card[], message: string): Promise<void> {
         const response = genericEmbedResponse(`^ ${message}`)
-        if (typeof cards == "string") {
-            response.attachFiles([{
-                attachment: cards,
-                name: `${message}.png`
-            }])
-        } else {
-            let filePaths: string[] = []
-            for (let i = 0; i < cards.length; i++) {
-                filePaths.push(`${root}/assets/img/cards/${cards[i].code}.png`)
-            }
-            const image = await mergeImages(filePaths, {
-                width: filePaths.length * 226,
-                height: 314
-            })
-            response.attachFiles([{
-                attachment: image,
-                name: `${message}.png`
-            }])
+        let filePaths: string[] = []
+        for (let i = 0; i < cards.length; i++) {
+            filePaths.push(`${root}/assets/img/cards/${cards[i].code}.png`)
         }
+        const image = await mergeImages(filePaths, {
+            width: filePaths.length * 226,
+            height: 314
+        })
+        response.attachFiles([{
+            attachment: image,
+            name: `${message}.png`
+        }])
         for (const player of this.players) {
             const channel = await player.user.createDM()
             await channel.send(response)
@@ -520,7 +529,10 @@ async function playQueue(channel: PartialTextBasedChannelFields, guild: Guild, v
     guildStatus[guild.id].audio = true
     const voice = await vc.join()
     guildStatus[guild.id].voice = voice
-    const currentSong = guildStatus[guild.id].queue.shift()
+    const currentSong = guildStatus[guild.id].queue[0]
+    if (!guildStatus[guild.id].fullLoop) {
+        guildStatus[guild.id].queue.shift()
+    }
     await youtubedl(currentSong.webpage_url, {
         noWarnings: true,
         noCallHome: true,
@@ -535,8 +547,13 @@ async function playQueue(channel: PartialTextBasedChannelFields, guild: Guild, v
     guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`)
     guildStatus[guild.id].nowPlaying.setImage(currentSong.thumbnail)
     guildStatus[guild.id].nowPlaying.addField('URL:', currentSong.webpage_url)
-    channel.send(guildStatus[guild.id].nowPlaying)
+    if (!guildStatus[guild.id].singleLoop) {
+        channel.send(guildStatus[guild.id].nowPlaying)
+    }
     guildStatus[guild.id].dispatcher.on('finish', () => {
+        if (guildStatus[guild.id].singleLoop) {
+            guildStatus[guild.id].queue.unshift(currentSong)
+        }
         guildStatus[guild.id].dispatcher.destroy()
         guildStatus[guild.id].audio = false
         playQueue(channel, guild, vc)
@@ -576,10 +593,8 @@ client.on('ready', () => {
 
         // Disconnects bot if it is inactive in a voice channel
         for (const guild in guildStatus) {
-            if ('audio' in guildStatus[guild] && !guildStatus[guild].audio) {
-                try {
-                    guildStatus[guild].voice.disconnect()
-                } catch { }
+            if (!guildStatus[guild].audio && guildStatus[guild].voice) {
+                guildStatus[guild].voice.disconnect()
             }
         }
     }, 60000) // Defines the time between executions in ms
@@ -748,15 +763,12 @@ async function play(msg: Message): Promise<void> {
         geoBypass: true,
         noPlaylist: true
     })
-    if (!('queue' in guildStatus[msg.guild.id])) {
-        guildStatus[msg.guild.id].queue = []
-    }
     function addToQueue(entry: { duration: number, webpage_url: string, title: string, thumbnails: { url: string }[] }) {
         if (entry.duration < 1200) {
             guildStatus[msg.guild.id].queue.push({
-                'webpage_url': entry.webpage_url,
-                'title': entry.title,
-                'thumbnail': entry.thumbnails[0].url
+                webpage_url: entry.webpage_url,
+                title: entry.title,
+                thumbnail: entry.thumbnails[0].url
             })
             return
         }
@@ -768,9 +780,6 @@ async function play(msg: Message): Promise<void> {
         }
     } else {
         addToQueue(output)
-    }
-    if (!('audio' in guildStatus[msg.guild.id])) {
-        guildStatus[msg.guild.id].audio = false
     }
     if (!guildStatus[msg.guild.id].audio) {
         playQueue(msg.channel, msg.guild, voiceChannel)
@@ -801,7 +810,15 @@ client.on('message', msg => {
 
     // Creates a key in GuildStatus for the current guild
     if (!(msg.guild.id in guildStatus)) {
-        guildStatus[msg.guild.id] = {}
+        guildStatus[msg.guild.id] = {
+            audio: false,
+            queue: [],
+            voice: null,
+            dispatcher: null,
+            nowPlaying: null,
+            fullLoop: false,
+            singleLoop: false
+        }
         fs.mkdirSync(`${home}/Downloads/Bot Resources/temp/${msg.guild.id}`)
     }
 
@@ -809,20 +826,17 @@ client.on('message', msg => {
 
         // Disconnects rythm bot if it attempts to play a rickroll
         if (msg.content.indexOf('Never Gonna Give You Up') != -1) {
-            msg.guild.members.fetch({ user: '235088799074484224' })
-                .then(rythm => {
-                    function kickRythm(count: number): void {
-                        if (rythm.voice.channelID) {
-                            rythm.voice.kick()
-                        } else if (count > 5) {
-                            return
-                        } else {
-                            setTimeout(Rythm => kickRythm(count + 1), 2000)
-                        }
-                    }
-                    kickRythm(0)
-                })
-                .catch(err => console.log(err))
+            function kickRickroll(count: number): void {
+                if (msg.member.voice.channelID) {
+                    msg.member.voice.kick()
+                    return
+                }
+                if (count > 5) {
+                    return
+                }
+                setTimeout(() => kickRickroll(count + 1), 2000)
+            }
+            kickRickroll(0)
         }
         return // Message is ignored if sent from a bot
     }
@@ -881,22 +895,52 @@ client.on('message', msg => {
                 play(msg)
                 break
             case 'pause':
-                if (!('dispatcher' in guildStatus[msg.guild.id])) {
+                if (!guildStatus[msg.guild.id].dispatcher) {
                     msg.reply('Nothing is playing!')
                     return
                 }
-                guildStatus[msg.guild.id].dispatcher.pause()
+                guildStatus[msg.guild.id].dispatcher.pause(true)
                 msg.reply('Paused!')
                 break
             case 'resume':
-                if (!('dispatcher' in guildStatus[msg.guild.id])) {
+                if (!guildStatus[msg.guild.id].dispatcher) {
                     msg.reply('Nothing is playing!')
                 }
                 guildStatus[msg.guild.id].dispatcher.resume()
                 msg.reply('Resumed!')
                 break
+            case 'loop':
+                if (!guildStatus[msg.guild.id].nowPlaying) {
+                    msg.reply('Nothing is playing!')
+                    return
+                }
+                if (guildStatus[msg.guild.id].singleLoop) {
+                    guildStatus[msg.guild.id].singleLoop = false
+                    guildStatus[msg.guild.id].nowPlaying.setFooter('')
+                    msg.reply('No longer looping')
+                    return
+                }
+                guildStatus[msg.guild.id].singleLoop = true
+                guildStatus[msg.guild.id].fullLoop = false
+                guildStatus[msg.guild.id].nowPlaying.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png')
+                msg.reply('Now looping!')
+                break
+            case 'loopqueue':
+                if (guildStatus[msg.guild.id].queue.length < 1) {
+                    msg.reply('There is no queue to loop!')
+                    return
+                }
+                if (guildStatus[msg.guild.id].fullLoop) {
+                    guildStatus[msg.guild.id].fullLoop = false
+                    msg.reply('No longer looping queue')
+                    return
+                }
+                guildStatus[msg.guild.id].fullLoop = true
+                guildStatus[msg.guild.id].singleLoop = false
+                msg.reply('Now looping queue!')
+                break
             case 'queue':
-                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id].queue.length < 1) {
+                if (guildStatus[msg.guild.id].queue.length < 1) {
                     msg.reply('There is no queue!')
                     return
                 }
@@ -904,18 +948,22 @@ client.on('message', msg => {
                 for (const [i, entry] of guildStatus[msg.guild.id].queue.entries()) {
                     queueMessage.addField(`${i + 1}.`, `${entry.title}\n${entry.webpage_url}`)
                 }
+                if (guildStatus[msg.guild.id].fullLoop) {
+                    queueMessage.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png')
+                }
                 msg.reply(queueMessage)
                 break
             case 'clear':
-                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id].queue.length < 1) {
+                if (guildStatus[msg.guild.id].queue.length < 1) {
                     msg.reply('There is no queue!')
                     return
                 }
                 guildStatus[msg.guild.id].queue = []
+                guildStatus[msg.guild.id].fullLoop = false
                 msg.reply('The queue has been cleared!')
                 break
             case 'shuffle':
-                if (!('queue' in guildStatus[msg.guild.id]) || guildStatus[msg.guild.id].queue.length < 1) {
+                if (guildStatus[msg.guild.id].queue.length < 1) {
                     msg.reply('There is no queue!')
                     return
                 }
@@ -923,19 +971,19 @@ client.on('message', msg => {
                 msg.reply('The queue has been shuffled')
                 break
             case 'stop':
-                if (!('dispatcher' in guildStatus[msg.guild.id])) {
+                if (!guildStatus[msg.guild.id].dispatcher) {
                     msg.reply('There is nothing playing!')
                     return
                 }
-                if ('queue' in guildStatus[msg.guild.id]) {
-                    guildStatus[msg.guild.id].queue = []
-                }
+                guildStatus[msg.guild.id].queue = []
                 guildStatus[msg.guild.id].dispatcher.destroy()
                 guildStatus[msg.guild.id].audio = false
+                guildStatus[msg.guild.id].singleLoop = false
+                guildStatus[msg.guild.id].fullLoop = false
                 msg.reply('Success')
                 break
             case 'np':
-                if (!('nowPlaying' in guildStatus[msg.guild.id])) {
+                if (!guildStatus[msg.guild.id].nowPlaying) {
                     msg.reply('Nothing has played yet!')
                     return
                 }
