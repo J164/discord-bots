@@ -542,6 +542,7 @@ function playQueue(channel, guild, vc) {
                 guildStatus[guild.id].queue.unshift(currentSong);
             }
             guildStatus[guild.id].dispatcher.destroy();
+            guildStatus[guild.id].dispatcher = null;
             guildStatus[guild.id].audio = false;
             playQueue(channel, guild, vc);
         });
@@ -1009,6 +1010,7 @@ client.on('message', msg => {
                     return;
                 }
                 guildStatus[msg.guild.id].dispatcher.destroy();
+                guildStatus[msg.guild.id].dispatcher = null;
                 guildStatus[msg.guild.id].singleLoop = false;
                 playQueue(msg.channel, msg.guild, guildStatus[msg.guild.id].voice.channel);
                 msg.reply('Skipped!');
@@ -1028,6 +1030,7 @@ client.on('message', msg => {
                 }
                 guildStatus[msg.guild.id].queue = [];
                 guildStatus[msg.guild.id].dispatcher.destroy();
+                guildStatus[msg.guild.id].dispatcher = null;
                 guildStatus[msg.guild.id].audio = false;
                 guildStatus[msg.guild.id].singleLoop = false;
                 guildStatus[msg.guild.id].fullLoop = false;
