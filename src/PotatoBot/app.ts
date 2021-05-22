@@ -11,7 +11,7 @@ const axios = require('axios') // Used to make http requests
 const canvas = require('canvas') // Allows the manipulation of images
 const youtubedl = require('youtube-dl-exec') // Youtube video downloader
 
-const client: Client = new Discord.Client() // Represents the bot client
+const client: Client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } }) // Represents the bot client
 const prefix = '&' // Bot command prefix
 const home = process.env.USERPROFILE // Represents path to user profile
 const root = '../..'
