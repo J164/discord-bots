@@ -878,8 +878,8 @@ async function displayQueue(msg: Message): Promise<void> {
             await message.react(emoji)
         }
         function filter(reaction: MessageReaction): boolean { return reaction.client === client }
-        let reaction = await message.awaitReactions(filter, { max: 1 })
-        let reactionResult = reaction.first()
+        const reaction = await message.awaitReactions(filter, { max: 1 })
+        const reactionResult = reaction.first()
         switch (reactionResult.emoji.name) {
             case '\u2B05\uFE0F':
                 await message.delete()

@@ -1,3 +1,5 @@
+import { Client, GuildMember, Message, MessageReaction, PartialTextBasedChannelFields, Snowflake } from "discord.js"
+
 process.on('uncaughtException', err => {
     console.log(err)
     setInterval(function () { }, 1000)
@@ -7,7 +9,7 @@ const Discord = require('discord.js')
 const fs = require('fs')
 const axios = require('axios')
 
-const client = new Discord.Client()
+const client: Client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS'] } })
 const prefix = '$'
 const home = 'D:/Bot Resources'
 const root = '../..'
@@ -15,24 +17,35 @@ var sysData = require(`${root}/assets/static/static.json`)
 var userData = require(`${home}/sys_files/bots.json`)
 var guildStatus = {}
 
+interface DeckJson {
+    image: string,
+    name: string,
+    url: string,
+    apiUrl: string
+}
+
+interface PlayerInfo {
+    poison: number,
+    playerName: string,
+    lifeTotal: number,
+    isAlive: boolean
+}
+
 class Deck {
 
-    image
-    name
-    url
-    apiUrl
-    authorId
+    image: string
+    name: string
+    url: string
+    apiUrl: string
 
-    fill(json) {
+    fill(json: DeckJson) {
         this.image = json.image
         this.name = json.name
         this.url = json.url
         this.apiUrl = json.apiUrl
-        this.authorId = json.authorId
     }
 
-    async getInfo(url, authorId) {
-        this.authorId = authorId
+    async getInfo(url: string) {
         this.url = url
         let authorID
         let deckID
@@ -96,13 +109,13 @@ class MagicGame {
     channel
     numAlive
 
-    constructor(playerList, channel) {
+    constructor(playerList: GuildMember[], channel: PartialTextBasedChannelFields) {
         this.channel = channel
         this.numAlive = playerList.length
         this.playerInfo = {}
         for (const player of playerList) {
             this.playerInfo[player.id] = {
-                playerName: player.username,
+                playerName: player.user.username,
                 lifeTotal: 20,
                 poison: 0,
                 isAlive: true
@@ -110,25 +123,25 @@ class MagicGame {
         }
     }
 
-    changeLife(player, amount) {
-        this.playerInfo[player.id].lifeTotal += amount
+    changeLife(player: Snowflake, amount:number) {
+        this.playerInfo[player].lifeTotal += amount
         if (this.checkStatus(player)) {
             this.printStandings()
             return
         }
     }
 
-    addPoison(player, amount) {
-        this.playerInfo[player.id].poison += amount
+    addPoison(player: Snowflake, amount: number) {
+        this.playerInfo[player].poison += amount
         if (this.checkStatus(player)) {
             this.printStandings()
             return
         }
     }
 
-    checkStatus(player) {
-        if (this.playerInfo[player.id].lifeTotal < 1 || this.playerInfo[player.id].poison >= 10) {
-            this.playerInfo[player.id].isAlive = false
+    checkStatus(player: Snowflake) {
+        if (this.playerInfo[player].lifeTotal < 1 || this.playerInfo[player].poison >= 10) {
+            this.playerInfo[player].isAlive = false
             this.numAlive--
             if (this.numAlive < 2) {
                 this.finishGame()
@@ -163,16 +176,16 @@ class MagicGame {
 }
 
 class CommanderGame extends MagicGame {
-    constructor(playerList, channel, commanderList) {
+    constructor(playerList: GuildMember[], channel: PartialTextBasedChannelFields, commanderList: string[]) {
         super(playerList, channel)
         //Make changes for commander (life total, times commander cast, commander damage)
     }
 
-    changeLife(player, amount, commander = null) {
+    changeLife(player: Snowflake, amount: number, commander: string = null) {
 
     }
 
-    checkStatus(player) {
+    checkStatus(player: Snowflake) {
         return true
         //returns true if they are alive
     }
@@ -181,33 +194,33 @@ class CommanderGame extends MagicGame {
 
     }
 
-    addCast(commander) {
+    addCast(commander: string) {
 
     }
 
-    getCasts(commander) {
+    getCasts(commander: string) {
 
     }
 }
 
-function refreshData(location) {
+function refreshData(location: string) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' })
     return JSON.parse(jsonString)
 }
 
-function genericEmbedResponse(title) {
+function genericEmbedResponse(title: string) {
     const embedVar = new Discord.MessageEmbed()
     embedVar.setTitle(title)
     embedVar.setColor(0xffff00)
     return embedVar
 }
 
-async function makeGetRequest(path) {
+async function makeGetRequest(path: string) {
     const response = await axios.get(path)
     return response.data
 }
 
-function findKey(object, property) {
+function findKey(object: any, property: string): any {
     let result
     if (object instanceof Array) {
         for (let i = 0; i < object.length; i++) {
@@ -244,13 +257,13 @@ client.on('ready', () => {
     }, 60000)
 })
 
-async function add(msg) {
+async function add(msg: Message) {
     if (msg.content.split(" ").length < 2) {
         msg.reply('Please enter a deckstats URL!')
         return
     }
     const deck = new Deck()
-    if (await deck.getInfo(msg.content.split(" ")[1], msg.author.id)) {
+    if (await deck.getInfo(msg.content.split(" ")[1])) {
         userData = refreshData(`${home}/sys_files/bots.json`)
         userData.decks.push(deck)
         const jsonString = JSON.stringify(userData)
@@ -261,7 +274,7 @@ async function add(msg) {
     msg.reply('Something went wrong... (Make sure you are using a valid deck url from deckstats.net and that the deck is not a duplicate)')
 }
 
-async function deckPreview(i, msg) {
+async function deckPreview(i: number, msg: Message) {
     const deck = new Deck()
     deck.fill(userData.decks[i])
     const message = await msg.channel.send(deck.getPreview())
@@ -275,10 +288,10 @@ async function deckPreview(i, msg) {
     for (const emoji of emojiList) {
         await message.react(emoji)
     }
-    const filter = reaction => reaction.client === client
-    let reaction = await message.awaitReactions(filter, { max: 1 })
-    reaction = reaction.first()
-    switch (reaction.emoji.name) {
+    function filter(reaction: MessageReaction): boolean { return reaction.client === client }
+    const reaction = await message.awaitReactions(filter, { max: 1 })
+    const reactionResult = reaction.first()
+    switch (reactionResult.emoji.name) {
         case '\uD83D\uDCC4':
             const deckList = await deck.getList()
             msg.reply(deckList)

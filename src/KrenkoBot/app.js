@@ -1,3 +1,4 @@
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -7,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+Object.defineProperty(exports, "__esModule", { value: true });
 process.on('uncaughtException', err => {
     console.log(err);
     setInterval(function () { }, 1000);
@@ -14,7 +16,7 @@ process.on('uncaughtException', err => {
 const Discord = require('discord.js');
 const fs = require('fs');
 const axios = require('axios');
-const client = new Discord.Client();
+const client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS'] } });
 const prefix = '$';
 const home = 'D:/Bot Resources';
 const root = '../..';
@@ -27,11 +29,9 @@ class Deck {
         this.name = json.name;
         this.url = json.url;
         this.apiUrl = json.apiUrl;
-        this.authorId = json.authorId;
     }
-    getInfo(url, authorId) {
+    getInfo(url) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.authorId = authorId;
             this.url = url;
             let authorID;
             let deckID;
@@ -98,7 +98,7 @@ class MagicGame {
         this.playerInfo = {};
         for (const player of playerList) {
             this.playerInfo[player.id] = {
-                playerName: player.username,
+                playerName: player.user.username,
                 lifeTotal: 20,
                 poison: 0,
                 isAlive: true
@@ -106,22 +106,22 @@ class MagicGame {
         }
     }
     changeLife(player, amount) {
-        this.playerInfo[player.id].lifeTotal += amount;
+        this.playerInfo[player].lifeTotal += amount;
         if (this.checkStatus(player)) {
             this.printStandings();
             return;
         }
     }
     addPoison(player, amount) {
-        this.playerInfo[player.id].poison += amount;
+        this.playerInfo[player].poison += amount;
         if (this.checkStatus(player)) {
             this.printStandings();
             return;
         }
     }
     checkStatus(player) {
-        if (this.playerInfo[player.id].lifeTotal < 1 || this.playerInfo[player.id].poison >= 10) {
-            this.playerInfo[player.id].isAlive = false;
+        if (this.playerInfo[player].lifeTotal < 1 || this.playerInfo[player].poison >= 10) {
+            this.playerInfo[player].isAlive = false;
             this.numAlive--;
             if (this.numAlive < 2) {
                 this.finishGame();
@@ -229,7 +229,7 @@ function add(msg) {
             return;
         }
         const deck = new Deck();
-        if (yield deck.getInfo(msg.content.split(" ")[1], msg.author.id)) {
+        if (yield deck.getInfo(msg.content.split(" ")[1])) {
             userData = refreshData(`${home}/sys_files/bots.json`);
             userData.decks.push(deck);
             const jsonString = JSON.stringify(userData);
@@ -255,10 +255,10 @@ function deckPreview(i, msg) {
         for (const emoji of emojiList) {
             yield message.react(emoji);
         }
-        const filter = reaction => reaction.client === client;
-        let reaction = yield message.awaitReactions(filter, { max: 1 });
-        reaction = reaction.first();
-        switch (reaction.emoji.name) {
+        function filter(reaction) { return reaction.client === client; }
+        const reaction = yield message.awaitReactions(filter, { max: 1 });
+        const reactionResult = reaction.first();
+        switch (reactionResult.emoji.name) {
             case '\uD83D\uDCC4':
                 const deckList = yield deck.getList();
                 msg.reply(deckList);

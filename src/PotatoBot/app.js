@@ -860,8 +860,8 @@ function displayQueue(msg) {
                     yield message.react(emoji);
                 }
                 function filter(reaction) { return reaction.client === client; }
-                let reaction = yield message.awaitReactions(filter, { max: 1 });
-                let reactionResult = reaction.first();
+                const reaction = yield message.awaitReactions(filter, { max: 1 });
+                const reactionResult = reaction.first();
                 switch (reactionResult.emoji.name) {
                     case '\u2B05\uFE0F':
                         yield message.delete();
