@@ -48,15 +48,18 @@ function play(msg) {
             msg.reply('This command can only be used while in a voice channel!');
             return;
         }
+        let loop = false;
         try {
             if (parseInt(msg.content.split(" ")[1]) <= userData.swearSongs.length && parseInt(msg.content.split(" ")[1]) > 0) {
                 songNum = parseInt(msg.content.split(" ")[1]) - 1;
             }
             else {
+                loop = true;
                 songNum = Math.floor(Math.random() * userData.swearSongs.length);
             }
         }
         catch (_a) {
+            loop = true;
             songNum = Math.floor(Math.random() * userData.swearSongs.length);
         }
         if (!(msg.guild.id in guildStatus)) {
@@ -75,6 +78,9 @@ function play(msg) {
         guildStatus[msg.guild.id].dispatcher.on('finish', () => {
             guildStatus[msg.guild.id].dispatcher.destroy();
             guildStatus[msg.guild.id].audio = false;
+            if (loop) {
+                play(msg);
+            }
         });
     });
 }
