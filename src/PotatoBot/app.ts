@@ -812,7 +812,7 @@ async function displayQueue(msg: Message): Promise<void> {
         msg.reply('There is no queue!')
         return
     }
-    const queueArray = []
+    const queueArray: Song[][] = []
     for (let r = 0; r < Math.ceil(guildStatus[msg.guild.id].queue.length / 25); r++) {
         queueArray.push([])
         for (let i = 0; i < 25; i++) {
@@ -822,7 +822,7 @@ async function displayQueue(msg: Message): Promise<void> {
             queueArray[r].push(guildStatus[msg.guild.id].queue[(r * 25) + i])
         }
     }
-    async function sendQueue(index) {
+    async function sendQueue(index: number): Promise<null> {
         const queueMessage = genericEmbedResponse('Queue')
         for (const [i, entry] of queueArray[index].entries()) {
             queueMessage.addField(`${i + 1}.`, `${entry.title}\n${entry.webpage_url}`)
