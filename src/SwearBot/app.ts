@@ -8,10 +8,10 @@ const fs = require('fs')
 
 const client = new Discord.Client()
 const prefix = '?'
-const home = process.env.USERPROFILE
+const home = 'D:/Bot Resources'
 const root = '../..'
 var sysData = require(`${root}/assets/static/static.json`)
-var userData = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`)
+var userData = require(`${home}/sys_files/bots.json`)
 var guildStatus = {}
 
 function refreshData(location) {
@@ -23,7 +23,7 @@ client.on('ready', () => {
     console.log('We have logged in as ' + client.user.tag)
     client.user.setActivity(sysData.swearStatus[Math.floor(Math.random() * sysData.swearStatus.length)])
     setInterval(function () {
-        userData = refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`)
+        userData = refreshData(`${home}/sys_files/bots.json`)
         client.user.setActivity(sysData.swearStatus[Math.floor(Math.random() * sysData.swearStatus.length)])
         for (const key in guildStatus) {
             if ('audio' in guildStatus[key] && !guildStatus[key].audio) {
@@ -65,7 +65,7 @@ async function play(msg) {
             guildStatus[msg.guild.id].dispatcher.destroy()
         } catch { }
     }
-    guildStatus[msg.guild.id].dispatcher = voice.play(`${home}/Downloads/Bot Resources/music_files/swear_songs/${userData.swearSongs[songNum]}`)
+    guildStatus[msg.guild.id].dispatcher = voice.play(`${home}/music_files/swear_songs/${userData.swearSongs[songNum]}`)
     guildStatus[msg.guild.id].dispatcher.on('finish', () => {
         guildStatus[msg.guild.id].dispatcher.destroy()
         guildStatus[msg.guild.id].audio = false

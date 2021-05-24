@@ -16,10 +16,10 @@ const fs = require('fs');
 const axios = require('axios');
 const client = new Discord.Client();
 const prefix = '$';
-const home = process.env.USERPROFILE;
+const home = 'D:/Bot Resources';
 const root = '../..';
 var sysData = require(`${root}/assets/static/static.json`);
-var userData = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
+var userData = require(`${home}/sys_files/bots.json`);
 var guildStatus = {};
 class Deck {
     fill(json) {
@@ -218,7 +218,7 @@ client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`);
     client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)]);
     setInterval(function () {
-        userData = refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
+        userData = refreshData(`${home}/sys_files/bots.json`);
         client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)]);
     }, 60000);
 });
@@ -230,10 +230,10 @@ function add(msg) {
         }
         const deck = new Deck();
         if (yield deck.getInfo(msg.content.split(" ")[1], msg.author.id)) {
-            userData = refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
+            userData = refreshData(`${home}/sys_files/bots.json`);
             userData.decks.push(deck);
             const jsonString = JSON.stringify(userData);
-            fs.writeFileSync(`${home}/Downloads/Bot Resources/sys_files/bots.json`, jsonString);
+            fs.writeFileSync(`${home}/sys_files/bots.json`, jsonString);
             msg.reply('Success!');
             return;
         }

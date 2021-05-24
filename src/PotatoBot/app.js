@@ -20,10 +20,10 @@ const canvas = require('canvas'); // Allows the manipulation of images
 const youtubedl = require('youtube-dl-exec'); // Youtube video downloader
 const client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } }); // Represents the bot client
 const prefix = '&'; // Bot command prefix
-const home = process.env.USERPROFILE; // Represents path to user profile
+const home = 'D:/Bot Resources'; // Represents path to resources
 const root = '../..';
 var sysData = require(`${root}/assets/static/static.json`); // Loads system info into memory
-var userData = require(`${home}/Downloads/Bot Resources/sys_files/bots.json`); // Loads persistant info into memory
+var userData = require(`${home}/sys_files/bots.json`); // Loads persistant info into memory
 var users = { admin: null, swear: null }; // Stores specific users
 var guildStatus = {}; // Stores guild specific information to allow bot to act independent in different guilds
 class Euchre {
@@ -503,7 +503,8 @@ function playQueue(channel, guild, vc) {
         try {
             voice = yield vc.join();
         }
-        catch (_a) {
+        catch (err) {
+            console.log(err);
             channel.send('Something went wrong!');
             guildStatus[guild.id].audio = false;
             guildStatus[guild.id].queue = [];
@@ -511,25 +512,26 @@ function playQueue(channel, guild, vc) {
         }
         guildStatus[guild.id].voice = voice;
         const currentSong = guildStatus[guild.id].queue.shift();
-        let options = {
-            noWarnings: true,
-            noCallHome: true,
-            noCheckCertificate: true,
-            preferFreeFormats: true,
-            ignoreErrors: true,
-            geoBypass: true,
-            printJson: true,
-            dumpJson: null,
-            format: 'bestaudio',
-            output: `${home}/Downloads/Bot Resources/temp/${guild.id}/%(id)s.mp3`
-        };
-        if (fs.existsSync(`${home}/Downloads/Bot Resources/temp/${guild.id}/${currentSong.id}.mp3`)) {
-            options['dumpJson'] = true;
+        if (!fs.existsSync(`${home}/temp/${guild.id}/${currentSong.id}.mp3`)) {
+            const output = yield youtubedl(currentSong.webpage_url, {
+                noWarnings: true,
+                noCallHome: true,
+                noCheckCertificate: true,
+                preferFreeFormats: true,
+                ignoreErrors: true,
+                geoBypass: true,
+                printJson: true,
+                dumpJson: null,
+                format: 'bestaudio',
+                output: `${home}/temp/${guild.id}/%(id)s.mp3`
+            }).catch();
+            if (output) {
+                currentSong.thumbnail = output.thumbnails[0].url;
+            }
         }
-        const songInfo = yield youtubedl(currentSong.webpage_url, options);
-        guildStatus[guild.id].dispatcher = voice.play(`${home}/Downloads/Bot Resources/temp/${guild.id}/${currentSong.id}.mp3`);
+        guildStatus[guild.id].dispatcher = voice.play(`${home}/temp/${guild.id}/${currentSong.id}.mp3`);
         guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`);
-        guildStatus[guild.id].nowPlaying.setImage(songInfo.thumbnails[0].url);
+        guildStatus[guild.id].nowPlaying.setImage(currentSong.thumbnail);
         guildStatus[guild.id].nowPlaying.addField('URL:', currentSong.webpage_url);
         if (!guildStatus[guild.id].singleLoop) {
             channel.send(guildStatus[guild.id].nowPlaying);
@@ -556,14 +558,42 @@ function getUser(guildId, userId) {
         return user;
     });
 }
+function download(guild) {
+    return __awaiter(this, void 0, void 0, function* () {
+        while (guildStatus[guild.id].downloadQueue.length > 0) {
+            guildStatus[guild.id].downloading = true;
+            const currentItem = guildStatus[guild.id].downloadQueue.shift();
+            try {
+                const output = yield youtubedl(currentItem, {
+                    noWarnings: true,
+                    noCallHome: true,
+                    noCheckCertificate: true,
+                    preferFreeFormats: true,
+                    ignoreErrors: true,
+                    geoBypass: true,
+                    printJson: true,
+                    format: 'bestaudio',
+                    output: `${home}/temp/${guild.id}/%(id)s.mp3`
+                });
+                for (let i = 0; i < guildStatus[guild.id].queue.length; i++) {
+                    if (guildStatus[guild.id].queue[i].title == output.title) {
+                        guildStatus[guild.id].queue[i].thumbnail = output.thumbnails[0].url;
+                    }
+                }
+            }
+            catch (_a) { }
+        }
+        guildStatus[guild.id].downloading = false;
+    });
+}
 // This block executes when the bot is launched
 client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`);
     // Removes the temp folder if it exists
-    if (fs.existsSync(`${home}/Downloads/Bot Resources/temp`)) {
-        fs.rmdirSync(`${home}/Downloads/Bot Resources/temp`, { recursive: true });
+    if (fs.existsSync(`${home}/temp`)) {
+        fs.rmdirSync(`${home}/temp`, { recursive: true });
     }
-    fs.mkdirSync(`${home}/Downloads/Bot Resources/temp`); // Creates a temp folder for this session
+    fs.mkdirSync(`${home}/temp`); // Creates a temp folder for this session
     client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)]); // Sets bot status
     // Fetches any necessary user objects
     getUser('619975185029922817', '609826125501169723')
@@ -572,7 +602,7 @@ client.on('ready', () => {
         .then(swear => { users.swear = swear.user; });
     // Defines tasks that must be executed periodically
     setInterval(function () {
-        userData = refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`); // Refresh user data variable
+        userData = refreshData(`${home}/sys_files/bots.json`); // Refresh user data variable
         client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)]); // Reset bot status
         // Disconnects bot if it is inactive in a voice channel
         for (const guild in guildStatus) {
@@ -666,16 +696,16 @@ function newSwearSong(msg) {
             noCheckCertificate: true,
             preferFreeFormats: true,
             format: 'bestaudio',
-            output: `${home}/Downloads/Bot Resources/music_files/swear_songs/song${userData.swearSongs.length + 1}.mp3`
+            output: `${home}/music_files/swear_songs/song${userData.swearSongs.length + 1}.mp3`
         });
-        userData = refreshData(`${home}/Downloads/Bot Resources/sys_files/bots.json`);
+        userData = refreshData(`${home}/sys_files/bots.json`);
         userData.swearSongs.push(`song${(userData.swearSongs.length + 1)}.mp3`);
         const jsonString = JSON.stringify(userData);
-        fs.writeFileSync(`${home}/Downloads/Bot Resources/sys_files/bots.json`, jsonString);
+        fs.writeFileSync(`${home}/sys_files/bots.json`, jsonString);
         msg.reply('Success!');
     });
 }
-function download(msg) {
+function downloadVideo(msg) {
     return __awaiter(this, void 0, void 0, function* () {
         if (msg.author != users.admin) {
             msg.reply('You don\'t have permission to use this command!');
@@ -691,7 +721,7 @@ function download(msg) {
             noCheckCertificate: true,
             preferFreeFormats: true,
             format: 'bestaudio',
-            output: `${home}/Downloads/Bot Resources/New Downloads/%(title)s.%(ext)s`,
+            output: `${home}/New Downloads/%(title)s.%(ext)s`,
             ignoreErrors: true
         };
         if (msg.content.split(" ").length < 3 || msg.content.split(" ")[2][0].toLowerCase() != 'a') {
@@ -766,8 +796,13 @@ function play(msg) {
                 guildStatus[msg.guild.id].queue.push({
                     webpage_url: webpage_url,
                     title: title,
-                    id: id
+                    id: id,
+                    thumbnail: null
                 });
+                guildStatus[msg.guild.id].downloadQueue.push(webpage_url);
+                if (!guildStatus[msg.guild.id].downloading) {
+                    download(msg.guild);
+                }
                 return;
             }
             msg.reply(`${title} is longer than 20 minutes and cannot be added to queue`);
@@ -871,13 +906,15 @@ client.on('message', msg => {
         guildStatus[msg.guild.id] = {
             audio: false,
             queue: [],
+            downloadQueue: [],
             voice: null,
+            downloading: false,
             dispatcher: null,
             nowPlaying: null,
             fullLoop: false,
             singleLoop: false
         };
-        fs.mkdirSync(`${home}/Downloads/Bot Resources/temp/${msg.guild.id}`);
+        fs.mkdirSync(`${home}/temp/${msg.guild.id}`);
     }
     if (msg.author.bot) {
         // Disconnects rythm bot if it attempts to play a rickroll
@@ -942,7 +979,7 @@ client.on('message', msg => {
                 newSwearSong(msg);
                 break;
             case 'download':
-                download(msg);
+                downloadVideo(msg);
                 break;
             case 'play':
                 play(msg);
@@ -1015,7 +1052,7 @@ client.on('message', msg => {
                 playQueue(msg.channel, msg.guild, guildStatus[msg.guild.id].voice.channel);
                 msg.reply('Skipped!');
                 break;
-            case 'shuffle':
+            case 'shuffle': //change to shuffle option when adding to queue (async downloading is easier)
                 if (guildStatus[msg.guild.id].queue.length < 1) {
                     msg.reply('There is no queue!');
                     return;
@@ -1029,6 +1066,7 @@ client.on('message', msg => {
                     return;
                 }
                 guildStatus[msg.guild.id].queue = [];
+                guildStatus[msg.guild.id].downloadQueue = [];
                 guildStatus[msg.guild.id].dispatcher.destroy();
                 guildStatus[msg.guild.id].dispatcher = null;
                 guildStatus[msg.guild.id].audio = false;
@@ -1055,7 +1093,7 @@ client.on('message', msg => {
                 msg.reply(playlists);
                 break;
             case 'quote':
-                const quotes = fs.readFileSync(`${home}/Downloads/Bot Resources/sys_files/quotes.txt`, 'utf8').split("}");
+                const quotes = fs.readFileSync(`${home}/sys_files/quotes.txt`, 'utf8').split("}");
                 msg.channel.send(quotes[Math.floor(Math.random() * quotes.length)], { 'tts': true });
                 break;
             case 'euchre':
