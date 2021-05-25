@@ -85,12 +85,12 @@ client.on('message', msg => {
     }
 
     if (!msg.content.startsWith(prefix)) {
-        if (msg.content.indexOf('swear') != -1) {
+        if (msg.content.indexOf('swear') == 0 || msg.content.indexOf(' swear') != -1) {
             msg.reply(sysData.blacklist.swears[Math.floor(Math.random() * sysData.blacklist.swears.length)])
             return
         }
         for (const swear of sysData.blacklist.swears) {
-            if (msg.content.indexOf(swear) != -1) {
+            if (msg.content.indexOf(swear) == 0 || msg.content.indexOf(` ${swear}`)) {
                 msg.reply('Good job swearing! Heck yeah!')
                 return
             }

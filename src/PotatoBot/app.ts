@@ -548,7 +548,6 @@ async function playQueue(channel: PartialTextBasedChannelFields, guild: Guild, v
             ignoreErrors: true,
             geoBypass: true,
             printJson: true,
-            dumpJson: null,
             format: 'bestaudio',
             output: `${home}/temp/${guild.id}/%(id)s.mp3`
         }).catch()
