@@ -937,23 +937,24 @@ client.on('message', msg => {
     }
     // Checks if message contains swears or insults potatoes
     if (!msg.content.startsWith(prefix)) {
-        const message = msg.content.toLowerCase();
         let mentionPotato = false;
         let mentionSwear = false;
         let mentionInsult = false;
-        if (message.indexOf('potato') != -1) {
-            mentionPotato = true;
-        }
-        for (const swear of sysData.blacklist.swears) {
-            if (message.indexOf(swear) != -1) {
-                mentionSwear = true;
-                break;
+        for (const word of msg.content.toLowerCase().split(" ")) {
+            if (word.indexOf('potato') != -1) {
+                mentionPotato = true;
             }
-        }
-        for (const insult of sysData.blacklist.insults) {
-            if (message.indexOf(insult) != -1) {
-                mentionInsult = true;
-                break;
+            for (const swear of sysData.blacklist.swears) {
+                if (word == swear) {
+                    mentionSwear = true;
+                    break;
+                }
+            }
+            for (const insult of sysData.blacklist.insults) {
+                if (word == insult) {
+                    mentionInsult = true;
+                    break;
+                }
             }
         }
         if (mentionPotato && (mentionSwear || mentionInsult)) {
