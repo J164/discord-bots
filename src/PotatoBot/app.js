@@ -794,7 +794,7 @@ function play(msg) {
             return;
         }
         function addToQueue(duration, webpage_url, title, id) {
-            if (duration < 1200) {
+            if (duration < 5400) {
                 guildStatus[msg.guild.id].queue.push({
                     webpage_url: webpage_url,
                     title: title,

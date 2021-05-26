@@ -814,7 +814,7 @@ async function play(msg: Message): Promise<void> {
         return
     }
     function addToQueue(duration: number, webpage_url: string, title: string, id: string) {
-        if (duration < 1200) {
+        if (duration < 5400) {
             guildStatus[msg.guild.id].queue.push({
                 webpage_url: webpage_url,
                 title: title,
