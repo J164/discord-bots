@@ -5,56 +5,187 @@ process.on('uncaughtException', err => {
     setInterval(function () { }, 1000)
 })
 
-const Discord = require('discord.js') // Discord api library
-const fs = require('fs') // Filesystem
-const axios = require('axios') // Used to make http requests
-const canvas = require('canvas') // Allows the manipulation of images
-const youtubedl = require('youtube-dl-exec') // Youtube video downloader
+import Discord = require('discord.js') // Discord api library
+import fs = require('fs') // Filesystem
+import axios from 'axios' // Used to make http requests
+import canvas = require('canvas') // Allows the manipulation of images
+import youtubedl from 'youtube-dl-exec' // Youtube video downloader
 
 const client: Client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } }) // Represents the bot client
 const prefix = '&' // Bot command prefix
 const home = 'D:/Bot Resources' // Represents path to resources
 const root = '../..'
-var sysData = require(`${root}/assets/static/static.json`) // Loads system info into memory
-var userData = require(`${home}/sys_files/bots.json`) // Loads persistant info into memory
-var users: { admin: User, swear: User } = { admin: null, swear: null } // Stores specific users
-var guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
+const sysData = require(`${root}/assets/static/static.json`) // Loads system info into memory
+let userData = require(`${home}/sys_files/bots.json`) // Loads persistant info into memory
+const users: { admin: User; swear: User } = { admin: null, swear: null } // Stores specific users
+const guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
 
 interface GuildData {
-    queue: Song[],
-    downloadQueue: string[],
-    downloading: boolean,
-    audio: boolean,
-    voice: VoiceConnection,
-    dispatcher: StreamDispatcher,
-    nowPlaying: MessageEmbed,
-    fullLoop: boolean,
-    singleLoop: boolean
+    queue: Song[];
+    downloadQueue: string[];
+    downloading: boolean;
+    audio: boolean;
+    voice: VoiceConnection;
+    dispatcher: StreamDispatcher;
+    nowPlaying: MessageEmbed;
+    fullLoop: boolean;
+    singleLoop: boolean;
 }
 
 interface Song {
-    webpage_url: string,
-    title: string,
-    id: string,
-    thumbnail: string
+    webpageUrl: string;
+    title: string;
+    id: string;
+    thumbnail: string;
 }
 
 interface Team {
-    tricks: number,
-    score: number
+    tricks: number;
+    score: number;
 }
 
 interface Card {
-    code: string,
-    suit: string,
-    value: string
+    code: string;
+    suit: string;
+    value: string;
 }
 
 interface Player {
-    id: number,
-    user: User,
-    hand: Card[],
-    team: Team
+    id: number;
+    user: User;
+    hand: Card[];
+    team: Team;
+}
+
+function voiceKick(count: number, user: GuildMember): void {
+    if (user.voice.channelID) {
+        user.voice.kick()
+        return
+    }
+    if (count > 5) {
+        return
+    }
+    setTimeout(() => voiceKick(count + 1, user), 2000)
+}
+
+// Merges multiple images into one image
+async function mergeImages(filePaths: string[], options: { width: number; height: number }): Promise<Buffer> {
+    const activeCanvas = canvas.createCanvas(options.width, options.height)
+    const ctx = activeCanvas.getContext('2d')
+    for (const [i, path] of filePaths.entries()) {
+        const image = await canvas.loadImage(path)
+        ctx.drawImage(image, i * (options.width / filePaths.length), 0)
+    }
+    return activeCanvas.toBuffer()
+}
+
+// Creates a commonly used discord embed
+function genericEmbedResponse(title: string): MessageEmbed {
+    const embedVar = new Discord.MessageEmbed()
+    embedVar.setTitle(title)
+    embedVar.setColor(0x0099ff)
+    return embedVar
+}
+
+// Refreshes the data variable
+function refreshData(location: string): JSON {
+    const jsonString = fs.readFileSync(location, { encoding: 'utf8' })
+    return JSON.parse(jsonString)
+}
+
+// Makes a http get request
+async function makeGetRequest(path: string): Promise<any> {
+    const response = await axios.get(path)
+    return response.data
+}
+
+// Recursively plays each video in the queue
+async function playQueue(channel: PartialTextBasedChannelFields, guild: Guild, vc: VoiceChannel): Promise<void> {
+    if (guildStatus[guild.id].queue.length < 1) {
+        return
+    }
+    guildStatus[guild.id].audio = true
+    let voice: VoiceConnection
+    try {
+        voice = await vc.join()
+    } catch (err) {
+        console.log(err)
+        channel.send('Something went wrong!')
+        guildStatus[guild.id].audio = false
+        guildStatus[guild.id].queue = []
+        return
+    }
+    guildStatus[guild.id].voice = voice
+    const currentSong = guildStatus[guild.id].queue.shift()
+    if (!fs.existsSync(`${home}/temp/${guild.id}/${currentSong.id}.mp3`)) {
+        try {
+            const output = await youtubedl(currentSong.webpageUrl, {
+                noWarnings: true,
+                noCallHome: true,
+                noCheckCertificate: true,
+                preferFreeFormats: true,
+                ignoreErrors: true,
+                geoBypass: true,
+                printJson: true,
+                format: 'bestaudio',
+                output: `${home}/music_files/playback/%(id)s.mp3`
+            })
+            if (output) {
+                currentSong.thumbnail = output.thumbnails[0].url
+            }
+        } catch { }
+    }
+    guildStatus[guild.id].dispatcher = voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
+    guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`)
+    guildStatus[guild.id].nowPlaying.setImage(currentSong.thumbnail)
+    guildStatus[guild.id].nowPlaying.addField('URL:', currentSong.webpageUrl)
+    if (!guildStatus[guild.id].singleLoop) {
+        channel.send(guildStatus[guild.id].nowPlaying)
+    }
+    guildStatus[guild.id].dispatcher.on('finish', () => {
+        if (guildStatus[guild.id].fullLoop) {
+            guildStatus[guild.id].queue.push(currentSong)
+        } else if (guildStatus[guild.id].singleLoop) {
+            guildStatus[guild.id].queue.unshift(currentSong)
+        }
+        guildStatus[guild.id].dispatcher.destroy()
+        guildStatus[guild.id].dispatcher = null
+        guildStatus[guild.id].audio = false
+        playQueue(channel, guild, vc)
+    })
+}
+
+// Fetches a user from a specific guild using their ID
+async function getUser(guildId: Snowflake, userId: Snowflake): Promise<GuildMember> {
+    const guild = await client.guilds.fetch(guildId)
+    const user = await guild.members.fetch({ user: userId })
+    return user
+}
+
+async function download(guild: Guild): Promise<void> {
+    while (guildStatus[guild.id].downloadQueue.length > 0) {
+        guildStatus[guild.id].downloading = true
+        const currentItem = guildStatus[guild.id].downloadQueue.shift()
+        try {
+            const output = await youtubedl(currentItem, {
+                noWarnings: true,
+                noCallHome: true,
+                noCheckCertificate: true,
+                preferFreeFormats: true,
+                ignoreErrors: true,
+                geoBypass: true,
+                printJson: true,
+                format: 'bestaudio',
+                output: `${home}/music_files/playback/%(id)s.mp3`
+            })
+            for (let i = 0; i < guildStatus[guild.id].queue.length; i++) {
+                if (guildStatus[guild.id].queue[i].title === output.title) {
+                    guildStatus[guild.id].queue[i].thumbnail = output.thumbnails[0].url
+                }
+            }
+        } catch { }
+    }
+    guildStatus[guild.id].downloading = false
 }
 
 class Euchre {
@@ -64,7 +195,7 @@ class Euchre {
     team2: Team
     deckID: number
     active: boolean
-    gameState: { top: Card, inPlay: Card[], trump: string }
+    gameState: { top: Card; inPlay: Card[]; trump: string }
     players: Player[]
 
     constructor(players: User[]) {
@@ -127,13 +258,13 @@ class Euchre {
 
     async startRound(): Promise<void> {
         let draws
-        let success: boolean = false
+        let success = false
         while (!success) {
             try {
                 const deck = await axios.post('https://deckofcardsapi.com/api/deck/new/shuffle?cards=9S,9D,9C,9H,0S,0D,0C,0H,JS,JD,JC,JH,QS,QD,QC,QH,KS,KD,KC,KH,AS,AD,AC,AH')
                 draws = await axios.post(`https://deckofcardsapi.com/api/deck/${deck.data.deck_id}/draw?count=21`)
                 success = true
-            } catch {}
+            } catch {  }
         }
         const output = draws.data
         this.players[0].hand = [output.cards[0], output.cards[4], output.cards[8], output.cards[12], output.cards[16]]
@@ -145,17 +276,17 @@ class Euchre {
             await this.sendHand(player)
         }
         await this.sendCards([this.gameState.top], 'Top of Stack:')
-        let playerUsers: Player[] = []
+        const playerUsers: Player[] = []
         for (const player of this.players) {
             playerUsers.push(player)
         }
         for (const player of this.players) {
             const response = await this.askPlayer(player.user, `Would you like to pass or have ${this.players[3].user.username} pick it up?`, ['Pick it up', 'Pass'])
-            if (response == 0) {
+            if (response === 0) {
                 this.gameState.trump = this.gameState.top.suit
                 this.players[3].hand[await this.askPlayer(this.players[3].user, 'What card would you like to replace?', this.getCardNames(this.players[3].hand))] = this.gameState.top
                 this.sendHand(this.players[3])
-                if (await this.askPlayer(player.user, 'Would you like to go alone?', ['Yes', 'No']) == 0) {
+                if (await this.askPlayer(player.user, 'Would you like to go alone?', ['Yes', 'No']) === 0) {
                     switch (player.id) {
                         case 0:
                             playerUsers.splice(2, 1)
@@ -177,16 +308,16 @@ class Euchre {
                 return
             }
         }
-        let availableSuits: string[] = ['Hearts', 'Diamonds', 'Clubs', 'Spades', 'Pass']
+        const availableSuits: string[] = ['Hearts', 'Diamonds', 'Clubs', 'Spades', 'Pass']
         availableSuits.splice(availableSuits.indexOf(`${this.gameState.top.suit[0]}${this.gameState.top.suit.slice(1).toLowerCase()}`), 1)
         for (const [i, player] of this.players.entries()) {
-            if (i == 3) {
+            if (i === 3) {
                 availableSuits.splice(availableSuits.length - 1, 1)
             }
             const response = await this.askPlayer(player.user, 'What would you like to be trump?', availableSuits)
-            if (response != 3) {
+            if (response !== 3) {
                 this.gameState.trump = availableSuits[response].toUpperCase()
-                if (await this.askPlayer(player.user, 'Would you like to go alone?', ['Yes', 'No']) == 0) {
+                if (await this.askPlayer(player.user, 'Would you like to go alone?', ['Yes', 'No']) === 0) {
                     switch (player.id) {
                         case 0:
                             playerUsers.splice(2, 1)
@@ -212,7 +343,7 @@ class Euchre {
 
     async tricks(activePlayers: Player[], leader: Team, solo: boolean): Promise<void> {
         for (let r = 0; r < 5; r++) {
-            let table: Card[] = []
+            const table: Card[] = []
             let lead: string
             for (const player of activePlayers) {
                 await this.sendHand(player)
@@ -220,11 +351,11 @@ class Euchre {
                     lead = table[0].suit
                 }
                 let availableHand: Card[] = []
-                let handIndices: number[] = []
-                let hasLead: boolean = false
-                if (lead != null) {
+                const handIndices: number[] = []
+                let hasLead = false
+                if (lead) {
                     for (const [i, card] of player.hand.entries()) {
-                        if (this.realSuit(card) == lead) {
+                        if (this.realSuit(card) === lead) {
                             availableHand.push(card)
                             handIndices.push(i)
                             hasLead = true
@@ -249,9 +380,9 @@ class Euchre {
                 await this.sendCards(table, 'Table:')
             }
             let leadingPlayer: Player
-            let leadingScore: number = 0
+            let leadingScore = 0
             for (const [i, card] of table.entries()) {
-                if (this.realSuit(card) == this.gameState.trump) {
+                if (this.realSuit(card) === this.gameState.trump) {
                     switch (card.code[0]) {
                         case '9':
                             if (7 > leadingScore) {
@@ -284,7 +415,7 @@ class Euchre {
                             }
                             break
                         case 'J':
-                            if (this.realSuit(card) == card.suit && 13 > leadingScore) {
+                            if (this.realSuit(card) === card.suit && 13 > leadingScore) {
                                 leadingScore = 13
                                 leadingPlayer = activePlayers[i]
                             } else if (12 > leadingScore) {
@@ -293,7 +424,7 @@ class Euchre {
                             }
                             break
                     }
-                } else if (card.suit == lead) {
+                } else if (card.suit === lead) {
                     switch (card.code[0]) {
                         case '9':
                             if (1 > leadingScore) {
@@ -334,7 +465,7 @@ class Euchre {
                     }
                 }
             }
-            if (leadingPlayer.id % 2 == 0) {
+            if (leadingPlayer.id % 2 === 0) {
                 this.team1.tricks++
             } else {
                 this.team2.tricks++
@@ -361,8 +492,8 @@ class Euchre {
         } else {
             winningTeam = this.team2
         }
-        if (winningTeam == leader) {
-            if (winningTeam.tricks == 5) {
+        if (winningTeam === leader) {
+            if (winningTeam.tricks === 5) {
                 if (solo) {
                     winningTeam.score += 4
                 } else {
@@ -385,27 +516,27 @@ class Euchre {
 
     //used to check for left bower
     realSuit(card: Card): string {
-        if (card.code[0] != 'J') {
+        if (card.code[0] !== 'J') {
             return card.suit
         }
         switch (card.suit) {
             case 'CLUBS':
-                if (this.gameState.trump == 'SPADES') {
+                if (this.gameState.trump === 'SPADES') {
                     return 'SPADES'
                 }
                 break
             case 'SPADES':
-                if (this.gameState.trump == 'CLUBS') {
+                if (this.gameState.trump === 'CLUBS') {
                     return 'CLUBS'
                 }
                 break
             case 'HEARTS':
-                if (this.gameState.trump == 'DIAMONDS') {
+                if (this.gameState.trump === 'DIAMONDS') {
                     return 'DIAMOND'
                 }
                 break
             case 'DIAMONDS':
-                if (this.gameState.trump == 'HEARTS') {
+                if (this.gameState.trump === 'HEARTS') {
                     return 'HEARTS'
                 }
                 break
@@ -414,7 +545,7 @@ class Euchre {
     }
 
     getCardNames(hand: Card[]): string[] {
-        let names: string[] = []
+        const names: string[] = []
         for (const card of hand) {
             names.push(`${card.value[0]}${card.value.slice(1).toLowerCase()} of ${card.suit[0]}${card.suit.slice(1).toLowerCase()}`)
         }
@@ -433,8 +564,8 @@ class Euchre {
             await message.react(emojiList[i])
         }
         function filter(reaction: MessageReaction): boolean { return reaction.client === client }
-        let reaction = await message.awaitReactions(filter, { max: 1 })
-        let reactionResult = reaction.first()
+        const reaction = await message.awaitReactions(filter, { max: 1 })
+        const reactionResult = reaction.first()
         for (let i = 0; i < emojiList.length; i++) {
             if (reactionResult.emoji.name === emojiList[i]) {
                 return i
@@ -443,12 +574,12 @@ class Euchre {
     }
 
     async sendHand(player: Player): Promise<void> {
-        let filePaths: string[] = []
+        const filePaths: string[] = []
         const hand = genericEmbedResponse('^ Your Hand:')
         for (const card of player.hand) {
             filePaths.push(`${root}/assets/img/cards/${card.code}.png`)
         }
-        if (filePaths.length == 1) {
+        if (filePaths.length === 1) {
             hand.attachFiles([{
                 attachment: filePaths[0],
                 name: 'hand.png'
@@ -471,7 +602,7 @@ class Euchre {
 
     async sendCards(cards: Card[], message: string): Promise<void> {
         const response = genericEmbedResponse(`^ ${message}`)
-        let filePaths: string[] = []
+        const filePaths: string[] = []
         for (let i = 0; i < cards.length; i++) {
             filePaths.push(`${root}/assets/img/cards/${cards[i].code}.png`)
         }
@@ -488,126 +619,6 @@ class Euchre {
             await channel.send(response)
         }
     }
-}
-
-// Merges multiple images into one image
-async function mergeImages(filePaths: string[], options: {width: number, height: number}): Promise<Buffer> {
-    const activeCanvas = canvas.createCanvas(options.width, options.height)
-    const ctx = activeCanvas.getContext('2d')
-    for (const [i, path] of filePaths.entries()) {
-        const image = await canvas.loadImage(path)
-        ctx.drawImage(image, i * (options.width / filePaths.length), 0)
-    }
-    return activeCanvas.toBuffer()
-}
-
-// Creates a commonly used discord embed
-function genericEmbedResponse(title: string): MessageEmbed {
-    const embedVar = new Discord.MessageEmbed()
-    embedVar.setTitle(title)
-    embedVar.setColor(0x0099ff)
-    return embedVar
-}
-
-// Refreshes the data variable
-function refreshData(location: string): JSON {
-    const jsonString = fs.readFileSync(location, { encoding: 'utf8' })
-    return JSON.parse(jsonString)
-}
-
-// Makes a http get request
-async function makeGetRequest(path: string): Promise<any> {
-    const response = await axios.get(path)
-    return response.data
-}
-
-// Recursively plays each video in the queue
-async function playQueue(channel: PartialTextBasedChannelFields, guild: Guild, vc: VoiceChannel): Promise<void> {
-    if (guildStatus[guild.id].queue.length < 1) {
-        return
-    }
-    guildStatus[guild.id].audio = true
-    let voice: VoiceConnection
-    try {
-        voice = await vc.join()
-    } catch (err) {
-        console.log(err)
-        channel.send('Something went wrong!')
-        guildStatus[guild.id].audio = false
-        guildStatus[guild.id].queue = []
-        return
-    }
-    guildStatus[guild.id].voice = voice
-    const currentSong = guildStatus[guild.id].queue.shift()
-    if (!fs.existsSync(`${home}/temp/${guild.id}/${currentSong.id}.mp3`)) {
-        try {
-            const output = await youtubedl(currentSong.webpage_url, {
-                noWarnings: true,
-                noCallHome: true,
-                noCheckCertificate: true,
-                preferFreeFormats: true,
-                ignoreErrors: true,
-                geoBypass: true,
-                printJson: true,
-                format: 'bestaudio',
-                output: `${home}/music_files/playback/%(id)s.mp3`
-            })
-            if (output) {
-                currentSong.thumbnail = output.thumbnails[0].url
-            }
-        } catch {  }
-    }
-    guildStatus[guild.id].dispatcher = voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
-    guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`)
-    guildStatus[guild.id].nowPlaying.setImage(currentSong.thumbnail)
-    guildStatus[guild.id].nowPlaying.addField('URL:', currentSong.webpage_url)
-    if (!guildStatus[guild.id].singleLoop) {
-        channel.send(guildStatus[guild.id].nowPlaying)
-    }
-    guildStatus[guild.id].dispatcher.on('finish', () => {
-        if (guildStatus[guild.id].fullLoop) {
-            guildStatus[guild.id].queue.push(currentSong)
-        } else if (guildStatus[guild.id].singleLoop) {
-            guildStatus[guild.id].queue.unshift(currentSong)
-        }
-        guildStatus[guild.id].dispatcher.destroy()
-        guildStatus[guild.id].dispatcher = null
-        guildStatus[guild.id].audio = false
-        playQueue(channel, guild, vc)
-    })
-}
-
-// Fetches a user from a specific guild using their ID
-async function getUser(guildId: Snowflake, userId: Snowflake): Promise<GuildMember> {
-    const guild = await client.guilds.fetch(guildId)
-    const user = await guild.members.fetch({ user: userId })
-    return user
-}
-
-async function download(guild: Guild): Promise<void> {
-    while (guildStatus[guild.id].downloadQueue.length > 0) {
-        guildStatus[guild.id].downloading = true
-        const currentItem = guildStatus[guild.id].downloadQueue.shift()
-        try {
-            const output = await youtubedl(currentItem, {
-                noWarnings: true,
-                noCallHome: true,
-                noCheckCertificate: true,
-                preferFreeFormats: true,
-                ignoreErrors: true,
-                geoBypass: true,
-                printJson: true,
-                format: 'bestaudio',
-                output: `${home}/music_files/playback/%(id)s.mp3`
-            })
-            for (let i = 0; i < guildStatus[guild.id].queue.length; i++) {
-                if (guildStatus[guild.id].queue[i].title == output.title) {
-                    guildStatus[guild.id].queue[i].thumbnail = output.thumbnails[0].url
-                }
-            }
-        } catch {  }
-    }
-    guildStatus[guild.id].downloading = false
 }
 
 // This block executes when the bot is launched
@@ -684,7 +695,7 @@ async function wynncraftStats(msg: Message): Promise<void> {
 }
 
 async function newSwearSong(msg: Message): Promise<void> {
-    if (msg.author != users.admin && msg.author != users.swear) {
+    if (msg.author !== users.admin && msg.author !== users.swear) {
         msg.reply('You don\'t have permission to use this command!')
         return
     }
@@ -732,7 +743,7 @@ async function newSwearSong(msg: Message): Promise<void> {
 }
 
 async function downloadVideo(msg: Message): Promise<void> {
-    if (msg.author != users.admin) {
+    if (msg.author !== users.admin) {
         msg.reply('You don\'t have permission to use this command!')
         return
     }
@@ -740,7 +751,7 @@ async function downloadVideo(msg: Message): Promise<void> {
         msg.reply('Please enter a video url')
         return
     }
-    let options = {
+    const options = {
         noWarnings: true,
         noCallHome: true,
         noCheckCertificate: true,
@@ -749,7 +760,7 @@ async function downloadVideo(msg: Message): Promise<void> {
         output: `${home}/New Downloads/%(title)s.%(ext)s`,
         ignoreErrors: true
     }
-    if (msg.content.split(" ").length < 3 || msg.content.split(" ")[2][0].toLowerCase() != 'a') {
+    if (msg.content.split(" ").length < 3 || msg.content.split(" ")[2][0].toLowerCase() !== 'a') {
         options.format = 'bestvideo,bestaudio'
     }
     msg.channel.send('Downloading...')
@@ -813,15 +824,15 @@ async function play(msg: Message): Promise<void> {
         msg.reply('Please enter a valid url')
         return
     }
-    function addToQueue(duration: number, webpage_url: string, title: string, id: string) {
+    function addToQueue(duration: number, webpageUrl: string, title: string, id: string) {
         if (duration < 5400) {
             guildStatus[msg.guild.id].queue.push({
-                webpage_url: webpage_url,
+                webpageUrl: webpageUrl,
                 title: title,
                 id: id,
                 thumbnail: null
             })
-            guildStatus[msg.guild.id].downloadQueue.push(webpage_url)
+            guildStatus[msg.guild.id].downloadQueue.push(webpageUrl)
             if (!guildStatus[msg.guild.id].downloading) {
                 download(msg.guild)
             }
@@ -862,13 +873,13 @@ async function displayQueue(msg: Message): Promise<void> {
     async function sendQueue(index: number): Promise<null> {
         const queueMessage = genericEmbedResponse('Queue')
         for (const [i, entry] of queueArray[index].entries()) {
-            queueMessage.addField(`${i + 1}.`, `${entry.title}\n${entry.webpage_url}`)
+            queueMessage.addField(`${i + 1}.`, `${entry.title}\n${entry.webpageUrl}`)
         }
         if (guildStatus[msg.guild.id].fullLoop) {
             queueMessage.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png')
         }
         const message = await msg.channel.send(queueMessage)
-        let emojiList = ['\u274C']
+        const emojiList = ['\u274C']
         if (index > 0) {
             emojiList.unshift('\u2B05\uFE0F')
         }
@@ -939,18 +950,8 @@ client.on('message', msg => {
     if (msg.author.bot) {
 
         // Disconnects rythm bot if it attempts to play a rickroll
-        if (msg.content.indexOf('Never Gonna Give You Up') != -1) {
-            function kickRickroll(count: number): void {
-                if (msg.member.voice.channelID) {
-                    msg.member.voice.kick()
-                    return
-                }
-                if (count > 5) {
-                    return
-                }
-                setTimeout(() => kickRickroll(count + 1), 2000)
-            }
-            kickRickroll(0)
+        if (msg.content.indexOf('Never Gonna Give You Up') !== -1) {
+            voiceKick(0, msg.member)
         }
         return // Message is ignored if sent from a bot
     }
@@ -961,17 +962,17 @@ client.on('message', msg => {
         let mentionSwear = false
         let mentionInsult = false
         for (const word of msg.content.toLowerCase().split(" ")) {
-            if (word.indexOf('potato') != -1) {
+            if (word.indexOf('potato') !== -1) {
                 mentionPotato = true
             }
             for (const swear of sysData.blacklist.swears) {
-                if (word == swear) {
+                if (word === swear) {
                     mentionSwear = true
                     break
                 }
             }
             for (const insult of sysData.blacklist.insults) {
-                if (word == insult) {
+                if (word === insult) {
                     mentionInsult = true
                     break
                 }

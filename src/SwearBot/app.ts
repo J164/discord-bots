@@ -3,16 +3,16 @@ process.on('uncaughtException', err => {
     setInterval(function () { }, 1000)
 })
 
-const Discord = require('discord.js')
-const fs = require('fs')
+import Discord = require('discord.js')
+import fs = require('fs')
 
 const client = new Discord.Client()
 const prefix = '?'
 const home = 'D:/Bot Resources'
 const root = '../..'
-var sysData = require(`${root}/assets/static/static.json`)
-var userData = require(`${home}/sys_files/bots.json`)
-var guildStatus = {}
+const sysData = require(`${root}/assets/static/static.json`)
+let userData = require(`${home}/sys_files/bots.json`)
+const guildStatus = {}
 
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' })
@@ -37,7 +37,7 @@ client.on('ready', () => {
 
 async function play(msg) {
     let songNum
-    let vc = msg.member.voice.channel
+    const vc = msg.member.voice.channel
     if (!vc) {
         msg.reply('This command can only be used while in a voice channel!')
         return
@@ -58,7 +58,7 @@ async function play(msg) {
         guildStatus[msg.guild.id] = {}
     }
     guildStatus[msg.guild.id].audio = true
-    let voice = await vc.join()
+    const voice = await vc.join()
     guildStatus[msg.guild.id].voice = voice
     if ('dispatcher' in guildStatus[msg.guild.id]) {
         try {
@@ -86,14 +86,14 @@ client.on('message', msg => {
 
     if (!msg.content.startsWith(prefix)) {
         for (const word of msg.content.toLowerCase().split(" ")) {
-            if (word == 'swear') {
+            if (word === 'swear') {
                 msg.reply(sysData.blacklist.swears[Math.floor(Math.random() * sysData.blacklist.swears.length)])
                 return
             }
         }
         for (const word of msg.content.toLowerCase().split(" ")) {
             for (const swear of sysData.blacklist.swears) {
-                if (word == swear) {
+                if (word === swear) {
                     msg.reply('Good job swearing! Heck yeah!')
                     return
                 }
@@ -102,7 +102,7 @@ client.on('message', msg => {
         return
     }
 
-    let messageStart = msg.content.split(" ")[0].slice(1)
+    const messageStart = msg.content.split(" ")[0].slice(1).toLowerCase()
 
     try {
         switch (messageStart) {

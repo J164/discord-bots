@@ -13,16 +13,59 @@ process.on('uncaughtException', err => {
     console.log(err);
     setInterval(function () { }, 1000);
 });
-const Discord = require('discord.js');
-const fs = require('fs');
-const axios = require('axios');
+const Discord = require("discord.js");
+const fs = require("fs");
+const axios_1 = require("axios");
 const client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS'] } });
 const prefix = '$';
 const home = 'D:/Bot Resources';
 const root = '../..';
-var sysData = require(`${root}/assets/static/static.json`);
-var userData = require(`${home}/sys_files/bots.json`);
-var guildStatus = {};
+const sysData = require(`${root}/assets/static/static.json`);
+let userData = require(`${home}/sys_files/bots.json`);
+const guildStatus = {};
+function refreshData(location) {
+    const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
+    return JSON.parse(jsonString);
+}
+function genericEmbedResponse(title) {
+    const embedVar = new Discord.MessageEmbed();
+    embedVar.setTitle(title);
+    embedVar.setColor(0xffff00);
+    return embedVar;
+}
+function makeGetRequest(path) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const response = yield axios_1.default.get(path);
+        return response.data;
+    });
+}
+function findKey(object, property) {
+    let result;
+    if (object instanceof Array) {
+        for (let i = 0; i < object.length; i++) {
+            result = findKey(object[i], property);
+            if (result) {
+                break;
+            }
+        }
+    }
+    else {
+        for (const prop in object) {
+            if (prop === property) {
+                if (object[prop]) {
+                    return object;
+                }
+            }
+            if (object[prop] instanceof Object || object[prop] instanceof Array) {
+                result = findKey(object[prop], property);
+                if (result) {
+                    break;
+                }
+            }
+        }
+    }
+    return result;
+}
 class Deck {
     fill(json) {
         this.image = json.image;
@@ -52,7 +95,7 @@ class Deck {
                 return false;
             }
             for (const deck of userData.decks) {
-                if (deck.name == deckJson.name) {
+                if (deck.name === deckJson.name) {
                     return false;
                 }
             }
@@ -73,17 +116,17 @@ class Deck {
     getList() {
         return __awaiter(this, void 0, void 0, function* () {
             const decklist = yield makeGetRequest(this.apiUrl + 'list');
-            let decklistArray = decklist.list.split("\n");
+            const decklistArray = decklist.list.split("\n");
             for (let i = 0; i < decklistArray.length; i++) {
                 if (!decklistArray[i] || decklistArray[i].startsWith('//')) {
                     decklistArray.splice(i, 1);
                     i--;
                     continue;
                 }
-                if (decklistArray[i].indexOf('//') != -1) {
+                if (decklistArray[i].indexOf('//') !== -1) {
                     decklistArray[i] = decklistArray[i].substr(0, decklistArray[i].indexOf('//'));
                 }
-                if (decklistArray[i].indexOf('#') != -1) {
+                if (decklistArray[i].indexOf('#') !== -1) {
                     decklistArray[i] = decklistArray[i].substr(0, decklistArray[i].indexOf('#'));
                 }
             }
@@ -171,49 +214,6 @@ class CommanderGame extends MagicGame {
     getCasts(commander) {
     }
 }
-function refreshData(location) {
-    const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
-    return JSON.parse(jsonString);
-}
-function genericEmbedResponse(title) {
-    const embedVar = new Discord.MessageEmbed();
-    embedVar.setTitle(title);
-    embedVar.setColor(0xffff00);
-    return embedVar;
-}
-function makeGetRequest(path) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const response = yield axios.get(path);
-        return response.data;
-    });
-}
-function findKey(object, property) {
-    let result;
-    if (object instanceof Array) {
-        for (let i = 0; i < object.length; i++) {
-            result = findKey(object[i], property);
-            if (result) {
-                break;
-            }
-        }
-    }
-    else {
-        for (let prop in object) {
-            if (prop == property) {
-                if (object[prop]) {
-                    return object;
-                }
-            }
-            if (object[prop] instanceof Object || object[prop] instanceof Array) {
-                result = findKey(object[prop], property);
-                if (result) {
-                    break;
-                }
-            }
-        }
-    }
-    return result;
-}
 client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`);
     client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)]);
@@ -245,11 +245,11 @@ function deckPreview(i, msg) {
         const deck = new Deck();
         deck.fill(userData.decks[i]);
         const message = yield msg.channel.send(deck.getPreview());
-        let emojiList = ['\uD83D\uDCC4', '\u274C']; // Page and X emoji
-        if (i != 0) {
+        const emojiList = ['\uD83D\uDCC4', '\u274C']; // Page and X emoji
+        if (i !== 0) {
             emojiList.unshift('\u2B05\uFE0F'); // Left arrow
         }
-        if (i != (userData.decks.length - 1)) {
+        if (i !== (userData.decks.length - 1)) {
             emojiList.push('\u27A1\uFE0F'); // Right arrow
         }
         for (const emoji of emojiList) {
@@ -285,7 +285,7 @@ client.on('message', msg => {
     if (msg.author.bot || !msg.content.startsWith(prefix) || !msg.guild) {
         return;
     }
-    let messageStart = msg.content.split(" ")[0].slice(1);
+    const messageStart = msg.content.split(" ")[0].slice(1).toLowerCase();
     try {
         switch (messageStart) {
             case 'add':
@@ -297,7 +297,7 @@ client.on('message', msg => {
             case 'roll':
                 let dice = 6;
                 if (msg.content.split(" ").length > 1) {
-                    let arg = parseInt(msg.content.split(" ")[1]);
+                    const arg = parseInt(msg.content.split(" ")[1]);
                     if (!isNaN(arg) && arg > 0) {
                         dice = arg;
                     }

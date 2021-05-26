@@ -13,19 +13,156 @@ process.on('uncaughtException', err => {
     console.log(err);
     setInterval(function () { }, 1000);
 });
-const Discord = require('discord.js'); // Discord api library
-const fs = require('fs'); // Filesystem
-const axios = require('axios'); // Used to make http requests
-const canvas = require('canvas'); // Allows the manipulation of images
-const youtubedl = require('youtube-dl-exec'); // Youtube video downloader
+const Discord = require("discord.js"); // Discord api library
+const fs = require("fs"); // Filesystem
+const axios_1 = require("axios"); // Used to make http requests
+const canvas = require("canvas"); // Allows the manipulation of images
+const youtube_dl_exec_1 = require("youtube-dl-exec"); // Youtube video downloader
 const client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } }); // Represents the bot client
 const prefix = '&'; // Bot command prefix
 const home = 'D:/Bot Resources'; // Represents path to resources
 const root = '../..';
-var sysData = require(`${root}/assets/static/static.json`); // Loads system info into memory
-var userData = require(`${home}/sys_files/bots.json`); // Loads persistant info into memory
-var users = { admin: null, swear: null }; // Stores specific users
-var guildStatus = {}; // Stores guild specific information to allow bot to act independent in different guilds
+const sysData = require(`${root}/assets/static/static.json`); // Loads system info into memory
+let userData = require(`${home}/sys_files/bots.json`); // Loads persistant info into memory
+const users = { admin: null, swear: null }; // Stores specific users
+const guildStatus = {}; // Stores guild specific information to allow bot to act independent in different guilds
+function voiceKick(count, user) {
+    if (user.voice.channelID) {
+        user.voice.kick();
+        return;
+    }
+    if (count > 5) {
+        return;
+    }
+    setTimeout(() => voiceKick(count + 1, user), 2000);
+}
+// Merges multiple images into one image
+function mergeImages(filePaths, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const activeCanvas = canvas.createCanvas(options.width, options.height);
+        const ctx = activeCanvas.getContext('2d');
+        for (const [i, path] of filePaths.entries()) {
+            const image = yield canvas.loadImage(path);
+            ctx.drawImage(image, i * (options.width / filePaths.length), 0);
+        }
+        return activeCanvas.toBuffer();
+    });
+}
+// Creates a commonly used discord embed
+function genericEmbedResponse(title) {
+    const embedVar = new Discord.MessageEmbed();
+    embedVar.setTitle(title);
+    embedVar.setColor(0x0099ff);
+    return embedVar;
+}
+// Refreshes the data variable
+function refreshData(location) {
+    const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
+    return JSON.parse(jsonString);
+}
+// Makes a http get request
+function makeGetRequest(path) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const response = yield axios_1.default.get(path);
+        return response.data;
+    });
+}
+// Recursively plays each video in the queue
+function playQueue(channel, guild, vc) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (guildStatus[guild.id].queue.length < 1) {
+            return;
+        }
+        guildStatus[guild.id].audio = true;
+        let voice;
+        try {
+            voice = yield vc.join();
+        }
+        catch (err) {
+            console.log(err);
+            channel.send('Something went wrong!');
+            guildStatus[guild.id].audio = false;
+            guildStatus[guild.id].queue = [];
+            return;
+        }
+        guildStatus[guild.id].voice = voice;
+        const currentSong = guildStatus[guild.id].queue.shift();
+        if (!fs.existsSync(`${home}/temp/${guild.id}/${currentSong.id}.mp3`)) {
+            try {
+                const output = yield youtube_dl_exec_1.default(currentSong.webpageUrl, {
+                    noWarnings: true,
+                    noCallHome: true,
+                    noCheckCertificate: true,
+                    preferFreeFormats: true,
+                    ignoreErrors: true,
+                    geoBypass: true,
+                    printJson: true,
+                    format: 'bestaudio',
+                    output: `${home}/music_files/playback/%(id)s.mp3`
+                });
+                if (output) {
+                    currentSong.thumbnail = output.thumbnails[0].url;
+                }
+            }
+            catch (_a) { }
+        }
+        guildStatus[guild.id].dispatcher = voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`);
+        guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`);
+        guildStatus[guild.id].nowPlaying.setImage(currentSong.thumbnail);
+        guildStatus[guild.id].nowPlaying.addField('URL:', currentSong.webpageUrl);
+        if (!guildStatus[guild.id].singleLoop) {
+            channel.send(guildStatus[guild.id].nowPlaying);
+        }
+        guildStatus[guild.id].dispatcher.on('finish', () => {
+            if (guildStatus[guild.id].fullLoop) {
+                guildStatus[guild.id].queue.push(currentSong);
+            }
+            else if (guildStatus[guild.id].singleLoop) {
+                guildStatus[guild.id].queue.unshift(currentSong);
+            }
+            guildStatus[guild.id].dispatcher.destroy();
+            guildStatus[guild.id].dispatcher = null;
+            guildStatus[guild.id].audio = false;
+            playQueue(channel, guild, vc);
+        });
+    });
+}
+// Fetches a user from a specific guild using their ID
+function getUser(guildId, userId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const guild = yield client.guilds.fetch(guildId);
+        const user = yield guild.members.fetch({ user: userId });
+        return user;
+    });
+}
+function download(guild) {
+    return __awaiter(this, void 0, void 0, function* () {
+        while (guildStatus[guild.id].downloadQueue.length > 0) {
+            guildStatus[guild.id].downloading = true;
+            const currentItem = guildStatus[guild.id].downloadQueue.shift();
+            try {
+                const output = yield youtube_dl_exec_1.default(currentItem, {
+                    noWarnings: true,
+                    noCallHome: true,
+                    noCheckCertificate: true,
+                    preferFreeFormats: true,
+                    ignoreErrors: true,
+                    geoBypass: true,
+                    printJson: true,
+                    format: 'bestaudio',
+                    output: `${home}/music_files/playback/%(id)s.mp3`
+                });
+                for (let i = 0; i < guildStatus[guild.id].queue.length; i++) {
+                    if (guildStatus[guild.id].queue[i].title === output.title) {
+                        guildStatus[guild.id].queue[i].thumbnail = output.thumbnails[0].url;
+                    }
+                }
+            }
+            catch (_a) { }
+        }
+        guildStatus[guild.id].downloading = false;
+    });
+}
 class Euchre {
     constructor(players) {
         this.team1 = {
@@ -92,8 +229,8 @@ class Euchre {
             let success = false;
             while (!success) {
                 try {
-                    const deck = yield axios.post('https://deckofcardsapi.com/api/deck/new/shuffle?cards=9S,9D,9C,9H,0S,0D,0C,0H,JS,JD,JC,JH,QS,QD,QC,QH,KS,KD,KC,KH,AS,AD,AC,AH');
-                    draws = yield axios.post(`https://deckofcardsapi.com/api/deck/${deck.data.deck_id}/draw?count=21`);
+                    const deck = yield axios_1.default.post('https://deckofcardsapi.com/api/deck/new/shuffle?cards=9S,9D,9C,9H,0S,0D,0C,0H,JS,JD,JC,JH,QS,QD,QC,QH,KS,KD,KC,KH,AS,AD,AC,AH');
+                    draws = yield axios_1.default.post(`https://deckofcardsapi.com/api/deck/${deck.data.deck_id}/draw?count=21`);
                     success = true;
                 }
                 catch (_a) { }
@@ -108,17 +245,17 @@ class Euchre {
                 yield this.sendHand(player);
             }
             yield this.sendCards([this.gameState.top], 'Top of Stack:');
-            let playerUsers = [];
+            const playerUsers = [];
             for (const player of this.players) {
                 playerUsers.push(player);
             }
             for (const player of this.players) {
                 const response = yield this.askPlayer(player.user, `Would you like to pass or have ${this.players[3].user.username} pick it up?`, ['Pick it up', 'Pass']);
-                if (response == 0) {
+                if (response === 0) {
                     this.gameState.trump = this.gameState.top.suit;
                     this.players[3].hand[yield this.askPlayer(this.players[3].user, 'What card would you like to replace?', this.getCardNames(this.players[3].hand))] = this.gameState.top;
                     this.sendHand(this.players[3]);
-                    if ((yield this.askPlayer(player.user, 'Would you like to go alone?', ['Yes', 'No'])) == 0) {
+                    if ((yield this.askPlayer(player.user, 'Would you like to go alone?', ['Yes', 'No'])) === 0) {
                         switch (player.id) {
                             case 0:
                                 playerUsers.splice(2, 1);
@@ -140,16 +277,16 @@ class Euchre {
                     return;
                 }
             }
-            let availableSuits = ['Hearts', 'Diamonds', 'Clubs', 'Spades', 'Pass'];
+            const availableSuits = ['Hearts', 'Diamonds', 'Clubs', 'Spades', 'Pass'];
             availableSuits.splice(availableSuits.indexOf(`${this.gameState.top.suit[0]}${this.gameState.top.suit.slice(1).toLowerCase()}`), 1);
             for (const [i, player] of this.players.entries()) {
-                if (i == 3) {
+                if (i === 3) {
                     availableSuits.splice(availableSuits.length - 1, 1);
                 }
                 const response = yield this.askPlayer(player.user, 'What would you like to be trump?', availableSuits);
-                if (response != 3) {
+                if (response !== 3) {
                     this.gameState.trump = availableSuits[response].toUpperCase();
-                    if ((yield this.askPlayer(player.user, 'Would you like to go alone?', ['Yes', 'No'])) == 0) {
+                    if ((yield this.askPlayer(player.user, 'Would you like to go alone?', ['Yes', 'No'])) === 0) {
                         switch (player.id) {
                             case 0:
                                 playerUsers.splice(2, 1);
@@ -176,7 +313,7 @@ class Euchre {
     tricks(activePlayers, leader, solo) {
         return __awaiter(this, void 0, void 0, function* () {
             for (let r = 0; r < 5; r++) {
-                let table = [];
+                const table = [];
                 let lead;
                 for (const player of activePlayers) {
                     yield this.sendHand(player);
@@ -184,11 +321,11 @@ class Euchre {
                         lead = table[0].suit;
                     }
                     let availableHand = [];
-                    let handIndices = [];
+                    const handIndices = [];
                     let hasLead = false;
-                    if (lead != null) {
+                    if (lead) {
                         for (const [i, card] of player.hand.entries()) {
-                            if (this.realSuit(card) == lead) {
+                            if (this.realSuit(card) === lead) {
                                 availableHand.push(card);
                                 handIndices.push(i);
                                 hasLead = true;
@@ -216,7 +353,7 @@ class Euchre {
                 let leadingPlayer;
                 let leadingScore = 0;
                 for (const [i, card] of table.entries()) {
-                    if (this.realSuit(card) == this.gameState.trump) {
+                    if (this.realSuit(card) === this.gameState.trump) {
                         switch (card.code[0]) {
                             case '9':
                                 if (7 > leadingScore) {
@@ -249,7 +386,7 @@ class Euchre {
                                 }
                                 break;
                             case 'J':
-                                if (this.realSuit(card) == card.suit && 13 > leadingScore) {
+                                if (this.realSuit(card) === card.suit && 13 > leadingScore) {
                                     leadingScore = 13;
                                     leadingPlayer = activePlayers[i];
                                 }
@@ -260,7 +397,7 @@ class Euchre {
                                 break;
                         }
                     }
-                    else if (card.suit == lead) {
+                    else if (card.suit === lead) {
                         switch (card.code[0]) {
                             case '9':
                                 if (1 > leadingScore) {
@@ -301,7 +438,7 @@ class Euchre {
                         }
                     }
                 }
-                if (leadingPlayer.id % 2 == 0) {
+                if (leadingPlayer.id % 2 === 0) {
                     this.team1.tricks++;
                 }
                 else {
@@ -328,8 +465,8 @@ class Euchre {
             else {
                 winningTeam = this.team2;
             }
-            if (winningTeam == leader) {
-                if (winningTeam.tricks == 5) {
+            if (winningTeam === leader) {
+                if (winningTeam.tricks === 5) {
                     if (solo) {
                         winningTeam.score += 4;
                     }
@@ -355,27 +492,27 @@ class Euchre {
     }
     //used to check for left bower
     realSuit(card) {
-        if (card.code[0] != 'J') {
+        if (card.code[0] !== 'J') {
             return card.suit;
         }
         switch (card.suit) {
             case 'CLUBS':
-                if (this.gameState.trump == 'SPADES') {
+                if (this.gameState.trump === 'SPADES') {
                     return 'SPADES';
                 }
                 break;
             case 'SPADES':
-                if (this.gameState.trump == 'CLUBS') {
+                if (this.gameState.trump === 'CLUBS') {
                     return 'CLUBS';
                 }
                 break;
             case 'HEARTS':
-                if (this.gameState.trump == 'DIAMONDS') {
+                if (this.gameState.trump === 'DIAMONDS') {
                     return 'DIAMOND';
                 }
                 break;
             case 'DIAMONDS':
-                if (this.gameState.trump == 'HEARTS') {
+                if (this.gameState.trump === 'HEARTS') {
                     return 'HEARTS';
                 }
                 break;
@@ -383,7 +520,7 @@ class Euchre {
         return card.suit;
     }
     getCardNames(hand) {
-        let names = [];
+        const names = [];
         for (const card of hand) {
             names.push(`${card.value[0]}${card.value.slice(1).toLowerCase()} of ${card.suit[0]}${card.suit.slice(1).toLowerCase()}`);
         }
@@ -402,8 +539,8 @@ class Euchre {
                 yield message.react(emojiList[i]);
             }
             function filter(reaction) { return reaction.client === client; }
-            let reaction = yield message.awaitReactions(filter, { max: 1 });
-            let reactionResult = reaction.first();
+            const reaction = yield message.awaitReactions(filter, { max: 1 });
+            const reactionResult = reaction.first();
             for (let i = 0; i < emojiList.length; i++) {
                 if (reactionResult.emoji.name === emojiList[i]) {
                     return i;
@@ -413,12 +550,12 @@ class Euchre {
     }
     sendHand(player) {
         return __awaiter(this, void 0, void 0, function* () {
-            let filePaths = [];
+            const filePaths = [];
             const hand = genericEmbedResponse('^ Your Hand:');
             for (const card of player.hand) {
                 filePaths.push(`${root}/assets/img/cards/${card.code}.png`);
             }
-            if (filePaths.length == 1) {
+            if (filePaths.length === 1) {
                 hand.attachFiles([{
                         attachment: filePaths[0],
                         name: 'hand.png'
@@ -442,7 +579,7 @@ class Euchre {
     sendCards(cards, message) {
         return __awaiter(this, void 0, void 0, function* () {
             const response = genericEmbedResponse(`^ ${message}`);
-            let filePaths = [];
+            const filePaths = [];
             for (let i = 0; i < cards.length; i++) {
                 filePaths.push(`${root}/assets/img/cards/${cards[i].code}.png`);
             }
@@ -460,133 +597,6 @@ class Euchre {
             }
         });
     }
-}
-// Merges multiple images into one image
-function mergeImages(filePaths, options) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const activeCanvas = canvas.createCanvas(options.width, options.height);
-        const ctx = activeCanvas.getContext('2d');
-        for (const [i, path] of filePaths.entries()) {
-            const image = yield canvas.loadImage(path);
-            ctx.drawImage(image, i * (options.width / filePaths.length), 0);
-        }
-        return activeCanvas.toBuffer();
-    });
-}
-// Creates a commonly used discord embed
-function genericEmbedResponse(title) {
-    const embedVar = new Discord.MessageEmbed();
-    embedVar.setTitle(title);
-    embedVar.setColor(0x0099ff);
-    return embedVar;
-}
-// Refreshes the data variable
-function refreshData(location) {
-    const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
-    return JSON.parse(jsonString);
-}
-// Makes a http get request
-function makeGetRequest(path) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const response = yield axios.get(path);
-        return response.data;
-    });
-}
-// Recursively plays each video in the queue
-function playQueue(channel, guild, vc) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (guildStatus[guild.id].queue.length < 1) {
-            return;
-        }
-        guildStatus[guild.id].audio = true;
-        let voice;
-        try {
-            voice = yield vc.join();
-        }
-        catch (err) {
-            console.log(err);
-            channel.send('Something went wrong!');
-            guildStatus[guild.id].audio = false;
-            guildStatus[guild.id].queue = [];
-            return;
-        }
-        guildStatus[guild.id].voice = voice;
-        const currentSong = guildStatus[guild.id].queue.shift();
-        if (!fs.existsSync(`${home}/temp/${guild.id}/${currentSong.id}.mp3`)) {
-            try {
-                const output = yield youtubedl(currentSong.webpage_url, {
-                    noWarnings: true,
-                    noCallHome: true,
-                    noCheckCertificate: true,
-                    preferFreeFormats: true,
-                    ignoreErrors: true,
-                    geoBypass: true,
-                    printJson: true,
-                    format: 'bestaudio',
-                    output: `${home}/music_files/playback/%(id)s.mp3`
-                });
-                if (output) {
-                    currentSong.thumbnail = output.thumbnails[0].url;
-                }
-            }
-            catch (_a) { }
-        }
-        guildStatus[guild.id].dispatcher = voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`);
-        guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`);
-        guildStatus[guild.id].nowPlaying.setImage(currentSong.thumbnail);
-        guildStatus[guild.id].nowPlaying.addField('URL:', currentSong.webpage_url);
-        if (!guildStatus[guild.id].singleLoop) {
-            channel.send(guildStatus[guild.id].nowPlaying);
-        }
-        guildStatus[guild.id].dispatcher.on('finish', () => {
-            if (guildStatus[guild.id].fullLoop) {
-                guildStatus[guild.id].queue.push(currentSong);
-            }
-            else if (guildStatus[guild.id].singleLoop) {
-                guildStatus[guild.id].queue.unshift(currentSong);
-            }
-            guildStatus[guild.id].dispatcher.destroy();
-            guildStatus[guild.id].dispatcher = null;
-            guildStatus[guild.id].audio = false;
-            playQueue(channel, guild, vc);
-        });
-    });
-}
-// Fetches a user from a specific guild using their ID
-function getUser(guildId, userId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const guild = yield client.guilds.fetch(guildId);
-        const user = yield guild.members.fetch({ user: userId });
-        return user;
-    });
-}
-function download(guild) {
-    return __awaiter(this, void 0, void 0, function* () {
-        while (guildStatus[guild.id].downloadQueue.length > 0) {
-            guildStatus[guild.id].downloading = true;
-            const currentItem = guildStatus[guild.id].downloadQueue.shift();
-            try {
-                const output = yield youtubedl(currentItem, {
-                    noWarnings: true,
-                    noCallHome: true,
-                    noCheckCertificate: true,
-                    preferFreeFormats: true,
-                    ignoreErrors: true,
-                    geoBypass: true,
-                    printJson: true,
-                    format: 'bestaudio',
-                    output: `${home}/music_files/playback/%(id)s.mp3`
-                });
-                for (let i = 0; i < guildStatus[guild.id].queue.length; i++) {
-                    if (guildStatus[guild.id].queue[i].title == output.title) {
-                        guildStatus[guild.id].queue[i].thumbnail = output.thumbnails[0].url;
-                    }
-                }
-            }
-            catch (_a) { }
-        }
-        guildStatus[guild.id].downloading = false;
-    });
 }
 // This block executes when the bot is launched
 client.on('ready', () => {
@@ -659,7 +669,7 @@ function wynncraftStats(msg) {
 }
 function newSwearSong(msg) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (msg.author != users.admin && msg.author != users.swear) {
+        if (msg.author !== users.admin && msg.author !== users.swear) {
             msg.reply('You don\'t have permission to use this command!');
             return;
         }
@@ -668,7 +678,7 @@ function newSwearSong(msg) {
             return;
         }
         msg.channel.send('Getting information on new song...');
-        const output = yield youtubedl(msg.content.split(" ")[1], {
+        const output = yield youtube_dl_exec_1.default(msg.content.split(" ")[1], {
             dumpJson: true,
             noWarnings: true,
             noCallHome: true,
@@ -692,7 +702,7 @@ function newSwearSong(msg) {
             return;
         }
         msg.channel.send('Downloading...');
-        youtubedl(msg.content.split(" ")[1], {
+        youtube_dl_exec_1.default(msg.content.split(" ")[1], {
             noWarnings: true,
             noCallHome: true,
             noCheckCertificate: true,
@@ -709,7 +719,7 @@ function newSwearSong(msg) {
 }
 function downloadVideo(msg) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (msg.author != users.admin) {
+        if (msg.author !== users.admin) {
             msg.reply('You don\'t have permission to use this command!');
             return;
         }
@@ -717,7 +727,7 @@ function downloadVideo(msg) {
             msg.reply('Please enter a video url');
             return;
         }
-        let options = {
+        const options = {
             noWarnings: true,
             noCallHome: true,
             noCheckCertificate: true,
@@ -726,11 +736,11 @@ function downloadVideo(msg) {
             output: `${home}/New Downloads/%(title)s.%(ext)s`,
             ignoreErrors: true
         };
-        if (msg.content.split(" ").length < 3 || msg.content.split(" ")[2][0].toLowerCase() != 'a') {
+        if (msg.content.split(" ").length < 3 || msg.content.split(" ")[2][0].toLowerCase() !== 'a') {
             options.format = 'bestvideo,bestaudio';
         }
         msg.channel.send('Downloading...');
-        yield youtubedl(msg.content.split(" ")[1], options);
+        yield youtube_dl_exec_1.default(msg.content.split(" ")[1], options);
         msg.reply('Download Successful!');
     });
 }
@@ -776,7 +786,7 @@ function play(msg) {
         msg.channel.send('Boiling potatoes...');
         let output;
         try {
-            output = yield youtubedl(url, {
+            output = yield youtube_dl_exec_1.default(url, {
                 dumpSingleJson: true,
                 noWarnings: true,
                 noCallHome: true,
@@ -793,15 +803,15 @@ function play(msg) {
             msg.reply('Please enter a valid url');
             return;
         }
-        function addToQueue(duration, webpage_url, title, id) {
+        function addToQueue(duration, webpageUrl, title, id) {
             if (duration < 5400) {
                 guildStatus[msg.guild.id].queue.push({
-                    webpage_url: webpage_url,
+                    webpageUrl: webpageUrl,
                     title: title,
                     id: id,
                     thumbnail: null
                 });
-                guildStatus[msg.guild.id].downloadQueue.push(webpage_url);
+                guildStatus[msg.guild.id].downloadQueue.push(webpageUrl);
                 if (!guildStatus[msg.guild.id].downloading) {
                     download(msg.guild);
                 }
@@ -845,13 +855,13 @@ function displayQueue(msg) {
             return __awaiter(this, void 0, void 0, function* () {
                 const queueMessage = genericEmbedResponse('Queue');
                 for (const [i, entry] of queueArray[index].entries()) {
-                    queueMessage.addField(`${i + 1}.`, `${entry.title}\n${entry.webpage_url}`);
+                    queueMessage.addField(`${i + 1}.`, `${entry.title}\n${entry.webpageUrl}`);
                 }
                 if (guildStatus[msg.guild.id].fullLoop) {
                     queueMessage.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png');
                 }
                 const message = yield msg.channel.send(queueMessage);
-                let emojiList = ['\u274C'];
+                const emojiList = ['\u274C'];
                 if (index > 0) {
                     emojiList.unshift('\u2B05\uFE0F');
                 }
@@ -920,18 +930,8 @@ client.on('message', msg => {
     }
     if (msg.author.bot) {
         // Disconnects rythm bot if it attempts to play a rickroll
-        if (msg.content.indexOf('Never Gonna Give You Up') != -1) {
-            function kickRickroll(count) {
-                if (msg.member.voice.channelID) {
-                    msg.member.voice.kick();
-                    return;
-                }
-                if (count > 5) {
-                    return;
-                }
-                setTimeout(() => kickRickroll(count + 1), 2000);
-            }
-            kickRickroll(0);
+        if (msg.content.indexOf('Never Gonna Give You Up') !== -1) {
+            voiceKick(0, msg.member);
         }
         return; // Message is ignored if sent from a bot
     }
@@ -941,17 +941,17 @@ client.on('message', msg => {
         let mentionSwear = false;
         let mentionInsult = false;
         for (const word of msg.content.toLowerCase().split(" ")) {
-            if (word.indexOf('potato') != -1) {
+            if (word.indexOf('potato') !== -1) {
                 mentionPotato = true;
             }
             for (const swear of sysData.blacklist.swears) {
-                if (word == swear) {
+                if (word === swear) {
                     mentionSwear = true;
                     break;
                 }
             }
             for (const insult of sysData.blacklist.insults) {
-                if (word == insult) {
+                if (word === insult) {
                     mentionInsult = true;
                     break;
                 }

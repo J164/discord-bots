@@ -1,3 +1,4 @@
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -7,19 +8,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+Object.defineProperty(exports, "__esModule", { value: true });
 process.on('uncaughtException', err => {
     console.log(err);
     setInterval(function () { }, 1000);
 });
-const Discord = require('discord.js');
-const fs = require('fs');
+const Discord = require("discord.js");
+const fs = require("fs");
 const client = new Discord.Client();
 const prefix = '?';
 const home = 'D:/Bot Resources';
 const root = '../..';
-var sysData = require(`${root}/assets/static/static.json`);
-var userData = require(`${home}/sys_files/bots.json`);
-var guildStatus = {};
+const sysData = require(`${root}/assets/static/static.json`);
+let userData = require(`${home}/sys_files/bots.json`);
+const guildStatus = {};
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
     return JSON.parse(jsonString);
@@ -43,7 +45,7 @@ client.on('ready', () => {
 function play(msg) {
     return __awaiter(this, void 0, void 0, function* () {
         let songNum;
-        let vc = msg.member.voice.channel;
+        const vc = msg.member.voice.channel;
         if (!vc) {
             msg.reply('This command can only be used while in a voice channel!');
             return;
@@ -66,7 +68,7 @@ function play(msg) {
             guildStatus[msg.guild.id] = {};
         }
         guildStatus[msg.guild.id].audio = true;
-        let voice = yield vc.join();
+        const voice = yield vc.join();
         guildStatus[msg.guild.id].voice = voice;
         if ('dispatcher' in guildStatus[msg.guild.id]) {
             try {
@@ -93,14 +95,14 @@ client.on('message', msg => {
     }
     if (!msg.content.startsWith(prefix)) {
         for (const word of msg.content.toLowerCase().split(" ")) {
-            if (word == 'swear') {
+            if (word === 'swear') {
                 msg.reply(sysData.blacklist.swears[Math.floor(Math.random() * sysData.blacklist.swears.length)]);
                 return;
             }
         }
         for (const word of msg.content.toLowerCase().split(" ")) {
             for (const swear of sysData.blacklist.swears) {
-                if (word == swear) {
+                if (word === swear) {
                     msg.reply('Good job swearing! Heck yeah!');
                     return;
                 }
@@ -108,7 +110,7 @@ client.on('message', msg => {
         }
         return;
     }
-    let messageStart = msg.content.split(" ")[0].slice(1);
+    const messageStart = msg.content.split(" ")[0].slice(1).toLowerCase();
     try {
         switch (messageStart) {
             case 'play':
