@@ -17,7 +17,7 @@ const Discord = require("discord.js"); // Discord api library
 const fs = require("fs"); // Filesystem
 const axios_1 = require("axios"); // Used to make http requests
 const canvas = require("canvas"); // Allows the manipulation of images
-const youtube_dl_exec_1 = require("youtube-dl-exec"); // Youtube video downloader
+const youtubedl = require('youtube-dl-exec'); // Youtube video downloader
 const client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } }); // Represents the bot client
 const prefix = '&'; // Bot command prefix
 const home = 'D:/Bot Resources'; // Represents path to resources
@@ -89,7 +89,7 @@ function playQueue(channel, guild, vc) {
         const currentSong = guildStatus[guild.id].queue.shift();
         if (!fs.existsSync(`${home}/temp/${guild.id}/${currentSong.id}.mp3`)) {
             try {
-                const output = yield youtube_dl_exec_1.default(currentSong.webpageUrl, {
+                const output = yield youtubedl(currentSong.webpageUrl, {
                     noWarnings: true,
                     noCallHome: true,
                     noCheckCertificate: true,
@@ -141,7 +141,7 @@ function download(guild) {
             guildStatus[guild.id].downloading = true;
             const currentItem = guildStatus[guild.id].downloadQueue.shift();
             try {
-                const output = yield youtube_dl_exec_1.default(currentItem, {
+                const output = yield youtubedl(currentItem, {
                     noWarnings: true,
                     noCallHome: true,
                     noCheckCertificate: true,
@@ -598,6 +598,22 @@ class Euchre {
         });
     }
 }
+// This block executes when someone's voice state changes
+client.on('voiceStateUpdate', (oldState, newState) => {
+    if (oldState.id !== client.user.id) {
+        return;
+    }
+    if (oldState.channelID && oldState.channelID !== newState.channelID) {
+        guildStatus[oldState.guild.id].queue = [];
+        guildStatus[oldState.guild.id].downloadQueue = [];
+        guildStatus[oldState.guild.id].dispatcher.destroy();
+        guildStatus[oldState.guild.id].dispatcher = null;
+        guildStatus[oldState.guild.id].audio = false;
+        guildStatus[oldState.guild.id].singleLoop = false;
+        guildStatus[oldState.guild.id].fullLoop = false;
+        guildStatus[oldState.guild.id].voice.disconnect();
+    }
+});
 // This block executes when the bot is launched
 client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`);
@@ -678,7 +694,7 @@ function newSwearSong(msg) {
             return;
         }
         msg.channel.send('Getting information on new song...');
-        const output = yield youtube_dl_exec_1.default(msg.content.split(" ")[1], {
+        const output = yield youtubedl(msg.content.split(" ")[1], {
             dumpJson: true,
             noWarnings: true,
             noCallHome: true,
@@ -702,7 +718,7 @@ function newSwearSong(msg) {
             return;
         }
         msg.channel.send('Downloading...');
-        youtube_dl_exec_1.default(msg.content.split(" ")[1], {
+        youtubedl(msg.content.split(" ")[1], {
             noWarnings: true,
             noCallHome: true,
             noCheckCertificate: true,
@@ -740,7 +756,7 @@ function downloadVideo(msg) {
             options.format = 'bestvideo,bestaudio';
         }
         msg.channel.send('Downloading...');
-        yield youtube_dl_exec_1.default(msg.content.split(" ")[1], options);
+        yield youtubedl(msg.content.split(" ")[1], options);
         msg.reply('Download Successful!');
     });
 }
@@ -786,7 +802,7 @@ function play(msg) {
         msg.channel.send('Boiling potatoes...');
         let output;
         try {
-            output = yield youtube_dl_exec_1.default(url, {
+            output = yield youtubedl(url, {
                 dumpSingleJson: true,
                 noWarnings: true,
                 noCallHome: true,
@@ -799,7 +815,8 @@ function play(msg) {
                 flatPlaylist: true
             });
         }
-        catch (_b) {
+        catch (err) {
+            console.log(err);
             msg.reply('Please enter a valid url');
             return;
         }

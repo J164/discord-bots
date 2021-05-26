@@ -9,7 +9,7 @@ import Discord = require('discord.js') // Discord api library
 import fs = require('fs') // Filesystem
 import axios from 'axios' // Used to make http requests
 import canvas = require('canvas') // Allows the manipulation of images
-import youtubedl from 'youtube-dl-exec' // Youtube video downloader
+const youtubedl = require('youtube-dl-exec') // Youtube video downloader
 
 const client: Client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } }) // Represents the bot client
 const prefix = '&' // Bot command prefix
@@ -133,7 +133,7 @@ async function playQueue(channel: PartialTextBasedChannelFields, guild: Guild, v
             if (output) {
                 currentSong.thumbnail = output.thumbnails[0].url
             }
-        } catch { }
+        } catch {  }
     }
     guildStatus[guild.id].dispatcher = voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
     guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`)
@@ -621,6 +621,23 @@ class Euchre {
     }
 }
 
+// This block executes when someone's voice state changes
+client.on('voiceStateUpdate', ( oldState, newState ) => {
+    if (oldState.id !== client.user.id ) {
+        return
+    }
+    if (oldState.channelID && oldState.channelID !== newState.channelID) {
+        guildStatus[oldState.guild.id].queue = []
+        guildStatus[oldState.guild.id].downloadQueue = []
+        guildStatus[oldState.guild.id].dispatcher.destroy()
+        guildStatus[oldState.guild.id].dispatcher = null
+        guildStatus[oldState.guild.id].audio = false
+        guildStatus[oldState.guild.id].singleLoop = false
+        guildStatus[oldState.guild.id].fullLoop = false
+        guildStatus[oldState.guild.id].voice.disconnect()
+    }
+})
+
 // This block executes when the bot is launched
 client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`)
@@ -820,7 +837,8 @@ async function play(msg: Message): Promise<void> {
             noPlaylist: true,
             flatPlaylist: true
         })
-    } catch {
+    } catch (err) {
+        console.log(err)
         msg.reply('Please enter a valid url')
         return
     }
