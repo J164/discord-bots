@@ -540,22 +540,24 @@ async function playQueue(channel: PartialTextBasedChannelFields, guild: Guild, v
     guildStatus[guild.id].voice = voice
     const currentSong = guildStatus[guild.id].queue.shift()
     if (!fs.existsSync(`${home}/temp/${guild.id}/${currentSong.id}.mp3`)) {
-        const output = await youtubedl(currentSong.webpage_url, {
-            noWarnings: true,
-            noCallHome: true,
-            noCheckCertificate: true,
-            preferFreeFormats: true,
-            ignoreErrors: true,
-            geoBypass: true,
-            printJson: true,
-            format: 'bestaudio',
-            output: `${home}/temp/${guild.id}/%(id)s.mp3`
-        }).catch()
-        if (output) {
-            currentSong.thumbnail = output.thumbnails[0].url
-        }
+        try {
+            const output = await youtubedl(currentSong.webpage_url, {
+                noWarnings: true,
+                noCallHome: true,
+                noCheckCertificate: true,
+                preferFreeFormats: true,
+                ignoreErrors: true,
+                geoBypass: true,
+                printJson: true,
+                format: 'bestaudio',
+                output: `${home}/music_files/playback/%(id)s.mp3`
+            })
+            if (output) {
+                currentSong.thumbnail = output.thumbnails[0].url
+            }
+        } catch {  }
     }
-    guildStatus[guild.id].dispatcher = voice.play(`${home}/temp/${guild.id}/${currentSong.id}.mp3`)
+    guildStatus[guild.id].dispatcher = voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
     guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`)
     guildStatus[guild.id].nowPlaying.setImage(currentSong.thumbnail)
     guildStatus[guild.id].nowPlaying.addField('URL:', currentSong.webpage_url)
@@ -596,7 +598,7 @@ async function download(guild: Guild): Promise<void> {
                 geoBypass: true,
                 printJson: true,
                 format: 'bestaudio',
-                output: `${home}/temp/${guild.id}/%(id)s.mp3`
+                output: `${home}/music_files/playback/%(id)s.mp3`
             })
             for (let i = 0; i < guildStatus[guild.id].queue.length; i++) {
                 if (guildStatus[guild.id].queue[i].title == output.title) {

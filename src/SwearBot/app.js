@@ -97,7 +97,7 @@ client.on('message', msg => {
             return;
         }
         for (const swear of sysData.blacklist.swears) {
-            if (msg.content.indexOf(swear) == 0 || msg.content.indexOf(` ${swear}`)) {
+            if (msg.content.indexOf(swear) == 0 || msg.content.indexOf(` ${swear}`) != -1) {
                 msg.reply('Good job swearing! Heck yeah!');
                 return;
             }
