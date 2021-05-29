@@ -634,10 +634,11 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`);
     // Removes the temp folder if it exists
-    if (fs.existsSync(`${home}/temp`)) {
-        fs.rmdirSync(`${home}/temp`, { recursive: true });
+    /*if (fs.existsSync(`${home}/temp`)) {
+        fs.rmdirSync(`${home}/temp`, { recursive: true })
     }
-    fs.mkdirSync(`${home}/temp`); // Creates a temp folder for this session
+
+    fs.mkdirSync(`${home}/temp`) // Creates a temp folder for this session*/
     client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)]); // Sets bot status
     // Fetches any necessary user objects
     getUser('619975185029922817', '609826125501169723')
@@ -975,7 +976,7 @@ client.on('message', msg => {
             fullLoop: false,
             singleLoop: false
         };
-        fs.mkdirSync(`${home}/temp/${msg.guild.id}`);
+        //fs.mkdirSync(`${home}/temp/${msg.guild.id}`)
     }
     if (msg.author.bot) {
         // Disconnects rythm bot if it attempts to play a rickroll
