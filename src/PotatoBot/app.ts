@@ -15,8 +15,8 @@ const client: Client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MES
 const prefix = '&' // Bot command prefix
 const home = 'D:/Bot Resources' // Represents path to resources
 const root = '../..'
-const sysData = require(`${root}/assets/static/static.json`) // Loads system info into memory
-let userData = require(`${home}/sys_files/bots.json`) // Loads persistant info into memory
+const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' })) // Loads system info into memory
+let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' })) // Loads persistant info into memory
 const users: { admin: User; swear: User } = { admin: null, swear: null } // Stores specific users
 const guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
 
@@ -37,6 +37,7 @@ interface Song {
     title: string;
     id: string;
     thumbnail: string;
+    duration: number;
 }
 
 interface Team {
@@ -117,8 +118,9 @@ async function playQueue(channel: PartialTextBasedChannelFields, guild: Guild, v
     }
     guildStatus[guild.id].voice = voice
     const currentSong = guildStatus[guild.id].queue.shift()
-    if (!fs.existsSync(`${home}/temp/${guild.id}/${currentSong.id}.mp3`)) {
+    if (!fs.existsSync(`${home}/music_files/playback/${currentSong.id}.json`)) {
         try {
+            console.log('downloading1')
             const output = await youtubedl(currentSong.webpageUrl, {
                 noWarnings: true,
                 noCallHome: true,
@@ -130,9 +132,15 @@ async function playQueue(channel: PartialTextBasedChannelFields, guild: Guild, v
                 format: 'bestaudio',
                 output: `${home}/music_files/playback/%(id)s.mp3`
             })
-            if (output) {
-                currentSong.thumbnail = output.thumbnails[0].url
-            }
+            currentSong.thumbnail = output.thumbnails[0].url
+            const metaData = JSON.stringify({
+                webpageUrl: currentSong.webpageUrl,
+                title: currentSong.title,
+                id: currentSong.id,
+                thumbnail: currentSong.thumbnail,
+                duration: currentSong.duration
+            })
+            fs.writeFileSync(`${home}/music_files/playback/${currentSong.id}.json`, metaData)
         } catch {  }
     }
     guildStatus[guild.id].dispatcher = voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
@@ -167,6 +175,7 @@ async function download(guild: Guild): Promise<void> {
         guildStatus[guild.id].downloading = true
         const currentItem = guildStatus[guild.id].downloadQueue.shift()
         try {
+            console.log('downloading2')
             const output = await youtubedl(currentItem, {
                 noWarnings: true,
                 noCallHome: true,
@@ -181,6 +190,14 @@ async function download(guild: Guild): Promise<void> {
             for (let i = 0; i < guildStatus[guild.id].queue.length; i++) {
                 if (guildStatus[guild.id].queue[i].title === output.title) {
                     guildStatus[guild.id].queue[i].thumbnail = output.thumbnails[0].url
+                    const metaData = JSON.stringify({
+                        webpageUrl: guildStatus[guild.id].queue[i].webpageUrl,
+                        title: guildStatus[guild.id].queue[i].title,
+                        id: guildStatus[guild.id].queue[i].id,
+                        thumbnail: guildStatus[guild.id].queue[i].thumbnail,
+                        duration: guildStatus[guild.id].queue[i].duration
+                    })
+                    fs.writeFileSync(`${home}/music_files/playback/${guildStatus[guild.id].queue[i].id}.json`, metaData)
                 }
             }
         } catch { }
@@ -626,7 +643,7 @@ client.on('voiceStateUpdate', ( oldState, newState ) => {
     if (oldState.id !== client.user.id ) {
         return
     }
-    if (oldState.channelID && oldState.channelID !== newState.channelID) {
+    if (oldState.channelID && oldState.channelID !== newState.channelID && guildStatus[oldState.guild.id].dispatcher) {
         guildStatus[oldState.guild.id].queue = []
         guildStatus[oldState.guild.id].downloadQueue = []
         guildStatus[oldState.guild.id].dispatcher.destroy()
@@ -786,7 +803,7 @@ async function downloadVideo(msg: Message): Promise<void> {
 }
 
 async function play(msg: Message): Promise<void> {
-    let url
+    let url: string
     const voiceChannel = msg.member.voice.channel
     if (!voiceChannel) {
         msg.reply('This command can only be used while in a voice channel!')
@@ -824,35 +841,43 @@ async function play(msg: Message): Promise<void> {
     }
     msg.channel.send('Boiling potatoes...')
     let output
-    try {
-        output = await youtubedl(url, {
-            dumpSingleJson: true,
-            noWarnings: true,
-            noCallHome: true,
-            noCheckCertificate: true,
-            preferFreeFormats: true,
-            youtubeSkipDashManifest: true,
-            ignoreErrors: true,
-            geoBypass: true,
-            noPlaylist: true,
-            flatPlaylist: true
-        })
-    } catch (err) {
-        console.log(err)
-        msg.reply('Please enter a valid url')
-        return
+    if (url.split(/[?&]+/)[1].startsWith('list') || !fs.existsSync(`${home}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`)) {
+        try {
+            console.log('downloading3')
+            output = await youtubedl(url, {
+                dumpSingleJson: true,
+                noWarnings: true,
+                noCallHome: true,
+                noCheckCertificate: true,
+                preferFreeFormats: true,
+                youtubeSkipDashManifest: true,
+                ignoreErrors: true,
+                geoBypass: true,
+                noPlaylist: true,
+                flatPlaylist: true
+            })
+        } catch (err) {
+            console.log(err)
+            msg.reply('Please enter a valid url')
+            return
+        }
+    } else {
+        output = JSON.parse(fs.readFileSync(`${home}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`, { encoding: 'utf8' }))
     }
-    function addToQueue(duration: number, webpageUrl: string, title: string, id: string) {
+    function addToQueue(duration: number, webpageUrl: string, title: string, id: string, thumbnail: string) {
         if (duration < 5400) {
             guildStatus[msg.guild.id].queue.push({
                 webpageUrl: webpageUrl,
                 title: title,
                 id: id,
-                thumbnail: null
+                thumbnail: thumbnail,
+                duration: duration
             })
-            guildStatus[msg.guild.id].downloadQueue.push(webpageUrl)
-            if (!guildStatus[msg.guild.id].downloading) {
-                download(msg.guild)
+            if (!thumbnail) {
+                guildStatus[msg.guild.id].downloadQueue.push(webpageUrl)
+                if (!guildStatus[msg.guild.id].downloading) {
+                    download(msg.guild)
+                }
             }
             return
         }
@@ -860,10 +885,16 @@ async function play(msg: Message): Promise<void> {
     }
     if ('entries' in output) {
         for (const entry of output.entries) {
-            addToQueue(entry.duration, `https://www.youtube.com/watch?v=${entry.id}`, entry.title, entry.id)
+            let data
+            if (fs.existsSync(`${home}/music_files/playback/${entry.id}.json`)) {
+                data = JSON.parse(fs.readFileSync(`${home}/music_files/playback/${entry.id}.json`, { encoding: 'utf8' }))
+            } else {
+                data = entry
+            }
+            addToQueue(data.duration, `https://www.youtube.com/watch?v=${data.id}`, data.title, data.id, data?.thumbnail)
         }
     } else {
-        addToQueue(output.duration, output.webpage_url, output.title, output.id)
+        addToQueue(output.duration, output.webpageUrl, output.title, output.id, output?.thumbnail)
     }
     msg.reply('Added to queue!')
     if (!guildStatus[msg.guild.id].audio) {
