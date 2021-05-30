@@ -101,23 +101,23 @@ async function makeGetRequest(path: string): Promise<any> {
 }
 
 // Recursively plays each video in the queue
-async function playQueue(channel: PartialTextBasedChannelFields, guild: Guild, vc: VoiceChannel): Promise<void> {
-    if (guildStatus[guild.id].queue.length < 1) {
+async function playQueue(channel: PartialTextBasedChannelFields, guildId: Snowflake, vc: VoiceChannel): Promise<void> {
+    if (guildStatus[guildId].queue.length < 1) {
         return
     }
-    guildStatus[guild.id].audio = true
+    guildStatus[guildId].audio = true
     let voice: VoiceConnection
     try {
         voice = await vc.join()
     } catch (err) {
         console.log(err)
         channel.send('Something went wrong!')
-        guildStatus[guild.id].audio = false
-        guildStatus[guild.id].queue = []
+        guildStatus[guildId].audio = false
+        guildStatus[guildId].queue = []
         return
     }
-    guildStatus[guild.id].voice = voice
-    const currentSong = guildStatus[guild.id].queue.shift()
+    guildStatus[guildId].voice = voice
+    const currentSong = guildStatus[guildId].queue.shift()
     if (!fs.existsSync(`${home}/music_files/playback/${currentSong.id}.json`)) {
         try {
             console.log('downloading1')
@@ -143,23 +143,23 @@ async function playQueue(channel: PartialTextBasedChannelFields, guild: Guild, v
             fs.writeFileSync(`${home}/music_files/playback/${currentSong.id}.json`, metaData)
         } catch {  }
     }
-    guildStatus[guild.id].dispatcher = voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
-    guildStatus[guild.id].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`)
-    guildStatus[guild.id].nowPlaying.setImage(currentSong.thumbnail)
-    guildStatus[guild.id].nowPlaying.addField('URL:', currentSong.webpageUrl)
-    if (!guildStatus[guild.id].singleLoop) {
-        channel.send(guildStatus[guild.id].nowPlaying)
+    guildStatus[guildId].dispatcher = voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
+    guildStatus[guildId].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`)
+    guildStatus[guildId].nowPlaying.setImage(currentSong.thumbnail)
+    guildStatus[guildId].nowPlaying.addField('URL:', currentSong.webpageUrl)
+    if (!guildStatus[guildId].singleLoop) {
+        channel.send(guildStatus[guildId].nowPlaying)
     }
-    guildStatus[guild.id].dispatcher.on('finish', () => {
-        if (guildStatus[guild.id].fullLoop) {
-            guildStatus[guild.id].queue.push(currentSong)
-        } else if (guildStatus[guild.id].singleLoop) {
-            guildStatus[guild.id].queue.unshift(currentSong)
+    guildStatus[guildId].dispatcher.on('finish', () => {
+        if (guildStatus[guildId].fullLoop) {
+            guildStatus[guildId].queue.push(currentSong)
+        } else if (guildStatus[guildId].singleLoop) {
+            guildStatus[guildId].queue.unshift(currentSong)
         }
-        guildStatus[guild.id].dispatcher.destroy()
-        guildStatus[guild.id].dispatcher = null
-        guildStatus[guild.id].audio = false
-        playQueue(channel, guild, vc)
+        guildStatus[guildId].dispatcher.destroy()
+        guildStatus[guildId].dispatcher = null
+        guildStatus[guildId].audio = false
+        playQueue(channel, guildId, vc)
     })
 }
 
@@ -900,7 +900,7 @@ async function play(msg: Message): Promise<void> {
     if (!guildStatus[msg.guild.id].audio) {
         guildStatus[msg.guild.id].singleLoop = false
         guildStatus[msg.guild.id].fullLoop = false
-        playQueue(msg.channel, msg.guild, voiceChannel)
+        playQueue(msg.channel, msg.guild.id, voiceChannel)
     }
 }
 
@@ -1124,7 +1124,7 @@ client.on('message', msg => {
                 guildStatus[msg.guild.id].dispatcher.destroy()
                 guildStatus[msg.guild.id].dispatcher = null
                 guildStatus[msg.guild.id].singleLoop = false
-                playQueue(msg.channel, msg.guild, guildStatus[msg.guild.id].voice.channel)
+                playQueue(msg.channel, msg.guild.id, guildStatus[msg.guild.id].voice.channel)
                 msg.reply('Skipped!')
                 break
             case 'shuffle': //change to shuffle option when adding to queue (async downloading is easier)
