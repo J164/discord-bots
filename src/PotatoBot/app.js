@@ -89,7 +89,6 @@ function playQueue(channel, guildId, vc) {
         const currentSong = guildStatus[guildId].queue.shift();
         if (!fs.existsSync(`${home}/music_files/playback/${currentSong.id}.json`)) {
             try {
-                console.log('downloading1');
                 const output = yield youtubedl(currentSong.webpageUrl, {
                     noWarnings: true,
                     noCallHome: true,
@@ -148,7 +147,6 @@ function download(guild) {
             guildStatus[guild.id].downloading = true;
             const currentItem = guildStatus[guild.id].downloadQueue.shift();
             try {
-                console.log('downloading2');
                 const output = yield youtubedl(currentItem, {
                     noWarnings: true,
                     noCallHome: true,
@@ -820,7 +818,6 @@ function play(msg) {
         let output;
         if (url.split(/[?&]+/)[1].startsWith('list') || !fs.existsSync(`${home}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`)) {
             try {
-                console.log('downloading3');
                 output = yield youtubedl(url, {
                     dumpSingleJson: true,
                     noWarnings: true,
