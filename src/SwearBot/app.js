@@ -19,8 +19,8 @@ const client = new Discord.Client();
 const prefix = '?';
 const home = 'D:/Bot Resources';
 const root = '../..';
-const sysData = require(`${root}/assets/static/static.json`);
-let userData = require(`${home}/sys_files/bots.json`);
+const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }));
+let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }));
 const guildStatus = {};
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
@@ -42,7 +42,7 @@ client.on('ready', () => {
         }
     }, 60000);
 });
-function play(msg) {
+function play(msg, loop) {
     return __awaiter(this, void 0, void 0, function* () {
         let songNum;
         const vc = msg.member.voice.channel;
@@ -50,38 +50,29 @@ function play(msg) {
             msg.reply('This command can only be used while in a voice channel!');
             return;
         }
-        let loop = false;
         try {
             if (parseInt(msg.content.split(" ")[1]) <= userData.swearSongs.length && parseInt(msg.content.split(" ")[1]) > 0) {
                 songNum = parseInt(msg.content.split(" ")[1]) - 1;
             }
             else {
-                loop = true;
                 songNum = Math.floor(Math.random() * userData.swearSongs.length);
             }
         }
         catch (_a) {
-            loop = true;
             songNum = Math.floor(Math.random() * userData.swearSongs.length);
-        }
-        if (!(msg.guild.id in guildStatus)) {
-            guildStatus[msg.guild.id] = {};
         }
         guildStatus[msg.guild.id].audio = true;
         const voice = yield vc.join();
         guildStatus[msg.guild.id].voice = voice;
-        if ('dispatcher' in guildStatus[msg.guild.id]) {
-            try {
-                guildStatus[msg.guild.id].dispatcher.destroy();
-            }
-            catch (_b) { }
+        if (guildStatus[msg.guild.id].dispatcher) {
+            guildStatus[msg.guild.id].dispatcher.destroy();
         }
         guildStatus[msg.guild.id].dispatcher = voice.play(`${home}/music_files/swear_songs/${userData.swearSongs[songNum]}`);
         guildStatus[msg.guild.id].dispatcher.on('finish', () => {
             guildStatus[msg.guild.id].dispatcher.destroy();
             guildStatus[msg.guild.id].audio = false;
             if (loop) {
-                play(msg);
+                play(msg, loop);
             }
         });
     });
@@ -91,7 +82,11 @@ client.on('message', msg => {
         return;
     }
     if (!(msg.guild.id in guildStatus)) {
-        guildStatus[msg.guild.id] = {};
+        guildStatus[msg.guild.id] = {
+            voice: null,
+            dispatcher: null,
+            audio: false
+        };
     }
     if (!msg.content.startsWith(prefix)) {
         for (const word of msg.content.toLowerCase().split(" ")) {
@@ -114,7 +109,10 @@ client.on('message', msg => {
     try {
         switch (messageStart) {
             case 'play':
-                play(msg);
+                play(msg, false);
+                break;
+            case 'loop':
+                play(msg, true);
                 break;
             case 'pause':
                 if (!('dispatcher' in guildStatus[msg.guild.id])) {

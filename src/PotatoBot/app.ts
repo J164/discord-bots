@@ -1,5 +1,3 @@
-import { Client, Guild, GuildMember, Message, MessageEmbed, MessageReaction, PartialTextBasedChannelFields, Snowflake, StreamDispatcher, User, VoiceChannel, VoiceConnection } from "discord.js"
-
 process.on('uncaughtException', err => {
     console.log(err)
     setInterval(function () { }, 1000)
@@ -11,13 +9,13 @@ import axios from 'axios' // Used to make http requests
 import canvas = require('canvas') // Allows the manipulation of images
 const youtubedl = require('youtube-dl-exec') // Youtube video downloader
 
-const client: Client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } }) // Represents the bot client
+const client: Discord.Client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } }) // Represents the bot client
 const prefix = '&' // Bot command prefix
 const home = 'D:/Bot Resources' // Represents path to resources
 const root = '../..'
 const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' })) // Loads system info into memory
 let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' })) // Loads persistant info into memory
-const users: { admin: User; swear: User } = { admin: null, swear: null } // Stores specific users
+const users: { admin: Discord.User; swear: Discord.User } = { admin: null, swear: null } // Stores specific users
 const guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
 
 interface GuildData {
@@ -25,9 +23,9 @@ interface GuildData {
     downloadQueue: string[];
     downloading: boolean;
     audio: boolean;
-    voice: VoiceConnection;
-    dispatcher: StreamDispatcher;
-    nowPlaying: MessageEmbed;
+    voice: Discord.VoiceConnection;
+    dispatcher: Discord.StreamDispatcher;
+    nowPlaying: Discord.MessageEmbed;
     fullLoop: boolean;
     singleLoop: boolean;
 }
@@ -53,12 +51,12 @@ interface Card {
 
 interface Player {
     id: number;
-    user: User;
+    user: Discord.User;
     hand: Card[];
     team: Team;
 }
 
-function voiceKick(count: number, user: GuildMember): void {
+function voiceKick(count: number, user: Discord.GuildMember): void {
     if (user.voice.channelID) {
         user.voice.kick()
         return
@@ -81,7 +79,7 @@ async function mergeImages(filePaths: string[], options: { width: number; height
 }
 
 // Creates a commonly used discord embed
-function genericEmbedResponse(title: string): MessageEmbed {
+function genericEmbedResponse(title: string): Discord.MessageEmbed {
     const embedVar = new Discord.MessageEmbed()
     embedVar.setTitle(title)
     embedVar.setColor(0x0099ff)
@@ -101,12 +99,12 @@ async function makeGetRequest(path: string): Promise<any> {
 }
 
 // Recursively plays each video in the queue
-async function playQueue(channel: PartialTextBasedChannelFields, guildId: Snowflake, vc: VoiceChannel): Promise<void> {
+async function playQueue(channel: Discord.PartialTextBasedChannelFields, guildId: Discord.Snowflake, vc: Discord.VoiceChannel): Promise<void> {
     if (guildStatus[guildId].queue.length < 1) {
         return
     }
     guildStatus[guildId].audio = true
-    let voice: VoiceConnection
+    let voice: Discord.VoiceConnection
     try {
         voice = await vc.join()
     } catch (err) {
@@ -163,13 +161,13 @@ async function playQueue(channel: PartialTextBasedChannelFields, guildId: Snowfl
 }
 
 // Fetches a user from a specific guild using their ID
-async function getUser(guildId: Snowflake, userId: Snowflake): Promise<GuildMember> {
+async function getUser(guildId: Discord.Snowflake, userId: Discord.Snowflake): Promise<Discord.GuildMember> {
     const guild = await client.guilds.fetch(guildId)
     const user = await guild.members.fetch({ user: userId })
     return user
 }
 
-async function download(guild: Guild): Promise<void> {
+async function download(guild: Discord.Guild): Promise<void> {
     while (guildStatus[guild.id].downloadQueue.length > 0) {
         guildStatus[guild.id].downloading = true
         const currentItem = guildStatus[guild.id].downloadQueue.shift()
@@ -213,7 +211,7 @@ class Euchre {
     gameState: { top: Card; inPlay: Card[]; trump: string }
     players: Player[]
 
-    constructor(players: User[]) {
+    constructor(players: Discord.User[]) {
         this.team1 = {
             tricks: 0,
             score: 0
@@ -254,7 +252,7 @@ class Euchre {
         }
     }
 
-    async startGame(): Promise<MessageEmbed> {
+    async startGame(): Promise<Discord.MessageEmbed> {
         await this.startRound()
         while (this.team1.score < 10 && this.team2.score < 10) {
             const newOrder = [this.players[3], this.players[0], this.players[1], this.players[2]]
@@ -567,9 +565,9 @@ class Euchre {
         return names
     }
 
-    async askPlayer(player: User, question: string, responses: string[]): Promise<number> {
+    async askPlayer(player: Discord.User, question: string, responses: string[]): Promise<number> {
         const channel = await player.createDM()
-        const prompt: MessageEmbed = genericEmbedResponse(question)
+        const prompt: Discord.MessageEmbed = genericEmbedResponse(question)
         for (let i = 0; i < responses.length; i++) {
             prompt.addField(`${(i + 1)}. `, responses[i])
         }
@@ -578,7 +576,7 @@ class Euchre {
         for (let i = 0; i < responses.length; i++) {
             await message.react(emojiList[i])
         }
-        function filter(reaction: MessageReaction): boolean { return reaction.client === client }
+        function filter(reaction: Discord.MessageReaction): boolean { return reaction.client === client }
         const reaction = await message.awaitReactions(filter, { max: 1 })
         const reactionResult = reaction.first()
         for (let i = 0; i < emojiList.length; i++) {
@@ -688,7 +686,7 @@ client.on('ready', () => {
 
 // Functions for specific commands
 
-async function wynncraftStats(msg: Message): Promise<void> {
+async function wynncraftStats(msg: Discord.Message): Promise<void> {
     if (msg.content.split(" ").length < 2) {
         msg.reply('Please enter a player username')
         return
@@ -726,7 +724,7 @@ async function wynncraftStats(msg: Message): Promise<void> {
     msg.reply(embedVar)
 }
 
-async function newSwearSong(msg: Message): Promise<void> {
+async function newSwearSong(msg: Discord.Message): Promise<void> {
     if (msg.author !== users.admin && msg.author !== users.swear) {
         msg.reply('You don\'t have permission to use this command!')
         return
@@ -774,7 +772,7 @@ async function newSwearSong(msg: Message): Promise<void> {
     msg.reply('Success!')
 }
 
-async function downloadVideo(msg: Message): Promise<void> {
+async function downloadVideo(msg: Discord.Message): Promise<void> {
     if (msg.author !== users.admin) {
         msg.reply('You don\'t have permission to use this command!')
         return
@@ -800,7 +798,7 @@ async function downloadVideo(msg: Message): Promise<void> {
     msg.reply('Download Successful!')
 }
 
-async function play(msg: Message): Promise<void> {
+async function play(msg: Discord.Message): Promise<void> {
     let url: string
     const voiceChannel = msg.member.voice.channel
     if (!voiceChannel) {
@@ -901,7 +899,7 @@ async function play(msg: Message): Promise<void> {
     }
 }
 
-async function displayQueue(msg: Message): Promise<void> {
+async function displayQueue(msg: Discord.Message): Promise<void> {
     if (guildStatus[msg.guild.id].queue.length < 1) {
         msg.reply('There is no queue!')
         return
@@ -935,7 +933,7 @@ async function displayQueue(msg: Message): Promise<void> {
         for (const emoji of emojiList) {
             await message.react(emoji)
         }
-        function filter(reaction: MessageReaction): boolean { return reaction.client === client }
+        function filter(reaction: Discord.MessageReaction): boolean { return reaction.client === client }
         const reaction = await message.awaitReactions(filter, { max: 1 })
         const reactionResult = reaction.first()
         switch (reactionResult.emoji.name) {
@@ -955,7 +953,7 @@ async function displayQueue(msg: Message): Promise<void> {
     sendQueue(0)
 }
 
-async function setupEuchre(msg: Message): Promise<void> {
+async function setupEuchre(msg: Discord.Message): Promise<void> {
     const player1 = await msg.guild.members.fetch({ query: msg.content.split(" ")[1], limit: 1 })
     const player2 = await msg.guild.members.fetch({ query: msg.content.split(" ")[2], limit: 1 })
     const player3 = await msg.guild.members.fetch({ query: msg.content.split(" ")[3], limit: 1 })

@@ -10,11 +10,17 @@ const client = new Discord.Client()
 const prefix = '?'
 const home = 'D:/Bot Resources'
 const root = '../..'
-const sysData = require(`${root}/assets/static/static.json`)
-let userData = require(`${home}/sys_files/bots.json`)
-const guildStatus = {}
+const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
+let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
+const guildStatus: { [key: string]: GuildData } = {}
 
-function refreshData(location) {
+interface GuildData {
+    voice: Discord.VoiceConnection;
+    dispatcher: Discord.StreamDispatcher;
+    audio: boolean;
+}
+
+function refreshData(location: string) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' })
     return JSON.parse(jsonString)
 }
@@ -35,42 +41,34 @@ client.on('ready', () => {
     }, 60000)
 })
 
-async function play(msg) {
+async function play(msg: Discord.Message, loop: boolean) {
     let songNum
     const vc = msg.member.voice.channel
     if (!vc) {
         msg.reply('This command can only be used while in a voice channel!')
         return
     }
-    let loop = false
     try {
         if (parseInt(msg.content.split(" ")[1]) <= userData.swearSongs.length && parseInt(msg.content.split(" ")[1]) > 0) {
             songNum = parseInt(msg.content.split(" ")[1]) - 1
         } else {
-            loop = true
             songNum = Math.floor(Math.random() * userData.swearSongs.length)
         }
     } catch {
-        loop = true
         songNum = Math.floor(Math.random() * userData.swearSongs.length)
-    }
-    if (!(msg.guild.id in guildStatus)) {
-        guildStatus[msg.guild.id] = {}
     }
     guildStatus[msg.guild.id].audio = true
     const voice = await vc.join()
     guildStatus[msg.guild.id].voice = voice
-    if ('dispatcher' in guildStatus[msg.guild.id]) {
-        try {
-            guildStatus[msg.guild.id].dispatcher.destroy()
-        } catch { }
+    if (guildStatus[msg.guild.id].dispatcher) {
+        guildStatus[msg.guild.id].dispatcher.destroy()
     }
     guildStatus[msg.guild.id].dispatcher = voice.play(`${home}/music_files/swear_songs/${userData.swearSongs[songNum]}`)
     guildStatus[msg.guild.id].dispatcher.on('finish', () => {
         guildStatus[msg.guild.id].dispatcher.destroy()
         guildStatus[msg.guild.id].audio = false
         if (loop) {
-            play(msg)
+            play(msg, loop)
         }
     })
 }
@@ -81,7 +79,11 @@ client.on('message', msg => {
     }
 
     if (!(msg.guild.id in guildStatus)) {
-        guildStatus[msg.guild.id] = {}
+        guildStatus[msg.guild.id] = {
+            voice: null,
+            dispatcher: null,
+            audio: false
+        }
     }
 
     if (!msg.content.startsWith(prefix)) {
@@ -107,7 +109,10 @@ client.on('message', msg => {
     try {
         switch (messageStart) {
             case 'play':
-                play(msg)
+                play(msg, false)
+                break
+            case 'loop':
+                play(msg, true)
                 break
             case 'pause':
                 if (!('dispatcher' in guildStatus[msg.guild.id])) {
