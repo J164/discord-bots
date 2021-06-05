@@ -614,10 +614,11 @@ class Euchre {
 }
 // This block executes when someone's voice state changes
 client.on('voiceStateUpdate', (oldState, newState) => {
+    var _a;
     if (oldState.id !== client.user.id) {
         return;
     }
-    if (oldState.channelID && oldState.channelID !== newState.channelID && guildStatus[oldState.guild.id].dispatcher) {
+    if (oldState.channelID && oldState.channelID !== newState.channelID && ((_a = guildStatus[oldState.guild.id]) === null || _a === void 0 ? void 0 : _a.dispatcher)) {
         guildStatus[oldState.guild.id].queue = [];
         guildStatus[oldState.guild.id].downloadQueue = [];
         guildStatus[oldState.guild.id].dispatcher.destroy();
@@ -872,7 +873,7 @@ function play(msg) {
             }
         }
         else {
-            addToQueue(output.duration, output.webpageUrl, output.title, output.id, output === null || output === void 0 ? void 0 : output.thumbnail);
+            addToQueue(output.duration, output.webpage_url, output.title, output.id, output === null || output === void 0 ? void 0 : output.thumbnail);
         }
         msg.reply('Added to queue!');
         if (!guildStatus[msg.guild.id].audio) {

@@ -639,7 +639,7 @@ client.on('voiceStateUpdate', ( oldState, newState ) => {
     if (oldState.id !== client.user.id ) {
         return
     }
-    if (oldState.channelID && oldState.channelID !== newState.channelID && guildStatus[oldState.guild.id].dispatcher) {
+    if (oldState.channelID && oldState.channelID !== newState.channelID && guildStatus[oldState.guild.id]?.dispatcher) {
         guildStatus[oldState.guild.id].queue = []
         guildStatus[oldState.guild.id].downloadQueue = []
         guildStatus[oldState.guild.id].dispatcher.destroy()
@@ -889,7 +889,7 @@ async function play(msg: Discord.Message): Promise<void> {
             addToQueue(data.duration, `https://www.youtube.com/watch?v=${data.id}`, data.title, data.id, data?.thumbnail)
         }
     } else {
-        addToQueue(output.duration, output.webpageUrl, output.title, output.id, output?.thumbnail)
+        addToQueue(output.duration, output.webpage_url, output.title, output.id, output?.thumbnail)
     }
     msg.reply('Added to queue!')
     if (!guildStatus[msg.guild.id].audio) {
