@@ -104,9 +104,8 @@ async function playQueue(channel: Discord.PartialTextBasedChannelFields, guildId
         return
     }
     guildStatus[guildId].audio = true
-    let voice: Discord.VoiceConnection
     try {
-        voice = await vc.join()
+        guildStatus[guildId].voice = await vc.join()
     } catch (err) {
         console.log(err)
         channel.send('Something went wrong!')
@@ -114,7 +113,6 @@ async function playQueue(channel: Discord.PartialTextBasedChannelFields, guildId
         guildStatus[guildId].queue = []
         return
     }
-    guildStatus[guildId].voice = voice
     const currentSong = guildStatus[guildId].queue.shift()
     if (!fs.existsSync(`${home}/music_files/playback/${currentSong.id}.json`)) {
         try {
