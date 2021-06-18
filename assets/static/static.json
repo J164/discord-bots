@@ -2,6 +2,7 @@
   "potatoKey": "NzgzMTIxNjk1MjQyMTkwODQ4.X8WI6Q.Y_njAUT2hW9XwcssQFlnFB2gg2s",
   "swearKey": "Nzk0NzEwNzkwMTE1OTUwNjAz.X--yGQ.q-3S8VuKsxFHxdVg5MOz593RV8I",
   "krenkoKey": "NzgzMDkxOTE3NzA1MTgzMjMz.X8VtLg.fevpRLh1K9Y5Jt-P9rFWmDU2sso",
+  "yeetKey": "ODUzNjc5ODc2NDI2MDM5MzM2.YMY5Vw.zxxboSAtq1DSFwBGlBBJPXnrjIg",
   "potatoStatus": [
     "Eating a baked potato",
     "Farming potatoes",
@@ -20,6 +21,10 @@
     "Building decks",
     "Magic: The Gathering",
     "Searching for new deck ideas"
+  ],
+  "yeetStatus": [
+    "Yeeting the Child",
+    "YA YEEEEEEEEEET"
   ],
   "blacklist": {
     "swears": [
