@@ -25,3 +25,8 @@
      directory: "/src/KrenkoBot"
      schedule:
        interval: "daily"
+       
+   - package-ecosystem: "npm"
+     directory: "/src/YeetBot"
+     schedule:
+       interval: "daily"
