@@ -26,15 +26,15 @@ const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, 
 let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' })); // Loads persistant info into memory
 const users = { admin: null, swear: null }; // Stores specific users
 const guildStatus = {}; // Stores guild specific information to allow bot to act independent in different guilds
-function voiceKick(count, user) {
-    if (user.voice.channelID) {
-        user.voice.kick();
+function voiceKick(count, voiceState) {
+    if (voiceState.channelID) {
+        voiceState.kick();
         return;
     }
     if (count > 5) {
         return;
     }
-    setTimeout(() => voiceKick(count + 1, user), 2000);
+    setTimeout(() => voiceKick(count + 1, voiceState), 2000);
 }
 // Merges multiple images into one image
 function mergeImages(filePaths, options) {
@@ -139,11 +139,11 @@ function getUser(guildId, userId) {
         return user;
     });
 }
-function download(guild) {
+function download(guildId) {
     return __awaiter(this, void 0, void 0, function* () {
-        while (guildStatus[guild.id].downloadQueue.length > 0) {
-            guildStatus[guild.id].downloading = true;
-            const currentItem = guildStatus[guild.id].downloadQueue.shift();
+        while (guildStatus[guildId].downloadQueue.length > 0) {
+            guildStatus[guildId].downloading = true;
+            const currentItem = guildStatus[guildId].downloadQueue.shift();
             try {
                 const output = yield youtubedl(currentItem, {
                     noWarnings: true,
@@ -156,23 +156,23 @@ function download(guild) {
                     format: 'bestaudio',
                     output: `${home}/music_files/playback/%(id)s.mp3`
                 });
-                for (let i = 0; i < guildStatus[guild.id].queue.length; i++) {
-                    if (guildStatus[guild.id].queue[i].title === output.title) {
-                        guildStatus[guild.id].queue[i].thumbnail = output.thumbnails[0].url;
+                for (let i = 0; i < guildStatus[guildId].queue.length; i++) {
+                    if (guildStatus[guildId].queue[i].title === output.title) {
+                        guildStatus[guildId].queue[i].thumbnail = output.thumbnails[0].url;
                         const metaData = JSON.stringify({
-                            webpageUrl: guildStatus[guild.id].queue[i].webpageUrl,
-                            title: guildStatus[guild.id].queue[i].title,
-                            id: guildStatus[guild.id].queue[i].id,
-                            thumbnail: guildStatus[guild.id].queue[i].thumbnail,
-                            duration: guildStatus[guild.id].queue[i].duration
+                            webpageUrl: guildStatus[guildId].queue[i].webpageUrl,
+                            title: guildStatus[guildId].queue[i].title,
+                            id: guildStatus[guildId].queue[i].id,
+                            thumbnail: guildStatus[guildId].queue[i].thumbnail,
+                            duration: guildStatus[guildId].queue[i].duration
                         });
-                        fs.writeFileSync(`${home}/music_files/playback/${guildStatus[guild.id].queue[i].id}.json`, metaData);
+                        fs.writeFileSync(`${home}/music_files/playback/${guildStatus[guildId].queue[i].id}.json`, metaData);
                     }
                 }
             }
             catch (_a) { }
         }
-        guildStatus[guild.id].downloading = false;
+        guildStatus[guildId].downloading = false;
     });
 }
 class Euchre {
@@ -851,7 +851,7 @@ function play(msg) {
                 if (!thumbnail) {
                     guildStatus[msg.guild.id].downloadQueue.push(webpageUrl);
                     if (!guildStatus[msg.guild.id].downloading) {
-                        download(msg.guild);
+                        download(msg.guild.id);
                     }
                 }
                 return;
@@ -977,7 +977,7 @@ client.on('message', msg => {
     if (msg.author.bot) {
         // Disconnects rythm bot if it attempts to play a rickroll
         if (msg.content.indexOf('Never Gonna Give You Up') !== -1) {
-            voiceKick(0, msg.member);
+            voiceKick(0, msg.member.voice);
         }
         return; // Message is ignored if sent from a bot
     }
