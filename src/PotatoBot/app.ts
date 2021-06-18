@@ -138,7 +138,7 @@ async function playQueue(channel: Discord.PartialTextBasedChannelFields, guildId
             fs.writeFileSync(`${home}/music_files/playback/${currentSong.id}.json`, metaData)
         } catch {  }
     }
-    guildStatus[guildId].dispatcher = voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
+    guildStatus[guildId].dispatcher = guildStatus[guildId].voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
     guildStatus[guildId].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`)
     guildStatus[guildId].nowPlaying.setImage(currentSong.thumbnail)
     guildStatus[guildId].nowPlaying.addField('URL:', currentSong.webpageUrl)

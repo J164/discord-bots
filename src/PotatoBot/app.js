@@ -74,9 +74,8 @@ function playQueue(channel, guildId, vc) {
             return;
         }
         guildStatus[guildId].audio = true;
-        let voice;
         try {
-            voice = yield vc.join();
+            guildStatus[guildId].voice = yield vc.join();
         }
         catch (err) {
             console.log(err);
@@ -85,7 +84,6 @@ function playQueue(channel, guildId, vc) {
             guildStatus[guildId].queue = [];
             return;
         }
-        guildStatus[guildId].voice = voice;
         const currentSong = guildStatus[guildId].queue.shift();
         if (!fs.existsSync(`${home}/music_files/playback/${currentSong.id}.json`)) {
             try {
@@ -112,7 +110,7 @@ function playQueue(channel, guildId, vc) {
             }
             catch (_a) { }
         }
-        guildStatus[guildId].dispatcher = voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`);
+        guildStatus[guildId].dispatcher = guildStatus[guildId].voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`);
         guildStatus[guildId].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`);
         guildStatus[guildId].nowPlaying.setImage(currentSong.thumbnail);
         guildStatus[guildId].nowPlaying.addField('URL:', currentSong.webpageUrl);
