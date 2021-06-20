@@ -9,6 +9,5 @@ cd ../SwearBot
 call npm install
 cd ../YeetBot
 call npm install
-cd ../files
 call choco install ffmpeg
 call choco upgrade ffmpeg

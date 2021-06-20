@@ -20,9 +20,9 @@ const client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 
 const prefix = '$';
 const home = 'D:/Bot Resources';
 const root = '../..';
-const sysData = require(`${root}/assets/static/static.json`);
-let userData = require(`${home}/sys_files/bots.json`);
-const guildStatus = {};
+const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }));
+let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }));
+const guildStatus = {}; // Stores guild specific information to allow bot to act independent in different guilds
 function refreshData(location) {
     const jsonString = fs.readFileSync(location, { encoding: 'utf8' });
     return JSON.parse(jsonString);
@@ -135,8 +135,7 @@ class Deck {
     }
 }
 class MagicGame {
-    constructor(playerList, channel) {
-        this.channel = channel;
+    constructor(playerList) {
         this.numAlive = playerList.length;
         this.playerInfo = {};
         for (const player of playerList) {
@@ -150,28 +149,25 @@ class MagicGame {
     }
     changeLife(player, amount) {
         this.playerInfo[player].lifeTotal += amount;
-        if (this.checkStatus(player)) {
-            this.printStandings();
-            return;
-        }
+        return this.checkStatus(player);
     }
     addPoison(player, amount) {
         this.playerInfo[player].poison += amount;
-        if (this.checkStatus(player)) {
-            this.printStandings();
-            return;
-        }
+        return this.checkStatus(player);
     }
     checkStatus(player) {
         if (this.playerInfo[player].lifeTotal < 1 || this.playerInfo[player].poison >= 10) {
-            this.playerInfo[player].isAlive = false;
-            this.numAlive--;
-            if (this.numAlive < 2) {
-                this.finishGame();
-            }
-            return false;
+            return this.eliminate(player);
         }
-        return true;
+        return this.printStandings();
+    }
+    eliminate(player) {
+        this.playerInfo[player].isAlive = false;
+        this.numAlive--;
+        if (this.numAlive < 2) {
+            return this.finishGame();
+        }
+        return this.printStandings();
     }
     printStandings() {
         const embedVar = genericEmbedResponse('Current Standings');
@@ -183,37 +179,44 @@ class MagicGame {
                 embedVar.addField(`${player.playerName}:`, 'ELIMINATED');
             }
         }
-        this.channel.send(embedVar);
+        return embedVar;
     }
     finishGame() {
         for (const player of this.playerInfo) {
             if (player.isAlive) {
                 const embedVar = genericEmbedResponse(`${player.playerName} Wins!!`);
                 embedVar.addField(`${player.playerName}:`, `Life Total: ${player.lifeTotal}\nPoison Counters: ${player.poison}`);
-                this.channel.send(embedVar);
-                break;
+                return embedVar;
             }
         }
     }
 }
-class CommanderGame extends MagicGame {
-    constructor(playerList, channel, commanderList) {
-        super(playerList, channel);
+/*class CommanderGame extends MagicGame {
+    constructor(playerList: Discord.GuildMember[], commanderList: string[]) {
+        super(playerList)
         //Make changes for commander (life total, times commander cast, commander damage)
     }
-    changeLife(player, amount, commander = null) {
+
+    changeLife(player: Discord.Snowflake, amount: number, commander: string = null) {
+
     }
-    checkStatus(player) {
-        return true;
-        //returns true if they are alive
+
+    checkStatus(player: Discord.Snowflake) {
+        
     }
+
     printStandings() {
+
     }
-    addCast(commander) {
+
+    addCast(commander: string) {
+
     }
-    getCasts(commander) {
+
+    getCasts(commander: string) {
+
     }
-}
+}*/
 client.on('ready', () => {
     console.log(`We have logged in as ${client.user.tag}`);
     client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)]);
@@ -285,6 +288,11 @@ client.on('message', msg => {
     if (msg.author.bot || !msg.content.startsWith(prefix) || !msg.guild) {
         return;
     }
+    if (!(msg.guild.id in guildStatus)) {
+        guildStatus[msg.guild.id] = {
+            game: null
+        };
+    }
     const messageStart = msg.content.split(" ")[0].slice(1).toLowerCase();
     try {
         switch (messageStart) {
@@ -317,6 +325,52 @@ client.on('message', msg => {
                     flipResult.setImage('https://upload.wikimedia.org/wikipedia/commons/d/d9/2017-D_Roosevelt_dime_reverse_transparent.png');
                 }
                 msg.reply(flipResult);
+                break;
+            case 'newgame':
+                if (guildStatus[msg.guild.id].game) {
+                    msg.reply('A game is already in progress!');
+                    return;
+                }
+                //guildStatus[msg.guild.id].game = new MagicGame()
+                break;
+            case 'hit':
+                if (!guildStatus[msg.guild.id].game) {
+                    msg.reply('There is no active game!');
+                    return;
+                }
+                //msg.reply(guildStatus[msg.guild.id].game.changeLife())
+                break;
+            case 'heal':
+                if (!guildStatus[msg.guild.id].game) {
+                    msg.reply('There is no active game!');
+                    return;
+                }
+                //msg.reply(guildStatus[msg.guild.id].game.changeLife()) // multiply number by -1
+                break;
+            case 'eliminate':
+                if (!guildStatus[msg.guild.id].game) {
+                    msg.reply('There is no active game!');
+                    return;
+                }
+                //msg.reply(guildStatus[msg.guild.id].game.eliminate())
+                break;
+            case 'poison':
+                if (!guildStatus[msg.guild.id].game) {
+                    msg.reply('There is no active game!');
+                    return;
+                }
+                //msg.reply(guildStatus[msg.guild.id].game.addPoison())
+                break;
+            case 'standings':
+                if (!guildStatus[msg.guild.id].game) {
+                    msg.reply('There is no active game!');
+                    return;
+                }
+                //msg.reply(guildStatus[msg.guild.id].game.printStandings())
+                break;
+            case 'endgame':
+                guildStatus[msg.guild.id].game = null;
+                msg.reply('Success!');
                 break;
         }
     }
