@@ -110,22 +110,21 @@ function playQueue(channel, guildId, vc) {
             }
             catch (_a) { }
         }
-        guildStatus[guildId].dispatcher = guildStatus[guildId].voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`);
+        guildStatus[guildId].voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`);
         guildStatus[guildId].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`);
         guildStatus[guildId].nowPlaying.setImage(currentSong.thumbnail);
         guildStatus[guildId].nowPlaying.addField('URL:', currentSong.webpageUrl);
         if (!guildStatus[guildId].singleLoop) {
             channel.send(guildStatus[guildId].nowPlaying);
         }
-        guildStatus[guildId].dispatcher.on('finish', () => {
+        guildStatus[guildId].voice.dispatcher.on('finish', () => {
             if (guildStatus[guildId].fullLoop) {
                 guildStatus[guildId].queue.push(currentSong);
             }
             else if (guildStatus[guildId].singleLoop) {
                 guildStatus[guildId].queue.unshift(currentSong);
             }
-            guildStatus[guildId].dispatcher.destroy();
-            guildStatus[guildId].dispatcher = null;
+            guildStatus[guildId].voice.dispatcher.destroy();
             guildStatus[guildId].audio = false;
             playQueue(channel, guildId, vc);
         });
@@ -612,15 +611,14 @@ class Euchre {
 }
 // This block executes when someone's voice state changes
 client.on('voiceStateUpdate', (oldState, newState) => {
-    var _a;
+    var _a, _b;
     if (oldState.id !== client.user.id) {
         return;
     }
-    if (oldState.channelID && oldState.channelID !== newState.channelID && ((_a = guildStatus[oldState.guild.id]) === null || _a === void 0 ? void 0 : _a.dispatcher)) {
+    if (oldState.channelID && oldState.channelID !== newState.channelID && ((_b = (_a = guildStatus[oldState.guild.id]) === null || _a === void 0 ? void 0 : _a.voice) === null || _b === void 0 ? void 0 : _b.dispatcher)) {
         guildStatus[oldState.guild.id].queue = [];
         guildStatus[oldState.guild.id].downloadQueue = [];
-        guildStatus[oldState.guild.id].dispatcher.destroy();
-        guildStatus[oldState.guild.id].dispatcher = null;
+        guildStatus[oldState.guild.id].voice.dispatcher.destroy();
         guildStatus[oldState.guild.id].audio = false;
         guildStatus[oldState.guild.id].singleLoop = false;
         guildStatus[oldState.guild.id].fullLoop = false;
@@ -955,6 +953,7 @@ function setupEuchre(msg) {
 }
 // This block executes when a message is sent
 client.on('message', msg => {
+    var _a, _b, _c;
     // If message is not in a guild return
     if (!msg.guild) {
         return;
@@ -967,7 +966,6 @@ client.on('message', msg => {
             downloadQueue: [],
             voice: null,
             downloading: false,
-            dispatcher: null,
             nowPlaying: null,
             fullLoop: false,
             singleLoop: false
@@ -1034,18 +1032,18 @@ client.on('message', msg => {
                 play(msg);
                 break;
             case 'pause':
-                if (!guildStatus[msg.guild.id].dispatcher) {
+                if (!((_a = guildStatus[msg.guild.id].voice) === null || _a === void 0 ? void 0 : _a.dispatcher)) {
                     msg.reply('Nothing is playing!');
                     return;
                 }
-                guildStatus[msg.guild.id].dispatcher.pause(true);
+                guildStatus[msg.guild.id].voice.dispatcher.pause(true);
                 msg.reply('Paused!');
                 break;
             case 'resume':
-                if (!guildStatus[msg.guild.id].dispatcher) {
+                if (!((_b = guildStatus[msg.guild.id].voice) === null || _b === void 0 ? void 0 : _b.dispatcher)) {
                     msg.reply('Nothing is playing!');
                 }
-                guildStatus[msg.guild.id].dispatcher.resume();
+                guildStatus[msg.guild.id].voice.dispatcher.resume();
                 msg.reply('Resumed!');
                 break;
             case 'loop':
@@ -1095,8 +1093,7 @@ client.on('message', msg => {
                     msg.reply('There is nothing to skip');
                     return;
                 }
-                guildStatus[msg.guild.id].dispatcher.destroy();
-                guildStatus[msg.guild.id].dispatcher = null;
+                guildStatus[msg.guild.id].voice.dispatcher.destroy();
                 guildStatus[msg.guild.id].singleLoop = false;
                 playQueue(msg.channel, msg.guild.id, guildStatus[msg.guild.id].voice.channel);
                 msg.reply('Skipped!');
@@ -1110,14 +1107,13 @@ client.on('message', msg => {
                 msg.reply('The queue has been shuffled');
                 break;
             case 'stop':
-                if (!guildStatus[msg.guild.id].dispatcher) {
+                if (!((_c = guildStatus[msg.guild.id].voice) === null || _c === void 0 ? void 0 : _c.dispatcher)) {
                     msg.reply('There is nothing playing!');
                     return;
                 }
                 guildStatus[msg.guild.id].queue = [];
                 guildStatus[msg.guild.id].downloadQueue = [];
-                guildStatus[msg.guild.id].dispatcher.destroy();
-                guildStatus[msg.guild.id].dispatcher = null;
+                guildStatus[msg.guild.id].voice.dispatcher.destroy();
                 guildStatus[msg.guild.id].audio = false;
                 guildStatus[msg.guild.id].singleLoop = false;
                 guildStatus[msg.guild.id].fullLoop = false;
