@@ -5,7 +5,7 @@ process.on('uncaughtException', err => {
 
 import Discord = require('discord.js') // Discord api library
 import fs = require('fs') // Filesystem
-import axios from 'axios' // Used to make http requests
+import axios = require('axios') // Used to make http requests
 import canvas = require('canvas') // Allows the manipulation of images
 const youtubedl = require('youtube-dl-exec') // Youtube video downloader
 
@@ -93,7 +93,7 @@ function refreshData(location: string): JSON {
 
 // Makes a http get request
 async function makeGetRequest(path: string): Promise<any> {
-    const response = await axios.get(path)
+    const response = await axios.default.get(path)
     return response.data
 }
 
@@ -270,8 +270,8 @@ class Euchre {
         let success = false
         while (!success) {
             try {
-                const deck = await axios.post('https://deckofcardsapi.com/api/deck/new/shuffle?cards=9S,9D,9C,9H,0S,0D,0C,0H,JS,JD,JC,JH,QS,QD,QC,QH,KS,KD,KC,KH,AS,AD,AC,AH')
-                draws = await axios.post(`https://deckofcardsapi.com/api/deck/${deck.data.deck_id}/draw?count=21`)
+                const deck = await axios.default.post('https://deckofcardsapi.com/api/deck/new/shuffle?cards=9S,9D,9C,9H,0S,0D,0C,0H,JS,JD,JC,JH,QS,QD,QC,QH,KS,KD,KC,KH,AS,AD,AC,AH')
+                draws = await axios.default.post(`https://deckofcardsapi.com/api/deck/${deck.data.deck_id}/draw?count=21`)
                 success = true
             } catch {  }
         }

@@ -15,7 +15,7 @@ process.on('uncaughtException', err => {
 });
 const Discord = require("discord.js"); // Discord api library
 const fs = require("fs"); // Filesystem
-const axios_1 = require("axios"); // Used to make http requests
+const axios = require("axios"); // Used to make http requests
 const canvas = require("canvas"); // Allows the manipulation of images
 const youtubedl = require('youtube-dl-exec'); // Youtube video downloader
 const client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } }); // Represents the bot client
@@ -63,7 +63,7 @@ function refreshData(location) {
 // Makes a http get request
 function makeGetRequest(path) {
     return __awaiter(this, void 0, void 0, function* () {
-        const response = yield axios_1.default.get(path);
+        const response = yield axios.default.get(path);
         return response.data;
     });
 }
@@ -240,8 +240,8 @@ class Euchre {
             let success = false;
             while (!success) {
                 try {
-                    const deck = yield axios_1.default.post('https://deckofcardsapi.com/api/deck/new/shuffle?cards=9S,9D,9C,9H,0S,0D,0C,0H,JS,JD,JC,JH,QS,QD,QC,QH,KS,KD,KC,KH,AS,AD,AC,AH');
-                    draws = yield axios_1.default.post(`https://deckofcardsapi.com/api/deck/${deck.data.deck_id}/draw?count=21`);
+                    const deck = yield axios.default.post('https://deckofcardsapi.com/api/deck/new/shuffle?cards=9S,9D,9C,9H,0S,0D,0C,0H,JS,JD,JC,JH,QS,QD,QC,QH,KS,KD,KC,KH,AS,AD,AC,AH');
+                    draws = yield axios.default.post(`https://deckofcardsapi.com/api/deck/${deck.data.deck_id}/draw?count=21`);
                     success = true;
                 }
                 catch (_a) { }
