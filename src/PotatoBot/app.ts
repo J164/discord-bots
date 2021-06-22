@@ -98,21 +98,19 @@ async function makeGetRequest(path: string): Promise<any> {
 }
 
 // Recursively plays each video in the queue
-async function playQueue(channel: Discord.PartialTextBasedChannelFields, guildId: Discord.Snowflake, vc: Discord.VoiceChannel): Promise<void> {
-    if (guildStatus[guildId].queue.length < 1) {
+async function playQueue(channel: Discord.PartialTextBasedChannelFields, guildID: Discord.Snowflake, vc: Discord.VoiceChannel): Promise<void> {
+    if (guildStatus[guildID].queue.length < 1) {
         return
     }
-    guildStatus[guildId].audio = true
-    try {
-        guildStatus[guildId].voice = await vc.join()
-    } catch (err) {
-        console.log(err)
+    guildStatus[guildID].audio = true
+    if (!vc.joinable) {
         channel.send('Something went wrong!')
-        guildStatus[guildId].audio = false
-        guildStatus[guildId].queue = []
+        guildStatus[guildID].audio = false
+        guildStatus[guildID].queue = []
         return
     }
-    const currentSong = guildStatus[guildId].queue.shift()
+    guildStatus[guildID].voice = await vc.join()
+    const currentSong = guildStatus[guildID].queue.shift()
     if (!fs.existsSync(`${home}/music_files/playback/${currentSong.id}.json`)) {
         try {
             const output = await youtubedl(currentSong.webpageUrl, {
@@ -137,36 +135,36 @@ async function playQueue(channel: Discord.PartialTextBasedChannelFields, guildId
             fs.writeFileSync(`${home}/music_files/playback/${currentSong.id}.json`, metaData)
         } catch {  }
     }
-    guildStatus[guildId].voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
-    guildStatus[guildId].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`)
-    guildStatus[guildId].nowPlaying.setImage(currentSong.thumbnail)
-    guildStatus[guildId].nowPlaying.addField('URL:', currentSong.webpageUrl)
-    if (!guildStatus[guildId].singleLoop) {
-        channel.send(guildStatus[guildId].nowPlaying)
+    guildStatus[guildID].voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
+    guildStatus[guildID].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`)
+    guildStatus[guildID].nowPlaying.setImage(currentSong.thumbnail)
+    guildStatus[guildID].nowPlaying.addField('URL:', currentSong.webpageUrl)
+    if (!guildStatus[guildID].singleLoop) {
+        channel.send(guildStatus[guildID].nowPlaying)
     }
-    guildStatus[guildId].voice.dispatcher.on('finish', () => {
-        if (guildStatus[guildId].fullLoop) {
-            guildStatus[guildId].queue.push(currentSong)
-        } else if (guildStatus[guildId].singleLoop) {
-            guildStatus[guildId].queue.unshift(currentSong)
+    guildStatus[guildID].voice.dispatcher.on('finish', () => {
+        if (guildStatus[guildID].fullLoop) {
+            guildStatus[guildID].queue.push(currentSong)
+        } else if (guildStatus[guildID].singleLoop) {
+            guildStatus[guildID].queue.unshift(currentSong)
         }
-        guildStatus[guildId].voice.dispatcher.destroy()
-        guildStatus[guildId].audio = false
-        playQueue(channel, guildId, vc)
+        guildStatus[guildID].voice.dispatcher.destroy()
+        guildStatus[guildID].audio = false
+        playQueue(channel, guildID, vc)
     })
 }
 
 // Fetches a user from a specific guild using their ID
-async function getUser(guildId: Discord.Snowflake, userId: Discord.Snowflake): Promise<Discord.GuildMember> {
-    const guild = await client.guilds.fetch(guildId)
-    const user = await guild.members.fetch({ user: userId })
+async function getUser(guildID: Discord.Snowflake, userID: Discord.Snowflake): Promise<Discord.GuildMember> {
+    const guild = await client.guilds.fetch(guildID)
+    const user = await guild.members.fetch({ user: userID })
     return user
 }
 
-async function download(guildId: Discord.Snowflake): Promise<void> {
-    while (guildStatus[guildId].downloadQueue.length > 0) {
-        guildStatus[guildId].downloading = true
-        const currentItem = guildStatus[guildId].downloadQueue.shift()
+async function download(guildID: Discord.Snowflake): Promise<void> {
+    while (guildStatus[guildID].downloadQueue.length > 0) {
+        guildStatus[guildID].downloading = true
+        const currentItem = guildStatus[guildID].downloadQueue.shift()
         try {
             const output = await youtubedl(currentItem, {
                 noWarnings: true,
@@ -179,22 +177,22 @@ async function download(guildId: Discord.Snowflake): Promise<void> {
                 format: 'bestaudio',
                 output: `${home}/music_files/playback/%(id)s.mp3`
             })
-            for (let i = 0; i < guildStatus[guildId].queue.length; i++) {
-                if (guildStatus[guildId].queue[i].title === output.title) {
-                    guildStatus[guildId].queue[i].thumbnail = output.thumbnails[0].url
+            for (let i = 0; i < guildStatus[guildID].queue.length; i++) {
+                if (guildStatus[guildID].queue[i].title === output.title) {
+                    guildStatus[guildID].queue[i].thumbnail = output.thumbnails[0].url
                     const metaData = JSON.stringify({
-                        webpageUrl: guildStatus[guildId].queue[i].webpageUrl,
-                        title: guildStatus[guildId].queue[i].title,
-                        id: guildStatus[guildId].queue[i].id,
-                        thumbnail: guildStatus[guildId].queue[i].thumbnail,
-                        duration: guildStatus[guildId].queue[i].duration
+                        webpageUrl: guildStatus[guildID].queue[i].webpageUrl,
+                        title: guildStatus[guildID].queue[i].title,
+                        id: guildStatus[guildID].queue[i].id,
+                        thumbnail: guildStatus[guildID].queue[i].thumbnail,
+                        duration: guildStatus[guildID].queue[i].duration
                     })
-                    fs.writeFileSync(`${home}/music_files/playback/${guildStatus[guildId].queue[i].id}.json`, metaData)
+                    fs.writeFileSync(`${home}/music_files/playback/${guildStatus[guildID].queue[i].id}.json`, metaData)
                 }
             }
         } catch { }
     }
-    guildStatus[guildId].downloading = false
+    guildStatus[guildID].downloading = false
 }
 
 class Euchre {

@@ -68,23 +68,20 @@ function makeGetRequest(path) {
     });
 }
 // Recursively plays each video in the queue
-function playQueue(channel, guildId, vc) {
+function playQueue(channel, guildID, vc) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (guildStatus[guildId].queue.length < 1) {
+        if (guildStatus[guildID].queue.length < 1) {
             return;
         }
-        guildStatus[guildId].audio = true;
-        try {
-            guildStatus[guildId].voice = yield vc.join();
-        }
-        catch (err) {
-            console.log(err);
+        guildStatus[guildID].audio = true;
+        if (!vc.joinable) {
             channel.send('Something went wrong!');
-            guildStatus[guildId].audio = false;
-            guildStatus[guildId].queue = [];
+            guildStatus[guildID].audio = false;
+            guildStatus[guildID].queue = [];
             return;
         }
-        const currentSong = guildStatus[guildId].queue.shift();
+        guildStatus[guildID].voice = yield vc.join();
+        const currentSong = guildStatus[guildID].queue.shift();
         if (!fs.existsSync(`${home}/music_files/playback/${currentSong.id}.json`)) {
             try {
                 const output = yield youtubedl(currentSong.webpageUrl, {
@@ -110,39 +107,39 @@ function playQueue(channel, guildId, vc) {
             }
             catch (_a) { }
         }
-        guildStatus[guildId].voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`);
-        guildStatus[guildId].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`);
-        guildStatus[guildId].nowPlaying.setImage(currentSong.thumbnail);
-        guildStatus[guildId].nowPlaying.addField('URL:', currentSong.webpageUrl);
-        if (!guildStatus[guildId].singleLoop) {
-            channel.send(guildStatus[guildId].nowPlaying);
+        guildStatus[guildID].voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`);
+        guildStatus[guildID].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`);
+        guildStatus[guildID].nowPlaying.setImage(currentSong.thumbnail);
+        guildStatus[guildID].nowPlaying.addField('URL:', currentSong.webpageUrl);
+        if (!guildStatus[guildID].singleLoop) {
+            channel.send(guildStatus[guildID].nowPlaying);
         }
-        guildStatus[guildId].voice.dispatcher.on('finish', () => {
-            if (guildStatus[guildId].fullLoop) {
-                guildStatus[guildId].queue.push(currentSong);
+        guildStatus[guildID].voice.dispatcher.on('finish', () => {
+            if (guildStatus[guildID].fullLoop) {
+                guildStatus[guildID].queue.push(currentSong);
             }
-            else if (guildStatus[guildId].singleLoop) {
-                guildStatus[guildId].queue.unshift(currentSong);
+            else if (guildStatus[guildID].singleLoop) {
+                guildStatus[guildID].queue.unshift(currentSong);
             }
-            guildStatus[guildId].voice.dispatcher.destroy();
-            guildStatus[guildId].audio = false;
-            playQueue(channel, guildId, vc);
+            guildStatus[guildID].voice.dispatcher.destroy();
+            guildStatus[guildID].audio = false;
+            playQueue(channel, guildID, vc);
         });
     });
 }
 // Fetches a user from a specific guild using their ID
-function getUser(guildId, userId) {
+function getUser(guildID, userID) {
     return __awaiter(this, void 0, void 0, function* () {
-        const guild = yield client.guilds.fetch(guildId);
-        const user = yield guild.members.fetch({ user: userId });
+        const guild = yield client.guilds.fetch(guildID);
+        const user = yield guild.members.fetch({ user: userID });
         return user;
     });
 }
-function download(guildId) {
+function download(guildID) {
     return __awaiter(this, void 0, void 0, function* () {
-        while (guildStatus[guildId].downloadQueue.length > 0) {
-            guildStatus[guildId].downloading = true;
-            const currentItem = guildStatus[guildId].downloadQueue.shift();
+        while (guildStatus[guildID].downloadQueue.length > 0) {
+            guildStatus[guildID].downloading = true;
+            const currentItem = guildStatus[guildID].downloadQueue.shift();
             try {
                 const output = yield youtubedl(currentItem, {
                     noWarnings: true,
@@ -155,23 +152,23 @@ function download(guildId) {
                     format: 'bestaudio',
                     output: `${home}/music_files/playback/%(id)s.mp3`
                 });
-                for (let i = 0; i < guildStatus[guildId].queue.length; i++) {
-                    if (guildStatus[guildId].queue[i].title === output.title) {
-                        guildStatus[guildId].queue[i].thumbnail = output.thumbnails[0].url;
+                for (let i = 0; i < guildStatus[guildID].queue.length; i++) {
+                    if (guildStatus[guildID].queue[i].title === output.title) {
+                        guildStatus[guildID].queue[i].thumbnail = output.thumbnails[0].url;
                         const metaData = JSON.stringify({
-                            webpageUrl: guildStatus[guildId].queue[i].webpageUrl,
-                            title: guildStatus[guildId].queue[i].title,
-                            id: guildStatus[guildId].queue[i].id,
-                            thumbnail: guildStatus[guildId].queue[i].thumbnail,
-                            duration: guildStatus[guildId].queue[i].duration
+                            webpageUrl: guildStatus[guildID].queue[i].webpageUrl,
+                            title: guildStatus[guildID].queue[i].title,
+                            id: guildStatus[guildID].queue[i].id,
+                            thumbnail: guildStatus[guildID].queue[i].thumbnail,
+                            duration: guildStatus[guildID].queue[i].duration
                         });
-                        fs.writeFileSync(`${home}/music_files/playback/${guildStatus[guildId].queue[i].id}.json`, metaData);
+                        fs.writeFileSync(`${home}/music_files/playback/${guildStatus[guildID].queue[i].id}.json`, metaData);
                     }
                 }
             }
             catch (_a) { }
         }
-        guildStatus[guildId].downloading = false;
+        guildStatus[guildID].downloading = false;
     });
 }
 class Euchre {
