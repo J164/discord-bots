@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 process.on('uncaughtException', err => {
     console.log(err);
@@ -19,7 +10,7 @@ const axios_1 = require("axios");
 const client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS'] } });
 const prefix = '$';
 const home = 'D:/Bot Resources';
-const root = '../..';
+const root = '../';
 const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }));
 let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }));
 const guildStatus = {}; // Stores guild specific information to allow bot to act independent in different guilds
@@ -33,11 +24,9 @@ function genericEmbedResponse(title) {
     embedVar.setColor(0xffff00);
     return embedVar;
 }
-function makeGetRequest(path) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const response = yield axios_1.default.get(path);
-        return response.data;
-    });
+async function makeGetRequest(path) {
+    const response = await axios_1.default.get(path);
+    return response.data;
 }
 function findKey(object, property) {
     let result;
@@ -73,39 +62,37 @@ class Deck {
         this.url = json.url;
         this.apiUrl = json.apiUrl;
     }
-    getInfo(url) {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.url = url;
-            let authorID;
-            let deckID;
-            try {
-                const fields = url.split('/');
-                authorID = fields[4];
-                deckID = fields[5].split('-')[0];
-            }
-            catch (_a) {
+    async getInfo(url) {
+        this.url = url;
+        let authorID;
+        let deckID;
+        try {
+            const fields = url.split('/');
+            authorID = fields[4];
+            deckID = fields[5].split('-')[0];
+        }
+        catch {
+            return false;
+        }
+        this.apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`;
+        let deckJson;
+        try {
+            deckJson = await makeGetRequest(this.apiUrl + 'json');
+        }
+        catch {
+            return false;
+        }
+        for (const deck of userData.decks) {
+            if (deck.name === deckJson.name) {
                 return false;
             }
-            this.apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`;
-            let deckJson;
-            try {
-                deckJson = yield makeGetRequest(this.apiUrl + 'json');
-            }
-            catch (_b) {
-                return false;
-            }
-            for (const deck of userData.decks) {
-                if (deck.name === deckJson.name) {
-                    return false;
-                }
-            }
-            this.name = deckJson.name;
-            let commander = findKey(deckJson, 'isCommander');
-            commander = commander.name;
-            const cardInfo = yield makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(commander)}`);
-            this.image = cardInfo.data[0].image_uris.large;
-            return true;
-        });
+        }
+        this.name = deckJson.name;
+        let commander = findKey(deckJson, 'isCommander');
+        commander = commander.name;
+        const cardInfo = await makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(commander)}`);
+        this.image = cardInfo.data[0].image_uris.large;
+        return true;
     }
     getPreview() {
         const preview = genericEmbedResponse(this.name);
@@ -113,25 +100,23 @@ class Deck {
         preview.addField('Deckstats URL:', this.url);
         return preview;
     }
-    getList() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const decklist = yield makeGetRequest(this.apiUrl + 'list');
-            const decklistArray = decklist.list.split("\n");
-            for (let i = 0; i < decklistArray.length; i++) {
-                if (!decklistArray[i] || decklistArray[i].startsWith('//')) {
-                    decklistArray.splice(i, 1);
-                    i--;
-                    continue;
-                }
-                if (decklistArray[i].indexOf('//') !== -1) {
-                    decklistArray[i] = decklistArray[i].substr(0, decklistArray[i].indexOf('//'));
-                }
-                if (decklistArray[i].indexOf('#') !== -1) {
-                    decklistArray[i] = decklistArray[i].substr(0, decklistArray[i].indexOf('#'));
-                }
+    async getList() {
+        const decklist = await makeGetRequest(this.apiUrl + 'list');
+        const decklistArray = decklist.list.split("\n");
+        for (let i = 0; i < decklistArray.length; i++) {
+            if (!decklistArray[i] || decklistArray[i].startsWith('//')) {
+                decklistArray.splice(i, 1);
+                i--;
+                continue;
             }
-            return '\n' + decklistArray.join('\n');
-        });
+            if (decklistArray[i].indexOf('//') !== -1) {
+                decklistArray[i] = decklistArray[i].substr(0, decklistArray[i].indexOf('//'));
+            }
+            if (decklistArray[i].indexOf('#') !== -1) {
+                decklistArray[i] = decklistArray[i].substr(0, decklistArray[i].indexOf('#'));
+            }
+        }
+        return '\n' + decklistArray.join('\n');
     }
 }
 class MagicGame {
@@ -225,64 +210,60 @@ client.on('ready', () => {
         client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)]);
     }, 60000);
 });
-function add(msg) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (msg.content.split(" ").length < 2) {
-            msg.reply('Please enter a deckstats URL!');
-            return;
-        }
-        const deck = new Deck();
-        if (yield deck.getInfo(msg.content.split(" ")[1])) {
-            userData = refreshData(`${home}/sys_files/bots.json`);
-            userData.decks.push(deck);
-            const jsonString = JSON.stringify(userData);
-            fs.writeFileSync(`${home}/sys_files/bots.json`, jsonString);
-            msg.reply('Success!');
-            return;
-        }
-        msg.reply('Something went wrong... (Make sure you are using a valid deck url from deckstats.net and that the deck is not a duplicate)');
-    });
+async function add(msg) {
+    if (msg.content.split(" ").length < 2) {
+        msg.reply('Please enter a deckstats URL!');
+        return;
+    }
+    const deck = new Deck();
+    if (await deck.getInfo(msg.content.split(" ")[1])) {
+        userData = refreshData(`${home}/sys_files/bots.json`);
+        userData.decks.push(deck);
+        const jsonString = JSON.stringify(userData);
+        fs.writeFileSync(`${home}/sys_files/bots.json`, jsonString);
+        msg.reply('Success!');
+        return;
+    }
+    msg.reply('Something went wrong... (Make sure you are using a valid deck url from deckstats.net and that the deck is not a duplicate)');
 }
-function deckPreview(i, msg) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const deck = new Deck();
-        deck.fill(userData.decks[i]);
-        const message = yield msg.channel.send(deck.getPreview());
-        const emojiList = ['\uD83D\uDCC4', '\u274C']; // Page and X emoji
-        if (i !== 0) {
-            emojiList.unshift('\u2B05\uFE0F'); // Left arrow
-        }
-        if (i !== (userData.decks.length - 1)) {
-            emojiList.push('\u27A1\uFE0F'); // Right arrow
-        }
-        for (const emoji of emojiList) {
-            yield message.react(emoji);
-        }
-        function filter(reaction) { return reaction.client === client; }
-        const reaction = yield message.awaitReactions(filter, { max: 1 });
-        const reactionResult = reaction.first();
-        switch (reactionResult.emoji.name) {
-            case '\uD83D\uDCC4':
-                const deckList = yield deck.getList();
-                msg.reply(deckList);
-                message.delete();
-                return;
-            case '\u274C':
-                message.delete();
-                return;
-            case '\u2B05\uFE0F':
-                message.delete();
-                deckPreview((i - 1), msg);
-                return;
-            case '\u27A1\uFE0F':
-                message.delete();
-                deckPreview((i + 1), msg);
-                return;
-            default:
-                message.delete();
-                return;
-        }
-    });
+async function deckPreview(i, msg) {
+    const deck = new Deck();
+    deck.fill(userData.decks[i]);
+    const message = await msg.channel.send(deck.getPreview());
+    const emojiList = ['\uD83D\uDCC4', '\u274C']; // Page and X emoji
+    if (i !== 0) {
+        emojiList.unshift('\u2B05\uFE0F'); // Left arrow
+    }
+    if (i !== (userData.decks.length - 1)) {
+        emojiList.push('\u27A1\uFE0F'); // Right arrow
+    }
+    for (const emoji of emojiList) {
+        await message.react(emoji);
+    }
+    function filter(reaction) { return reaction.client === client; }
+    const reaction = await message.awaitReactions(filter, { max: 1 });
+    const reactionResult = reaction.first();
+    switch (reactionResult.emoji.name) {
+        case '\uD83D\uDCC4':
+            const deckList = await deck.getList();
+            msg.reply(deckList);
+            message.delete();
+            return;
+        case '\u274C':
+            message.delete();
+            return;
+        case '\u2B05\uFE0F':
+            message.delete();
+            deckPreview((i - 1), msg);
+            return;
+        case '\u27A1\uFE0F':
+            message.delete();
+            deckPreview((i + 1), msg);
+            return;
+        default:
+            message.delete();
+            return;
+    }
 }
 client.on('message', msg => {
     if (msg.author.bot || !msg.content.startsWith(prefix) || !msg.guild) {

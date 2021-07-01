@@ -19,6 +19,8 @@ Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "SwearBot", "src\SwearBot\Sw
 EndProject
 Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "YeetBot", "src\YeetBot\YeetBot.njsproj", "{F4DB82DC-BCFA-477A-AB70-7608777D327F}"
 EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "BotManager", "BotManager\BotManager.njsproj", "{BEE75378-9F5A-46BD-9448-5B582025AB2E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,10 @@ Global
 		{F4DB82DC-BCFA-477A-AB70-7608777D327F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F4DB82DC-BCFA-477A-AB70-7608777D327F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F4DB82DC-BCFA-477A-AB70-7608777D327F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BEE75378-9F5A-46BD-9448-5B582025AB2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEE75378-9F5A-46BD-9448-5B582025AB2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEE75378-9F5A-46BD-9448-5B582025AB2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEE75378-9F5A-46BD-9448-5B582025AB2E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

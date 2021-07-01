@@ -1,7 +1,9 @@
 cd "%~dp0"
 cd ..
 call npm install
-cd src/KrenkoBot
+cd BotManager
+call npm install
+cd ../src/KrenkoBot
 call npm install
 cd ../PotatoBot
 call npm install

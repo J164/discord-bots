@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 process.on('uncaughtException', err => {
     console.log(err);
@@ -18,7 +9,7 @@ const fs = require("fs");
 const client = new Discord.Client();
 const prefix = '?';
 const home = 'D:/Bot Resources';
-const root = '../..';
+const root = '../';
 const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }));
 let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }));
 const guildStatus = {};
@@ -37,44 +28,42 @@ client.on('ready', () => {
                 try {
                     guildStatus[key].voice.disconnect();
                 }
-                catch (_a) { }
+                catch { }
             }
         }
     }, 60000);
 });
-function play(msg, loop) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let songNum;
-        const vc = msg.member.voice.channel;
-        if (!vc) {
-            msg.reply('This command can only be used while in a voice channel!');
-            return;
+async function play(msg, loop) {
+    let songNum;
+    const vc = msg.member.voice.channel;
+    if (!vc) {
+        msg.reply('This command can only be used while in a voice channel!');
+        return;
+    }
+    try {
+        if (parseInt(msg.content.split(" ")[1]) <= userData.swearSongs.length && parseInt(msg.content.split(" ")[1]) > 0) {
+            songNum = parseInt(msg.content.split(" ")[1]) - 1;
         }
-        try {
-            if (parseInt(msg.content.split(" ")[1]) <= userData.swearSongs.length && parseInt(msg.content.split(" ")[1]) > 0) {
-                songNum = parseInt(msg.content.split(" ")[1]) - 1;
-            }
-            else {
-                songNum = Math.floor(Math.random() * userData.swearSongs.length);
-            }
-        }
-        catch (_a) {
+        else {
             songNum = Math.floor(Math.random() * userData.swearSongs.length);
         }
-        guildStatus[msg.guild.id].audio = true;
-        const voice = yield vc.join();
-        guildStatus[msg.guild.id].voice = voice;
-        if (guildStatus[msg.guild.id].dispatcher) {
-            guildStatus[msg.guild.id].dispatcher.destroy();
+    }
+    catch {
+        songNum = Math.floor(Math.random() * userData.swearSongs.length);
+    }
+    guildStatus[msg.guild.id].audio = true;
+    const voice = await vc.join();
+    guildStatus[msg.guild.id].voice = voice;
+    if (guildStatus[msg.guild.id].dispatcher) {
+        guildStatus[msg.guild.id].dispatcher.destroy();
+    }
+    guildStatus[msg.guild.id].dispatcher = voice.play(`${home}/music_files/swear_songs/${userData.swearSongs[songNum]}`);
+    guildStatus[msg.guild.id].dispatcher.on('finish', () => {
+        guildStatus[msg.guild.id].dispatcher.destroy();
+        guildStatus[msg.guild.id].audio = false;
+        if (loop) {
+            play(msg, loop);
         }
-        guildStatus[msg.guild.id].dispatcher = voice.play(`${home}/music_files/swear_songs/${userData.swearSongs[songNum]}`);
-        guildStatus[msg.guild.id].dispatcher.on('finish', () => {
-            guildStatus[msg.guild.id].dispatcher.destroy();
-            guildStatus[msg.guild.id].audio = false;
-            if (loop) {
-                play(msg, loop);
-            }
-        });
     });
 }
 client.on('message', msg => {
