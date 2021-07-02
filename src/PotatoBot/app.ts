@@ -28,6 +28,7 @@ interface GuildData {
     nowPlaying: Discord.MessageEmbed;
     fullLoop: boolean;
     singleLoop: boolean;
+    dispatcher: Discord.StreamDispatcher;
 }
 
 interface Song {
@@ -136,20 +137,20 @@ async function playQueue(channel: Discord.PartialTextBasedChannelFields, guildID
             fs.writeFileSync(`${home}/music_files/playback/${currentSong.id}.json`, metaData)
         } catch {  }
     }
-    guildStatus[guildID].voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
+    guildStatus[guildID].dispatcher = guildStatus[guildID].voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
     guildStatus[guildID].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`)
     guildStatus[guildID].nowPlaying.setImage(currentSong.thumbnail)
     guildStatus[guildID].nowPlaying.addField('URL:', currentSong.webpageUrl)
     if (!guildStatus[guildID].singleLoop) {
         channel.send(guildStatus[guildID].nowPlaying)
     }
-    guildStatus[guildID].voice.dispatcher.on('finish', () => {
+    guildStatus[guildID].dispatcher.on('finish', () => {
         if (guildStatus[guildID].fullLoop) {
             guildStatus[guildID].queue.push(currentSong)
         } else if (guildStatus[guildID].singleLoop) {
             guildStatus[guildID].queue.unshift(currentSong)
         }
-        guildStatus[guildID].voice.dispatcher.destroy()
+        guildStatus[guildID].dispatcher.destroy()
         guildStatus[guildID].audio = false
         playQueue(channel, guildID, vc)
     })
@@ -952,10 +953,10 @@ function defineEvents() {
         if (oldState.id !== client.user.id) {
             return
         }
-        if (oldState.channelID && oldState.channelID !== newState.channelID && guildStatus[oldState.guild.id]?.voice?.dispatcher) {
+        if (oldState.channelID && oldState.channelID !== newState.channelID && guildStatus[oldState.guild.id]?.dispatcher) {
             guildStatus[oldState.guild.id].queue = []
             guildStatus[oldState.guild.id].downloadQueue = []
-            guildStatus[oldState.guild.id].voice.dispatcher.destroy()
+            guildStatus[oldState.guild.id].dispatcher.destroy()
             guildStatus[oldState.guild.id].audio = false
             guildStatus[oldState.guild.id].singleLoop = false
             guildStatus[oldState.guild.id].fullLoop = false
@@ -975,6 +976,7 @@ function defineEvents() {
         if (!(msg.guild.id in guildStatus)) {
             guildStatus[msg.guild.id] = {
                 audio: false,
+                dispatcher: null,
                 queue: [],
                 downloadQueue: [],
                 voice: null,
@@ -1050,18 +1052,18 @@ function defineEvents() {
                     play(msg)
                     break
                 case 'pause':
-                    if (!guildStatus[msg.guild.id].voice?.dispatcher) {
+                    if (!guildStatus[msg.guild.id].dispatcher) {
                         msg.reply('Nothing is playing!')
                         return
                     }
-                    guildStatus[msg.guild.id].voice.dispatcher.pause(true)
+                    guildStatus[msg.guild.id].dispatcher.pause(true)
                     msg.reply('Paused!')
                     break
                 case 'resume':
-                    if (!guildStatus[msg.guild.id].voice?.dispatcher) {
+                    if (!guildStatus[msg.guild.id].dispatcher) {
                         msg.reply('Nothing is playing!')
                     }
-                    guildStatus[msg.guild.id].voice.dispatcher.resume()
+                    guildStatus[msg.guild.id].dispatcher.resume()
                     msg.reply('Resumed!')
                     break
                 case 'loop':
@@ -1111,7 +1113,7 @@ function defineEvents() {
                         msg.reply('There is nothing to skip')
                         return
                     }
-                    guildStatus[msg.guild.id].voice.dispatcher.destroy()
+                    guildStatus[msg.guild.id].dispatcher.destroy()
                     guildStatus[msg.guild.id].singleLoop = false
                     playQueue(msg.channel, msg.guild.id, guildStatus[msg.guild.id].voice.channel)
                     msg.reply('Skipped!')
@@ -1125,13 +1127,13 @@ function defineEvents() {
                     msg.reply('The queue has been shuffled')
                     break
                 case 'stop':
-                    if (!guildStatus[msg.guild.id].voice?.dispatcher) {
+                    if (!guildStatus[msg.guild.id].dispatcher) {
                         msg.reply('There is nothing playing!')
                         return
                     }
                     guildStatus[msg.guild.id].queue = []
                     guildStatus[msg.guild.id].downloadQueue = []
-                    guildStatus[msg.guild.id].voice.dispatcher.destroy()
+                    guildStatus[msg.guild.id].dispatcher.destroy()
                     guildStatus[msg.guild.id].audio = false
                     guildStatus[msg.guild.id].singleLoop = false
                     guildStatus[msg.guild.id].fullLoop = false
