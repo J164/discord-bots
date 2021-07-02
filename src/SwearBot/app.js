@@ -6,7 +6,8 @@ process.on('uncaughtException', err => {
 });
 const Discord = require("discord.js");
 const fs = require("fs");
-let client = new Discord.Client();
+const intents = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES'];
+let client = new Discord.Client({ ws: { intents: intents } });
 const prefix = '?';
 const home = 'D:/Bot Resources';
 const root = '..';
@@ -145,7 +146,7 @@ process.on("message", function (arg) {
             process.send('stop');
             break;
         case 'start':
-            client = new Discord.Client();
+            client = new Discord.Client({ ws: { intents: intents } });
             guildStatus = {};
             defineEvents();
             client.login(sysData.swearKey);

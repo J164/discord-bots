@@ -7,7 +7,8 @@ process.on('uncaughtException', err => {
 const Discord = require("discord.js");
 const fs = require("fs");
 const axios_1 = require("axios");
-let client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS'] } });
+const intents = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS'];
+let client = new Discord.Client({ ws: { intents: intents } });
 const prefix = '$';
 const home = 'D:/Bot Resources';
 const root = '..';
@@ -370,7 +371,7 @@ process.on("message", function (arg) {
             process.send('stop');
             break;
         case 'start':
-            client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS'] } });
+            client = new Discord.Client({ ws: { intents: intents } });
             defineEvents();
             guildStatus = {};
             client.login(sysData.krenkoKey);

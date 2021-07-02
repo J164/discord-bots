@@ -7,7 +7,8 @@ import Discord = require('discord.js')
 import fs = require('fs')
 import axios from 'axios'
 
-let client: Discord.Client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS'] } })
+const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS']
+let client: Discord.Client = new Discord.Client({ ws: { intents: intents} })
 const prefix = '$'
 const home = 'D:/Bot Resources'
 const root = '..'
@@ -417,7 +418,7 @@ process.on("message", function (arg) {
             process.send('stop')
             break
         case 'start':
-            client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS'] } })
+            client = new Discord.Client({ ws: { intents: intents } })
             defineEvents()
             guildStatus = {}
             client.login(sysData.krenkoKey)

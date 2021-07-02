@@ -9,7 +9,8 @@ const fs = require("fs"); // Filesystem
 const axios = require("axios"); // Used to make http requests
 const canvas = require("canvas"); // Allows the manipulation of images
 const youtubedl = require('youtube-dl-exec'); // Youtube video downloader
-let client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } }); // Represents the bot client
+const intents = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'];
+let client = new Discord.Client({ ws: { intents: intents } }); // Represents the bot client
 const prefix = '&'; // Bot command prefix
 const home = 'D:/Bot Resources'; // Represents path to resources
 const root = '..';
@@ -1111,7 +1112,7 @@ process.on("message", function (arg) {
             process.send('stop');
             break;
         case 'start':
-            client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } });
+            client = new Discord.Client({ ws: { intents: intents } });
             guildStatus = {};
             defineEvents();
             client.login(sysData.potatoKey);

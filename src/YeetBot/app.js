@@ -6,7 +6,8 @@ process.on('uncaughtException', err => {
 });
 const Discord = require("discord.js");
 const fs = require("fs");
-let client = new Discord.Client();
+const intents = ['GUILDS', 'GUILD_MESSAGES'];
+let client = new Discord.Client({ ws: { intents: intents } });
 //const home = 'D:/Bot Resources'
 const root = '..';
 const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }));
@@ -56,7 +57,7 @@ process.on("message", function (arg) {
             process.send('stop');
             break;
         case 'start':
-            client = new Discord.Client();
+            client = new Discord.Client({ ws: { intents: intents } });
             defineEvents();
             client.login(sysData.yeetKey);
             break;
