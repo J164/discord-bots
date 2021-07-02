@@ -1,7 +1,7 @@
 import * as exec from 'child_process'
 import * as readline from "readline"
 
-const src = '../src'
+const src = 'C:/Users/jacob/OneDrive/Documents/Master Discord Bots/src'
 
 const potatoBot = {
     process: exec.fork(`${src}/PotatoBot/app.js`),

@@ -11,7 +11,7 @@ const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'G
 let client: Discord.Client = new Discord.Client({ ws: { intents: intents} })
 const prefix = '$'
 const home = 'D:/Bot Resources'
-const root = '..'
+const root = 'C:/Users/jacob/OneDrive/Documents/Master Discord Bots/'
 const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
 let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
 let guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
@@ -344,7 +344,11 @@ function defineEvents() {
                     }
                     msg.channel.send(`Rolling a ${dice}-sided die...`)
                     const diceResult = genericEmbedResponse(`${dice}-sided die result`)
-                    diceResult.addField(`${Math.floor((Math.random() * (dice - 1)) + 1)}`, `The chance of getting this result is about ${Math.round(100 / dice)}%`)
+                    let chanceMod = 10000
+                    while ((100 / dice) * chanceMod < 1) {
+                        chanceMod *= 10
+                    }
+                    diceResult.addField(`${Math.floor((Math.random() * (dice - 1)) + 1)}`, `The chance of getting this result is about ${Math.round((100 / dice) * chanceMod) / chanceMod}%`)
                     msg.reply(diceResult)
                     break
                 case 'flip':

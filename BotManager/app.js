@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const exec = require("child_process");
 const readline = require("readline");
-const src = '../src';
+const src = 'C:/Users/jacob/OneDrive/Documents/Master Discord Bots/src';
 const potatoBot = {
     process: exec.fork(`${src}/PotatoBot/app.js`),
     online: false
