@@ -9,14 +9,14 @@ const fs = require("fs"); // Filesystem
 const axios = require("axios"); // Used to make http requests
 const canvas = require("canvas"); // Allows the manipulation of images
 const youtubedl = require('youtube-dl-exec'); // Youtube video downloader
-const client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } }); // Represents the bot client
+let client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } }); // Represents the bot client
 const prefix = '&'; // Bot command prefix
 const home = 'D:/Bot Resources'; // Represents path to resources
-const root = '../';
+const root = '..';
 const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' })); // Loads system info into memory
 let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' })); // Loads persistant info into memory
 const users = { admin: null, swear: null }; // Stores specific users
-const guildStatus = {}; // Stores guild specific information to allow bot to act independent in different guilds
+let guildStatus = {}; // Stores guild specific information to allow bot to act independent in different guilds
 function voiceKick(count, voiceState) {
     if (voiceState.channelID) {
         voiceState.kick();
@@ -575,48 +575,6 @@ class Euchre {
         }
     }
 }
-// This block executes when someone's voice state changes
-client.on('voiceStateUpdate', (oldState, newState) => {
-    if (oldState.id !== client.user.id) {
-        return;
-    }
-    if (oldState.channelID && oldState.channelID !== newState.channelID && guildStatus[oldState.guild.id]?.voice?.dispatcher) {
-        guildStatus[oldState.guild.id].queue = [];
-        guildStatus[oldState.guild.id].downloadQueue = [];
-        guildStatus[oldState.guild.id].voice.dispatcher.destroy();
-        guildStatus[oldState.guild.id].audio = false;
-        guildStatus[oldState.guild.id].singleLoop = false;
-        guildStatus[oldState.guild.id].fullLoop = false;
-        guildStatus[oldState.guild.id].voice.disconnect();
-    }
-});
-// This block executes when the bot is launched
-client.on('ready', () => {
-    console.log(`We have logged in as ${client.user.tag}`);
-    // Removes the temp folder if it exists
-    /*if (fs.existsSync(`${home}/temp`)) {
-        fs.rmdirSync(`${home}/temp`, { recursive: true })
-    }
-
-    fs.mkdirSync(`${home}/temp`) // Creates a temp folder for this session*/
-    client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)]); // Sets bot status
-    // Fetches any necessary user objects
-    getUser('619975185029922817', '609826125501169723')
-        .then(admin => { users.admin = admin.user; });
-    getUser('619975185029922817', '633046187506794527')
-        .then(swear => { users.swear = swear.user; });
-    // Defines tasks that must be executed periodically
-    setInterval(function () {
-        userData = refreshData(`${home}/sys_files/bots.json`); // Refresh user data variable
-        client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)]); // Reset bot status
-        // Disconnects bot if it is inactive in a voice channel
-        for (const guild in guildStatus) {
-            if (!guildStatus[guild].audio && guildStatus[guild].voice) {
-                guildStatus[guild].voice.disconnect();
-            }
-        }
-    }, 60000); // Defines the time between executions in ms
-});
 // Functions for specific commands
 async function wynncraftStats(msg) {
     if (msg.content.split(" ").length < 2) {
@@ -902,203 +860,262 @@ async function setupEuchre(msg) {
     const results = await game.startGame();
     msg.channel.send(results);
 }
-// This block executes when a message is sent
-client.on('message', msg => {
-    // If message is not in a guild return
-    if (!msg.guild) {
-        return;
-    }
-    // Creates a key in GuildStatus for the current guild
-    if (!(msg.guild.id in guildStatus)) {
-        guildStatus[msg.guild.id] = {
-            audio: false,
-            queue: [],
-            downloadQueue: [],
-            voice: null,
-            downloading: false,
-            nowPlaying: null,
-            fullLoop: false,
-            singleLoop: false
-        };
-        //fs.mkdirSync(`${home}/temp/${msg.guild.id}`)
-    }
-    if (msg.author.bot) {
-        // Disconnects rythm bot if it attempts to play a rickroll
-        if (msg.content.indexOf('Never Gonna Give You Up') !== -1) {
-            voiceKick(0, msg.member.voice);
+function defineEvents() {
+    // This block executes when the bot is launched
+    client.on('ready', () => {
+        console.log(`We have logged in as ${client.user.tag}`);
+        process.send('start');
+        // Removes the temp folder if it exists
+        /*if (fs.existsSync(`${home}/temp`)) {
+            fs.rmdirSync(`${home}/temp`, { recursive: true })
         }
-        return; // Message is ignored if sent from a bot
-    }
-    // Checks if message contains swears or insults potatoes
-    if (!msg.content.startsWith(prefix)) {
-        let mentionPotato = false;
-        let mentionSwear = false;
-        let mentionInsult = false;
-        for (const word of msg.content.toLowerCase().split(" ")) {
-            if (word.indexOf('potato') !== -1) {
-                mentionPotato = true;
+    
+        fs.mkdirSync(`${home}/temp`) // Creates a temp folder for this session*/
+        client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)]); // Sets bot status
+        // Fetches any necessary user objects
+        getUser('619975185029922817', '609826125501169723')
+            .then(admin => { users.admin = admin.user; });
+        getUser('619975185029922817', '633046187506794527')
+            .then(swear => { users.swear = swear.user; });
+        // Defines tasks that must be executed periodically
+        setInterval(function () {
+            userData = refreshData(`${home}/sys_files/bots.json`); // Refresh user data variable
+            client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)]); // Reset bot status
+            // Disconnects bot if it is inactive in a voice channel
+            for (const guild in guildStatus) {
+                if (!guildStatus[guild].audio && guildStatus[guild].voice) {
+                    guildStatus[guild].voice.disconnect();
+                }
             }
-            for (const swear of sysData.blacklist.swears) {
-                if (word === swear) {
-                    mentionSwear = true;
+        }, 60000); // Defines the time between executions in ms
+    });
+    // This block executes when someone's voice state changes
+    client.on('voiceStateUpdate', (oldState, newState) => {
+        if (oldState.id !== client.user.id) {
+            return;
+        }
+        if (oldState.channelID && oldState.channelID !== newState.channelID && guildStatus[oldState.guild.id]?.voice?.dispatcher) {
+            guildStatus[oldState.guild.id].queue = [];
+            guildStatus[oldState.guild.id].downloadQueue = [];
+            guildStatus[oldState.guild.id].voice.dispatcher.destroy();
+            guildStatus[oldState.guild.id].audio = false;
+            guildStatus[oldState.guild.id].singleLoop = false;
+            guildStatus[oldState.guild.id].fullLoop = false;
+            guildStatus[oldState.guild.id].voice.disconnect();
+        }
+    });
+    // This block executes when a message is sent
+    client.on('message', msg => {
+        // If message is not in a guild return
+        if (!msg.guild) {
+            return;
+        }
+        // Creates a key in GuildStatus for the current guild
+        if (!(msg.guild.id in guildStatus)) {
+            guildStatus[msg.guild.id] = {
+                audio: false,
+                queue: [],
+                downloadQueue: [],
+                voice: null,
+                downloading: false,
+                nowPlaying: null,
+                fullLoop: false,
+                singleLoop: false
+            };
+            //fs.mkdirSync(`${home}/temp/${msg.guild.id}`)
+        }
+        if (msg.author.bot) {
+            // Disconnects rythm bot if it attempts to play a rickroll
+            if (msg.content.indexOf('Never Gonna Give You Up') !== -1) {
+                voiceKick(0, msg.member.voice);
+            }
+            return; // Message is ignored if sent from a bot
+        }
+        // Checks if message contains swears or insults potatoes
+        if (!msg.content.startsWith(prefix)) {
+            let mentionPotato = false;
+            let mentionSwear = false;
+            let mentionInsult = false;
+            for (const word of msg.content.toLowerCase().split(" ")) {
+                if (word.indexOf('potato') !== -1) {
+                    mentionPotato = true;
+                }
+                for (const swear of sysData.blacklist.swears) {
+                    if (word === swear) {
+                        mentionSwear = true;
+                        break;
+                    }
+                }
+                for (const insult of sysData.blacklist.insults) {
+                    if (word === insult) {
+                        mentionInsult = true;
+                        break;
+                    }
+                }
+            }
+            if (mentionPotato && (mentionSwear || mentionInsult)) {
+                msg.reply('FOOL! HOW DARE YOU BLASPHEMISE THE HOLY ORDER OF THE POTATOES! EAT POTATOES!', { 'tts': true });
+                client.user.setActivity(`Teaching ${msg.author.tag} the value of potatoes`, {
+                    type: 'STREAMING',
+                    url: 'https://www.youtube.com/watch?v=fLNWeEen35Y'
+                });
+            }
+            else if (mentionSwear) {
+                for (let i = 0; i < 3; i++) {
+                    msg.channel.send('a');
+                }
+            }
+            return;
+        }
+        const msgBody = msg.content.split(" ")[0].slice(1).toLowerCase();
+        try {
+            // Determines which command was sent
+            switch (msgBody) {
+                case 'wynncraft':
+                    wynncraftStats(msg);
                     break;
-                }
-            }
-            for (const insult of sysData.blacklist.insults) {
-                if (word === insult) {
-                    mentionInsult = true;
+                case 'newsong':
+                    newSwearSong(msg);
                     break;
-                }
-            }
-        }
-        if (mentionPotato && (mentionSwear || mentionInsult)) {
-            msg.reply('FOOL! HOW DARE YOU BLASPHEMISE THE HOLY ORDER OF THE POTATOES! EAT POTATOES!', { 'tts': true });
-            client.user.setActivity(`Teaching ${msg.author.tag} the value of potatoes`, {
-                type: 'STREAMING',
-                url: 'https://www.youtube.com/watch?v=fLNWeEen35Y'
-            });
-        }
-        else if (mentionSwear) {
-            for (let i = 0; i < 3; i++) {
-                msg.channel.send('a');
-            }
-        }
-        return;
-    }
-    const msgBody = msg.content.split(" ")[0].slice(1).toLowerCase();
-    try {
-        // Determines which command was sent
-        switch (msgBody) {
-            case 'wynncraft':
-                wynncraftStats(msg);
-                break;
-            case 'newsong':
-                newSwearSong(msg);
-                break;
-            case 'download':
-                downloadVideo(msg);
-                break;
-            case 'play':
-                play(msg);
-                break;
-            case 'pause':
-                if (!guildStatus[msg.guild.id].voice?.dispatcher) {
-                    msg.reply('Nothing is playing!');
-                    return;
-                }
-                guildStatus[msg.guild.id].voice.dispatcher.pause(true);
-                msg.reply('Paused!');
-                break;
-            case 'resume':
-                if (!guildStatus[msg.guild.id].voice?.dispatcher) {
-                    msg.reply('Nothing is playing!');
-                }
-                guildStatus[msg.guild.id].voice.dispatcher.resume();
-                msg.reply('Resumed!');
-                break;
-            case 'loop':
-                if (!guildStatus[msg.guild.id].nowPlaying) {
-                    msg.reply('Nothing is playing!');
-                    return;
-                }
-                if (guildStatus[msg.guild.id].singleLoop) {
-                    guildStatus[msg.guild.id].singleLoop = false;
-                    guildStatus[msg.guild.id].nowPlaying.setFooter('');
-                    msg.reply('No longer looping');
-                    return;
-                }
-                guildStatus[msg.guild.id].singleLoop = true;
-                guildStatus[msg.guild.id].fullLoop = false;
-                guildStatus[msg.guild.id].nowPlaying.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png');
-                msg.reply('Now looping!');
-                break;
-            case 'loopqueue':
-                if (guildStatus[msg.guild.id].queue.length < 1) {
-                    msg.reply('There is no queue to loop!');
-                    return;
-                }
-                if (guildStatus[msg.guild.id].fullLoop) {
+                case 'download':
+                    downloadVideo(msg);
+                    break;
+                case 'play':
+                    play(msg);
+                    break;
+                case 'pause':
+                    if (!guildStatus[msg.guild.id].voice?.dispatcher) {
+                        msg.reply('Nothing is playing!');
+                        return;
+                    }
+                    guildStatus[msg.guild.id].voice.dispatcher.pause(true);
+                    msg.reply('Paused!');
+                    break;
+                case 'resume':
+                    if (!guildStatus[msg.guild.id].voice?.dispatcher) {
+                        msg.reply('Nothing is playing!');
+                    }
+                    guildStatus[msg.guild.id].voice.dispatcher.resume();
+                    msg.reply('Resumed!');
+                    break;
+                case 'loop':
+                    if (!guildStatus[msg.guild.id].nowPlaying) {
+                        msg.reply('Nothing is playing!');
+                        return;
+                    }
+                    if (guildStatus[msg.guild.id].singleLoop) {
+                        guildStatus[msg.guild.id].singleLoop = false;
+                        guildStatus[msg.guild.id].nowPlaying.setFooter('');
+                        msg.reply('No longer looping');
+                        return;
+                    }
+                    guildStatus[msg.guild.id].singleLoop = true;
                     guildStatus[msg.guild.id].fullLoop = false;
-                    msg.reply('No longer looping queue');
-                    return;
-                }
-                guildStatus[msg.guild.id].fullLoop = true;
-                guildStatus[msg.guild.id].singleLoop = false;
-                msg.reply('Now looping queue!');
-                break;
-            case 'queue':
-                displayQueue(msg);
-                break;
-            case 'clear':
-                if (guildStatus[msg.guild.id].queue.length < 1) {
-                    msg.reply('There is no queue!');
-                    return;
-                }
-                guildStatus[msg.guild.id].queue = [];
-                guildStatus[msg.guild.id].fullLoop = false;
-                msg.reply('The queue has been cleared!');
-                break;
-            case 'skip':
-                if (!guildStatus[msg.guild.id].audio) {
-                    msg.reply('There is nothing to skip');
-                    return;
-                }
-                guildStatus[msg.guild.id].voice.dispatcher.destroy();
-                guildStatus[msg.guild.id].singleLoop = false;
-                playQueue(msg.channel, msg.guild.id, guildStatus[msg.guild.id].voice.channel);
-                msg.reply('Skipped!');
-                break;
-            case 'shuffle': //change to shuffle option when adding to queue (async downloading is easier)
-                if (guildStatus[msg.guild.id].queue.length < 1) {
-                    msg.reply('There is no queue!');
-                    return;
-                }
-                guildStatus[msg.guild.id].queue.sort(() => Math.random() - 0.5);
-                msg.reply('The queue has been shuffled');
-                break;
-            case 'stop':
-                if (!guildStatus[msg.guild.id].voice?.dispatcher) {
-                    msg.reply('There is nothing playing!');
-                    return;
-                }
-                guildStatus[msg.guild.id].queue = [];
-                guildStatus[msg.guild.id].downloadQueue = [];
-                guildStatus[msg.guild.id].voice.dispatcher.destroy();
-                guildStatus[msg.guild.id].audio = false;
-                guildStatus[msg.guild.id].singleLoop = false;
-                guildStatus[msg.guild.id].fullLoop = false;
-                guildStatus[msg.guild.id].voice.disconnect();
-                msg.reply('Success');
-                break;
-            case 'np':
-                if (!guildStatus[msg.guild.id].nowPlaying) {
-                    msg.reply('Nothing has played yet!');
-                    return;
-                }
-                msg.reply(guildStatus[msg.guild.id].nowPlaying);
-                break;
-            case 'playlists':
-                const playlists = genericEmbedResponse('Playlists');
-                playlists.addField('Epic Mix', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY4lfQYkEb60nitxrJMpN5a2');
-                playlists.addField('Undertale Mix', 'https://www.youtube.com/playlist?list=PLLSgIflCqVYMBjn63DEn0b6-sqKZ9xh_x');
-                playlists.addField('MTG Parodies', 'https://www.youtube.com/playlist?list=PLt3HR7cu4NMNUoQx1q5ullRMW-ZwosuNl');
-                playlists.addField('Bully Maguire', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY6QzsEh8F5N7J02ngFcE4w_');
-                playlists.addField('Star Wars Parodies', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY79M_MgSuRg-U0Y9t-5n_Hk');
-                playlists.addField('Fun Mix', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY77NZ6oE4PbkFarsOIyQcGD');
-                msg.reply(playlists);
-                break;
-            case 'quote':
-                const quotes = fs.readFileSync(`${home}/sys_files/quotes.txt`, 'utf8').split("}");
-                msg.channel.send(quotes[Math.floor(Math.random() * quotes.length)], { 'tts': true });
-                break;
-            case 'euchre':
-                setupEuchre(msg);
-                break;
+                    guildStatus[msg.guild.id].nowPlaying.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png');
+                    msg.reply('Now looping!');
+                    break;
+                case 'loopqueue':
+                    if (guildStatus[msg.guild.id].queue.length < 1) {
+                        msg.reply('There is no queue to loop!');
+                        return;
+                    }
+                    if (guildStatus[msg.guild.id].fullLoop) {
+                        guildStatus[msg.guild.id].fullLoop = false;
+                        msg.reply('No longer looping queue');
+                        return;
+                    }
+                    guildStatus[msg.guild.id].fullLoop = true;
+                    guildStatus[msg.guild.id].singleLoop = false;
+                    msg.reply('Now looping queue!');
+                    break;
+                case 'queue':
+                    displayQueue(msg);
+                    break;
+                case 'clear':
+                    if (guildStatus[msg.guild.id].queue.length < 1) {
+                        msg.reply('There is no queue!');
+                        return;
+                    }
+                    guildStatus[msg.guild.id].queue = [];
+                    guildStatus[msg.guild.id].fullLoop = false;
+                    msg.reply('The queue has been cleared!');
+                    break;
+                case 'skip':
+                    if (!guildStatus[msg.guild.id].audio) {
+                        msg.reply('There is nothing to skip');
+                        return;
+                    }
+                    guildStatus[msg.guild.id].voice.dispatcher.destroy();
+                    guildStatus[msg.guild.id].singleLoop = false;
+                    playQueue(msg.channel, msg.guild.id, guildStatus[msg.guild.id].voice.channel);
+                    msg.reply('Skipped!');
+                    break;
+                case 'shuffle': //change to shuffle option when adding to queue (async downloading is easier)
+                    if (guildStatus[msg.guild.id].queue.length < 1) {
+                        msg.reply('There is no queue!');
+                        return;
+                    }
+                    guildStatus[msg.guild.id].queue.sort(() => Math.random() - 0.5);
+                    msg.reply('The queue has been shuffled');
+                    break;
+                case 'stop':
+                    if (!guildStatus[msg.guild.id].voice?.dispatcher) {
+                        msg.reply('There is nothing playing!');
+                        return;
+                    }
+                    guildStatus[msg.guild.id].queue = [];
+                    guildStatus[msg.guild.id].downloadQueue = [];
+                    guildStatus[msg.guild.id].voice.dispatcher.destroy();
+                    guildStatus[msg.guild.id].audio = false;
+                    guildStatus[msg.guild.id].singleLoop = false;
+                    guildStatus[msg.guild.id].fullLoop = false;
+                    guildStatus[msg.guild.id].voice.disconnect();
+                    msg.reply('Success');
+                    break;
+                case 'np':
+                    if (!guildStatus[msg.guild.id].nowPlaying) {
+                        msg.reply('Nothing has played yet!');
+                        return;
+                    }
+                    msg.reply(guildStatus[msg.guild.id].nowPlaying);
+                    break;
+                case 'playlists':
+                    const playlists = genericEmbedResponse('Playlists');
+                    playlists.addField('Epic Mix', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY4lfQYkEb60nitxrJMpN5a2');
+                    playlists.addField('Undertale Mix', 'https://www.youtube.com/playlist?list=PLLSgIflCqVYMBjn63DEn0b6-sqKZ9xh_x');
+                    playlists.addField('MTG Parodies', 'https://www.youtube.com/playlist?list=PLt3HR7cu4NMNUoQx1q5ullRMW-ZwosuNl');
+                    playlists.addField('Bully Maguire', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY6QzsEh8F5N7J02ngFcE4w_');
+                    playlists.addField('Star Wars Parodies', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY79M_MgSuRg-U0Y9t-5n_Hk');
+                    playlists.addField('Fun Mix', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY77NZ6oE4PbkFarsOIyQcGD');
+                    msg.reply(playlists);
+                    break;
+                case 'quote':
+                    const quotes = fs.readFileSync(`${home}/sys_files/quotes.txt`, 'utf8').split("}");
+                    msg.channel.send(quotes[Math.floor(Math.random() * quotes.length)], { 'tts': true });
+                    break;
+                case 'euchre':
+                    setupEuchre(msg);
+                    break;
+            }
         }
-    }
-    catch (err) {
-        console.log(err);
+        catch (err) {
+            console.log(err);
+        }
+    });
+}
+process.on("message", function (arg) {
+    switch (arg) {
+        case 'stop':
+            client.destroy();
+            console.log('Potato Bot has been logged out');
+            process.send('stop');
+            break;
+        case 'start':
+            client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'] } });
+            guildStatus = {};
+            defineEvents();
+            client.login(sysData.potatoKey);
+            break;
     }
 });
-client.login(sysData.potatoKey);
 //# sourceMappingURL=app.js.map

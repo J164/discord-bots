@@ -7,13 +7,13 @@ import Discord = require('discord.js')
 import fs = require('fs')
 import axios from 'axios'
 
-const client: Discord.Client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS'] } })
+let client: Discord.Client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS'] } })
 const prefix = '$'
 const home = 'D:/Bot Resources'
-const root = '../'
+const root = '..'
 const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
 let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
-const guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
+let guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
 
 interface GuildData {
     game: MagicGame //| CommanderGame;
@@ -244,15 +244,6 @@ class MagicGame {
     }
 }*/
 
-client.on('ready', () => {
-    console.log(`We have logged in as ${client.user.tag}`)
-    client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)])
-    setInterval(function () {
-        userData = refreshData(`${home}/sys_files/bots.json`)
-        client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)])
-    }, 60000)
-})
-
 async function add(msg: Discord.Message) {
     if (msg.content.split(" ").length < 2) {
         msg.reply('Please enter a deckstats URL!')
@@ -310,100 +301,126 @@ async function deckPreview(i: number, msg: Discord.Message) {
     }
 }
 
-client.on('message', msg => {
-    if (msg.author.bot || !msg.content.startsWith(prefix) || !msg.guild) {
-        return
-    }
+function defineEvents() {
+    client.on('ready', () => {
+        console.log(`We have logged in as ${client.user.tag}`)
+        process.send('start')
+        client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)])
+        setInterval(function () {
+            userData = refreshData(`${home}/sys_files/bots.json`)
+            client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)])
+        }, 60000)
+    })
 
-    if (!(msg.guild.id in guildStatus)) {
-        guildStatus[msg.guild.id] = {
-            game: null
+    client.on('message', msg => {
+        if (msg.author.bot || !msg.content.startsWith(prefix) || !msg.guild) {
+            return
         }
-    }
 
-    const messageStart = msg.content.split(" ")[0].slice(1).toLowerCase()
+        if (!(msg.guild.id in guildStatus)) {
+            guildStatus[msg.guild.id] = {
+                game: null
+            }
+        }
 
-    try {
-        switch (messageStart) {
-            case 'add':
-                add(msg)
-                break
-            case 'decks':
-                deckPreview(0, msg)
-                break
-            case 'roll':
-                let dice = 6
-                if (msg.content.split(" ").length > 1) {
-                    const arg = parseInt(msg.content.split(" ")[1])
-                    if (!isNaN(arg) && arg > 0) {
-                        dice = arg
+        const messageStart = msg.content.split(" ")[0].slice(1).toLowerCase()
+
+        try {
+            switch (messageStart) {
+                case 'add':
+                    add(msg)
+                    break
+                case 'decks':
+                    deckPreview(0, msg)
+                    break
+                case 'roll':
+                    let dice = 6
+                    if (msg.content.split(" ").length > 1) {
+                        const arg = parseInt(msg.content.split(" ")[1])
+                        if (!isNaN(arg) && arg > 0) {
+                            dice = arg
+                        }
                     }
-                }
-                msg.channel.send(`Rolling a ${dice}-sided die...`)
-                const diceResult = genericEmbedResponse(`${dice}-sided die result`)
-                diceResult.addField(`${Math.floor((Math.random() * (dice - 1)) + 1)}`, `The chance of getting this result is about ${Math.round(100 / dice)}%`)
-                msg.reply(diceResult)
-                break
-            case 'flip':
-                const flip = Math.random()
-                const flipResult = genericEmbedResponse('Flip Result:')
-                if (flip >= 0.5) {
-                    flipResult.setImage('https://upload.wikimedia.org/wikipedia/commons/d/dd/2017-D_Roosevelt_dime_obverse_transparent.png')
-                } else {
-                    flipResult.setImage('https://upload.wikimedia.org/wikipedia/commons/d/d9/2017-D_Roosevelt_dime_reverse_transparent.png')
-                }
-                msg.reply(flipResult)
-                break
-            case 'newgame':
-                if (guildStatus[msg.guild.id].game) {
-                    msg.reply('A game is already in progress!')
-                    return
-                }
-                //guildStatus[msg.guild.id].game = new MagicGame()
-                break
-            case 'hit':
-                if (!guildStatus[msg.guild.id].game) {
-                    msg.reply('There is no active game!')
-                    return
-                }
-                //msg.reply(guildStatus[msg.guild.id].game.changeLife())
-                break
-            case 'heal':
-                if (!guildStatus[msg.guild.id].game) {
-                    msg.reply('There is no active game!')
-                    return
-                }
-                //msg.reply(guildStatus[msg.guild.id].game.changeLife()) // multiply number by -1
-                break
-            case 'eliminate':
-                if (!guildStatus[msg.guild.id].game) {
-                    msg.reply('There is no active game!')
-                    return
-                }
-                //msg.reply(guildStatus[msg.guild.id].game.eliminate())
-                break
-            case 'poison':
-                if (!guildStatus[msg.guild.id].game) {
-                    msg.reply('There is no active game!')
-                    return
-                }
-                //msg.reply(guildStatus[msg.guild.id].game.addPoison())
-                break
-            case 'standings':
-                if (!guildStatus[msg.guild.id].game) {
-                    msg.reply('There is no active game!')
-                    return
-                }
-                //msg.reply(guildStatus[msg.guild.id].game.printStandings())
-                break
-            case 'endgame':
-                guildStatus[msg.guild.id].game = null
-                msg.reply('Success!')
-                break
+                    msg.channel.send(`Rolling a ${dice}-sided die...`)
+                    const diceResult = genericEmbedResponse(`${dice}-sided die result`)
+                    diceResult.addField(`${Math.floor((Math.random() * (dice - 1)) + 1)}`, `The chance of getting this result is about ${Math.round(100 / dice)}%`)
+                    msg.reply(diceResult)
+                    break
+                case 'flip':
+                    const flip = Math.random()
+                    const flipResult = genericEmbedResponse('Flip Result:')
+                    if (flip >= 0.5) {
+                        flipResult.setImage('https://upload.wikimedia.org/wikipedia/commons/d/dd/2017-D_Roosevelt_dime_obverse_transparent.png')
+                    } else {
+                        flipResult.setImage('https://upload.wikimedia.org/wikipedia/commons/d/d9/2017-D_Roosevelt_dime_reverse_transparent.png')
+                    }
+                    msg.reply(flipResult)
+                    break
+                case 'newgame':
+                    if (guildStatus[msg.guild.id].game) {
+                        msg.reply('A game is already in progress!')
+                        return
+                    }
+                    //guildStatus[msg.guild.id].game = new MagicGame()
+                    break
+                case 'hit':
+                    if (!guildStatus[msg.guild.id].game) {
+                        msg.reply('There is no active game!')
+                        return
+                    }
+                    //msg.reply(guildStatus[msg.guild.id].game.changeLife())
+                    break
+                case 'heal':
+                    if (!guildStatus[msg.guild.id].game) {
+                        msg.reply('There is no active game!')
+                        return
+                    }
+                    //msg.reply(guildStatus[msg.guild.id].game.changeLife()) // multiply number by -1
+                    break
+                case 'eliminate':
+                    if (!guildStatus[msg.guild.id].game) {
+                        msg.reply('There is no active game!')
+                        return
+                    }
+                    //msg.reply(guildStatus[msg.guild.id].game.eliminate())
+                    break
+                case 'poison':
+                    if (!guildStatus[msg.guild.id].game) {
+                        msg.reply('There is no active game!')
+                        return
+                    }
+                    //msg.reply(guildStatus[msg.guild.id].game.addPoison())
+                    break
+                case 'standings':
+                    if (!guildStatus[msg.guild.id].game) {
+                        msg.reply('There is no active game!')
+                        return
+                    }
+                    //msg.reply(guildStatus[msg.guild.id].game.printStandings())
+                    break
+                case 'endgame':
+                    guildStatus[msg.guild.id].game = null
+                    msg.reply('Success!')
+                    break
+            }
+        } catch (err) {
+            console.log(err)
         }
-    } catch (err) {
-        console.log(err)
+    })
+}
+
+process.on("message", function (arg) {
+    switch (arg) {
+        case 'stop':
+            client.destroy()
+            console.log('Krenko Bot has been logged out')
+            process.send('stop')
+            break
+        case 'start':
+            client = new Discord.Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS'] } })
+            defineEvents()
+            guildStatus = {}
+            client.login(sysData.krenkoKey)
+            break
     }
 })
-
-client.login(sysData.krenkoKey)
