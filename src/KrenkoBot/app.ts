@@ -3,9 +3,9 @@ process.on('uncaughtException', err => {
     setInterval(function () { }, 1000)
 })
 
-import Discord = require('discord.js')
-import fs = require('fs')
-import axios from 'axios'
+import * as Discord from 'discord.js'
+import * as fs from 'fs'
+import * as axios from 'axios'
 
 const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS']
 let client: Discord.Client = new Discord.Client({ ws: { intents: intents} })
@@ -17,7 +17,7 @@ let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encod
 let guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
 
 interface GuildData {
-    game: MagicGame //| CommanderGame;
+    game: MagicGame; //| CommanderGame;
 }
 
 interface DeckJson {
@@ -47,7 +47,7 @@ function genericEmbedResponse(title: string) {
 }
 
 async function makeGetRequest(path: string) {
-    const response = await axios.get(path)
+    const response = await axios.default.get(path)
     return response.data
 }
 

@@ -3,10 +3,10 @@ process.on('uncaughtException', err => {
     setInterval(function () { }, 1000)
 })
 
-import Discord = require('discord.js') // Discord api library
-import fs = require('fs') // Filesystem
-import axios = require('axios') // Used to make http requests
-import canvas = require('canvas') // Allows the manipulation of images
+import * as Discord from 'discord.js' // Discord api library
+import * as fs from 'fs' // Filesystem
+import * as axios from 'axios' // Used to make http requests
+import * as canvas from 'canvas' // Allows the manipulation of images
 const youtubedl = require('youtube-dl-exec') // Youtube video downloader
 
 const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS']
@@ -202,7 +202,6 @@ class Euchre {
     // Instance variables
     team1: Team
     team2: Team
-    deckID: number
     active: boolean
     gameState: { top: Card; inPlay: Card[]; trump: string }
     players: Player[]

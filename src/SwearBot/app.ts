@@ -3,8 +3,8 @@ process.on('uncaughtException', err => {
     setInterval(function () { }, 1000)
 })
 
-import Discord = require('discord.js')
-import fs = require('fs')
+import * as Discord from 'discord.js'
+import * as fs from 'fs'
 
 const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES']
 let client = new Discord.Client({ ws: { intents: intents } })

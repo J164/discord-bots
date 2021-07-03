@@ -6,7 +6,7 @@ process.on('uncaughtException', err => {
 });
 const Discord = require("discord.js");
 const fs = require("fs");
-const axios_1 = require("axios");
+const axios = require("axios");
 const intents = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS'];
 let client = new Discord.Client({ ws: { intents: intents } });
 const prefix = '$';
@@ -26,7 +26,7 @@ function genericEmbedResponse(title) {
     return embedVar;
 }
 async function makeGetRequest(path) {
-    const response = await axios_1.default.get(path);
+    const response = await axios.default.get(path);
     return response.data;
 }
 function findKey(object, property) {
