@@ -8,6 +8,7 @@ const Discord = require("discord.js"); // Discord api library
 const fs = require("fs"); // Filesystem
 const axios = require("axios"); // Used to make http requests
 const canvas = require("canvas"); // Allows the manipulation of images
+const EventEmitter = require("events");
 const youtubedl = require('youtube-dl-exec'); // Youtube video downloader
 const intents = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS'];
 let client = new Discord.Client({ ws: { intents: intents } }); // Represents the bot client
@@ -18,6 +19,51 @@ const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, 
 let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' })); // Loads persistant info into memory
 const users = { admin: null, swear: null }; // Stores specific users
 let guildStatus = {}; // Stores guild specific information to allow bot to act independent in different guilds
+class QueueItem extends EventEmitter {
+    constructor(webpageUrl, title, id, thumbnail, duration) {
+        super();
+        this.webpageUrl = webpageUrl;
+        this.title = title;
+        this.id = id;
+        this.thumbnail = thumbnail;
+        this.duration = duration;
+        this.downloading = false;
+    }
+    isDownloaded() {
+        if (fs.existsSync(`${home}/music_files/playback/${this.id}.json`)) {
+            return true;
+        }
+        if (!this.downloading) {
+            this.download();
+        }
+        return false;
+    }
+    async download() {
+        this.downloading = true;
+        console.log('downloading');
+        const output = await youtubedl(this.webpageUrl, {
+            noWarnings: true,
+            noCallHome: true,
+            noCheckCertificate: true,
+            preferFreeFormats: true,
+            ignoreErrors: true,
+            geoBypass: true,
+            printJson: true,
+            format: 'bestaudio',
+            output: `${home}/music_files/playback/%(id)s.mp3`
+        });
+        this.thumbnail = output.thumbnails[0].url;
+        const metaData = JSON.stringify({
+            webpageUrl: this.webpageUrl,
+            title: this.title,
+            id: this.id,
+            thumbnail: this.thumbnail,
+            duration: this.duration
+        });
+        fs.writeFileSync(`${home}/music_files/playback/${this.id}.json`, metaData);
+        this.emit('downloaded');
+    }
+}
 function voiceKick(count, voiceState) {
     if (voiceState.channelID) {
         voiceState.kick();
@@ -55,62 +101,51 @@ async function makeGetRequest(path) {
     const response = await axios.default.get(path);
     return response.data;
 }
-// Recursively plays each video in the queue
-async function playQueue(channel, guildID, vc) {
-    if (guildStatus[guildID].queue.length < 1) {
-        return;
-    }
-    guildStatus[guildID].audio = true;
-    if (!vc.joinable) {
+async function connect(channel, guildID, vc) {
+    if (!vc.joinable || guildStatus[guildID].queue.length < 1) {
         channel.send('Something went wrong!');
-        guildStatus[guildID].audio = false;
         guildStatus[guildID].queue = [];
         return;
     }
+    guildStatus[guildID].audio = true;
     guildStatus[guildID].voice = await vc.join();
-    const currentSong = guildStatus[guildID].queue.shift();
-    if (!fs.existsSync(`${home}/music_files/playback/${currentSong.id}.json`)) {
-        try {
-            const output = await youtubedl(currentSong.webpageUrl, {
-                noWarnings: true,
-                noCallHome: true,
-                noCheckCertificate: true,
-                preferFreeFormats: true,
-                ignoreErrors: true,
-                geoBypass: true,
-                printJson: true,
-                format: 'bestaudio',
-                output: `${home}/music_files/playback/%(id)s.mp3`
-            });
-            currentSong.thumbnail = output.thumbnails[0].url;
-            const metaData = JSON.stringify({
-                webpageUrl: currentSong.webpageUrl,
-                title: currentSong.title,
-                id: currentSong.id,
-                thumbnail: currentSong.thumbnail,
-                duration: currentSong.duration
-            });
-            fs.writeFileSync(`${home}/music_files/playback/${currentSong.id}.json`, metaData);
-        }
-        catch { }
+    checkSongStatus(channel, guildID, vc);
+}
+// Recursively plays each video in the queue
+async function checkSongStatus(channel, guildID, vc) {
+    if (guildStatus[guildID].queue.length < 1) {
+        guildStatus[guildID].audio = false;
+        guildStatus[guildID].singleLoop = false;
+        guildStatus[guildID].fullLoop = false;
+        return;
     }
-    guildStatus[guildID].dispatcher = guildStatus[guildID].voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`);
-    guildStatus[guildID].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`);
-    guildStatus[guildID].nowPlaying.setImage(currentSong.thumbnail);
-    guildStatus[guildID].nowPlaying.addField('URL:', currentSong.webpageUrl);
+    const currentSong = guildStatus[guildID].queue.shift();
+    if (!currentSong.isDownloaded()) {
+        currentSong.once("downloaded", () => {
+            playSong(channel, guildID, vc, currentSong);
+        });
+        return;
+    }
+    playSong(channel, guildID, vc, currentSong);
+}
+async function playSong(channel, guildID, vc, song) {
+    guildStatus[guildID].dispatcher = guildStatus[guildID].voice.play(`${home}/music_files/playback/${song.id}.mp3`);
+    guildStatus[guildID].nowPlaying = genericEmbedResponse(`Now Playing: ${song.title}`);
+    guildStatus[guildID].nowPlaying.setImage(song.thumbnail);
+    guildStatus[guildID].nowPlaying.addField('URL:', song.webpageUrl);
     if (!guildStatus[guildID].singleLoop) {
         channel.send(guildStatus[guildID].nowPlaying);
     }
     guildStatus[guildID].dispatcher.on('finish', () => {
         if (guildStatus[guildID].fullLoop) {
-            guildStatus[guildID].queue.push(currentSong);
+            guildStatus[guildID].queue.push(song);
         }
         else if (guildStatus[guildID].singleLoop) {
-            guildStatus[guildID].queue.unshift(currentSong);
+            guildStatus[guildID].queue.unshift(song);
         }
         guildStatus[guildID].dispatcher.destroy();
         guildStatus[guildID].audio = false;
-        playQueue(channel, guildID, vc);
+        checkSongStatus(channel, guildID, vc);
     });
 }
 // Fetches a user from a specific guild using their ID
@@ -121,35 +156,10 @@ async function getUser(guildID, userID) {
 }
 async function download(guildID) {
     while (guildStatus[guildID].downloadQueue.length > 0) {
+        console.log('time to download');
         guildStatus[guildID].downloading = true;
         const currentItem = guildStatus[guildID].downloadQueue.shift();
-        try {
-            const output = await youtubedl(currentItem, {
-                noWarnings: true,
-                noCallHome: true,
-                noCheckCertificate: true,
-                preferFreeFormats: true,
-                ignoreErrors: true,
-                geoBypass: true,
-                printJson: true,
-                format: 'bestaudio',
-                output: `${home}/music_files/playback/%(id)s.mp3`
-            });
-            for (let i = 0; i < guildStatus[guildID].queue.length; i++) {
-                if (guildStatus[guildID].queue[i].title === output.title) {
-                    guildStatus[guildID].queue[i].thumbnail = output.thumbnails[0].url;
-                    const metaData = JSON.stringify({
-                        webpageUrl: guildStatus[guildID].queue[i].webpageUrl,
-                        title: guildStatus[guildID].queue[i].title,
-                        id: guildStatus[guildID].queue[i].id,
-                        thumbnail: guildStatus[guildID].queue[i].thumbnail,
-                        duration: guildStatus[guildID].queue[i].duration
-                    });
-                    fs.writeFileSync(`${home}/music_files/playback/${guildStatus[guildID].queue[i].id}.json`, metaData);
-                }
-            }
-        }
-        catch { }
+        await currentItem.download();
     }
     guildStatus[guildID].downloading = false;
 }
@@ -756,15 +766,10 @@ async function play(msg) {
     }
     function addToQueue(duration, webpageUrl, title, id, thumbnail) {
         if (duration < 5400) {
-            guildStatus[msg.guild.id].queue.push({
-                webpageUrl: webpageUrl,
-                title: title,
-                id: id,
-                thumbnail: thumbnail,
-                duration: duration
-            });
+            const song = new QueueItem(webpageUrl, title, id, thumbnail, duration);
+            guildStatus[msg.guild.id].queue.push(song);
             if (!thumbnail) {
-                guildStatus[msg.guild.id].downloadQueue.push(webpageUrl);
+                guildStatus[msg.guild.id].downloadQueue.push(song);
                 if (!guildStatus[msg.guild.id].downloading) {
                     download(msg.guild.id);
                 }
@@ -792,7 +797,7 @@ async function play(msg) {
     if (!guildStatus[msg.guild.id].audio) {
         guildStatus[msg.guild.id].singleLoop = false;
         guildStatus[msg.guild.id].fullLoop = false;
-        playQueue(msg.channel, msg.guild.id, voiceChannel);
+        connect(msg.channel, msg.guild.id, voiceChannel);
     }
 }
 async function displayQueue(msg) {
@@ -1049,7 +1054,7 @@ function defineEvents() {
                     }
                     guildStatus[msg.guild.id].dispatcher.destroy();
                     guildStatus[msg.guild.id].singleLoop = false;
-                    playQueue(msg.channel, msg.guild.id, guildStatus[msg.guild.id].voice.channel);
+                    checkSongStatus(msg.channel, msg.guild.id, guildStatus[msg.guild.id].voice.channel);
                     msg.reply('Skipped!');
                     break;
                 case 'shuffle': //change to shuffle option when adding to queue (async downloading is easier)

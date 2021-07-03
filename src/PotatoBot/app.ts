@@ -7,6 +7,7 @@ import * as Discord from 'discord.js' // Discord api library
 import * as fs from 'fs' // Filesystem
 import * as axios from 'axios' // Used to make http requests
 import * as canvas from 'canvas' // Allows the manipulation of images
+import EventEmitter = require('events')
 const youtubedl = require('youtube-dl-exec') // Youtube video downloader
 
 const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS']
@@ -20,8 +21,8 @@ const users: { admin: Discord.User; swear: Discord.User } = { admin: null, swear
 let guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
 
 interface GuildData {
-    queue: Song[];
-    downloadQueue: string[];
+    queue: QueueItem[];
+    downloadQueue: QueueItem[];
     downloading: boolean;
     audio: boolean;
     voice: Discord.VoiceConnection;
@@ -29,14 +30,6 @@ interface GuildData {
     fullLoop: boolean;
     singleLoop: boolean;
     dispatcher: Discord.StreamDispatcher;
-}
-
-interface Song {
-    webpageUrl: string;
-    title: string;
-    id: string;
-    thumbnail: string;
-    duration: number;
 }
 
 interface Team {
@@ -55,6 +48,61 @@ interface Player {
     user: Discord.User;
     hand: Card[];
     team: Team;
+}
+
+class QueueItem extends EventEmitter {
+    webpageUrl: string
+    title: string
+    id: string
+    thumbnail: string
+    duration: number
+    downloading: boolean
+
+    constructor(webpageUrl: string, title: string, id: string, thumbnail: string, duration: number) {
+        super()
+        this.webpageUrl = webpageUrl
+        this.title = title
+        this.id = id
+        this.thumbnail = thumbnail
+        this.duration = duration
+        this.downloading = false
+    }
+
+    isDownloaded(): boolean {
+        if (fs.existsSync(`${home}/music_files/playback/${this.id}.json`)) {
+            return true
+        }
+        if (!this.downloading) {
+            this.download()
+        }
+        return false
+    }
+
+    async download(): Promise<void> {
+        this.downloading = true
+        console.log('downloading')
+        const output = await youtubedl(this.webpageUrl, {
+            noWarnings: true,
+            noCallHome: true,
+            noCheckCertificate: true,
+            preferFreeFormats: true,
+            ignoreErrors: true,
+            geoBypass: true,
+            printJson: true,
+            format: 'bestaudio',
+            output: `${home}/music_files/playback/%(id)s.mp3`
+        })
+        this.thumbnail = output.thumbnails[0].url
+        const metaData = JSON.stringify({
+            webpageUrl: this.webpageUrl,
+            title: this.title,
+            id: this.id,
+            thumbnail: this.thumbnail,
+            duration: this.duration
+        })
+        fs.writeFileSync(`${home}/music_files/playback/${this.id}.json`, metaData)
+        this.emit('downloaded')
+    }
 }
 
 function voiceKick(count: number, voiceState: Discord.VoiceState): void {
@@ -99,60 +147,52 @@ async function makeGetRequest(path: string): Promise<any> {
     return response.data
 }
 
-// Recursively plays each video in the queue
-async function playQueue(channel: Discord.PartialTextBasedChannelFields, guildID: Discord.Snowflake, vc: Discord.VoiceChannel): Promise<void> {
-    if (guildStatus[guildID].queue.length < 1) {
-        return
-    }
-    guildStatus[guildID].audio = true
-    if (!vc.joinable) {
+async function connect(channel: Discord.PartialTextBasedChannelFields, guildID: Discord.Snowflake, vc: Discord.VoiceChannel): Promise<void> {
+    if (!vc.joinable || guildStatus[guildID].queue.length < 1) {
         channel.send('Something went wrong!')
-        guildStatus[guildID].audio = false
         guildStatus[guildID].queue = []
         return
     }
+    guildStatus[guildID].audio = true
     guildStatus[guildID].voice = await vc.join()
-    const currentSong = guildStatus[guildID].queue.shift()
-    if (!fs.existsSync(`${home}/music_files/playback/${currentSong.id}.json`)) {
-        try {
-            const output = await youtubedl(currentSong.webpageUrl, {
-                noWarnings: true,
-                noCallHome: true,
-                noCheckCertificate: true,
-                preferFreeFormats: true,
-                ignoreErrors: true,
-                geoBypass: true,
-                printJson: true,
-                format: 'bestaudio',
-                output: `${home}/music_files/playback/%(id)s.mp3`
-            })
-            currentSong.thumbnail = output.thumbnails[0].url
-            const metaData = JSON.stringify({
-                webpageUrl: currentSong.webpageUrl,
-                title: currentSong.title,
-                id: currentSong.id,
-                thumbnail: currentSong.thumbnail,
-                duration: currentSong.duration
-            })
-            fs.writeFileSync(`${home}/music_files/playback/${currentSong.id}.json`, metaData)
-        } catch {  }
+    checkSongStatus(channel, guildID, vc)
+}
+
+// Recursively plays each video in the queue
+async function checkSongStatus(channel: Discord.PartialTextBasedChannelFields, guildID: Discord.Snowflake, vc: Discord.VoiceChannel): Promise<void> {
+    if (guildStatus[guildID].queue.length < 1) {
+        guildStatus[guildID].audio = false
+        guildStatus[guildID].singleLoop = false
+        guildStatus[guildID].fullLoop = false
+        return
     }
-    guildStatus[guildID].dispatcher = guildStatus[guildID].voice.play(`${home}/music_files/playback/${currentSong.id}.mp3`)
-    guildStatus[guildID].nowPlaying = genericEmbedResponse(`Now Playing: ${currentSong.title}`)
-    guildStatus[guildID].nowPlaying.setImage(currentSong.thumbnail)
-    guildStatus[guildID].nowPlaying.addField('URL:', currentSong.webpageUrl)
+    const currentSong = guildStatus[guildID].queue.shift()
+    if (!currentSong.isDownloaded()) {
+        currentSong.once("downloaded", () => {
+            playSong(channel, guildID, vc, currentSong)
+        })
+        return
+    }
+    playSong(channel, guildID, vc, currentSong)
+}
+
+async function playSong(channel: Discord.PartialTextBasedChannelFields, guildID: Discord.Snowflake, vc: Discord.VoiceChannel, song: QueueItem): Promise<void> {
+    guildStatus[guildID].dispatcher = guildStatus[guildID].voice.play(`${home}/music_files/playback/${song.id}.mp3`)
+    guildStatus[guildID].nowPlaying = genericEmbedResponse(`Now Playing: ${song.title}`)
+    guildStatus[guildID].nowPlaying.setImage(song.thumbnail)
+    guildStatus[guildID].nowPlaying.addField('URL:', song.webpageUrl)
     if (!guildStatus[guildID].singleLoop) {
         channel.send(guildStatus[guildID].nowPlaying)
     }
     guildStatus[guildID].dispatcher.on('finish', () => {
         if (guildStatus[guildID].fullLoop) {
-            guildStatus[guildID].queue.push(currentSong)
+            guildStatus[guildID].queue.push(song)
         } else if (guildStatus[guildID].singleLoop) {
-            guildStatus[guildID].queue.unshift(currentSong)
+            guildStatus[guildID].queue.unshift(song)
         }
         guildStatus[guildID].dispatcher.destroy()
         guildStatus[guildID].audio = false
-        playQueue(channel, guildID, vc)
+        checkSongStatus(channel, guildID, vc)
     })
 }
 
@@ -165,34 +205,10 @@ async function getUser(guildID: Discord.Snowflake, userID: Discord.Snowflake): P
 
 async function download(guildID: Discord.Snowflake): Promise<void> {
     while (guildStatus[guildID].downloadQueue.length > 0) {
+        console.log('time to download')
         guildStatus[guildID].downloading = true
         const currentItem = guildStatus[guildID].downloadQueue.shift()
-        try {
-            const output = await youtubedl(currentItem, {
-                noWarnings: true,
-                noCallHome: true,
-                noCheckCertificate: true,
-                preferFreeFormats: true,
-                ignoreErrors: true,
-                geoBypass: true,
-                printJson: true,
-                format: 'bestaudio',
-                output: `${home}/music_files/playback/%(id)s.mp3`
-            })
-            for (let i = 0; i < guildStatus[guildID].queue.length; i++) {
-                if (guildStatus[guildID].queue[i].title === output.title) {
-                    guildStatus[guildID].queue[i].thumbnail = output.thumbnails[0].url
-                    const metaData = JSON.stringify({
-                        webpageUrl: guildStatus[guildID].queue[i].webpageUrl,
-                        title: guildStatus[guildID].queue[i].title,
-                        id: guildStatus[guildID].queue[i].id,
-                        thumbnail: guildStatus[guildID].queue[i].thumbnail,
-                        duration: guildStatus[guildID].queue[i].duration
-                    })
-                    fs.writeFileSync(`${home}/music_files/playback/${guildStatus[guildID].queue[i].id}.json`, metaData)
-                }
-            }
-        } catch { }
+        await currentItem.download()
     }
     guildStatus[guildID].downloading = false
 }
@@ -806,15 +822,10 @@ async function play(msg: Discord.Message): Promise<void> {
     }
     function addToQueue(duration: number, webpageUrl: string, title: string, id: string, thumbnail: string) {
         if (duration < 5400) {
-            guildStatus[msg.guild.id].queue.push({
-                webpageUrl: webpageUrl,
-                title: title,
-                id: id,
-                thumbnail: thumbnail,
-                duration: duration
-            })
+            const song = new QueueItem(webpageUrl, title, id, thumbnail, duration)
+            guildStatus[msg.guild.id].queue.push(song)
             if (!thumbnail) {
-                guildStatus[msg.guild.id].downloadQueue.push(webpageUrl)
+                guildStatus[msg.guild.id].downloadQueue.push(song)
                 if (!guildStatus[msg.guild.id].downloading) {
                     download(msg.guild.id)
                 }
@@ -840,7 +851,7 @@ async function play(msg: Discord.Message): Promise<void> {
     if (!guildStatus[msg.guild.id].audio) {
         guildStatus[msg.guild.id].singleLoop = false
         guildStatus[msg.guild.id].fullLoop = false
-        playQueue(msg.channel, msg.guild.id, voiceChannel)
+        connect(msg.channel, msg.guild.id, voiceChannel)
     }
 }
 
@@ -849,7 +860,7 @@ async function displayQueue(msg: Discord.Message): Promise<void> {
         msg.reply('There is no queue!')
         return
     }
-    const queueArray: Song[][] = []
+    const queueArray: QueueItem[][] = []
     for (let r = 0; r < Math.ceil(guildStatus[msg.guild.id].queue.length / 25); r++) {
         queueArray.push([])
         for (let i = 0; i < 25; i++) {
@@ -1114,7 +1125,7 @@ function defineEvents() {
                     }
                     guildStatus[msg.guild.id].dispatcher.destroy()
                     guildStatus[msg.guild.id].singleLoop = false
-                    playQueue(msg.channel, msg.guild.id, guildStatus[msg.guild.id].voice.channel)
+                    checkSongStatus(msg.channel, msg.guild.id, guildStatus[msg.guild.id].voice.channel)
                     msg.reply('Skipped!')
                     break
                 case 'shuffle': //change to shuffle option when adding to queue (async downloading is easier)
