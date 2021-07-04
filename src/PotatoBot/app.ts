@@ -21,15 +21,15 @@ const users: { admin: Discord.User; swear: Discord.User } = { admin: null, swear
 let guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
 
 interface GuildData {
-    queue: QueueItem[];
-    downloadQueue: QueueItem[];
+    queue?: QueueItem[];
+    downloadQueue?: QueueItem[];
     downloading: boolean;
     audio: boolean;
-    voice: Discord.VoiceConnection;
-    nowPlaying: Discord.MessageEmbed;
+    voice?: Discord.VoiceConnection;
+    nowPlaying?: Discord.MessageEmbed;
     fullLoop: boolean;
     singleLoop: boolean;
-    dispatcher: Discord.StreamDispatcher;
+    dispatcher?: Discord.StreamDispatcher;
 }
 
 interface Team {
@@ -183,7 +183,7 @@ async function playSong(channel: Discord.PartialTextBasedChannelFields, guildID:
     if (!guildStatus[guildID].singleLoop) {
         channel.send(guildStatus[guildID].nowPlaying)
     }
-    guildStatus[guildID].dispatcher.on('finish', () => {
+    guildStatus[guildID].dispatcher.once('finish', () => {
         if (guildStatus[guildID].fullLoop) {
             guildStatus[guildID].queue.push(song)
         } else if (guildStatus[guildID].singleLoop) {
@@ -761,7 +761,6 @@ async function downloadVideo(msg: Discord.Message): Promise<void> {
 async function search(parameter: string): Promise<string> {
     const searchResult = await axios.default.get(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&order=relevance&q=${encodeURIComponent(parameter)}&type=video&videoDefinition=high&key=${sysData.googleKey}`)
     if (searchResult.data.pageInfo.totalResults < 1) {
-        console.log('no results')
         return null
     }
     return searchResult.data.items[0].id.videoId
@@ -984,13 +983,9 @@ function defineEvents() {
             return
         }
         if (oldState.channelID && oldState.channelID !== newState.channelID && guildStatus[oldState.guild.id]?.dispatcher) {
-            guildStatus[oldState.guild.id].queue = []
-            guildStatus[oldState.guild.id].downloadQueue = []
-            guildStatus[oldState.guild.id].dispatcher.destroy()
             guildStatus[oldState.guild.id].audio = false
             guildStatus[oldState.guild.id].singleLoop = false
             guildStatus[oldState.guild.id].fullLoop = false
-            guildStatus[oldState.guild.id].voice.disconnect()
         }
     })
 

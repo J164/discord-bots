@@ -135,7 +135,7 @@ async function playSong(channel, guildID, vc, song) {
     if (!guildStatus[guildID].singleLoop) {
         channel.send(guildStatus[guildID].nowPlaying);
     }
-    guildStatus[guildID].dispatcher.on('finish', () => {
+    guildStatus[guildID].dispatcher.once('finish', () => {
         if (guildStatus[guildID].fullLoop) {
             guildStatus[guildID].queue.push(song);
         }
@@ -702,7 +702,6 @@ async function downloadVideo(msg) {
 async function search(parameter) {
     const searchResult = await axios.default.get(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&order=relevance&q=${encodeURIComponent(parameter)}&type=video&videoDefinition=high&key=${sysData.googleKey}`);
     if (searchResult.data.pageInfo.totalResults < 1) {
-        console.log('no results');
         return null;
     }
     return searchResult.data.items[0].id.videoId;
@@ -921,13 +920,9 @@ function defineEvents() {
             return;
         }
         if (oldState.channelID && oldState.channelID !== newState.channelID && guildStatus[oldState.guild.id]?.dispatcher) {
-            guildStatus[oldState.guild.id].queue = [];
-            guildStatus[oldState.guild.id].downloadQueue = [];
-            guildStatus[oldState.guild.id].dispatcher.destroy();
             guildStatus[oldState.guild.id].audio = false;
             guildStatus[oldState.guild.id].singleLoop = false;
             guildStatus[oldState.guild.id].fullLoop = false;
-            guildStatus[oldState.guild.id].voice.disconnect();
         }
     });
     // This block executes when a message is sent
