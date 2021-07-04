@@ -722,7 +722,7 @@ async function play(msg) {
         term = msg.content.split(" ")[1];
     }
     catch {
-        msg.reply('Please enter a video url when using this command');
+        msg.reply('Please enter a video url or search terms when using this command');
         return;
     }
     switch (term.toLowerCase()) {
