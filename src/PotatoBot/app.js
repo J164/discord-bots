@@ -699,8 +699,16 @@ async function downloadVideo(msg) {
     await youtubedl(msg.content.split(" ")[1], options);
     msg.reply('Download Successful!');
 }
+async function search(parameter) {
+    const searchResult = await axios.default.get(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&order=relevance&q=${encodeURIComponent(parameter)}&type=video&videoDefinition=high&key=${sysData.googleKey}`);
+    if (searchResult.data.pageInfo.totalResults < 1) {
+        console.log('no results');
+        return null;
+    }
+    return searchResult.data.items[0].id.videoId;
+}
 async function play(msg) {
-    let url;
+    let term;
     const voiceChannel = msg.member.voice.channel;
     if (!voiceChannel) {
         msg.reply('This command can only be used while in a voice channel!');
@@ -711,33 +719,46 @@ async function play(msg) {
         return;
     }
     try {
-        url = msg.content.split(" ")[1];
+        term = msg.content.split(" ")[1];
     }
     catch {
         msg.reply('Please enter a video url when using this command');
         return;
     }
-    switch (url.toLowerCase()) {
+    switch (term.toLowerCase()) {
         case 'epic':
-            url = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY4lfQYkEb60nitxrJMpN5a2';
+            term = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY4lfQYkEb60nitxrJMpN5a2';
             break;
         case 'magic':
-            url = 'https://www.youtube.com/playlist?list=PLt3HR7cu4NMNUoQx1q5ullRMW-ZwosuNl';
+            term = 'https://www.youtube.com/playlist?list=PLt3HR7cu4NMNUoQx1q5ullRMW-ZwosuNl';
             break;
         case 'undertale':
-            url = 'https://www.youtube.com/playlist?list=PLLSgIflCqVYMBjn63DEn0b6-sqKZ9xh_x';
+            term = 'https://www.youtube.com/playlist?list=PLLSgIflCqVYMBjn63DEn0b6-sqKZ9xh_x';
             break;
         case 'fun':
-            url = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY77NZ6oE4PbkFarsOIyQcGD';
+            term = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY77NZ6oE4PbkFarsOIyQcGD';
             break;
         case 'bully':
-            url = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY6QzsEh8F5N7J02ngFcE4w_';
+            term = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY6QzsEh8F5N7J02ngFcE4w_';
             break;
         case 'starwars':
-            url = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY79M_MgSuRg-U0Y9t-5n_Hk';
+            term = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY79M_MgSuRg-U0Y9t-5n_Hk';
             break;
     }
     msg.channel.send('Boiling potatoes...');
+    let url;
+    if (term.indexOf('youtube.com/') === -1) {
+        const arg = msg.content.split(" ");
+        arg.shift();
+        url = `https://www.youtube.com/watch?v=${await search(arg.join(" "))}`;
+        if (!url) {
+            msg.reply(`No results found for '${term}'`);
+            return;
+        }
+    }
+    else {
+        url = term;
+    }
     let output;
     if (url.split(/[?&]+/)[1].startsWith('list') || !fs.existsSync(`${home}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`)) {
         try {

@@ -86,7 +86,6 @@ async function startAll() {
 async function stopAll() {
     if (!potatoBot.online && !krenkoBot.online && !swearBot.online && !yeetBot.online) {
         process.exit();
-        return;
     }
     if (potatoBot.online) {
         await potatoBot.process.send('stop');
