@@ -429,3 +429,5 @@ process.on("message", function (arg) {
             break
     }
 })
+
+process.send('ready')

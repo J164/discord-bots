@@ -23,12 +23,12 @@ const consoleInterface = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
-async function sendAll(arg) {
-    await potatoBot.process.send(arg);
-    await krenkoBot.process.send(arg);
-    await swearBot.process.send(arg);
-    await yeetBot.process.send(arg);
-}
+/*async function sendAll(arg: string) {
+    await potatoBot.process.send(arg)
+    await krenkoBot.process.send(arg)
+    await swearBot.process.send(arg)
+    await yeetBot.process.send(arg)
+}*/
 async function startAll() {
     if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
         prompt();
@@ -315,41 +315,64 @@ function prompt() {
         prompt();
     });
 }
-sendAll('start');
 potatoBot.process.once('message', function (arg) {
-    if (arg !== 'start') {
+    if (arg !== 'ready') {
         return;
     }
-    potatoBot.online = true;
-    if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
-        prompt();
-    }
+    potatoBot.process.send('start');
+    potatoBot.process.once('message', function (arg) {
+        if (arg !== 'start') {
+            return;
+        }
+        potatoBot.online = true;
+        if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
+            prompt();
+        }
+    });
 });
 krenkoBot.process.once('message', function (arg) {
-    if (arg !== 'start') {
+    if (arg !== 'ready') {
         return;
     }
-    krenkoBot.online = true;
-    if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
-        prompt();
-    }
+    krenkoBot.process.send('start');
+    krenkoBot.process.once('message', function (arg) {
+        if (arg !== 'start') {
+            return;
+        }
+        krenkoBot.online = true;
+        if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
+            prompt();
+        }
+    });
 });
 swearBot.process.once('message', function (arg) {
-    if (arg !== 'start') {
+    if (arg !== 'ready') {
         return;
     }
-    swearBot.online = true;
-    if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
-        prompt();
-    }
+    swearBot.process.send('start');
+    swearBot.process.once('message', function (arg) {
+        if (arg !== 'start') {
+            return;
+        }
+        swearBot.online = true;
+        if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
+            prompt();
+        }
+    });
 });
 yeetBot.process.once('message', function (arg) {
-    if (arg !== 'start') {
+    if (arg !== 'ready') {
         return;
     }
-    yeetBot.online = true;
-    if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
-        prompt();
-    }
+    yeetBot.process.send('start');
+    yeetBot.process.once('message', function (arg) {
+        if (arg !== 'start') {
+            return;
+        }
+        yeetBot.online = true;
+        if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
+            prompt();
+        }
+    });
 });
 //# sourceMappingURL=app.js.map

@@ -382,4 +382,5 @@ process.on("message", function (arg) {
             break;
     }
 });
+process.send('ready');
 //# sourceMappingURL=app.js.map
