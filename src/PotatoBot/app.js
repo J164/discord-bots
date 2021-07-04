@@ -40,7 +40,6 @@ class QueueItem extends EventEmitter {
     }
     async download() {
         this.downloading = true;
-        console.log('downloading');
         const output = await youtubedl(this.webpageUrl, {
             noWarnings: true,
             noCallHome: true,
@@ -776,7 +775,7 @@ async function play(msg) {
             }
             return;
         }
-        msg.reply(`${title} is longer than 20 minutes and cannot be added to queue`);
+        msg.reply(`${title} is longer than 90 minutes and cannot be added to queue`);
     }
     if ('entries' in output) {
         for (const entry of output.entries) {

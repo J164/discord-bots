@@ -7,7 +7,7 @@ import * as Discord from 'discord.js' // Discord api library
 import * as fs from 'fs' // Filesystem
 import * as axios from 'axios' // Used to make http requests
 import * as canvas from 'canvas' // Allows the manipulation of images
-import EventEmitter = require('events')
+import * as EventEmitter from 'events'
 const youtubedl = require('youtube-dl-exec') // Youtube video downloader
 
 const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS']
@@ -80,7 +80,6 @@ class QueueItem extends EventEmitter {
 
     async download(): Promise<void> {
         this.downloading = true
-        console.log('downloading')
         const output = await youtubedl(this.webpageUrl, {
             noWarnings: true,
             noCallHome: true,
@@ -832,7 +831,7 @@ async function play(msg: Discord.Message): Promise<void> {
             }
             return
         }
-        msg.reply(`${title} is longer than 20 minutes and cannot be added to queue`)
+        msg.reply(`${title} is longer than 90 minutes and cannot be added to queue`);
     }
     if ('entries' in output) {
         for (const entry of output.entries) {
