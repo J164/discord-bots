@@ -1,2 +1,2 @@
-cd BotManager
-start node app.js
+cd dist
+start node index.js

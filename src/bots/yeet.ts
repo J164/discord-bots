@@ -9,7 +9,7 @@ import * as fs from 'fs'
 const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'GUILD_MESSAGES']
 let client = new Discord.Client({ ws: { intents: intents } })
 //const home = 'D:/Bot Resources'
-const root = 'C:/Users/jacob/OneDrive/Documents/Master Discord Bots/'
+const root = './..'
 const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
 //let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
 /*const guildStatus: { [key: string]: GuildData } = {}

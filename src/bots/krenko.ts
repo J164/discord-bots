@@ -11,7 +11,7 @@ const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'G
 let client: Discord.Client = new Discord.Client({ ws: { intents: intents} })
 const prefix = '$'
 const home = 'D:/Bot Resources'
-const root = 'C:/Users/jacob/OneDrive/Documents/Master Discord Bots/'
+const root = './..'
 const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
 let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
 let guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
@@ -153,7 +153,7 @@ class Deck {
 
 class MagicGame {
 
-    playerInfo
+    playerInfo: any
     numAlive
 
     constructor(playerList: Discord.GuildMember[]) {
