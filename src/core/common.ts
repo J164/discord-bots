@@ -1,8 +1,14 @@
-import * as Discord from "discord.js"
-import * as canvas from "canvas"
+import { Client, GuildMember, MessageEmbed, Snowflake, VoiceState } from "discord.js"
+import { createCanvas, loadImage } from "canvas"
 import * as axios from "axios"
+import { readFileSync } from "fs"
 
-export function voiceKick(count: number, voiceState: Discord.VoiceState): void {
+export const home = 'D:/Bot Resources'
+export const root = './..'
+export const sysData = JSON.parse(readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
+export let userData = JSON.parse(readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
+
+export function voiceKick(count: number, voiceState: VoiceState): void {
     if (voiceState.channelID) {
         voiceState.kick()
         return
@@ -14,17 +20,17 @@ export function voiceKick(count: number, voiceState: Discord.VoiceState): void {
 }
 
 export async function mergeImages(filePaths: string[], options: { width: number; height: number }): Promise<Buffer> {
-    const activeCanvas = canvas.createCanvas(options.width, options.height)
+    const activeCanvas = createCanvas(options.width, options.height)
     const ctx = activeCanvas.getContext('2d')
     for (const [i, path] of filePaths.entries()) {
-        const image = await canvas.loadImage(path)
+        const image = await loadImage(path)
         ctx.drawImage(image, i * (options.width / filePaths.length), 0)
     }
     return activeCanvas.toBuffer()
 }
 
-export function genericEmbedResponse(title: string): Discord.MessageEmbed {
-    const embedVar = new Discord.MessageEmbed()
+export function genericEmbedResponse(title: string): MessageEmbed {
+    const embedVar = new MessageEmbed()
     embedVar.setTitle(title)
     embedVar.setColor(0x0099ff)
     return embedVar
@@ -35,20 +41,13 @@ export async function makeGetRequest(path: string): Promise<any> {
     return response.data
 }
 
-export async function getUser(guildID: Discord.Snowflake, userID: Discord.Snowflake, client: Discord.Client): Promise<Discord.GuildMember> {
+export async function getUser(guildID: Snowflake, userID: Snowflake, client: Client): Promise<GuildMember> {
     const guild = await client.guilds.fetch(guildID)
     return guild.members.fetch({ user: userID })
 }
 
-import * as fs from "fs"
-
-export const home = 'D:/Bot Resources'
-export const root = './..'
-export const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
-export let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
-
 export function refreshData() {
-    userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
+    userData = JSON.parse(readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
 }
 
 export function findKey(object: any, property: string): any {

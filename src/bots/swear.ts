@@ -1,18 +1,18 @@
-import * as Discord from 'discord.js'
+import { BitFieldResolvable, Client, IntentsString, Message, StreamDispatcher, VoiceConnection } from 'discord.js'
 import { userData, home, sysData } from '../core/common'
 
-const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES']
-let client = new Discord.Client({ ws: { intents: intents } })
+const intents: BitFieldResolvable<IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES']
+let client = new Client({ ws: { intents: intents } })
 const prefix = '?'
 let guildStatus: { [key: string]: GuildData } = {}
 
 interface GuildData {
-    voice: Discord.VoiceConnection;
-    dispatcher: Discord.StreamDispatcher;
+    voice: VoiceConnection;
+    dispatcher: StreamDispatcher;
     audio: boolean;
 }
 
-async function play(msg: Discord.Message, loop: boolean) {
+async function play(msg: Message, loop: boolean) {
     let songNum
     const vc = msg.member.voice.channel
     if (!vc) {
@@ -142,7 +142,7 @@ process.on("message", function (arg) {
             process.send('stop')
             break
         case 'start':
-            client = new Discord.Client({ ws: { intents: intents } })
+            client = new Client({ ws: { intents: intents } })
             guildStatus = {}
             defineEvents()
             client.login(sysData.swearKey)

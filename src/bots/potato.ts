@@ -1,15 +1,15 @@
-import * as Discord from 'discord.js'
-import * as fs from 'fs'
+import { BitFieldResolvable, Client, IntentsString, Message, MessageEmbed, MessageReaction, PartialTextBasedChannelFields, Snowflake, StreamDispatcher, User, VoiceChannel, VoiceConnection } from 'discord.js'
+import { existsSync, readFileSync, writeFileSync } from 'fs'
 import * as axios from 'axios'
-import * as EventEmitter from 'events'
+import { EventEmitter } from 'events'
 import { Euchre } from '../core/games/Euchre'
 import { genericEmbedResponse, getUser, makeGetRequest, voiceKick, home, userData, refreshData, sysData, root } from '../core/common'
 const youtubedl = require('youtube-dl-exec')
 
-const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS']
-let client: Discord.Client = new Discord.Client({ ws: { intents: intents} })
+const intents: BitFieldResolvable<IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS']
+let client: Client = new Client({ ws: { intents: intents} })
 const prefix = '&'
-const users: { admin: Discord.User; swear: Discord.User } = { admin: null, swear: null }
+const users: { admin: User; swear: User } = { admin: null, swear: null }
 let guildStatus: { [key: string]: GuildData } = {}
 
 interface GuildData {
@@ -17,11 +17,11 @@ interface GuildData {
     downloadQueue?: QueueItem[];
     downloading: boolean;
     audio: boolean;
-    voice?: Discord.VoiceConnection;
-    nowPlaying?: Discord.MessageEmbed;
+    voice?: VoiceConnection;
+    nowPlaying?: MessageEmbed;
     fullLoop: boolean;
     singleLoop: boolean;
-    dispatcher?: Discord.StreamDispatcher;
+    dispatcher?: StreamDispatcher;
 }
 
 class QueueItem extends EventEmitter {
@@ -43,7 +43,7 @@ class QueueItem extends EventEmitter {
     }
 
     isDownloaded(): boolean {
-        if (fs.existsSync(`${home}/music_files/playback/${this.id}.json`)) {
+        if (existsSync(`${home}/music_files/playback/${this.id}.json`)) {
             return true
         }
         if (!this.downloading) {
@@ -73,12 +73,12 @@ class QueueItem extends EventEmitter {
             thumbnail: this.thumbnail,
             duration: this.duration
         })
-        fs.writeFileSync(`${home}/music_files/playback/${this.id}.json`, metaData)
+        writeFileSync(`${home}/music_files/playback/${this.id}.json`, metaData)
         this.emit('downloaded')
     }
 }
 
-async function connect(channel: Discord.PartialTextBasedChannelFields, guildID: Discord.Snowflake, vc: Discord.VoiceChannel): Promise<void> {
+async function connect(channel: PartialTextBasedChannelFields, guildID: Snowflake, vc: VoiceChannel): Promise<void> {
     if (!vc.joinable || guildStatus[guildID].queue.length < 1) {
         channel.send('Something went wrong!')
         guildStatus[guildID].queue = []
@@ -89,7 +89,7 @@ async function connect(channel: Discord.PartialTextBasedChannelFields, guildID: 
     checkSongStatus(channel, guildID, vc)
 }
 
-async function checkSongStatus(channel: Discord.PartialTextBasedChannelFields, guildID: Discord.Snowflake, vc: Discord.VoiceChannel): Promise<void> {
+async function checkSongStatus(channel: PartialTextBasedChannelFields, guildID: Snowflake, vc: VoiceChannel): Promise<void> {
     if (guildStatus[guildID].queue.length < 1) {
         guildStatus[guildID].audio = false
         guildStatus[guildID].singleLoop = false
@@ -106,7 +106,7 @@ async function checkSongStatus(channel: Discord.PartialTextBasedChannelFields, g
     playSong(channel, guildID, vc, currentSong)
 }
 
-async function playSong(channel: Discord.PartialTextBasedChannelFields, guildID: Discord.Snowflake, vc: Discord.VoiceChannel, song: QueueItem): Promise<void> {
+async function playSong(channel: PartialTextBasedChannelFields, guildID: Snowflake, vc: VoiceChannel, song: QueueItem): Promise<void> {
     guildStatus[guildID].dispatcher = guildStatus[guildID].voice.play(`${home}/music_files/playback/${song.id}.mp3`)
     guildStatus[guildID].nowPlaying = genericEmbedResponse(`Now Playing: ${song.title}`)
     guildStatus[guildID].nowPlaying.setImage(song.thumbnail)
@@ -126,7 +126,7 @@ async function playSong(channel: Discord.PartialTextBasedChannelFields, guildID:
     })
 }
 
-async function download(guildID: Discord.Snowflake): Promise<void> {
+async function download(guildID: Snowflake): Promise<void> {
     while (guildStatus[guildID].downloadQueue.length > 0) {
         console.log('time to download')
         guildStatus[guildID].downloading = true
@@ -136,7 +136,7 @@ async function download(guildID: Discord.Snowflake): Promise<void> {
     guildStatus[guildID].downloading = false
 }
 
-async function wynncraftStats(msg: Discord.Message): Promise<void> {
+async function wynncraftStats(msg: Message): Promise<void> {
     if (msg.content.split(" ").length < 2) {
         msg.reply('Please enter a player username')
         return
@@ -145,7 +145,7 @@ async function wynncraftStats(msg: Discord.Message): Promise<void> {
     let current
     let playtimeStr
     let hPlaytimeStr
-    const embedVar = new Discord.MessageEmbed()
+    const embedVar = new MessageEmbed()
     embedVar.setTitle(f.data[0].username)
     if (f.data[0].meta.location.online) {
         current = `Online at: ${f.data[0].meta.location.server}`
@@ -174,7 +174,7 @@ async function wynncraftStats(msg: Discord.Message): Promise<void> {
     msg.reply(embedVar)
 }
 
-async function newSwearSong(msg: Discord.Message): Promise<void> {
+async function newSwearSong(msg: Message): Promise<void> {
     if (msg.author !== users.admin && msg.author !== users.swear) {
         msg.reply('You don\'t have permission to use this command!')
         return
@@ -217,11 +217,11 @@ async function newSwearSong(msg: Discord.Message): Promise<void> {
     refreshData()
     userData.swearSongs.push(`song${(userData.swearSongs.length + 1)}.mp3`)
     const jsonString = JSON.stringify(userData)
-    fs.writeFileSync(`${home}/sys_files/bots.json`, jsonString)
+    writeFileSync(`${home}/sys_files/bots.json`, jsonString)
     msg.reply('Success!')
 }
 
-async function downloadVideo(msg: Discord.Message): Promise<void> {
+async function downloadVideo(msg: Message): Promise<void> {
     if (msg.author !== users.admin) {
         msg.reply('You don\'t have permission to use this command!')
         return
@@ -255,7 +255,7 @@ async function search(parameter: string): Promise<string> {
     return searchResult.data.items[0].id.videoId
 }
 
-async function play(msg: Discord.Message): Promise<void> {
+async function play(msg: Message): Promise<void> {
     let term: string
     const voiceChannel = msg.member.voice.channel
     if (!voiceChannel?.joinable) {
@@ -302,7 +302,7 @@ async function play(msg: Discord.Message): Promise<void> {
         url = term
     }
     let output
-    if (url.split(/[?&]+/)[1].startsWith('list') || !fs.existsSync(`${home}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`)) {
+    if (url.split(/[?&]+/)[1].startsWith('list') || !existsSync(`${home}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`)) {
         try {
             output = await youtubedl(url, {
                 dumpSingleJson: true,
@@ -322,7 +322,7 @@ async function play(msg: Discord.Message): Promise<void> {
             return
         }
     } else {
-        output = JSON.parse(fs.readFileSync(`${home}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`, { encoding: 'utf8' }))
+        output = JSON.parse(readFileSync(`${home}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`, { encoding: 'utf8' }))
     }
     function addToQueue(duration: number, webpageUrl: string, title: string, id: string, thumbnail: string) {
         if (duration < 5400) {
@@ -341,8 +341,8 @@ async function play(msg: Discord.Message): Promise<void> {
     if ('entries' in output) {
         for (const entry of output.entries) {
             let data
-            if (fs.existsSync(`${home}/music_files/playback/${entry.id}.json`)) {
-                data = JSON.parse(fs.readFileSync(`${home}/music_files/playback/${entry.id}.json`, { encoding: 'utf8' }))
+            if (existsSync(`${home}/music_files/playback/${entry.id}.json`)) {
+                data = JSON.parse(readFileSync(`${home}/music_files/playback/${entry.id}.json`, { encoding: 'utf8' }))
             } else {
                 data = entry
             }
@@ -359,7 +359,7 @@ async function play(msg: Discord.Message): Promise<void> {
     }
 }
 
-async function displayQueue(msg: Discord.Message): Promise<void> {
+async function displayQueue(msg: Message): Promise<void> {
     if (guildStatus[msg.guild.id].queue.length < 1) {
         msg.reply('There is no queue!')
         return
@@ -393,7 +393,7 @@ async function displayQueue(msg: Discord.Message): Promise<void> {
         for (const emoji of emojiList) {
             await message.react(emoji)
         }
-        function filter(reaction: Discord.MessageReaction): boolean { return reaction.client === client }
+        function filter(reaction: MessageReaction): boolean { return reaction.client === client }
         const reactionCollection = await message.awaitReactions(filter, { max: 1 })
         const reactionResult = reactionCollection.first()
         switch (reactionResult.emoji.name) {
@@ -413,7 +413,7 @@ async function displayQueue(msg: Discord.Message): Promise<void> {
     sendQueue(0)
 }
 
-async function setupEuchre(msg: Discord.Message): Promise<void> {
+async function setupEuchre(msg: Message): Promise<void> {
     const player1 = await msg.guild.members.fetch({ query: msg.content.split(" ")[1], limit: 1 })
     const player2 = await msg.guild.members.fetch({ query: msg.content.split(" ")[2], limit: 1 })
     const player3 = await msg.guild.members.fetch({ query: msg.content.split(" ")[3], limit: 1 })
@@ -646,7 +646,7 @@ function defineEvents() {
                     msg.reply(playlists)
                     break
                 case 'quote':
-                    const quotes = fs.readFileSync(`${root}/assets/static/quotes.txt`, 'utf8').split("}")
+                    const quotes = readFileSync(`${root}/assets/static/quotes.txt`, 'utf8').split("}")
                     msg.channel.send(quotes[Math.floor(Math.random() * quotes.length)], { 'tts': true })
                     break
                 case 'euchre':
@@ -667,7 +667,7 @@ process.on("message", function (arg) {
             process.send('stop')
             break
         case 'start':
-            client = new Discord.Client({ ws: { intents: intents } })
+            client = new Client({ ws: { intents: intents } })
             guildStatus = {}
             defineEvents()
             client.login(sysData.potatoKey)

@@ -1,4 +1,4 @@
-import * as Discord from "discord.js"
+import { MessageEmbed, MessageReaction, User } from "discord.js"
 import * as axios from "axios"
 import { genericEmbedResponse, mergeImages, root } from "../common"
 
@@ -15,7 +15,7 @@ interface Card {
 
 interface Player {
     id: number;
-    user: Discord.User;
+    user: User;
     hand: Card[];
     team: Team;
 }
@@ -27,7 +27,7 @@ export class Euchre {
     private gameState: { top: Card; inPlay: Card[]; trump: string }
     private players: Player[]
 
-    public constructor(players: Discord.User[]) {
+    public constructor(players: User[]) {
         this.team1 = {
             tricks: 0,
             score: 0
@@ -67,7 +67,7 @@ export class Euchre {
         }
     }
 
-    public async startGame(): Promise<Discord.MessageEmbed> {
+    public async startGame(): Promise<MessageEmbed> {
         await this.startRound()
         while (this.team1.score < 10 && this.team2.score < 10) {
             const newOrder = [this.players[3], this.players[0], this.players[1], this.players[2]]
@@ -371,7 +371,7 @@ export class Euchre {
         return names
     }
 
-    private async askPlayer(player: Discord.User, question: string, responses: string[]): Promise<number> {
+    private async askPlayer(player: User, question: string, responses: string[]): Promise<number> {
         const channel = await player.createDM()
         const prompt = genericEmbedResponse(question)
         for (let i = 0; i < responses.length; i++) {
@@ -382,7 +382,7 @@ export class Euchre {
         for (let i = 0; i < responses.length; i++) {
             await message.react(emojiList[i])
         }
-        function filter(reaction: Discord.MessageReaction): boolean { return reaction.client === message.client }
+        function filter(reaction: MessageReaction): boolean { return reaction.client === message.client }
         const reactionCollection = await message.awaitReactions(filter, { max: 1 })
         const reactionResult = reactionCollection.first()
         for (let i = 0; i < emojiList.length; i++) {

@@ -1,7 +1,7 @@
-import * as exec from 'child_process'
+import { ChildProcess, fork } from 'child_process'
 
 export class BotSubprocess {
-    private readonly process: exec.ChildProcess
+    private readonly process: ChildProcess
     private online: boolean
     public readonly name: string
     private readonly id: string
@@ -13,7 +13,7 @@ export class BotSubprocess {
     }
 
     private constructor(path: string, name: string, id: string) {
-        this.process = exec.fork(path)
+        this.process = fork(path)
         this.online = false
         this.name = name
         this.id = id

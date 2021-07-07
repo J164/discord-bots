@@ -1,9 +1,9 @@
-import * as Discord from 'discord.js'
-import * as fs from 'fs'
+import { BitFieldResolvable, Client, GuildMember, IntentsString, Message, MessageReaction, Snowflake } from 'discord.js'
+import { writeFileSync } from 'fs'
 import { findKey, genericEmbedResponse, makeGetRequest, userData, refreshData, home, sysData } from '../core/common'
 
-const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS']
-let client: Discord.Client = new Discord.Client({ ws: { intents: intents} })
+const intents: BitFieldResolvable<IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS']
+let client: Client = new Client({ ws: { intents: intents} })
 const prefix = '$'
 let guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
 
@@ -102,7 +102,7 @@ class MagicGame {
     playerInfo: any
     numAlive
 
-    constructor(playerList: Discord.GuildMember[]) {
+    constructor(playerList: GuildMember[]) {
         this.numAlive = playerList.length
         this.playerInfo = {}
         for (const player of playerList) {
@@ -115,24 +115,24 @@ class MagicGame {
         }
     }
 
-    changeLife(player: Discord.Snowflake, amount: number) {
+    changeLife(player: Snowflake, amount: number) {
         this.playerInfo[player].lifeTotal += amount
         return this.checkStatus(player)
     }
 
-    addPoison(player: Discord.Snowflake, amount: number) {
+    addPoison(player: Snowflake, amount: number) {
         this.playerInfo[player].poison += amount
         return this.checkStatus(player)
     }
 
-    checkStatus(player: Discord.Snowflake) {
+    checkStatus(player: Snowflake) {
         if (this.playerInfo[player].lifeTotal < 1 || this.playerInfo[player].poison >= 10) {
             return this.eliminate(player)
         }
         return this.printStandings()
     }
 
-    eliminate(player: Discord.Snowflake) {
+    eliminate(player: Snowflake) {
         this.playerInfo[player].isAlive = false
         this.numAlive--
         if (this.numAlive < 2) {
@@ -165,16 +165,16 @@ class MagicGame {
 }
 
 /*class CommanderGame extends MagicGame {
-    constructor(playerList: Discord.GuildMember[], commanderList: string[]) {
+    constructor(playerList: GuildMember[], commanderList: string[]) {
         super(playerList)
         //Make changes for commander (life total, times commander cast, commander damage)
     }
 
-    changeLife(player: Discord.Snowflake, amount: number, commander: string = null) {
+    changeLife(player: Snowflake, amount: number, commander: string = null) {
 
     }
 
-    checkStatus(player: Discord.Snowflake) {
+    checkStatus(player: Snowflake) {
         
     }
 
@@ -191,7 +191,7 @@ class MagicGame {
     }
 }*/
 
-async function add(msg: Discord.Message) {
+async function add(msg: Message) {
     if (msg.content.split(" ").length < 2) {
         msg.reply('Please enter a deckstats URL!')
         return
@@ -201,14 +201,14 @@ async function add(msg: Discord.Message) {
         refreshData()
         userData.decks.push(deck)
         const jsonString = JSON.stringify(userData)
-        fs.writeFileSync(`${home}/sys_files/bots.json`, jsonString)
+        writeFileSync(`${home}/sys_files/bots.json`, jsonString)
         msg.reply('Success!')
         return
     }
     msg.reply('Something went wrong... (Make sure you are using a valid deck url from deckstats.net and that the deck is not a duplicate)')
 }
 
-async function deckPreview(i: number, msg: Discord.Message) {
+async function deckPreview(i: number, msg: Message) {
     const deck = new Deck()
     deck.fill(userData.decks[i])
     const message = await msg.channel.send(deck.getPreview())
@@ -222,7 +222,7 @@ async function deckPreview(i: number, msg: Discord.Message) {
     for (const emoji of emojiList) {
         await message.react(emoji)
     }
-    function filter(reaction: Discord.MessageReaction): boolean { return reaction.client === client }
+    function filter(reaction: MessageReaction): boolean { return reaction.client === client }
     const reaction = await message.awaitReactions(filter, { max: 1 })
     const reactionResult = reaction.first()
     switch (reactionResult.emoji.name) {
@@ -364,7 +364,7 @@ process.on("message", function (arg) {
             process.send('stop')
             break
         case 'start':
-            client = new Discord.Client({ ws: { intents: intents } })
+            client = new Client({ ws: { intents: intents } })
             defineEvents()
             guildStatus = {}
             client.login(sysData.krenkoKey)

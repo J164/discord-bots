@@ -3,7 +3,7 @@ process.on('uncaughtException', err => {
 })
 
 import { BotSubprocess } from "./src/core/BotSubprocess"
-import * as readline from "readline"
+import { createInterface } from "readline"
 import { refreshData } from "./src/core/common"
 
 setInterval(function () {
@@ -11,7 +11,7 @@ setInterval(function () {
 }, 60000)
 
 const bots = BotSubprocess.bots
-const consoleInterface = readline.createInterface({
+const consoleInterface = createInterface({
     input: process.stdin,
     output: process.stdout
 })
