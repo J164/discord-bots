@@ -1,24 +1,8 @@
-process.on('uncaughtException', err => {
-    console.log(err)
-    setInterval(function () { }, 1000)
-})
-
 import * as Discord from 'discord.js'
-import * as fs from 'fs'
+import { sysData } from '../core/common'
 
 const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'GUILD_MESSAGES']
 let client = new Discord.Client({ ws: { intents: intents } })
-//const home = 'D:/Bot Resources'
-const root = './..'
-const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
-//let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
-/*const guildStatus: { [key: string]: GuildData } = {}
-
-interface GuildData {
-    voice: Discord.VoiceConnection;
-    dispatcher: Discord.StreamDispatcher;
-    audio: boolean;
-}*/
 
 function defineEvents() {
     client.on('ready', () => {
@@ -26,15 +10,7 @@ function defineEvents() {
         process.send('start')
         client.user.setActivity(sysData.yeetStatus[Math.floor(Math.random() * sysData.yeetStatus.length)])
         setInterval(function () {
-            //userData = refreshData(`${home}/sys_files/bots.json`)
             client.user.setActivity(sysData.yeetStatus[Math.floor(Math.random() * sysData.yeetStatus.length)])
-            /*for (const key in guildStatus) {
-                if ('audio' in guildStatus[key] && !guildStatus[key].audio) {
-                    try {
-                        guildStatus[key].voice.disconnect()
-                    } catch { }
-                }
-            }*/
         }, 60000)
     })
 

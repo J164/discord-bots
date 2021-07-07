@@ -1,382 +1,106 @@
-import * as exec from 'child_process'
+process.on('uncaughtException', err => {
+    setInterval(function () { console.log(err) }, 1000)
+})
+
+import { BotSubprocess } from "./src/core/BotSubprocess"
 import * as readline from "readline"
+import { refreshData } from "./src/core/common"
 
-const src = 'C:/Users/jacob/OneDrive/Documents/Master Discord Bots/src'
+setInterval(function () {
+    refreshData()
+}, 60000)
 
-const potatoBot = {
-    process: exec.fork(`${src}/PotatoBot/app.js`),
-    online: false
-}
-const krenkoBot = {
-    process: exec.fork(`${src}/KrenkoBot/app.js`),
-    online: false
-}
-const swearBot = {
-    process: exec.fork(`${src}/SwearBot/app.js`),
-    online: false
-}
-const yeetBot = {
-    process: exec.fork(`${src}/YeetBot/app.js`),
-    online: false
-}
-
+const bots = BotSubprocess.bots
 const consoleInterface = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 })
 
-/*async function sendAll(arg: string) {
-    await potatoBot.process.send(arg)
-    await krenkoBot.process.send(arg)
-    await swearBot.process.send(arg)
-    await yeetBot.process.send(arg)
-}*/
+async function startAll(): Promise<void> {
+    for (const key in bots) {
+        bots[key].start()
+    }
+}
 
-async function startAll() {
-    if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
-        prompt()
+async function stopAll(): Promise<void> {
+    for (const key in bots) {
+        bots[key].stop()
+    }
+    process.exit()
+}
+
+function stop(input: string[]): void {
+    if (input.length < 2) {
+        console.log('This command takes 1 parameter (Bot Name)')
         return
     }
-    if (!potatoBot.online) {
-        await potatoBot.process.send('start')
-        potatoBot.process.once('message', function (arg) {
-            if (arg !== 'start') {
-                return
-            }
-            potatoBot.online = true
-            if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
-                prompt()
-            }
-        })
+    if (input[1] == 'all') {
+        stopAll()
+        return
     }
-    if (!krenkoBot.online) {
-        await krenkoBot.process.send('start')
-        krenkoBot.process.once('message', function (arg) {
-            if (arg !== 'start') {
-                return
+    for (const key in bots) {
+        if (key == input[1]) {
+            if (!bots[key].stop()) {
+                console.log(`${bots[key].name} is already offline`)
             }
-            krenkoBot.online = true
-            if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
-                prompt()
-            }
-        })
+            return
+        }
     }
-    if (!swearBot.online) {
-        await swearBot.process.send('start')
-        swearBot.process.once('message', function (arg) {
-            if (arg !== 'start') {
-                return
-            }
-            swearBot.online = true
-            if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
-                prompt()
-            }
-        })
+    console.log('Name not recognized')
+}
+
+function start(input: string[]): void {
+    if (input.length < 2) {
+        console.log('This command takes 1 parameter (Bot Name)')
+        return
     }
-    if (!yeetBot.online) {
-        await yeetBot.process.send('start')
-        yeetBot.process.once('message', function (arg) {
-            if (arg !== 'start') {
-                return
+    if (input[1] == 'all') {
+        startAll()
+        return
+    }
+    for (const key in bots) {
+        if (key == input[1]) {
+            if (!bots[key].start()) {
+                console.log(`${bots[key].name} is already online`)
+                break
             }
-            yeetBot.online = true
-            if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
-                prompt()
-            }
-        })
+            return
+        }
+    }
+    console.log('Name not recognized')
+}
+
+function list(): void {
+    for (const key in bots) {
+        if (bots[key].getOnline()) {
+            console.log(`${bots[key].name}: `, "\x1b[42m", 'Online', '\x1b[0m')
+        } else {
+            console.log(`${bots[key].name}: `, "\x1b[41m", 'Offline', '\x1b[0m')
+        }
     }
 }
 
-async function stopAll() {
-    if (!potatoBot.online && !krenkoBot.online && !swearBot.online && !yeetBot.online) {
-        process.exit()
-    }
-    if (potatoBot.online) {
-        await potatoBot.process.send('stop')
-        potatoBot.process.once('message', function (arg) {
-            if (arg !== 'stop') {
-                return
-            }
-            potatoBot.online = false
-            if (!potatoBot.online && !krenkoBot.online && !swearBot.online && !yeetBot.online) {
-                process.exit()
-            }
-        })
-    }
-    if (krenkoBot.online) {
-        krenkoBot.process.send('stop')
-        krenkoBot.process.once('message', function (arg) {
-            if (arg !== 'stop') {
-                return
-            }
-            krenkoBot.online = false
-            if (!potatoBot.online && !krenkoBot.online && !swearBot.online && !yeetBot.online) {
-                process.exit()
-            }
-        })
-    }
-    if (swearBot.online) {
-        swearBot.process.send('stop')
-        swearBot.process.once('message', function (arg) {
-            if (arg !== 'stop') {
-                return
-            }
-            swearBot.online = false
-            if (!potatoBot.online && !krenkoBot.online && !swearBot.online && !yeetBot.online) {
-                process.exit()
-            }
-        })
-    }
-    if (yeetBot.online) {
-        yeetBot.process.send('stop')
-        yeetBot.process.once('message', function (arg) {
-            if (arg !== 'stop') {
-                return
-            }
-            yeetBot.online = false
-            if (!potatoBot.online && !krenkoBot.online && !swearBot.online && !yeetBot.online) {
-                process.exit()
-            }
-        })
-    }
-}
-
-function prompt() {
-    consoleInterface.question('> ', (input) => {
+function prompt(): void {
+    consoleInterface.question('', (input) => {
         const parsedInput = input.split(" ")
         switch (parsedInput[0]) {
             case 'stop':
-                if (parsedInput.length < 2) {
-                    console.log('This command takes 1 parameter (Bot Name)')
-                    break
-                }
-                switch (parsedInput[1]) {
-                    case 'potato':
-                        if (!potatoBot.online) {
-                            console.log('Potato Bot is already offline')
-                            break
-                        }
-                        potatoBot.process.send('stop')
-                        potatoBot.process.once('message', function (arg) {
-                            if (arg !== 'stop') {
-                                return
-                            }
-                            potatoBot.online = false
-                            prompt()
-                        })
-                        return
-                    case 'krenko':
-                        if (!krenkoBot.online) {
-                            console.log('Krenko Bot is already offline')
-                            break
-                        }
-                        krenkoBot.process.send('stop')
-                        krenkoBot.process.once('message', function (arg) {
-                            if (arg !== 'stop') {
-                                return
-                            }
-                            krenkoBot.online = false
-                            prompt()
-                        })
-                        return
-                    case 'swear':
-                        if (!swearBot.online) {
-                            console.log('Swear Bot is already offline')
-                            break
-                        }
-                        swearBot.process.send('stop')
-                        swearBot.process.once('message', function (arg) {
-                            if (arg !== 'stop') {
-                                return
-                            }
-                            swearBot.online = false
-                            prompt()
-                        })
-                        return
-                    case 'yeet':
-                        if (!yeetBot.online) {
-                            console.log('Yeet Bot is already offline')
-                            break
-                        }
-                        yeetBot.process.send('stop')
-                        yeetBot.process.once('message', function (arg) {
-                            if (arg !== 'stop') {
-                                return
-                            }
-                            yeetBot.online = false
-                            prompt()
-                        })
-                        return
-                    case 'all':
-                        stopAll()
-                        return
-                    default:
-                        console.log('Name not recognized')
-                        break
-                }
+                stop(parsedInput)
                 break
             case 'start':
-                if (parsedInput.length < 2) {
-                    console.log('This command takes 1 parameter (Bot Name)')
-                    break
-                }
-                switch (parsedInput[1]) {
-                    case 'potato':
-                        if (potatoBot.online) {
-                            console.log('Potato Bot is already online')
-                            break
-                        }
-                        potatoBot.process.send('start')
-                        potatoBot.process.once('message', function (arg) {
-                            if (arg !== 'start') {
-                                return
-                            }
-                            potatoBot.online = true
-                            prompt()
-                        })
-                        return
-                    case 'krenko':
-                        if (krenkoBot.online) {
-                            console.log('Krenko Bot is already online')
-                            break
-                        }
-                        krenkoBot.process.send('start')
-                        krenkoBot.process.once('message', function (arg) {
-                            if (arg !== 'start') {
-                                return
-                            }
-                            krenkoBot.online = true
-                            prompt()
-                        })
-                        return
-                    case 'swear':
-                        if (swearBot.online) {
-                            console.log('Swear Bot is already online')
-                            break
-                        }
-                        swearBot.process.send('start')
-                        swearBot.process.once('message', function (arg) {
-                            if (arg !== 'start') {
-                                return
-                            }
-                            swearBot.online = true
-                            prompt()
-                        })
-                        return
-                    case 'yeet':
-                        if (yeetBot.online) {
-                            console.log('Yeet Bot is already online')
-                            break
-                        }
-                        yeetBot.process.send('start')
-                        yeetBot.process.once('message', function (arg) {
-                            if (arg !== 'start') {
-                                return
-                            }
-                            yeetBot.online = true
-                            prompt()
-                        })
-                        return
-                    case 'all':
-                        startAll()
-                        return
-                    default:
-                        console.log('Name not recognized')
-                        break
-                }
+                start(parsedInput)
+                break
+            case 'list':
+                list()
                 break
             case 'help':
                 console.log('start <name> (start a bot or use "all" to start all of them')
                 console.log('stop <name> (stop a bot or use "all" to stop all of them')
                 console.log('list (list all bots and their running status')
                 break
-            case 'list':
-                if (potatoBot.online) {
-                    console.log('Potato Bot: ', "\x1b[42m", 'Online', '\x1b[0m')
-                } else {
-                    console.log('Potato Bot: ', "\x1b[41m", 'Offline', '\x1b[0m')
-                }
-                if (krenkoBot.online) {
-                    console.log('Krenko Bot: ', "\x1b[42m", 'Online', '\x1b[0m')
-                } else {
-                    console.log('Krenko Bot: ', "\x1b[41m", 'Offline', '\x1b[0m')
-                }
-                if (swearBot.online) {
-                    console.log('Swear Bot: ', "\x1b[42m", 'Online', '\x1b[0m')
-                } else {
-                    console.log('Swear Bot: ', "\x1b[41m", 'Offline', '\x1b[0m')
-                }
-                if (yeetBot.online) {
-                    console.log('Yeet Bot: ', "\x1b[42m", 'Online', '\x1b[0m')
-                } else {
-                    console.log('Yeet Bot: ', "\x1b[41m", 'Offline', '\x1b[0m')
-                }
-                break
         }
         prompt()
     })
 }
 
-potatoBot.process.once('message', function (arg) {
-    if (arg !== 'ready') {
-        return
-    }
-    potatoBot.process.send('start')
-    potatoBot.process.once('message', function (arg) {
-        if (arg !== 'start') {
-            return
-        }
-        potatoBot.online = true
-        if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
-            prompt()
-        }
-    })
-})
-
-krenkoBot.process.once('message', function (arg) {
-    if (arg !== 'ready') {
-        return
-    }
-    krenkoBot.process.send('start')
-    krenkoBot.process.once('message', function (arg) {
-        if (arg !== 'start') {
-            return
-        }
-        krenkoBot.online = true
-        if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
-            prompt()
-        }
-    })
-})
-
-swearBot.process.once('message', function (arg) {
-    if (arg !== 'ready') {
-        return
-    }
-    swearBot.process.send('start')
-    swearBot.process.once('message', function (arg) {
-        if (arg !== 'start') {
-            return
-        }
-        swearBot.online = true
-        if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
-            prompt()
-        }
-    })
-})
-
-yeetBot.process.once('message', function (arg) {
-    if (arg !== 'ready') {
-        return
-    }
-    yeetBot.process.send('start')
-    yeetBot.process.once('message', function (arg) {
-        if (arg !== 'start') {
-            return
-        }
-        yeetBot.online = true
-        if (potatoBot.online && krenkoBot.online && swearBot.online && yeetBot.online) {
-            prompt()
-        }
-    })
-})
+prompt()

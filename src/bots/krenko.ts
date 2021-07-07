@@ -1,19 +1,10 @@
-process.on('uncaughtException', err => {
-    console.log(err)
-    setInterval(function () { }, 1000)
-})
-
 import * as Discord from 'discord.js'
 import * as fs from 'fs'
-import * as axios from 'axios'
+import { findKey, genericEmbedResponse, makeGetRequest, userData, refreshData, home, sysData } from '../core/common'
 
 const intents: Discord.BitFieldResolvable<Discord.IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS']
 let client: Discord.Client = new Discord.Client({ ws: { intents: intents} })
 const prefix = '$'
-const home = 'D:/Bot Resources'
-const root = './..'
-const sysData = JSON.parse(fs.readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
-let userData = JSON.parse(fs.readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
 let guildStatus: { [key: string]: GuildData } = {} // Stores guild specific information to allow bot to act independent in different guilds
 
 interface GuildData {
@@ -32,51 +23,6 @@ interface PlayerInfo {
     playerName: string;
     lifeTotal: number;
     isAlive: boolean;
-}
-
-function refreshData(location: string) {
-    const jsonString = fs.readFileSync(location, { encoding: 'utf8' })
-    return JSON.parse(jsonString)
-}
-
-function genericEmbedResponse(title: string) {
-    const embedVar = new Discord.MessageEmbed()
-    embedVar.setTitle(title)
-    embedVar.setColor(0xffff00)
-    return embedVar
-}
-
-async function makeGetRequest(path: string) {
-    const response = await axios.default.get(path)
-    return response.data
-}
-
-function findKey(object: any, property: string): any {
-    let result
-    if (object instanceof Array) {
-        for (let i = 0; i < object.length; i++) {
-            result = findKey(object[i], property)
-            if (result) {
-                break
-            }
-        }
-    }
-    else {
-        for (const prop in object) {
-            if (prop === property) {
-                if (object[prop]) {
-                    return object
-                }
-            }
-            if (object[prop] instanceof Object || object[prop] instanceof Array) {
-                result = findKey(object[prop], property)
-                if (result) {
-                    break
-                }
-            }
-        }
-    }
-    return result;
 }
 
 class Deck {
@@ -252,7 +198,7 @@ async function add(msg: Discord.Message) {
     }
     const deck = new Deck()
     if (await deck.getInfo(msg.content.split(" ")[1])) {
-        userData = refreshData(`${home}/sys_files/bots.json`)
+        refreshData()
         userData.decks.push(deck)
         const jsonString = JSON.stringify(userData)
         fs.writeFileSync(`${home}/sys_files/bots.json`, jsonString)
@@ -285,9 +231,6 @@ async function deckPreview(i: number, msg: Discord.Message) {
             msg.reply(deckList)
             message.delete()
             return
-        case '\u274C':
-            message.delete()
-            return
         case '\u2B05\uFE0F':
             message.delete()
             deckPreview((i - 1), msg)
@@ -308,7 +251,6 @@ function defineEvents() {
         process.send('start')
         client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)])
         setInterval(function () {
-            userData = refreshData(`${home}/sys_files/bots.json`)
             client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)])
         }, 60000)
     })
