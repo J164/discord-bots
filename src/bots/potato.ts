@@ -1,140 +1,17 @@
-import { BitFieldResolvable, Client, IntentsString, Message, MessageEmbed, MessageReaction, PartialTextBasedChannelFields, Snowflake, StreamDispatcher, User, VoiceChannel, VoiceConnection } from 'discord.js'
+import { BitFieldResolvable, Client, IntentsString, Message, MessageEmbed, MessageReaction, User } from 'discord.js'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import * as axios from 'axios'
-import { EventEmitter } from 'events'
 import { Euchre } from '../core/games/Euchre'
-import { genericEmbedResponse, getUser, makeGetRequest, voiceKick, home, userData, refreshData, sysData, root } from '../core/common'
+import { genericEmbedResponse, getUser, makeGetRequest, voiceKick, home, userData, refreshData, sysData, root, PotatoGuildData } from '../core/common'
+import { checkSongStatus, connect, download, QueueItem } from '../core/voice'
 const youtubedl = require('youtube-dl-exec')
 
 const intents: BitFieldResolvable<IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS']
 let client: Client = new Client({ ws: { intents: intents} })
+client.on('debug', console.log)
 const prefix = '&'
 const users: { admin: User; swear: User } = { admin: null, swear: null }
-let guildStatus: { [key: string]: GuildData } = {}
-
-interface GuildData {
-    queue?: QueueItem[];
-    downloadQueue?: QueueItem[];
-    downloading: boolean;
-    audio: boolean;
-    voice?: VoiceConnection;
-    nowPlaying?: MessageEmbed;
-    fullLoop: boolean;
-    singleLoop: boolean;
-    dispatcher?: StreamDispatcher;
-}
-
-class QueueItem extends EventEmitter {
-    webpageUrl: string
-    title: string
-    id: string
-    thumbnail: string
-    duration: number
-    downloading: boolean
-
-    constructor(webpageUrl: string, title: string, id: string, thumbnail: string, duration: number) {
-        super()
-        this.webpageUrl = webpageUrl
-        this.title = title
-        this.id = id
-        this.thumbnail = thumbnail
-        this.duration = duration
-        this.downloading = false
-    }
-
-    isDownloaded(): boolean {
-        if (existsSync(`${home}/music_files/playback/${this.id}.json`)) {
-            return true
-        }
-        if (!this.downloading) {
-            this.download()
-        }
-        return false
-    }
-
-    async download(): Promise<void> {
-        this.downloading = true
-        const output = await youtubedl(this.webpageUrl, {
-            noWarnings: true,
-            noCallHome: true,
-            noCheckCertificate: true,
-            preferFreeFormats: true,
-            ignoreErrors: true,
-            geoBypass: true,
-            printJson: true,
-            format: 'bestaudio',
-            output: `${home}/music_files/playback/%(id)s.mp3`
-        })
-        this.thumbnail = output.thumbnails[0].url
-        const metaData = JSON.stringify({
-            webpageUrl: this.webpageUrl,
-            title: this.title,
-            id: this.id,
-            thumbnail: this.thumbnail,
-            duration: this.duration
-        })
-        writeFileSync(`${home}/music_files/playback/${this.id}.json`, metaData)
-        this.emit('downloaded')
-    }
-}
-
-async function connect(channel: PartialTextBasedChannelFields, guildID: Snowflake, vc: VoiceChannel): Promise<void> {
-    if (!vc.joinable || guildStatus[guildID].queue.length < 1) {
-        channel.send('Something went wrong!')
-        guildStatus[guildID].queue = []
-        return
-    }
-    guildStatus[guildID].audio = true
-    guildStatus[guildID].voice = await vc.join()
-    checkSongStatus(channel, guildID, vc)
-}
-
-async function checkSongStatus(channel: PartialTextBasedChannelFields, guildID: Snowflake, vc: VoiceChannel): Promise<void> {
-    if (guildStatus[guildID].queue.length < 1) {
-        guildStatus[guildID].audio = false
-        guildStatus[guildID].singleLoop = false
-        guildStatus[guildID].fullLoop = false
-        return
-    }
-    const currentSong = guildStatus[guildID].queue.shift()
-    if (!currentSong.isDownloaded()) {
-        currentSong.once("downloaded", () => {
-            playSong(channel, guildID, vc, currentSong)
-        })
-        return
-    }
-    playSong(channel, guildID, vc, currentSong)
-}
-
-async function playSong(channel: PartialTextBasedChannelFields, guildID: Snowflake, vc: VoiceChannel, song: QueueItem): Promise<void> {
-    guildStatus[guildID].dispatcher = guildStatus[guildID].voice.play(`${home}/music_files/playback/${song.id}.mp3`)
-    guildStatus[guildID].nowPlaying = genericEmbedResponse(`Now Playing: ${song.title}`)
-    guildStatus[guildID].nowPlaying.setImage(song.thumbnail)
-    guildStatus[guildID].nowPlaying.addField('URL:', song.webpageUrl)
-    if (!guildStatus[guildID].singleLoop) {
-        channel.send(guildStatus[guildID].nowPlaying)
-    }
-    guildStatus[guildID].dispatcher.once('finish', () => {
-        if (guildStatus[guildID].fullLoop) {
-            guildStatus[guildID].queue.push(song)
-        } else if (guildStatus[guildID].singleLoop) {
-            guildStatus[guildID].queue.unshift(song)
-        }
-        guildStatus[guildID].dispatcher.destroy()
-        guildStatus[guildID].audio = false
-        checkSongStatus(channel, guildID, vc)
-    })
-}
-
-async function download(guildID: Snowflake): Promise<void> {
-    while (guildStatus[guildID].downloadQueue.length > 0) {
-        console.log('time to download')
-        guildStatus[guildID].downloading = true
-        const currentItem = guildStatus[guildID].downloadQueue.shift()
-        await currentItem.download()
-    }
-    guildStatus[guildID].downloading = false
-}
+let guildStatus: { [key: string]: PotatoGuildData } = {}
 
 async function wynncraftStats(msg: Message): Promise<void> {
     if (msg.content.split(" ").length < 2) {
@@ -331,7 +208,7 @@ async function play(msg: Message): Promise<void> {
             if (!thumbnail) {
                 guildStatus[msg.guild.id].downloadQueue.push(song)
                 if (!guildStatus[msg.guild.id].downloading) {
-                    download(msg.guild.id)
+                    download(guildStatus[msg.guild.id])
                 }
             }
             return
@@ -355,7 +232,7 @@ async function play(msg: Message): Promise<void> {
     if (!guildStatus[msg.guild.id].audio) {
         guildStatus[msg.guild.id].singleLoop = false
         guildStatus[msg.guild.id].fullLoop = false
-        connect(msg.channel, msg.guild.id, voiceChannel)
+        connect(msg.channel, msg.guild.id, voiceChannel, guildStatus[msg.guild.id])
     }
 }
 
@@ -603,7 +480,7 @@ function defineEvents() {
                     }
                     guildStatus[msg.guild.id].dispatcher.destroy()
                     guildStatus[msg.guild.id].singleLoop = false
-                    checkSongStatus(msg.channel, msg.guild.id, guildStatus[msg.guild.id].voice.channel)
+                    checkSongStatus(msg.channel, guildStatus[msg.guild.id])
                     msg.reply('Skipped!')
                     break
                 case 'shuffle': //change to shuffle option when adding to queue (async downloading is easier)

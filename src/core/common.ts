@@ -1,12 +1,25 @@
-import { Client, GuildMember, MessageEmbed, Snowflake, VoiceState } from "discord.js"
+import { Client, GuildMember, MessageEmbed, Snowflake, StreamDispatcher, VoiceConnection, VoiceState } from "discord.js"
 import { createCanvas, loadImage } from "canvas"
 import * as axios from "axios"
 import { readFileSync } from "fs"
+import { QueueItem } from "./voice"
 
 export const home = 'D:/Bot Resources'
 export const root = './..'
 export const sysData = JSON.parse(readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
 export let userData = JSON.parse(readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
+
+export interface PotatoGuildData {
+    queue?: QueueItem[];
+    downloadQueue?: QueueItem[];
+    downloading: boolean;
+    audio: boolean;
+    voice?: VoiceConnection;
+    nowPlaying?: MessageEmbed;
+    fullLoop: boolean;
+    singleLoop: boolean;
+    dispatcher?: StreamDispatcher;
+}
 
 export function voiceKick(count: number, voiceState: VoiceState): void {
     if (voiceState.channelID) {
