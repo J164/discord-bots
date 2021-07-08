@@ -2,7 +2,6 @@ import { PartialTextBasedChannelFields, Snowflake, VoiceChannel } from "discord.
 import EventEmitter = require("events")
 import { createReadStream, existsSync, unlinkSync, writeFileSync } from "fs"
 import { home, genericEmbedResponse, PotatoGuildData } from "./common"
-const prism = require('prism-media')
 const ffmpeg = require("fluent-ffmpeg")
 const youtubedl = require("youtube-dl-exec")
 
@@ -33,7 +32,6 @@ export class QueueItem extends EventEmitter {
     }
 
     public async download(): Promise<void> {
-        console.log(this.title)
         if (this.downloading) {
             return
         }
@@ -63,7 +61,6 @@ export class QueueItem extends EventEmitter {
             .once('end', () => {
                 //unlinkSync(`${home}/music_files/playback/${this.id}.mp3`)
                 writeFileSync(`${home}/music_files/playback/${this.id}.json`, metaData)
-                console.log(`${this.id}`)
                 this.emit('downloaded')
             })
             .on('error', function(err: any) {
@@ -81,7 +78,6 @@ export async function connect(channel: PartialTextBasedChannelFields, guildID: S
     }
     guildData.audio = true
     guildData.voice = await vc.join()
-    guildData.voice.on('debug', console.log)
     checkSongStatus(channel, guildData)
 }
 

@@ -5,12 +5,12 @@ export class BotSubprocess {
     private online: boolean
     public readonly name: string
     private readonly id: string
-    public static bots: { [key: string]: BotSubprocess } = {
-        potato: new BotSubprocess('./src/bots/potato.js', 'Potato Bot', 'potato'),
-        krenko: new BotSubprocess('./src/bots/krenko.js', 'Krenko Bot', 'krenko'),
-        swear: new BotSubprocess('./src/bots/swear.js', 'Swear Bot', 'swear'),
-        yeet: new BotSubprocess('./src/bots/yeet.js', 'Yeet Bot', 'yeet'),
-    }
+    public static bots =  new Map<string, BotSubprocess>([
+        ['potato', new BotSubprocess('./src/bots/potato.js', 'Potato Bot', 'potato')],
+        ['krenko', new BotSubprocess('./src/bots/krenko.js', 'Krenko Bot', 'krenko')],
+        ['swear', new BotSubprocess('./src/bots/swear.js', 'Swear Bot', 'swear')],
+        ['yeet', new BotSubprocess('./src/bots/yeet.js', 'Yeet Bot', 'yeet')]
+    ]) 
 
     private constructor(path: string, name: string, id: string) {
         this.process = fork(path)
@@ -21,7 +21,7 @@ export class BotSubprocess {
             if (arg !== 'ready') {
                 return
             }
-            BotSubprocess.bots[id].start()
+            BotSubprocess.bots.get(id).start()
         })
     }
 
@@ -39,7 +39,7 @@ export class BotSubprocess {
             if (arg !== 'stop') {
                 return
             }
-            BotSubprocess.bots[id].online = false
+            BotSubprocess.bots.get(id).online = false
         })
         return true
     }
@@ -54,7 +54,7 @@ export class BotSubprocess {
             if (arg !== 'start') {
                 return
             }
-            BotSubprocess.bots[id].online = true
+            BotSubprocess.bots.get(id).online = true
         })
         return true
     }

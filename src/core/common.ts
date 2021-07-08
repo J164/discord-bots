@@ -68,25 +68,17 @@ export function findKey(object: any, property: string): any {
     if (object instanceof Array) {
         for (const item of object) {
             result = findKey(item, property)
-            if (result) {
-                break
-            }
+            break
+        }
+        return result
+    }
+    for (const prop in object) {
+        if (prop === property) {
+            return object
+        }
+        if (object[prop] instanceof Object || object[prop] instanceof Array) {
+            result = findKey(object[prop], property)
+            return result
         }
     }
-    else {
-        for (const prop in object) {
-            if (prop === property) {
-                if (object[prop]) {
-                    return object
-                }
-            }
-            if (object[prop] instanceof Object || object[prop] instanceof Array) {
-                result = findKey(object[prop], property)
-                if (result) {
-                    break
-                }
-            }
-        }
-    }
-    return result;
 }

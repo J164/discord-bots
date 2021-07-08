@@ -17,14 +17,14 @@ const consoleInterface = createInterface({
 })
 
 async function startAll(): Promise<void> {
-    for (const key in bots) {
-        bots[key].start()
+    for (const [, bot] of bots) {
+        bot.start()
     }
 }
 
 async function stopAll(): Promise<void> {
-    for (const key in bots) {
-        bots[key].stop()
+    for (const [, bot] of bots) {
+        bot.stop()
     }
     process.exit()
 }
@@ -38,10 +38,10 @@ function stop(input: string[]): void {
         stopAll()
         return
     }
-    for (const key in bots) {
+    for (const [key, bot] of bots) {
         if (key == input[1]) {
-            if (!bots[key].stop()) {
-                console.log(`${bots[key].name} is already offline`)
+            if (!bot.stop()) {
+                console.log(`${bot.name} is already offline`)
             }
             return
         }
@@ -58,10 +58,10 @@ function start(input: string[]): void {
         startAll()
         return
     }
-    for (const key in bots) {
+    for (const [key, bot] of bots) {
         if (key == input[1]) {
-            if (!bots[key].start()) {
-                console.log(`${bots[key].name} is already online`)
+            if (!bot.start()) {
+                console.log(`${bot.name} is already online`)
                 break
             }
             return
@@ -71,11 +71,11 @@ function start(input: string[]): void {
 }
 
 function list(): void {
-    for (const key in bots) {
-        if (bots[key].getOnline()) {
-            console.log(`${bots[key].name}: `, "\x1b[42m", 'Online', '\x1b[0m')
+    for (const [, bot] of bots) {
+        if (bot.getOnline()) {
+            console.log(`${bot.name}: `, "\x1b[42m", 'Online', '\x1b[0m')
         } else {
-            console.log(`${bots[key].name}: `, "\x1b[41m", 'Offline', '\x1b[0m')
+            console.log(`${bot.name}: `, "\x1b[41m", 'Offline', '\x1b[0m')
         }
     }
 }

@@ -8,7 +8,6 @@ const youtubedl = require('youtube-dl-exec')
 
 const intents: BitFieldResolvable<IntentsString> = ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS']
 let client: Client = new Client({ ws: { intents: intents} })
-client.on('debug', console.log)
 const prefix = '&'
 const users: { admin: User; swear: User } = { admin: null, swear: null }
 let guildStatus: { [key: string]: PotatoGuildData } = {}
@@ -236,6 +235,43 @@ async function play(msg: Message): Promise<void> {
     }
 }
 
+async function sendQueue(index: number, msg: Message, queueArray: QueueItem[][]): Promise<null> {
+    const queueMessage = genericEmbedResponse('Queue')
+    for (const [i, entry] of queueArray[index].entries()) {
+        queueMessage.addField(`${i + 1}.`, `${entry.title}\n${entry.webpageUrl}`)
+    }
+    if (guildStatus[msg.guild.id].fullLoop) {
+        queueMessage.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png')
+    }
+    const message = await msg.channel.send(queueMessage)
+    const emojiList = ['\u274C']
+    if (index > 0) {
+        emojiList.unshift('\u2B05\uFE0F')
+    }
+    if (index < queueArray.length - 1) {
+        emojiList.push('\u27A1\uFE0F')
+    }
+    for (const emoji of emojiList) {
+        await message.react(emoji)
+    }
+    function filter(reaction: MessageReaction): boolean { return reaction.client === client }
+    const reactionCollection = await message.awaitReactions(filter, { max: 1 })
+    const reactionResult = reactionCollection.first()
+    switch (reactionResult.emoji.name) {
+        case '\u2B05\uFE0F':
+            await message.delete()
+            sendQueue(index - 1, msg, queueArray)
+            break
+        case '\u27A1\uFE0F':
+            await message.delete()
+            sendQueue(index + 1, msg, queueArray)
+            break
+        default:
+            message.delete()
+            return
+    }
+}
+
 async function displayQueue(msg: Message): Promise<void> {
     if (guildStatus[msg.guild.id].queue.length < 1) {
         msg.reply('There is no queue!')
@@ -251,43 +287,7 @@ async function displayQueue(msg: Message): Promise<void> {
             queueArray[r].push(guildStatus[msg.guild.id].queue[(r * 25) + i])
         }
     }
-    async function sendQueue(index: number): Promise<null> {
-        const queueMessage = genericEmbedResponse('Queue')
-        for (const [i, entry] of queueArray[index].entries()) {
-            queueMessage.addField(`${i + 1}.`, `${entry.title}\n${entry.webpageUrl}`)
-        }
-        if (guildStatus[msg.guild.id].fullLoop) {
-            queueMessage.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png')
-        }
-        const message = await msg.channel.send(queueMessage)
-        const emojiList = ['\u274C']
-        if (index > 0) {
-            emojiList.unshift('\u2B05\uFE0F')
-        }
-        if (index < queueArray.length - 1) {
-            emojiList.push('\u27A1\uFE0F')
-        }
-        for (const emoji of emojiList) {
-            await message.react(emoji)
-        }
-        function filter(reaction: MessageReaction): boolean { return reaction.client === client }
-        const reactionCollection = await message.awaitReactions(filter, { max: 1 })
-        const reactionResult = reactionCollection.first()
-        switch (reactionResult.emoji.name) {
-            case '\u2B05\uFE0F':
-                await message.delete()
-                sendQueue(index - 1)
-                break
-            case '\u27A1\uFE0F':
-                await message.delete()
-                sendQueue(index + 1)
-                break
-            default:
-                message.delete()
-                return
-        }
-    }
-    sendQueue(0)
+    sendQueue(0, msg, queueArray)
 }
 
 async function setupEuchre(msg: Message): Promise<void> {
