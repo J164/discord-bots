@@ -6,7 +6,7 @@ export class BotSubprocess {
     public readonly name: string
     private readonly id: string
     public static bots =  new Map<string, BotSubprocess>([
-        ['potato', new BotSubprocess('./src/bots/potato.js', 'Potato Bot', 'potato')],
+        ['potato', new BotSubprocess('./src/bots/potato/potato.js', 'Potato Bot', 'potato')],
         ['krenko', new BotSubprocess('./src/bots/krenko.js', 'Krenko Bot', 'krenko')],
         ['swear', new BotSubprocess('./src/bots/swear.js', 'Swear Bot', 'swear')],
         ['yeet', new BotSubprocess('./src/bots/yeet.js', 'Yeet Bot', 'yeet')]

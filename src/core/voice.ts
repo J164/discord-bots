@@ -1,7 +1,7 @@
-import { PartialTextBasedChannelFields, Snowflake, VoiceChannel } from "discord.js"
+import { MessageEmbed, PartialTextBasedChannelFields, StreamDispatcher, VoiceChannel, VoiceConnection } from "discord.js"
 import EventEmitter = require("events")
 import { createReadStream, existsSync, unlinkSync, writeFileSync } from "fs"
-import { home, genericEmbedResponse, PotatoGuildData } from "./common"
+import { home, genericEmbedResponse } from "./common"
 const ffmpeg = require("fluent-ffmpeg")
 const youtubedl = require("youtube-dl-exec")
 
@@ -11,6 +11,7 @@ export class QueueItem extends EventEmitter {
     public readonly id: string
     public thumbnail: string
     public readonly duration: number
+    public looping: boolean
     private downloading: boolean
 
     public constructor(webpageUrl: string, title: string, id: string, thumbnail: string, duration: number) {
@@ -20,6 +21,7 @@ export class QueueItem extends EventEmitter {
         this.id = id
         this.thumbnail = thumbnail
         this.duration = duration
+        this.looping = false
         this.downloading = false
     }
 
@@ -70,65 +72,237 @@ export class QueueItem extends EventEmitter {
     }
 }
 
-export async function connect(channel: PartialTextBasedChannelFields, guildID: Snowflake, vc: VoiceChannel, guildData: PotatoGuildData): Promise<void> {
-    if (!vc.joinable || guildData.queue.length < 1) {
-        channel.send('Something went wrong!')
-        guildData.queue = []
-        return
-    }
-    guildData.audio = true
-    guildData.voice = await vc.join()
-    checkSongStatus(channel, guildData)
-}
+export class VoiceManager {
 
-export async function checkSongStatus(channel: PartialTextBasedChannelFields, guildData: PotatoGuildData): Promise<void> {
-    if (guildData.queue.length < 1) {
-        guildData.audio = false
-        guildData.singleLoop = false
-        guildData.fullLoop = false
-        return
-    }
-    const song = guildData.queue.shift()
-    if (!song.isDownloaded()) {
-        song.once("downloaded", () => {
-            playSong(channel, song, guildData)
-        })
-        return
-    }
-    playSong(channel, song, guildData)
-}
+    private queue: QueueItem[]
+    private downloadQueue: QueueItem[]
+    private boundChannel: PartialTextBasedChannelFields
+    private downloading: boolean
+    private playing: boolean
+    private voiceConnection: VoiceConnection
+    private nowPlaying: MessageEmbed
+    private queueLoop: boolean
+    private songLoop: boolean
+    private streamDispatcher: StreamDispatcher
 
-export async function playSong(channel: PartialTextBasedChannelFields, song: QueueItem, guildData: PotatoGuildData): Promise<void> {
-    //const stream = createReadStream(`${home}/music_files/playback/${song.id}.ogg`)
-    //stream.once("end", () => console.log('close'))
-    guildData.dispatcher = guildData.voice.play(`${home}/music_files/playback/${song.id}.mp3`)//, { type: 'ogg/opus' })
-    guildData.nowPlaying = genericEmbedResponse(`Now Playing: ${song.title}`)
-    guildData.nowPlaying.setImage(song.thumbnail)
-    guildData.nowPlaying.addField('URL:', song.webpageUrl)
-    if (!guildData.singleLoop) {
-        channel.send(guildData.nowPlaying)
+    public constructor() {
+        this.queue = []
+        this.downloadQueue = []
+        this.downloading = false
+        this.playing = false
+        this.queueLoop = false
+        this.songLoop = false
     }
-    guildData.dispatcher.once('finish', () => {
-        if (guildData.fullLoop) {
-            guildData.queue.push(song)
-        } else if (guildData.singleLoop) {
-            guildData.queue.unshift(song)
+
+    public addToQueue(duration: number, webpageUrl: string, title: string, id: string, thumbnail: string): void {
+        if (duration < 5400) {
+            const song = new QueueItem(webpageUrl, title, id, thumbnail, duration)
+            this.queue.push(song)
+            if (!thumbnail) {
+                this.downloadQueue.push(song)
+                if (!this.downloading) {
+                    this.download()
+                }
+            }
         }
-        guildData.dispatcher.destroy()
-        guildData.audio = false
-        checkSongStatus(channel, guildData)
-    })
-}
-
-export async function download(guildData: PotatoGuildData): Promise<void> {
-    if (guildData.downloadQueue.length < 1) {
-        guildData.downloading = false
-        return
     }
-    guildData.downloading = true
-    const currentItem = guildData.downloadQueue.shift()
-    await currentItem.download()
-    currentItem.once("downloaded", () => {
-        download(guildData)
-    })
+
+    public async connect(channel: PartialTextBasedChannelFields, voiceChannel: VoiceChannel): Promise<void> {
+        if (this.playing) {
+            return
+        }
+        if (!voiceChannel.joinable || this.queue.length < 1) {
+            channel.send('Something went wrong (Check if voice channel is joinable)')
+            this.reset()
+            return
+        }
+        this.playing = true
+        this.voiceConnection = await voiceChannel.join()
+        this.boundChannel = channel
+        this.checkSongStatus()
+    }
+
+    private async checkSongStatus(): Promise<void> {
+        if (this.queue.length < 1) {
+            this.reset()
+            return
+        }
+        this.playing = true
+        const song = this.queue.shift()
+        if (!song.isDownloaded()) {
+            song.once("downloaded", () => {
+                this.playSong(song)
+            })
+            return
+        }
+        this.playSong(song)
+    }
+
+    private async playSong(song: QueueItem): Promise<void> {
+        //const stream = createReadStream(`${home}/music_files/playback/${song.id}.ogg`)
+        //stream.once("end", () => console.log('close'))
+        this.streamDispatcher = this.voiceConnection.play(`${home}/music_files/playback/${song.id}.mp3`)//, { type: 'ogg/opus' })
+        this.nowPlaying = genericEmbedResponse(`Now Playing: ${song.title}`)
+        this.nowPlaying.setImage(song.thumbnail)
+        this.nowPlaying.addField('URL:', song.webpageUrl)
+        if (!song.looping) {
+            this.boundChannel.send(this.nowPlaying)
+        }
+        if (this.songLoop) {
+            song.looping = true
+        }
+        this.streamDispatcher.once('finish', () => {
+            if (this.queueLoop) {
+                this.queue.push(song)
+            } else if (this.songLoop) {
+                this.queue.unshift(song)
+            }
+            this.streamDispatcher.destroy()
+            this.playing = false
+            this.checkSongStatus()
+        })
+    }
+
+    public async download(): Promise<void> {
+        if (this.downloadQueue.length < 1) {
+            this.downloading = false
+            return
+        }
+        this.downloading = true
+        const currentItem = this.downloadQueue.shift()
+        await currentItem.download()
+        currentItem.once("downloaded", () => {
+            this.download()
+        })
+    }
+
+    public pause(): boolean {
+        if (!this.streamDispatcher || this.streamDispatcher.paused) {
+            return false
+        }
+        this.streamDispatcher.pause(true)
+        return true
+    }
+
+    public resume(): boolean {
+        if (!this.streamDispatcher) {
+            return false
+        }
+        this.streamDispatcher.resume()
+        return true
+    }
+
+    public loopSong(): string {
+        if (!this.streamDispatcher) {
+            return 'Nothing is playing!'
+        }
+        if (this.songLoop) {
+            this.songLoop = false
+            this.nowPlaying.setFooter('')
+            return 'No longer looping'
+        }
+        this.songLoop = true
+        this.nowPlaying.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png')
+        return 'Now looping'
+    }
+
+    public loopQueue(): string {
+        if (!this.streamDispatcher) {
+            return 'Nothing is playing!'
+        }
+        if (this.queueLoop) {
+            this.queueLoop = false
+            return 'No longer looping queue'
+        }
+        this.queueLoop = true
+        return 'Now looping queue'
+    }
+
+    public clear(): boolean {
+        if (this.queue.length < 1) {
+            return false
+        }
+        this.queue = []
+        this.downloadQueue = []
+        this.queueLoop = false
+        return true
+    }
+
+    public skip(): boolean {
+        if (!this.streamDispatcher) {
+            return false
+        }
+        this.streamDispatcher.end()
+        return true
+    }
+
+    public shuffleQueue(): boolean {
+        if (this.queue.length < 1) {
+            return false
+        }
+        for (var i = this.queue.length - 1; i > 0; i--) {
+            var randomIndex = Math.floor(Math.random() * (i + 1));
+            var temp = this.queue[i];
+            this.queue[i] = this.queue[randomIndex];
+            this.queue[randomIndex] = temp;
+        }
+        return true
+    }
+
+    public stop(): boolean {
+        this.reset()
+        return true
+    }
+
+    public getNowPlaying(): string | MessageEmbed {
+        if (!this.nowPlaying) {
+            return 'Nothing has played yet!'
+        }
+        return this.nowPlaying
+    }
+
+    public getQueue(): QueueItem[][] {
+        if (this.queue.length < 1) {
+            return null
+        }
+        const queueArray: QueueItem[][] = []
+        for (let r = 0; r < Math.ceil(this.queue.length / 25); r++) {
+            queueArray.push([])
+            for (let i = 0; i < 25; i++) {
+                if ((r * 25) + i > this.queue.length - 1) {
+                    break
+                }
+                queueArray[r].push(this.queue[(r * 25) + i])
+            }
+        }
+        return queueArray
+    }
+
+    public getQueueLoop(): boolean {
+        if (this.queueLoop) {
+            return true
+        }
+        return false
+    }
+
+    public checkIsIdle(): void {
+        if (!this.playing) {
+            this.stop()
+        }
+    }
+
+    private reset(): void {
+        this.queue = []
+        this.downloadQueue = []
+        this.boundChannel = null
+        this.downloading = false
+        this.playing = false
+        this.voiceConnection?.disconnect()
+        this.voiceConnection = null
+        this.nowPlaying = null
+        this.queueLoop = false
+        this.songLoop = false
+        this.streamDispatcher?.destroy()
+        this.streamDispatcher = null
+    }
 }
