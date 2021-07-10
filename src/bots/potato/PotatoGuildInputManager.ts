@@ -4,6 +4,7 @@ import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
 import { genericEmbedResponse, home, makeGetRequest, refreshData, root, searchYoutube, sysData, userData, voiceKick } from '../../core/common'
 import { Euchre } from '../../core/games/Euchre'
 import { QueueItem, PotatoVoiceManager } from './PotatoVoiceManager'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
 
 export class PotatoGuildInputManager extends BaseGuildInputManager {
@@ -71,6 +72,7 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
         }
     }
 
+    // eslint-disable-next-line complexity
     private async parseCommand(message: Message): Promise<MessageEmbed | string> {
         switch (message.content.split(' ')[0].slice(1).toLowerCase()) {
             case 'wynncraft':
@@ -261,12 +263,6 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
                 break
             case 'fun':
                 url = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY77NZ6oE4PbkFarsOIyQcGD'
-                break
-            case 'bully':
-                url = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY6QzsEh8F5N7J02ngFcE4w_'
-                break
-            case 'starwars':
-                url = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY79M_MgSuRg-U0Y9t-5n_Hk'
                 break
             default:
                 break

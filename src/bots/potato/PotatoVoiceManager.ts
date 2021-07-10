@@ -3,7 +3,8 @@ import EventEmitter = require('events')
 import { existsSync, writeFileSync } from 'fs'
 import { home, genericEmbedResponse } from '../../core/common'
 import { VoiceManager } from '../../core/VoiceManager'
-const ffmpeg = require('fluent-ffmpeg')
+import * as ffmpeg from 'fluent-ffmpeg'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
 
 export class QueueItem extends EventEmitter {
