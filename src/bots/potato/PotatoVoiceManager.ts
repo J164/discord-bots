@@ -1,7 +1,8 @@
-import { MessageEmbed, PartialTextBasedChannelFields, StreamDispatcher, VoiceChannel, VoiceConnection } from "discord.js"
+import { MessageEmbed, PartialTextBasedChannelFields, VoiceChannel } from "discord.js"
 import EventEmitter = require("events")
-import { createReadStream, existsSync, unlinkSync, writeFileSync } from "fs"
-import { home, genericEmbedResponse } from "./common"
+import { existsSync, writeFileSync } from "fs"
+import { home, genericEmbedResponse } from "../../core/common"
+import { VoiceManager } from "../../core/VoiceManager"
 const ffmpeg = require("fluent-ffmpeg")
 const youtubedl = require("youtube-dl-exec")
 
@@ -72,20 +73,18 @@ export class QueueItem extends EventEmitter {
     }
 }
 
-export class VoiceManager {
+export class PotatoVoiceManager extends VoiceManager {
 
     private queue: QueueItem[]
     private downloadQueue: QueueItem[]
     private boundChannel: PartialTextBasedChannelFields
     private downloading: boolean
-    private playing: boolean
-    private voiceConnection: VoiceConnection
     private nowPlaying: MessageEmbed
     private queueLoop: boolean
     private songLoop: boolean
-    private streamDispatcher: StreamDispatcher
 
     public constructor() {
+        super()
         this.queue = []
         this.downloadQueue = []
         this.downloading = false
@@ -107,17 +106,13 @@ export class VoiceManager {
         }
     }
 
-    public async connect(channel: PartialTextBasedChannelFields, voiceChannel: VoiceChannel): Promise<void> {
-        if (this.playing) {
-            return
-        }
-        if (!voiceChannel.joinable || this.queue.length < 1) {
+    public async connect(voiceChannel: VoiceChannel, channel: PartialTextBasedChannelFields): Promise<void> {
+        await super.connect(voiceChannel)
+        if (this.queue.length < 1) {
             channel.send('Something went wrong (Check if voice channel is joinable)')
             this.reset()
             return
         }
-        this.playing = true
-        this.voiceConnection = await voiceChannel.join()
         this.boundChannel = channel
         this.checkSongStatus()
     }
@@ -139,9 +134,7 @@ export class VoiceManager {
     }
 
     private async playSong(song: QueueItem): Promise<void> {
-        //const stream = createReadStream(`${home}/music_files/playback/${song.id}.ogg`)
-        //stream.once("end", () => console.log('close'))
-        this.streamDispatcher = this.voiceConnection.play(`${home}/music_files/playback/${song.id}.mp3`)//, { type: 'ogg/opus' })
+        this.createStream(`${home}/music_files/playback/${song.id}.mp3`)
         this.nowPlaying = genericEmbedResponse(`Now Playing: ${song.title}`)
         this.nowPlaying.setImage(song.thumbnail)
         this.nowPlaying.addField('URL:', song.webpageUrl)
@@ -174,22 +167,6 @@ export class VoiceManager {
         currentItem.once("downloaded", () => {
             this.download()
         })
-    }
-
-    public pause(): boolean {
-        if (!this.streamDispatcher || this.streamDispatcher.paused) {
-            return false
-        }
-        this.streamDispatcher.pause(true)
-        return true
-    }
-
-    public resume(): boolean {
-        if (!this.streamDispatcher) {
-            return false
-        }
-        this.streamDispatcher.resume()
-        return true
     }
 
     public loopSong(): string {
@@ -249,11 +226,6 @@ export class VoiceManager {
         return true
     }
 
-    public stop(): boolean {
-        this.reset()
-        return true
-    }
-
     public getNowPlaying(): string | MessageEmbed {
         if (!this.nowPlaying) {
             return 'Nothing has played yet!'
@@ -285,24 +257,14 @@ export class VoiceManager {
         return false
     }
 
-    public checkIsIdle(): void {
-        if (!this.playing) {
-            this.stop()
-        }
-    }
-
-    private reset(): void {
+    public reset(): void {
+        super.reset()
         this.queue = []
         this.downloadQueue = []
         this.boundChannel = null
         this.downloading = false
-        this.playing = false
-        this.voiceConnection?.disconnect()
-        this.voiceConnection = null
         this.nowPlaying = null
         this.queueLoop = false
         this.songLoop = false
-        this.streamDispatcher?.destroy()
-        this.streamDispatcher = null
     }
 }

@@ -1,4 +1,4 @@
-import { Client, Guild, GuildMember, Message, MessageEmbed, Snowflake, VoiceState } from "discord.js"
+import { Client, GuildMember, MessageEmbed, Snowflake, VoiceState } from "discord.js"
 import { createCanvas, loadImage } from "canvas"
 import * as axios from "axios"
 import { readFileSync } from "fs"
@@ -7,30 +7,6 @@ export const home = 'D:/Bot Resources'
 export const root = './..'
 export const sysData = JSON.parse(readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
 export let userData = JSON.parse(readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
-
-export abstract class BaseGuildCommandManager {
-
-    protected readonly guild: Guild
-    protected readonly client: Client
-    protected readonly users: Map<string, GuildMember>
-
-    public constructor(guild: Guild, client: Client) {
-        this.guild = guild
-        this.client = client
-        this.users = new Map<string, GuildMember>()
-    }
-
-    public parseInput(message: Message): Promise<MessageEmbed | string | void> {
-        return null
-    }
-
-    protected async getUsers(): Promise<void> {
-        this.users.set('admin', await this.guild.members.fetch({ user: '609826125501169723' }))
-        if (this.guild.id == '619975185029922817' || this.guild.id == '793330937035096134') {
-            this.users.set('swear', await this.guild.members.fetch({ user: '633046187506794527' }))
-        }
-    } 
-}
 
 export function voiceKick(count: number, voiceState: VoiceState): void {
     if (voiceState.channelID) {

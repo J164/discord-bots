@@ -1,8 +1,7 @@
-import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
-import { sysData } from '../core/common'
+import { Client } from 'discord.js'
+import { sysData } from '../../core/common'
 
-const intents: BitFieldResolvable<IntentsString> = ['GUILDS', 'GUILD_MESSAGES']
-let client = new Client({ ws: { intents: intents } })
+const client = new Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES'] } })
 
 function defineEvents() {
     client.on('ready', () => {
@@ -37,7 +36,6 @@ process.on("message", function (arg) {
             process.send('stop')
             break
         case 'start':
-            client = new Client({ ws: { intents: intents } })
             defineEvents()
             client.login(sysData.yeetKey)
             break

@@ -7,9 +7,9 @@ export class BotSubprocess {
     private readonly id: string
     public static bots =  new Map<string, BotSubprocess>([
         ['potato', new BotSubprocess('./src/bots/potato/potato.js', 'Potato Bot', 'potato')],
-        ['krenko', new BotSubprocess('./src/bots/krenko.js', 'Krenko Bot', 'krenko')],
-        ['swear', new BotSubprocess('./src/bots/swear.js', 'Swear Bot', 'swear')],
-        ['yeet', new BotSubprocess('./src/bots/yeet.js', 'Yeet Bot', 'yeet')]
+        ['krenko', new BotSubprocess('./src/bots/krenko/krenko.js', 'Krenko Bot', 'krenko')],
+        ['swear', new BotSubprocess('./src/bots/swear/swear.js', 'Swear Bot', 'swear')],
+        ['yeet', new BotSubprocess('./src/bots/yeet/yeet.js', 'Yeet Bot', 'yeet')]
     ]) 
 
     private constructor(path: string, name: string, id: string) {

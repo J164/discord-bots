@@ -1,34 +1,35 @@
 import { Guild, Client, Message, MessageEmbed, MessageReaction } from "discord.js"
 import { existsSync, readFileSync, writeFileSync } from "fs"
-import { BaseGuildCommandManager, genericEmbedResponse, home, makeGetRequest, refreshData, root, searchYoutube, sysData, userData, voiceKick } from "../../core/common"
+import { BaseGuildInputManager } from "../../core/BaseGuildInputManager"
+import { genericEmbedResponse, home, makeGetRequest, refreshData, root, searchYoutube, sysData, userData, voiceKick } from "../../core/common"
 import { Euchre } from "../../core/games/Euchre"
-import { QueueItem, VoiceManager } from "../../core/voice"
+import { QueueItem, PotatoVoiceManager } from "./PotatoVoiceManager"
 const youtubedl = require("youtube-dl-exec")
 
-export class PotatoGuildCommandManager extends BaseGuildCommandManager {
+export class PotatoGuildInputManager extends BaseGuildInputManager {
 
     private static readonly prefix = '&'
-    public readonly voiceManager: VoiceManager
+    public readonly voiceManager: PotatoVoiceManager
 
     public constructor(guild: Guild, client: Client) {
         super(guild, client)
-        this.voiceManager = new VoiceManager()
-        super.getUsers()
+        this.voiceManager = new PotatoVoiceManager()
+        this.getUsers()
     }
 
     public async parseInput(message: Message): Promise<MessageEmbed | string | void> {
         if (!message.guild) {
-            return null
+            return
         }
 
         if (message.author.bot) {
             if (message.content.indexOf('Never Gonna Give You Up') !== -1) {
                 voiceKick(0, message.member.voice)
             }
-            return null
+            return
         }
 
-        if (!message.content.startsWith(PotatoGuildCommandManager.prefix)) {
+        if (!message.content.startsWith(PotatoGuildInputManager.prefix)) {
             return this.genericMessageParse(message)
         }
 
@@ -39,26 +40,25 @@ export class PotatoGuildCommandManager extends BaseGuildCommandManager {
         let mentionPotato = false
         let mentionSwear = false
         let mentionInsult = false
-        for (const word of message.content.toLowerCase().split(" ")) {
-            if (word.indexOf('potato') !== -1) {
-                mentionPotato = true
+        const input = message.content.toLowerCase()
+        if (input.match(/(\W|^)potato(s|es)?(\W|$)/)) {
+            mentionPotato = true
+        }
+        for (const swear of sysData.blacklist.swears) {
+            if (input.match(new RegExp(`(\\W|^)${swear}(\\W|$)`))) {
+                mentionSwear = true
+                break
             }
-            for (const swear of sysData.blacklist.swears) {
-                if (word === swear) {
-                    mentionSwear = true
-                    break
-                }
-            }
-            for (const insult of sysData.blacklist.insults) {
-                if (word === insult) {
-                    mentionInsult = true
-                    break
-                }
+        }
+        for (const insult of sysData.blacklist.insults) {
+            if (input.match(new RegExp(`(\\W|^)${insult}(\\W|$)`))) {
+                mentionInsult = true
+                break
             }
         }
         if (mentionPotato && (mentionSwear || mentionInsult)) {
             message.reply('FOOL! HOW DARE YOU BLASPHEMISE THE HOLY ORDER OF THE POTATOES! EAT POTATOES!', { 'tts': true })
-            super.client.user.setActivity(`Teaching ${message.author.tag} the value of potatoes`, {
+            this.client.user.setActivity(`Teaching ${message.author.tag} the value of potatoes`, {
                 type: 'STREAMING',
                 url: 'https://www.youtube.com/watch?v=fLNWeEen35Y'
             })
@@ -74,7 +74,7 @@ export class PotatoGuildCommandManager extends BaseGuildCommandManager {
     private async parseCommand(message: Message): Promise<MessageEmbed | string> {
         switch (message.content.split(" ")[0].slice(1).toLowerCase()) {
             case 'wynncraft':
-                return PotatoGuildCommandManager.getWynncraftStats(message)
+                return PotatoGuildInputManager.getWynncraftStats(message)
             case 'newsong':
                 return this.addSwearSong(message)
             case 'download':
@@ -114,7 +114,7 @@ export class PotatoGuildCommandManager extends BaseGuildCommandManager {
                 }
                 return 'There is nothing to shuffle!'
             case 'stop':
-                this.voiceManager.stop()
+                this.voiceManager.reset()
                 return 'Success'
             case 'np':
                 return this.voiceManager.getNowPlaying()
@@ -131,7 +131,7 @@ export class PotatoGuildCommandManager extends BaseGuildCommandManager {
                 const quotes = readFileSync(`${root}/assets/static/quotes.txt`, 'utf8').split("}")
                 return quotes[Math.floor(Math.random() * quotes.length)]
             case 'euchre':
-                return PotatoGuildCommandManager.setupEuchre(message)
+                return PotatoGuildInputManager.setupEuchre(message)
         }
     }
     
@@ -173,7 +173,7 @@ export class PotatoGuildCommandManager extends BaseGuildCommandManager {
     }
     
     private async addSwearSong(message: Message): Promise<string> {
-        if (message.member !== super.users.get('admin') && message.member !== super.users.get('swear')) {
+        if (message.member !== this.users.get('admin') && message.member !== this.users.get('swear')) {
             return 'You don\'t have permission to use this command!'
         }
         if (message.content.split(" ").length < 2) {
@@ -215,7 +215,7 @@ export class PotatoGuildCommandManager extends BaseGuildCommandManager {
     }
     
     private async downloadVideo(message: Message): Promise<string> {
-        if (message.member !== super.users.get('admin')) {
+        if (message.member !== this.users.get('admin')) {
             return 'You don\'t have permission to use this command!'
         }
         if (message.content.split(" ").length < 2) {
@@ -268,7 +268,7 @@ export class PotatoGuildCommandManager extends BaseGuildCommandManager {
                 break
         }
         message.channel.send('Boiling potatoes...')
-        if (url.indexOf('youtube.com/') === -1) {
+        if (!url.match(/(\.|^)youtube\.com\//)) {
             const arg = message.content.split(" ")
             arg.shift()
             const term = await searchYoutube(arg.join(" "))
@@ -312,11 +312,11 @@ export class PotatoGuildCommandManager extends BaseGuildCommandManager {
         } else {
             this.voiceManager.addToQueue(output.duration, output.webpage_url, output.title, output.id, output?.thumbnail)
         }
-        this.voiceManager.connect(message.channel, voiceChannel)
+        this.voiceManager.connect(voiceChannel, message.channel)
         return 'Added to queue!'
     }
     
-    private async queue(index: number, message: Message, queueArray: QueueItem[][] = null): Promise<null> {
+    private async queue(index: number, message: Message, queueArray: QueueItem[][] = null): Promise<void> {
         if (!queueArray) {
             queueArray = this.voiceManager.getQueue()
             if (!queueArray) {
@@ -342,7 +342,7 @@ export class PotatoGuildCommandManager extends BaseGuildCommandManager {
         for (const emoji of emojiList) {
             await menu.react(emoji)
         }
-        const client = super.client
+        const client = this.client
         function filter(reaction: MessageReaction): boolean { return reaction.client === client }
         const reactionCollection = await menu.awaitReactions(filter, { max: 1 })
         const reactionResult = reactionCollection.first()
