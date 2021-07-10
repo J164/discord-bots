@@ -1,10 +1,10 @@
-import { MessageEmbed, PartialTextBasedChannelFields, VoiceChannel } from "discord.js"
-import EventEmitter = require("events")
-import { existsSync, writeFileSync } from "fs"
-import { home, genericEmbedResponse } from "../../core/common"
-import { VoiceManager } from "../../core/VoiceManager"
-const ffmpeg = require("fluent-ffmpeg")
-const youtubedl = require("youtube-dl-exec")
+import { MessageEmbed, PartialTextBasedChannelFields, VoiceChannel } from 'discord.js'
+import EventEmitter = require('events')
+import { existsSync, writeFileSync } from 'fs'
+import { home, genericEmbedResponse } from '../../core/common'
+import { VoiceManager } from '../../core/VoiceManager'
+const ffmpeg = require('fluent-ffmpeg')
+const youtubedl = require('youtube-dl-exec')
 
 export class QueueItem extends EventEmitter {
     public readonly webpageUrl: string
@@ -66,6 +66,7 @@ export class QueueItem extends EventEmitter {
                 writeFileSync(`${home}/music_files/playback/${this.id}.json`, metaData)
                 this.emit('downloaded')
             })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .on('error', function(err: any) {
                 console.log(err)
             })
@@ -125,7 +126,7 @@ export class PotatoVoiceManager extends VoiceManager {
         this.playing = true
         const song = this.queue.shift()
         if (!song.isDownloaded()) {
-            song.once("downloaded", () => {
+            song.once('downloaded', () => {
                 this.playSong(song)
             })
             return
@@ -164,7 +165,7 @@ export class PotatoVoiceManager extends VoiceManager {
         this.downloading = true
         const currentItem = this.downloadQueue.shift()
         await currentItem.download()
-        currentItem.once("downloaded", () => {
+        currentItem.once('downloaded', () => {
             this.download()
         })
     }
@@ -217,11 +218,11 @@ export class PotatoVoiceManager extends VoiceManager {
         if (this.queue.length < 1) {
             return false
         }
-        for (var i = this.queue.length - 1; i > 0; i--) {
-            var randomIndex = Math.floor(Math.random() * (i + 1));
-            var temp = this.queue[i];
-            this.queue[i] = this.queue[randomIndex];
-            this.queue[randomIndex] = temp;
+        for (let i = this.queue.length - 1; i > 0; i--) {
+            const randomIndex = Math.floor(Math.random() * (i + 1))
+            const temp = this.queue[i]
+            this.queue[i] = this.queue[randomIndex]
+            this.queue[randomIndex] = temp
         }
         return true
     }
@@ -241,10 +242,10 @@ export class PotatoVoiceManager extends VoiceManager {
         for (let r = 0; r < Math.ceil(this.queue.length / 25); r++) {
             queueArray.push([])
             for (let i = 0; i < 25; i++) {
-                if ((r * 25) + i > this.queue.length - 1) {
+                if (r * 25 + i > this.queue.length - 1) {
                     break
                 }
-                queueArray[r].push(this.queue[(r * 25) + i])
+                queueArray[r].push(this.queue[r * 25 + i])
             }
         }
         return queueArray

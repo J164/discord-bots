@@ -1,4 +1,4 @@
-import { Guild, Client, GuildMember, Message, MessageEmbed } from "discord.js"
+import { Guild, Client, GuildMember, Message, MessageEmbed } from 'discord.js'
 
 export abstract class BaseGuildInputManager {
 
@@ -13,13 +13,14 @@ export abstract class BaseGuildInputManager {
     }
 
     public parseInput(message: Message): Promise<MessageEmbed | string | void> {
+        console.log(message)
         return null
     }
 
     protected async getUsers(): Promise<void> {
         this.users.set('admin', await this.guild.members.fetch({ user: '609826125501169723' }))
-        if (this.guild.id == '619975185029922817' || this.guild.id == '793330937035096134') {
+        if (this.guild.id === '619975185029922817' || this.guild.id === '793330937035096134') {
             this.users.set('swear', await this.guild.members.fetch({ user: '633046187506794527' }))
         }
-    } 
+    }
 }

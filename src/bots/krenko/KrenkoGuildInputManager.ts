@@ -1,7 +1,7 @@
-import { Client, Guild, Message, MessageEmbed, MessageReaction } from "discord.js";
-import { writeFileSync } from "fs";
-import { BaseGuildInputManager } from "../../core/BaseGuildInputManager";
-import { findKey, genericEmbedResponse, home, makeGetRequest, refreshData, userData } from "../../core/common";
+import { Client, Guild, Message, MessageEmbed, MessageReaction } from 'discord.js'
+import { writeFileSync } from 'fs'
+import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
+import { findKey, genericEmbedResponse, home, makeGetRequest, refreshData, userData } from '../../core/common'
 
 interface DeckJson {
     image: string;
@@ -64,7 +64,7 @@ class Deck {
 
     async getList() {
         const decklist = await makeGetRequest(this.apiUrl + 'list')
-        const decklistArray = decklist.list.split("\n")
+        const decklistArray = decklist.list.split('\n')
         for (let i = 0; i < decklistArray.length; i++) {
             if (!decklistArray[i] || decklistArray[i].startsWith('//')) {
                 decklistArray.splice(i, 1)
@@ -85,7 +85,7 @@ class Deck {
 export class KrenkoGuildInputManager extends BaseGuildInputManager {
 
     private static readonly prefix = '$'
-    
+
     public constructor(guild: Guild, client: Client) {
         super(guild, client)
     }
@@ -99,7 +99,7 @@ export class KrenkoGuildInputManager extends BaseGuildInputManager {
     }
 
     private async parseCommand(message: Message): Promise<MessageEmbed | string> {
-        switch (message.content.split(" ")[0].slice(1).toLowerCase()) {
+        switch (message.content.split(' ')[0].slice(1).toLowerCase()) {
             case 'add':
                 return KrenkoGuildInputManager.add(message)
             case 'decks':
@@ -108,16 +108,18 @@ export class KrenkoGuildInputManager extends BaseGuildInputManager {
             case 'roll':
                 return KrenkoGuildInputManager.roll(message)
             case 'flip':
-                return KrenkoGuildInputManager.flip(message)
+                return KrenkoGuildInputManager.flip()
+            default:
+                return 'Command not recognized'
         }
     }
 
     private static async add(message: Message): Promise<string> {
-        if (message.content.split(" ").length < 2) {
+        if (message.content.split(' ').length < 2) {
             return 'Please enter a deckstats URL!'
         }
         const deck = new Deck()
-        if (!await deck.getInfo(message.content.split(" ")[1])) {
+        if (!await deck.getInfo(message.content.split(' ')[1])) {
             return 'Something went wrong... (Make sure you are using a valid deck url from deckstats.net and that the deck is not a duplicate)'
         }
         refreshData()
@@ -131,11 +133,11 @@ export class KrenkoGuildInputManager extends BaseGuildInputManager {
         const deck = new Deck()
         deck.fill(userData.decks[i])
         const menu = await message.channel.send(deck.getPreview())
-        const emojiList = ['\uD83D\uDCC4', '\u274C']
+        const emojiList = [ '\uD83D\uDCC4', '\u274C' ]
         if (i !== 0) {
             emojiList.unshift('\u2B05\uFE0F')
         }
-        if (i !== (userData.decks.length - 1)) {
+        if (i !== userData.decks.length - 1) {
             emojiList.push('\u27A1\uFE0F')
         }
         for (const emoji of emojiList) {
@@ -147,8 +149,7 @@ export class KrenkoGuildInputManager extends BaseGuildInputManager {
         const reactionResult = reactionCollection.first()
         switch (reactionResult.emoji.name) {
             case '\uD83D\uDCC4':
-                const deckList = await deck.getList()
-                message.reply(deckList)
+                message.reply(await deck.getList())
                 menu.delete()
                 return
             case '\u2B05\uFE0F':
@@ -161,14 +162,13 @@ export class KrenkoGuildInputManager extends BaseGuildInputManager {
                 return
             default:
                 menu.delete()
-                return
         }
     }
 
     private static roll(message: Message): MessageEmbed {
         let dice = 6
-        if (message.content.split(" ").length > 1) {
-            const arg = parseInt(message.content.split(" ")[1])
+        if (message.content.split(' ').length > 1) {
+            const arg = parseInt(message.content.split(' ')[1])
             if (!isNaN(arg) && arg > 0) {
                 dice = arg
             }
@@ -176,14 +176,14 @@ export class KrenkoGuildInputManager extends BaseGuildInputManager {
         message.channel.send(`Rolling a ${dice}-sided die...`)
         const diceResult = genericEmbedResponse(`${dice}-sided die result`)
         let chanceMod = 10000
-        while ((100 / dice) * chanceMod < 1) {
+        while (100 / dice * chanceMod < 1) {
             chanceMod *= 10
         }
-        diceResult.addField(`${Math.floor((Math.random() * (dice - 1)) + 1)}`, `The chance of getting this result is about ${Math.round((100 / dice) * chanceMod) / chanceMod}%`)
+        diceResult.addField(`${Math.floor(Math.random() * (dice - 1) + 1)}`, `The chance of getting this result is about ${Math.round(100 / dice * chanceMod) / chanceMod}%`)
         return diceResult
     }
 
-    private static flip(message: Message): MessageEmbed {
+    private static flip(): MessageEmbed {
         const flip = Math.random()
         const flipResult = genericEmbedResponse('Flip Result:')
         if (flip >= 0.5) {

@@ -2,7 +2,7 @@ import { Client } from 'discord.js'
 import { sysData } from '../../core/common'
 import { SwearGuildInputManager } from './SwearGuildInputManager'
 
-const client = new Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES'] } })
+const client = new Client({ ws: { intents: [ 'GUILDS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES' ] } })
 const guildStatus = new Map<string, SwearGuildInputManager>()
 
 function defineEvents() {
@@ -12,7 +12,7 @@ function defineEvents() {
         client.user.setActivity(sysData.swearStatus[Math.floor(Math.random() * sysData.swearStatus.length)])
         setInterval(function () {
             client.user.setActivity(sysData.swearStatus[Math.floor(Math.random() * sysData.swearStatus.length)])
-            for (const [, guildManager] of guildStatus) {
+            for (const [ , guildManager ] of guildStatus) {
                 guildManager.voiceManager.checkIsIdle()
             }
         }, 60000)
@@ -32,7 +32,7 @@ function defineEvents() {
     })
 }
 
-process.on("message", function (arg) {
+process.on('message', function (arg) {
     switch (arg) {
         case 'stop':
             client.destroy()
@@ -43,6 +43,8 @@ process.on("message", function (arg) {
         case 'start':
             defineEvents()
             client.login(sysData.swearKey)
+            break
+        default:
             break
     }
 })

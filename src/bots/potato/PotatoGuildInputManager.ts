@@ -1,10 +1,10 @@
-import { Guild, Client, Message, MessageEmbed, MessageReaction } from "discord.js"
-import { existsSync, readFileSync, writeFileSync } from "fs"
-import { BaseGuildInputManager } from "../../core/BaseGuildInputManager"
-import { genericEmbedResponse, home, makeGetRequest, refreshData, root, searchYoutube, sysData, userData, voiceKick } from "../../core/common"
-import { Euchre } from "../../core/games/Euchre"
-import { QueueItem, PotatoVoiceManager } from "./PotatoVoiceManager"
-const youtubedl = require("youtube-dl-exec")
+import { Guild, Client, Message, MessageEmbed, MessageReaction } from 'discord.js'
+import { existsSync, readFileSync, writeFileSync } from 'fs'
+import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
+import { genericEmbedResponse, home, makeGetRequest, refreshData, root, searchYoutube, sysData, userData, voiceKick } from '../../core/common'
+import { Euchre } from '../../core/games/Euchre'
+import { QueueItem, PotatoVoiceManager } from './PotatoVoiceManager'
+const youtubedl = require('youtube-dl-exec')
 
 export class PotatoGuildInputManager extends BaseGuildInputManager {
 
@@ -72,7 +72,7 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
     }
 
     private async parseCommand(message: Message): Promise<MessageEmbed | string> {
-        switch (message.content.split(" ")[0].slice(1).toLowerCase()) {
+        switch (message.content.split(' ')[0].slice(1).toLowerCase()) {
             case 'wynncraft':
                 return PotatoGuildInputManager.getWynncraftStats(message)
             case 'newsong':
@@ -119,27 +119,29 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
             case 'np':
                 return this.voiceManager.getNowPlaying()
             case 'playlists':
-                const playlists = genericEmbedResponse('Playlists')
-                playlists.addField('Epic Mix', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY4lfQYkEb60nitxrJMpN5a2')
-                playlists.addField('Undertale Mix', 'https://www.youtube.com/playlist?list=PLLSgIflCqVYMBjn63DEn0b6-sqKZ9xh_x')
-                playlists.addField('MTG Parodies', 'https://www.youtube.com/playlist?list=PLt3HR7cu4NMNUoQx1q5ullRMW-ZwosuNl')
-                playlists.addField('Bully Maguire', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY6QzsEh8F5N7J02ngFcE4w_')
-                playlists.addField('Star Wars Parodies', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY79M_MgSuRg-U0Y9t-5n_Hk')
-                playlists.addField('Fun Mix', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY77NZ6oE4PbkFarsOIyQcGD')
-                return playlists
+                return genericEmbedResponse('Playlists')
+                    .addField('Epic Mix', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY4lfQYkEb60nitxrJMpN5a2')
+                    .addField('Undertale Mix', 'https://www.youtube.com/playlist?list=PLLSgIflCqVYMBjn63DEn0b6-sqKZ9xh_x')
+                    .addField('MTG Parodies', 'https://www.youtube.com/playlist?list=PLt3HR7cu4NMNUoQx1q5ullRMW-ZwosuNl')
+                    .addField('Bully Maguire', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY6QzsEh8F5N7J02ngFcE4w_')
+                    .addField('Star Wars Parodies', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY79M_MgSuRg-U0Y9t-5n_Hk')
+                    .addField('Fun Mix', 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY77NZ6oE4PbkFarsOIyQcGD')
             case 'quote':
-                const quotes = readFileSync(`${root}/assets/static/quotes.txt`, 'utf8').split("}")
+                // eslint-disable-next-line no-case-declarations
+                const quotes = readFileSync(`${root}/assets/static/quotes.txt`, 'utf8').split('}')
                 return quotes[Math.floor(Math.random() * quotes.length)]
             case 'euchre':
                 return PotatoGuildInputManager.setupEuchre(message)
+            default:
+                return 'Command not recognized'
         }
     }
-    
+
     private static async getWynncraftStats(message: Message): Promise<MessageEmbed | string> {
-        if (message.content.split(" ").length < 2) {
+        if (message.content.split(' ').length < 2) {
             return 'Please enter a player username!'
         }
-        const data = await makeGetRequest(`https://api.wynncraft.com/v2/player/${message.content.split(" ")[1]}/stats`)
+        const data = await makeGetRequest(`https://api.wynncraft.com/v2/player/${message.content.split(' ')[1]}/stats`)
         let status
         const embedVar = new MessageEmbed()
         embedVar.setTitle(data.data[0].username)
@@ -167,20 +169,20 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
             } else {
                 playHoursString = playHours.toString()
             }
-            embedVar.addField(`Profile ${(i + 1)}`, `Class: ${data.data[0].classes[i].name}\nPlaytime: ${playHoursString}:${playtimeString}\nCombat Level: ${data.data[0].classes[i].professions.combat.level}`)
+            embedVar.addField(`Profile ${i + 1}`, `Class: ${data.data[0].classes[i].name}\nPlaytime: ${playHoursString}:${playtimeString}\nCombat Level: ${data.data[0].classes[i].professions.combat.level}`)
         }
         return embedVar
     }
-    
+
     private async addSwearSong(message: Message): Promise<string> {
         if (message.member !== this.users.get('admin') && message.member !== this.users.get('swear')) {
             return 'You don\'t have permission to use this command!'
         }
-        if (message.content.split(" ").length < 2) {
+        if (message.content.split(' ').length < 2) {
             return 'Please enter a video url'
         }
         message.channel.send('Getting information on new song...')
-        const output = await youtubedl(message.content.split(" ")[1], {
+        const output = await youtubedl(message.content.split(' ')[1], {
             dumpJson: true,
             noWarnings: true,
             noCallHome: true,
@@ -199,7 +201,7 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
             return 'The video length limit is 20 minutes! Aborting...'
         }
         message.channel.send('Downloading...')
-        youtubedl(message.content.split(" ")[1], {
+        youtubedl(message.content.split(' ')[1], {
             noWarnings: true,
             noCallHome: true,
             noCheckCertificate: true,
@@ -208,17 +210,17 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
             output: `${home}/music_files/swear_songs/song${userData.swearSongs.length + 1}.mp3`
         })
         refreshData()
-        userData.swearSongs.push(`song${(userData.swearSongs.length + 1)}.mp3`)
+        userData.swearSongs.push(`song${userData.swearSongs.length + 1}.mp3`)
         const jsonString = JSON.stringify(userData)
         writeFileSync(`${home}/sys_files/bots.json`, jsonString)
         return 'Success!'
     }
-    
+
     private async downloadVideo(message: Message): Promise<string> {
         if (message.member !== this.users.get('admin')) {
             return 'You don\'t have permission to use this command!'
         }
-        if (message.content.split(" ").length < 2) {
+        if (message.content.split(' ').length < 2) {
             return 'Please enter a video url'
         }
         const options = {
@@ -230,11 +232,11 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
             output: `${home}/New Downloads/%(title)s.%(ext)s`,
             ignoreErrors: true
         }
-        if (message.content.split(" ").length < 3 || message.content.split(" ")[2][0].toLowerCase() !== 'a') {
+        if (message.content.split(' ').length < 3 || message.content.split(' ')[2][0].toLowerCase() !== 'a') {
             options.format = 'bestvideo,bestaudio'
         }
         message.channel.send('Downloading...')
-        await youtubedl(message.content.split(" ")[1], options)
+        await youtubedl(message.content.split(' ')[1], options)
         return 'Download Successful!'
     }
 
@@ -243,10 +245,10 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
         if (!voiceChannel?.joinable) {
             return 'This command can only be used while in a visable voice channel!'
         }
-        if (message.content.split(" ").length < 2) {
+        if (message.content.split(' ').length < 2) {
             return 'Please enter a video url or search terms when using this command'
         }
-        let url = message.content.split(" ")[1]
+        let url = message.content.split(' ')[1]
         switch (url.toLowerCase()) {
             case 'epic':
                 url = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY4lfQYkEb60nitxrJMpN5a2'
@@ -266,14 +268,16 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
             case 'starwars':
                 url = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY79M_MgSuRg-U0Y9t-5n_Hk'
                 break
+            default:
+                break
         }
         message.channel.send('Boiling potatoes...')
         if (!url.match(/(\.|^)youtube\.com\//)) {
-            const arg = message.content.split(" ")
+            const arg = message.content.split(' ')
             arg.shift()
-            const term = await searchYoutube(arg.join(" "))
+            const term = await searchYoutube(arg.join(' '))
             if (!term) {
-                return `No results found for '${arg.join(" ")}'`
+                return `No results found for '${arg.join(' ')}'`
             }
             url = `https://www.youtube.com/watch?v=${term}`
         }
@@ -315,7 +319,7 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
         this.voiceManager.connect(voiceChannel, message.channel)
         return 'Added to queue!'
     }
-    
+
     private async queue(index: number, message: Message, queueArray: QueueItem[][] = null): Promise<void> {
         if (!queueArray) {
             queueArray = this.voiceManager.getQueue()
@@ -325,14 +329,14 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
             }
         }
         const queueMessage = genericEmbedResponse('Queue')
-        for (const [i, entry] of queueArray[index].entries()) {
+        for (const [ i, entry ] of queueArray[index].entries()) {
             queueMessage.addField(`${i + 1}.`, `${entry.title}\n${entry.webpageUrl}`)
         }
         if (this.voiceManager.getQueueLoop()) {
             queueMessage.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png')
         }
         const menu = await message.channel.send(queueMessage)
-        const emojiList = ['\u274C']
+        const emojiList = [ '\u274C' ]
         if (index > 0) {
             emojiList.unshift('\u2B05\uFE0F')
         }
@@ -357,20 +361,20 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
                 break
             default:
                 menu.delete()
-                return
+                break
         }
     }
-    
+
     private static async setupEuchre(message: Message): Promise<MessageEmbed> {
-        const player1 = await message.guild.members.fetch({ query: message.content.split(" ")[1], limit: 1 })
-        const player2 = await message.guild.members.fetch({ query: message.content.split(" ")[2], limit: 1 })
-        const player3 = await message.guild.members.fetch({ query: message.content.split(" ")[3], limit: 1 })
-        const player4 = await message.guild.members.fetch({ query: message.content.split(" ")[4], limit: 1 })
+        const player1 = await message.guild.members.fetch({ query: message.content.split(' ')[1], limit: 1 })
+        const player2 = await message.guild.members.fetch({ query: message.content.split(' ')[2], limit: 1 })
+        const player3 = await message.guild.members.fetch({ query: message.content.split(' ')[3], limit: 1 })
+        const player4 = await message.guild.members.fetch({ query: message.content.split(' ')[4], limit: 1 })
         const players = genericEmbedResponse('Teams')
         players.addField('Team 1:', `${player1.first().user.username}, ${player3.first().user.username}`)
         players.addField('Team 2:', `${player2.first().user.username}, ${player4.first().user.username}`)
         message.channel.send(players)
-        const game = new Euchre([player1.first().user, player2.first().user, player3.first().user, player4.first().user])
+        const game = new Euchre([ player1.first().user, player2.first().user, player3.first().user, player4.first().user ])
         return game.startGame()
     }
 }

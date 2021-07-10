@@ -1,7 +1,7 @@
 import { Client } from 'discord.js'
 import { sysData } from '../../core/common'
 
-const client = new Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES'] } })
+const client = new Client({ ws: { intents: [ 'GUILDS', 'GUILD_MESSAGES' ] } })
 
 function defineEvents() {
     client.on('ready', () => {
@@ -28,7 +28,7 @@ function defineEvents() {
     })
 }
 
-process.on("message", function (arg) {
+process.on('message', function (arg) {
     switch (arg) {
         case 'stop':
             client.destroy()
@@ -38,6 +38,8 @@ process.on("message", function (arg) {
         case 'start':
             defineEvents()
             client.login(sysData.yeetKey)
+            break
+        default:
             break
     }
 })

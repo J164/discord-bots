@@ -1,4 +1,4 @@
-import { PartialTextBasedChannelFields, StreamDispatcher, VoiceChannel, VoiceConnection } from "discord.js"
+import { PartialTextBasedChannelFields, StreamDispatcher, VoiceChannel, VoiceConnection } from 'discord.js'
 
 export abstract class VoiceManager {
 
@@ -10,6 +10,7 @@ export abstract class VoiceManager {
         this.playing = false
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public async connect(voiceChannel: VoiceChannel, channel: PartialTextBasedChannelFields = null): Promise<void> {
         if (this.playing) {
             return

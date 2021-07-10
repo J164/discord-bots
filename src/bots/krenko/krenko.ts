@@ -2,7 +2,7 @@ import { Client } from 'discord.js'
 import { sysData } from '../../core/common'
 import { KrenkoGuildInputManager } from './KrenkoGuildInputManager'
 
-const client = new Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS']} })
+const client = new Client({ ws: { intents: [ 'GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS' ]} })
 const guildStatus = new Map<string, KrenkoGuildInputManager>()
 
 function defineEvents() {
@@ -29,7 +29,7 @@ function defineEvents() {
     })
 }
 
-process.on("message", function (arg) {
+process.on('message', function (arg) {
     switch (arg) {
         case 'stop':
             client.destroy()
@@ -40,6 +40,8 @@ process.on("message", function (arg) {
         case 'start':
             defineEvents()
             client.login(sysData.krenkoKey)
+            break
+        default:
             break
     }
 })

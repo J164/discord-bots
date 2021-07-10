@@ -2,7 +2,7 @@ import { Client } from 'discord.js'
 import { sysData } from '../../core/common'
 import { PotatoGuildInputManager } from './PotatoGuildInputManager'
 
-const client = new Client({ ws: { intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS']} })
+const client = new Client({ ws: { intents: [ 'GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS' ]} })
 const guildStatus = new Map<string, PotatoGuildInputManager>()
 
 function defineEvents() {
@@ -15,7 +15,7 @@ function defineEvents() {
         setInterval(function () {
             client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)])
 
-            for (const [, guildManager] of guildStatus) {
+            for (const [ , guildManager ] of guildStatus) {
                 guildManager.voiceManager.checkIsIdle()
             }
         }, 60000)
@@ -35,7 +35,7 @@ function defineEvents() {
     })
 }
 
-process.on("message", function (arg) {
+process.on('message', function (arg) {
     switch (arg) {
         case 'stop':
             client.destroy()
@@ -46,6 +46,8 @@ process.on("message", function (arg) {
         case 'start':
             defineEvents()
             client.login(sysData.potatoKey)
+            break
+        default:
             break
     }
 })

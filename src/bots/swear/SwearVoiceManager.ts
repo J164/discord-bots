@@ -1,4 +1,4 @@
-import { VoiceManager } from "../../core/VoiceManager"
+import { VoiceManager } from '../../core/VoiceManager'
 
 export class SwearVoiceManager extends VoiceManager {
 

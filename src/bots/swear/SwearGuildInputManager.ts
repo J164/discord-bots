@@ -1,7 +1,7 @@
-import { Client, Guild, Message, MessageEmbed } from "discord.js";
-import { BaseGuildInputManager } from "../../core/BaseGuildInputManager";
-import { home, sysData, userData } from "../../core/common";
-import { SwearVoiceManager } from "./SwearVoiceManager";
+import { Client, Guild, Message, MessageEmbed } from 'discord.js'
+import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
+import { home, sysData, userData } from '../../core/common'
+import { SwearVoiceManager } from './SwearVoiceManager'
 
 export class SwearGuildInputManager extends BaseGuildInputManager {
 
@@ -40,7 +40,7 @@ export class SwearGuildInputManager extends BaseGuildInputManager {
     }
 
     private async parseCommand(message: Message): Promise<MessageEmbed | string> {
-        switch (message.content.split(" ")[0].slice(1).toLowerCase()) {
+        switch (message.content.split(' ')[0].slice(1).toLowerCase()) {
             case 'play':
                 return this.play(message)
             case 'loop':
@@ -58,6 +58,8 @@ export class SwearGuildInputManager extends BaseGuildInputManager {
             case 'stop':
                 this.voiceManager.reset()
                 return 'Success'
+            default:
+                return 'Command not recognized'
         }
     }
 
@@ -68,8 +70,8 @@ export class SwearGuildInputManager extends BaseGuildInputManager {
             return 'This command can only be used while in a visable voice channel!'
         }
         try {
-            if (parseInt(message.content.split(" ")[1]) <= userData.swearSongs.length && parseInt(message.content.split(" ")[1]) > 0) {
-                songNum = parseInt(message.content.split(" ")[1]) - 1
+            if (parseInt(message.content.split(' ')[1]) <= userData.swearSongs.length && parseInt(message.content.split(' ')[1]) > 0) {
+                songNum = parseInt(message.content.split(' ')[1]) - 1
             } else {
                 songNum = Math.floor(Math.random() * userData.swearSongs.length)
             }

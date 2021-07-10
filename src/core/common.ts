@@ -1,7 +1,7 @@
-import { Client, GuildMember, MessageEmbed, Snowflake, VoiceState } from "discord.js"
-import { createCanvas, loadImage } from "canvas"
-import * as axios from "axios"
-import { readFileSync } from "fs"
+import { Client, GuildMember, MessageEmbed, Snowflake, VoiceState } from 'discord.js'
+import { createCanvas, loadImage } from 'canvas'
+import * as axios from 'axios'
+import { readFileSync } from 'fs'
 
 export const home = 'D:/Bot Resources'
 export const root = './..'
@@ -30,7 +30,7 @@ export async function searchYoutube(parameter: string): Promise<string> {
 export async function mergeImages(filePaths: string[], options: { width: number; height: number }): Promise<Buffer> {
     const activeCanvas = createCanvas(options.width, options.height)
     const ctx = activeCanvas.getContext('2d')
-    for (const [i, path] of filePaths.entries()) {
+    for (const [ i, path ] of filePaths.entries()) {
         const image = await loadImage(path)
         ctx.drawImage(image, i * (options.width / filePaths.length), 0)
     }
@@ -44,6 +44,7 @@ export function genericEmbedResponse(title: string): MessageEmbed {
     return embedVar
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function makeGetRequest(path: string): Promise<any> {
     const response = await axios.default.get(path)
     return response.data
@@ -54,11 +55,12 @@ export async function getUser(guildID: Snowflake, userID: Snowflake, client: Cli
     return guild.members.fetch({ user: userID })
 }
 
-export function refreshData() {
+export function refreshData(): void {
     userData = JSON.parse(readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
 }
 
-export function findKey(object: any, property: string): any {
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export function findKey(object: any, property: string): any { // eslint-disable-line @typescript-eslint/no-explicit-any
     let result
     if (object instanceof Array) {
         for (const item of object) {
