@@ -17,7 +17,7 @@ function defineEvents() {
 
     client.on('message', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new KrenkoGuildInputManager(message.guild, client))
+            guildStatus.set(message.guild.id, new KrenkoGuildInputManager(message.guild))
         }
 
         guildStatus.get(message.guild.id).parseInput(message)

@@ -108,15 +108,17 @@ export class PotatoVoiceManager extends VoiceManager {
         }
     }
 
-    public async connect(voiceChannel: VoiceChannel, channel: PartialTextBasedChannelFields): Promise<void> {
+    public async connect(voiceChannel: VoiceChannel): Promise<void> {
         await super.connect(voiceChannel)
         if (this.queue.length < 1) {
-            channel.send('Something went wrong (Check if voice channel is joinable)')
             this.reset()
             return
         }
-        this.boundChannel = channel
         this.checkSongStatus()
+    }
+
+    public bindChannel(channel: PartialTextBasedChannelFields): void {
+        this.boundChannel = channel
     }
 
     private async checkSongStatus(): Promise<void> {

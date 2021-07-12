@@ -1,4 +1,4 @@
-import { Client, Guild, Message, MessageEmbed, MessageReaction } from 'discord.js'
+import { Guild, Message, MessageEmbed, MessageReaction } from 'discord.js'
 import { writeFileSync } from 'fs'
 import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
 import { findKey, genericEmbedResponse, home, makeGetRequest, refreshData, userData } from '../../core/common'
@@ -86,8 +86,8 @@ export class KrenkoGuildInputManager extends BaseGuildInputManager {
 
     private static readonly prefix = '$'
 
-    public constructor(guild: Guild, client: Client) {
-        super(guild, client)
+    public constructor(guild: Guild) {
+        super(guild)
     }
 
     public async parseInput(message: Message): Promise<MessageEmbed | string | void> {
@@ -143,8 +143,7 @@ export class KrenkoGuildInputManager extends BaseGuildInputManager {
         for (const emoji of emojiList) {
             await menu.react(emoji)
         }
-        const client = this.client
-        function filter(reaction: MessageReaction): boolean { return reaction.client === client }
+        function filter(reaction: MessageReaction): boolean { return reaction.client === message.client }
         const reactionCollection = await menu.awaitReactions(filter, { max: 1 })
         const reactionResult = reactionCollection.first()
         switch (reactionResult.emoji.name) {

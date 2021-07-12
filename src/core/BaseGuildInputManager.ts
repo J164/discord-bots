@@ -1,14 +1,12 @@
-import { Guild, Client, GuildMember, Message, MessageEmbed } from 'discord.js'
+import { Guild, GuildMember, Message, MessageEmbed } from 'discord.js'
 
 export abstract class BaseGuildInputManager {
 
     protected readonly guild: Guild
-    protected readonly client: Client
-    protected readonly users: Map<string, GuildMember>
+    public readonly users: Map<string, GuildMember>
 
-    public constructor(guild: Guild, client: Client) {
+    public constructor(guild: Guild) {
         this.guild = guild
-        this.client = client
         this.users = new Map<string, GuildMember>()
     }
 

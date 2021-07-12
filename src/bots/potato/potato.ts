@@ -23,7 +23,7 @@ function defineEvents() {
 
     client.on('message', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new PotatoGuildInputManager(message.guild, client))
+            guildStatus.set(message.guild.id, new PotatoGuildInputManager(message.guild))
         }
 
         guildStatus.get(message.guild.id).parseInput(message)

@@ -1,4 +1,4 @@
-import { Client, Guild, Message, MessageEmbed } from 'discord.js'
+import { Guild, Message, MessageEmbed } from 'discord.js'
 import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
 import { home, sysData, userData } from '../../core/common'
 import { SwearVoiceManager } from './SwearVoiceManager'
@@ -8,8 +8,8 @@ export class SwearGuildInputManager extends BaseGuildInputManager {
     private static readonly prefix = '?'
     public readonly voiceManager: SwearVoiceManager
 
-    public constructor(guild: Guild, client: Client) {
-        super(guild, client)
+    public constructor(guild: Guild) {
+        super(guild)
         this.voiceManager = new SwearVoiceManager()
     }
 
