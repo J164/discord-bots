@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint ./ --ext .ts"
+    "lint": "eslint ./ --ext .ts",
+    "build": "tsc"
   },
   "author": "",
   "license": "ISC",
