@@ -1,6 +1,6 @@
 import { MessageEmbed, MessageReaction, User } from 'discord.js'
 import * as axios from 'axios'
-import { genericEmbedResponse, mergeImages, root } from '../common'
+import { genericEmbedResponse, mergeImages, root } from '../../common'
 
 interface Team {
     tricks: number;

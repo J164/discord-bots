@@ -1,7 +1,7 @@
 import { Message, MessageEmbed } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { genericEmbedResponse } from '../../../core/common'
-import { Euchre } from '../../../core/games/Euchre'
+import { Euchre } from '../../../core/modules/games/Euchre'
 
 export async function setupEuchre(message: Message): Promise<MessageEmbed> {
     const player1 = await message.guild.members.fetch({ query: message.content.split(' ')[1], limit: 1 })

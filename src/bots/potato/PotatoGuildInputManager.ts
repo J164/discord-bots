@@ -1,6 +1,4 @@
-import { Guild, Message, MessageEmbed, Collection } from 'discord.js'
-import { readdirSync } from 'fs'
-import { BaseCommand } from '../../core/BaseCommand'
+import { Guild, Message, MessageEmbed } from 'discord.js'
 import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
 import { sysData, voiceKick } from '../../core/common'
 import { PotatoVoiceManager } from './PotatoVoiceManager'
@@ -9,20 +7,11 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
 
     private static readonly prefix = '&'
     public readonly voiceManager: PotatoVoiceManager
-    private readonly commands: Collection<string, BaseCommand>
 
     public constructor(guild: Guild) {
-        super(guild)
+        super(guild, 'potato')
         this.voiceManager = new PotatoVoiceManager()
         this.getUsers()
-        this.commands = new Collection<string, BaseCommand>()
-        const commandFiles = readdirSync('./src/bots/potato/commands').filter(file => file.endsWith('.js'))
-
-        for (const file of commandFiles) {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            const command = require(`./commands/${file}`)
-            this.commands.set(command.aliases[0], command)
-        }
     }
 
     public async parseInput(message: Message): Promise<MessageEmbed | string | void> {
@@ -77,16 +66,5 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
                 message.channel.send('a')
             }
         }
-    }
-
-    private async parseCommand(message: Message): Promise<MessageEmbed | string | void> {
-        const commandName = message.content.split(' ')[0].slice(1).toLowerCase()
-        const command = this.commands.get(commandName) || this.commands.find(cmd => cmd.aliases.includes(commandName))
-
-        if (!command) {
-            return 'Command not recognized'
-        }
-
-        return command.execute(message, this)
     }
 }
