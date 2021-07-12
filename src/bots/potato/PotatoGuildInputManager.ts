@@ -4,7 +4,7 @@ import { sysData, voiceKick } from '../../core/common'
 import { PotatoVoiceManager } from './PotatoVoiceManager'
 
 export class PotatoGuildInputManager extends BaseGuildInputManager {
-
+                            
     private static readonly prefix = '&'
     public readonly voiceManager: PotatoVoiceManager
 
