@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [16.x]
     
     steps:
       - name: Setup repo
@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           
-      - run: npm ci
+      - run: npm ci --no-optional
       - run: npm run build
       - run: npm run lint
       
