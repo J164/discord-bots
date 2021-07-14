@@ -4,14 +4,15 @@ import { BaseCommand } from './BaseCommand'
 
 export abstract class BaseGuildInputManager {
 
-    protected readonly guild: Guild
+    private readonly guild: Guild
     public readonly users: Map<string, GuildMember>
-    protected readonly commands: Collection<string, BaseCommand>
+    private readonly commands: Collection<string, BaseCommand>
 
-    public constructor(guild: Guild, botName: string) {
+    protected constructor(guild: Guild, botName: string) {
         this.guild = guild
         this.users = new Map<string, GuildMember>()
         this.commands = new Collection<string, BaseCommand>()
+        this.getUsers()
         const commandFiles = readdirSync(`./src/bots/${botName}/commands`).filter(file => file.endsWith('.js'))
 
         for (const file of commandFiles) {
@@ -37,7 +38,7 @@ export abstract class BaseGuildInputManager {
         return command.execute(message, this)
     }
 
-    protected async getUsers(): Promise<void> {
+    private async getUsers(): Promise<void> {
         this.users.set('admin', await this.guild.members.fetch({ user: '609826125501169723' }))
         if (this.guild.id === '619975185029922817' || this.guild.id === '793330937035096134') {
             this.users.set('swear', await this.guild.members.fetch({ user: '633046187506794527' }))

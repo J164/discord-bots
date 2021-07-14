@@ -16,5 +16,4 @@ export class SwearVoiceManager extends VoiceManager {
     public destroyDispatcher(): void {
         this.streamDispatcher?.destroy()
     }
-
 }

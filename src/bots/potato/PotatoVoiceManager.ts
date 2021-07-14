@@ -90,7 +90,6 @@ export class PotatoVoiceManager extends VoiceManager {
         this.queue = []
         this.downloadQueue = []
         this.downloading = false
-        this.playing = false
         this.queueLoop = false
         this.songLoop = false
     }

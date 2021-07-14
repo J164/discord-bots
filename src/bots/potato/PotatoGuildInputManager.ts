@@ -11,7 +11,6 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
     public constructor(guild: Guild) {
         super(guild, 'potato')
         this.voiceManager = new PotatoVoiceManager()
-        this.getUsers()
     }
 
     public async parseInput(message: Message): Promise<MessageEmbed | string | void> {

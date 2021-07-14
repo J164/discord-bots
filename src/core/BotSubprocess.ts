@@ -5,23 +5,17 @@ export class BotSubprocess {
     private online: boolean
     public readonly name: string
     private readonly id: string
-    public static bots = new Map<string, BotSubprocess>([
-        [ 'potato', new BotSubprocess('./src/bots/potato/potato.js', 'Potato Bot', 'potato') ],
-        [ 'krenko', new BotSubprocess('./src/bots/krenko/krenko.js', 'Krenko Bot', 'krenko') ],
-        [ 'swear', new BotSubprocess('./src/bots/swear/swear.js', 'Swear Bot', 'swear') ],
-        [ 'yeet', new BotSubprocess('./src/bots/yeet/yeet.js', 'Yeet Bot', 'yeet') ]
-    ])
 
-    private constructor(path: string, name: string, id: string) {
+    public constructor(path: string, name: string, id: string) {
         this.process = fork(path)
         this.online = false
         this.name = name
         this.id = id
-        this.process.once('message', function (arg) {
+        this.process.once('message', arg => {
             if (arg !== 'ready') {
                 return
             }
-            BotSubprocess.bots.get(id).start()
+            this.start()
         })
     }
 
@@ -34,12 +28,11 @@ export class BotSubprocess {
             return false
         }
         this.process.send('stop')
-        const id = this.id
-        this.process.once('message', function (arg) {
+        this.process.once('message', arg => {
             if (arg !== 'stop') {
                 return
             }
-            BotSubprocess.bots.get(id).online = false
+            this.online = false
         })
         return true
     }
@@ -49,12 +42,11 @@ export class BotSubprocess {
             return false
         }
         this.process.send('start')
-        const id = this.id
-        this.process.once('message', function (arg) {
+        this.process.once('message', arg => {
             if (arg !== 'start') {
                 return
             }
-            BotSubprocess.bots.get(id).online = true
+            this.online = true
         })
         return true
     }

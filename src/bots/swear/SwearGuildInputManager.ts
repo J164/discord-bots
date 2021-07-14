@@ -15,7 +15,7 @@ export class SwearGuildInputManager extends BaseGuildInputManager {
 
     public async parseInput(message: Message): Promise<MessageEmbed | string | void> {
         if (message.author.bot || !message.guild) {
-            return null
+            return
         }
 
         if (!message.content.startsWith(SwearGuildInputManager.prefix)) {

@@ -8,7 +8,12 @@ import { refreshData } from './src/core/common'
 
 setInterval(function () { refreshData() }, 60000)
 
-const bots = BotSubprocess.bots
+const bots = new Map<string, BotSubprocess>([
+    [ 'potato', new BotSubprocess('./src/bots/potato/potato.js', 'Potato Bot', 'potato') ],
+    [ 'krenko', new BotSubprocess('./src/bots/krenko/krenko.js', 'Krenko Bot', 'krenko') ],
+    [ 'swear', new BotSubprocess('./src/bots/swear/swear.js', 'Swear Bot', 'swear') ],
+    [ 'yeet', new BotSubprocess('./src/bots/yeet/yeet.js', 'Yeet Bot', 'yeet') ]
+])
 const consoleInterface = createInterface({
     input: process.stdin,
     output: process.stdout
@@ -60,7 +65,6 @@ function start(input: string[]): void {
         if (key === input[1]) {
             if (!bot.start()) {
                 console.log(`${bot.name} is already online`)
-                break
             }
             return
         }
@@ -92,9 +96,9 @@ function prompt(): void {
                 list()
                 break
             default:
-                console.log('start <name> (start a bot or use "all" to start all of them')
-                console.log('stop <name> (stop a bot or use "all" to stop all of them')
-                console.log('list (list all bots and their running status')
+                console.log('start <name> (start a bot or use "all" to start all of them)')
+                console.log('stop <name> (stop a bot or use "all" to stop all of them)')
+                console.log('list (list all bots and their running status)')
                 break
         }
         prompt()

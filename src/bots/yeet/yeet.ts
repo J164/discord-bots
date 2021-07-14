@@ -1,7 +1,10 @@
-import { Client } from 'discord.js'
+import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
 import { sysData } from '../../core/common'
+import { YeetGuildInputManager } from './YeetGuildInputManager'
 
-const client = new Client({ ws: { intents: [ 'GUILDS', 'GUILD_MESSAGES' ] } })
+const intents: BitFieldResolvable<IntentsString> = [ 'GUILDS', 'GUILD_MESSAGES' ]
+let client = new Client({ ws: { intents: intents } })
+const guildStatus = new Map<string, YeetGuildInputManager>()
 
 function defineEvents() {
     client.on('ready', () => {
@@ -13,18 +16,17 @@ function defineEvents() {
         }, 60000)
     })
 
-    client.on('message', msg => {
-        if (msg.author.bot || !msg.guild) {
-            return
+    client.on('message', message => {
+        if (!guildStatus.has(message.guild.id)) {
+            guildStatus.set(message.guild.id, new YeetGuildInputManager(message.guild))
         }
 
-        if (msg.content.toLowerCase().indexOf('yee') !== -1) {
-            if (msg.content.toLowerCase().substr(msg.content.toLowerCase().indexOf('yee') + 1, 10) === 'eeeeeeeeee') {
-                msg.reply('Wow! Much Yeet!')
-                return
-            }
-            msg.reply('YEEEEEEEEEET!')
-        }
+        guildStatus.get(message.guild.id).parseInput(message)
+            .then(response => {
+                if (response) {
+                    message.reply(response)
+                }
+            })
     })
 }
 
@@ -36,6 +38,7 @@ process.on('message', function (arg) {
             process.send('stop')
             break
         case 'start':
+            client = new Client({ ws: { intents: intents } })
             defineEvents()
             client.login(sysData.yeetKey)
             break

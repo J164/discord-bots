@@ -1,8 +1,9 @@
-import { Client } from 'discord.js'
+import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
 import { sysData } from '../../core/common'
 import { SwearGuildInputManager } from './SwearGuildInputManager'
 
-const client = new Client({ ws: { intents: [ 'GUILDS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES' ] } })
+const intents: BitFieldResolvable<IntentsString> = [ 'GUILDS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES' ]
+let client: Client = new Client({ ws: { intents: intents } })
 const guildStatus = new Map<string, SwearGuildInputManager>()
 
 function defineEvents() {
@@ -41,6 +42,7 @@ process.on('message', function (arg) {
             process.send('stop')
             break
         case 'start':
+            client = new Client({ ws: { intents: intents } })
             defineEvents()
             client.login(sysData.swearKey)
             break

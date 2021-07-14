@@ -10,19 +10,19 @@ interface DeckJson {
 
 export class Deck {
 
-    image: string
-    name: string
-    url: string
-    apiUrl: string
+    private image: string
+    private name: string
+    private url: string
+    private apiUrl: string
 
-    fill(json: DeckJson): void {
+    public fill(json: DeckJson): void {
         this.image = json.image
         this.name = json.name
         this.url = json.url
         this.apiUrl = json.apiUrl
     }
 
-    async getInfo(url: string): Promise<boolean> {
+    public async getInfo(url: string): Promise<boolean> {
         this.url = url
         let authorID
         let deckID
@@ -53,14 +53,14 @@ export class Deck {
         return true
     }
 
-    getPreview(): MessageEmbed {
+    public getPreview(): MessageEmbed {
         const preview = genericEmbedResponse(this.name)
         preview.setImage(this.image)
         preview.addField('Deckstats URL:', this.url)
         return preview
     }
 
-    async getList(): Promise<string> {
+    public async getList(): Promise<string> {
         const decklist = await makeGetRequest(this.apiUrl + 'list')
         const decklistArray = decklist.list.split('\n')
         for (let i = 0; i < decklistArray.length; i++) {

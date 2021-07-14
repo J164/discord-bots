@@ -1,8 +1,9 @@
-import { Client } from 'discord.js'
+import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
 import { sysData } from '../../core/common'
 import { PotatoGuildInputManager } from './PotatoGuildInputManager'
 
-const client = new Client({ ws: { intents: [ 'GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS' ]} })
+const intents: BitFieldResolvable<IntentsString> = [ 'GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS' ]
+let client = new Client({ ws: { intents: intents } })
 const guildStatus = new Map<string, PotatoGuildInputManager>()
 
 function defineEvents() {
@@ -44,6 +45,7 @@ process.on('message', function (arg) {
             process.send('stop')
             break
         case 'start':
+            client = new Client({ ws: { intents: intents } })
             defineEvents()
             client.login(sysData.potatoKey)
             break
