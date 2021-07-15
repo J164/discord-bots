@@ -1,9 +1,11 @@
 import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
 import { sysData } from '../../core/common'
+import { DatabaseManager } from '../../core/DatabaseManager'
 import { YeetGuildInputManager } from './YeetGuildInputManager'
 
 const intents: BitFieldResolvable<IntentsString> = [ 'GUILDS', 'GUILD_MESSAGES' ]
 let client = new Client({ ws: { intents: intents } })
+const database = new DatabaseManager()
 const guildStatus = new Map<string, YeetGuildInputManager>()
 
 function defineEvents() {
@@ -18,7 +20,7 @@ function defineEvents() {
 
     client.on('message', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new YeetGuildInputManager(message.guild))
+            guildStatus.set(message.guild.id, new YeetGuildInputManager(message.guild, database))
         }
 
         guildStatus.get(message.guild.id).parseInput(message)
@@ -34,6 +36,7 @@ process.on('message', function (arg) {
     switch (arg) {
         case 'stop':
             client.destroy()
+            guildStatus.clear()
             console.log('Yeet Bot has been logged out')
             process.send('stop')
             break

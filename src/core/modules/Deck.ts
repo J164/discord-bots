@@ -1,11 +1,12 @@
 import { MessageEmbed } from 'discord.js'
-import { makeGetRequest, userData, findKey, genericEmbedResponse } from '../common'
+import { makeGetRequest, findKey, genericEmbedResponse } from '../common'
 
 interface DeckJson {
     image: string;
     name: string;
     url: string;
-    apiUrl: string;
+    // eslint-disable-next-line camelcase
+    api_url: string;
 }
 
 export class Deck {
@@ -19,7 +20,23 @@ export class Deck {
         this.image = json.image
         this.name = json.name
         this.url = json.url
-        this.apiUrl = json.apiUrl
+        this.apiUrl = json.api_url
+    }
+
+    public getName(): string {
+        return this.name
+    }
+
+    public getImage(): string {
+        return this.image
+    }
+
+    public getUrl(): string {
+        return this.url
+    }
+
+    public getApiUrl(): string {
+        return this.apiUrl
     }
 
     public async getInfo(url: string): Promise<boolean> {
@@ -39,11 +56,6 @@ export class Deck {
             deckJson = await makeGetRequest(this.apiUrl + 'json')
         } catch {
             return false
-        }
-        for (const deck of userData.decks) {
-            if (deck.name === deckJson.name) {
-                return false
-            }
         }
         this.name = deckJson.name
         let commander = findKey(deckJson, 'isCommander')

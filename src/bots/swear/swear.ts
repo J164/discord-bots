@@ -1,9 +1,11 @@
 import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
 import { sysData } from '../../core/common'
+import { DatabaseManager } from '../../core/DatabaseManager'
 import { SwearGuildInputManager } from './SwearGuildInputManager'
 
 const intents: BitFieldResolvable<IntentsString> = [ 'GUILDS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES' ]
 let client: Client = new Client({ ws: { intents: intents } })
+const database = new DatabaseManager()
 const guildStatus = new Map<string, SwearGuildInputManager>()
 
 function defineEvents() {
@@ -21,7 +23,7 @@ function defineEvents() {
 
     client.on('message', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new SwearGuildInputManager(message.guild))
+            guildStatus.set(message.guild.id, new SwearGuildInputManager(message.guild, database))
         }
 
         guildStatus.get(message.guild.id).parseInput(message)

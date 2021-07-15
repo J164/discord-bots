@@ -1,6 +1,7 @@
 import { Guild, Message, MessageEmbed } from 'discord.js'
 import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
 import { sysData } from '../../core/common'
+import { DatabaseManager } from '../../core/DatabaseManager'
 import { SwearVoiceManager } from './SwearVoiceManager'
 
 export class SwearGuildInputManager extends BaseGuildInputManager {
@@ -8,8 +9,8 @@ export class SwearGuildInputManager extends BaseGuildInputManager {
     private static readonly prefix = '?'
     public readonly voiceManager: SwearVoiceManager
 
-    public constructor(guild: Guild) {
-        super(guild, 'swear')
+    public constructor(guild: Guild, database: DatabaseManager) {
+        super(guild, database, 'swear')
         this.voiceManager = new SwearVoiceManager()
     }
 

@@ -5,11 +5,8 @@ process.on('uncaughtException', err => {
 import { BotSubprocess } from './src/core/BotSubprocess'
 import { createInterface } from 'readline'
 import { refreshData } from './src/core/common'
-import { DatabaseManager } from './src/core/DatabaseManager'
 
 setInterval(function () { refreshData() }, 60000)
-
-const database = new DatabaseManager()
 
 const bots = new Map<string, BotSubprocess>([
     [ 'potato', new BotSubprocess('./src/bots/potato/potato.js', 'Potato Bot', 'potato') ],
@@ -33,7 +30,6 @@ async function stopAll(): Promise<void> {
     for (const [ , bot ] of bots) {
         bot.stop()
     }
-    database.end()
     process.exit()
 }
 

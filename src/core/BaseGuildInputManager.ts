@@ -1,16 +1,19 @@
 import { Collection, Guild, GuildMember, Message, MessageEmbed } from 'discord.js'
 import { readdirSync } from 'fs'
 import { BaseCommand } from './BaseCommand'
+import { DatabaseManager } from './DatabaseManager'
 
 export abstract class BaseGuildInputManager {
 
     private readonly guild: Guild
     public readonly users: Map<string, GuildMember>
+    public readonly database: DatabaseManager
     private readonly commands: Collection<string, BaseCommand>
 
-    protected constructor(guild: Guild, botName: string) {
+    protected constructor(guild: Guild, database: DatabaseManager, botName: string) {
         this.guild = guild
         this.users = new Map<string, GuildMember>()
+        this.database = database
         this.commands = new Collection<string, BaseCommand>()
         this.getUsers()
         const commandFiles = readdirSync(`./src/bots/${botName}/commands`).filter(file => file.endsWith('.js'))

@@ -1,9 +1,11 @@
 import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
 import { sysData } from '../../core/common'
+import { DatabaseManager } from '../../core/DatabaseManager'
 import { PotatoGuildInputManager } from './PotatoGuildInputManager'
 
 const intents: BitFieldResolvable<IntentsString> = [ 'GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS' ]
 let client = new Client({ ws: { intents: intents } })
+const database = new DatabaseManager()
 const guildStatus = new Map<string, PotatoGuildInputManager>()
 
 function defineEvents() {
@@ -24,7 +26,7 @@ function defineEvents() {
 
     client.on('message', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new PotatoGuildInputManager(message.guild))
+            guildStatus.set(message.guild.id, new PotatoGuildInputManager(message.guild, database))
         }
 
         guildStatus.get(message.guild.id).parseInput(message)

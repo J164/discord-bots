@@ -1,12 +1,13 @@
 import { Guild, Message, MessageEmbed } from 'discord.js'
 import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
+import { DatabaseManager } from '../../core/DatabaseManager'
 
 export class YeetGuildInputManager extends BaseGuildInputManager {
 
     private static readonly prefix = '%'
 
-    public constructor(guild: Guild) {
-        super(guild, 'yeet')
+    public constructor(guild: Guild, database: DatabaseManager) {
+        super(guild, database, 'yeet')
     }
 
     public async parseInput(message: Message): Promise<MessageEmbed | string | void> {

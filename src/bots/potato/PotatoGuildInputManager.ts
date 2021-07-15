@@ -1,6 +1,7 @@
 import { Guild, Message, MessageEmbed } from 'discord.js'
 import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
 import { sysData, voiceKick } from '../../core/common'
+import { DatabaseManager } from '../../core/DatabaseManager'
 import { PotatoVoiceManager } from './PotatoVoiceManager'
 
 export class PotatoGuildInputManager extends BaseGuildInputManager {
@@ -8,8 +9,8 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
     private static readonly prefix = '&'
     public readonly voiceManager: PotatoVoiceManager
 
-    public constructor(guild: Guild) {
-        super(guild, 'potato')
+    public constructor(guild: Guild, database: DatabaseManager) {
+        super(guild, database, 'potato')
         this.voiceManager = new PotatoVoiceManager()
     }
 

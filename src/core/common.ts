@@ -65,9 +65,10 @@ export function findKey(object: any, property: string): any { // eslint-disable-
     if (object instanceof Array) {
         for (const item of object) {
             result = findKey(item, property)
-            break
         }
-        return result
+        if (result) {
+            return result
+        }
     }
     for (const prop in object) {
         if (prop === property) {
@@ -75,7 +76,9 @@ export function findKey(object: any, property: string): any { // eslint-disable-
         }
         if (object[prop] instanceof Object || object[prop] instanceof Array) {
             result = findKey(object[prop], property)
-            return result
+            if (result) {
+                return result
+            }
         }
     }
 }
