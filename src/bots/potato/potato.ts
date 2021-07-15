@@ -15,7 +15,7 @@ function defineEvents() {
 
         client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)])
 
-        setInterval(function () {
+        setInterval(() => {
             client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)])
 
             for (const [ , guildManager ] of guildStatus) {
@@ -38,7 +38,7 @@ function defineEvents() {
     })
 }
 
-process.on('message', function (arg) {
+process.on('message', arg => {
     switch (arg) {
         case 'stop':
             client.destroy()

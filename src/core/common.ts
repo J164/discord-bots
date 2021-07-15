@@ -44,8 +44,7 @@ export function genericEmbedResponse(title: string): MessageEmbed {
     return embedVar
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function makeGetRequest(path: string): Promise<any> {
+export async function makeGetRequest(path: string): Promise<unknown> {
     const response = await axios.default.get(path)
     return response.data
 }
@@ -57,28 +56,4 @@ export async function getUser(guildID: Snowflake, userID: Snowflake, client: Cli
 
 export function refreshData(): void {
     userData = JSON.parse(readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
-}
-
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function findKey(object: any, property: string): any { // eslint-disable-line @typescript-eslint/no-explicit-any
-    let result
-    if (object instanceof Array) {
-        for (const item of object) {
-            result = findKey(item, property)
-        }
-        if (result) {
-            return result
-        }
-    }
-    for (const prop in object) {
-        if (prop === property) {
-            return object
-        }
-        if (object[prop] instanceof Object || object[prop] instanceof Array) {
-            result = findKey(object[prop], property)
-            if (result) {
-                return result
-            }
-        }
-    }
 }

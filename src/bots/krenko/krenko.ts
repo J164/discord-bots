@@ -13,7 +13,7 @@ function defineEvents() {
         console.log(`We have logged in as ${client.user.tag}`)
         process.send('start')
         client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)])
-        setInterval(function () {
+        setInterval(() => {
             client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)])
         }, 60000)
     })

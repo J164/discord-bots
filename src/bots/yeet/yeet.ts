@@ -13,7 +13,7 @@ function defineEvents() {
         console.log('We have logged in as ' + client.user.tag)
         process.send('start')
         client.user.setActivity(sysData.yeetStatus[Math.floor(Math.random() * sysData.yeetStatus.length)])
-        setInterval(function () {
+        setInterval(() => {
             client.user.setActivity(sysData.yeetStatus[Math.floor(Math.random() * sysData.yeetStatus.length)])
         }, 60000)
     })
@@ -32,7 +32,7 @@ function defineEvents() {
     })
 }
 
-process.on('message', function (arg) {
+process.on('message', arg => {
     switch (arg) {
         case 'stop':
             client.destroy()

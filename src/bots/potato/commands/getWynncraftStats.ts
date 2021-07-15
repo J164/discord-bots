@@ -2,11 +2,32 @@ import { Message, MessageEmbed } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { makeGetRequest } from '../../../core/common'
 
+interface wynncraftData {
+    data: {
+        username: string,
+        meta: {
+            location: {
+                online: boolean
+                server: string
+            }
+        }
+        classes: {
+            name: string
+            playtime: number
+            professions: {
+                combat: {
+                    level: number
+                }
+            }
+        }[]
+    }[]
+}
+
 async function getWynncraftStats(message: Message): Promise<MessageEmbed | string> {
     if (message.content.split(' ').length < 2) {
         return 'Please enter a player username!'
     }
-    const data = await makeGetRequest(`https://api.wynncraft.com/v2/player/${message.content.split(' ')[1]}/stats`)
+    const data = <wynncraftData> await makeGetRequest(`https://api.wynncraft.com/v2/player/${message.content.split(' ')[1]}/stats`)
     let status
     const embedVar = new MessageEmbed()
     embedVar.setTitle(data.data[0].username)

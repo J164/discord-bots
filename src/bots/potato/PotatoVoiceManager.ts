@@ -67,10 +67,7 @@ export class QueueItem extends EventEmitter {
                 writeFileSync(`${home}/music_files/playback/${this.id}.json`, metaData)
                 this.emit('downloaded')
             })
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .on('error', function(err: any) {
-                console.log(err)
-            })
+            .on('error', err => { console.log(err) })
             .save(`${home}/music_files/playback/${this.id}.ogg`)
     }
 }

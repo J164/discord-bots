@@ -16,8 +16,7 @@ export class DatabaseManager {
         this.connection.connect()
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public select(table: string, callback: (results: any[]) => void): void {
+    public select(table: string, callback: (results: unknown[]) => void): void {
         this.connection.query(`SELECT * FROM ${table} AS solution`, (error, results) => {
             if (error) {
                 return
