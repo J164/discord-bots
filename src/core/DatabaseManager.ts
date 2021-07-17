@@ -6,6 +6,15 @@ export class DatabaseManager {
     private connection: Connection
 
     public constructor() {
+        this.connect()
+        this.connection.on('error', err => {
+            console.log(err)
+            this.connection.end()
+            this.connect()
+        })
+    }
+
+    private connect() {
         this.connection = createConnection({
             host: 'localhost',
             user: 'DiscordBots',
@@ -39,7 +48,7 @@ export class DatabaseManager {
         }
         this.connection.query(`INSERT INTO ${table} (${columns}) VALUES (${values})`, (error) => {
             if (error) {
-                throw error
+                console.log(error)
             }
         })
     }

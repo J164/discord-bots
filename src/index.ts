@@ -2,17 +2,17 @@ process.on('uncaughtException', err => {
     setInterval(() => { console.log(err) }, 1000)
 })
 
-import { BotSubprocess } from './src/core/BotSubprocess'
+import { BotSubprocess } from './core/BotSubprocess'
 import { createInterface } from 'readline'
-import { refreshData } from './src/core/common'
+import { refreshData } from './core/common'
 
 setInterval(() => { refreshData() }, 60000)
 
 const bots = new Map<string, BotSubprocess>([
-    [ 'potato', new BotSubprocess('./src/bots/potato/potato.js', 'Potato Bot', 'potato') ],
-    [ 'krenko', new BotSubprocess('./src/bots/krenko/krenko.js', 'Krenko Bot', 'krenko') ],
-    [ 'swear', new BotSubprocess('./src/bots/swear/swear.js', 'Swear Bot', 'swear') ],
-    [ 'yeet', new BotSubprocess('./src/bots/yeet/yeet.js', 'Yeet Bot', 'yeet') ]
+    [ 'potato', new BotSubprocess('./bots/potato/potato.js', 'Potato Bot', 'potato') ],
+    [ 'krenko', new BotSubprocess('./bots/krenko/krenko.js', 'Krenko Bot', 'krenko') ],
+    [ 'swear', new BotSubprocess('./bots/swear/swear.js', 'Swear Bot', 'swear') ],
+    [ 'yeet', new BotSubprocess('./bots/yeet/yeet.js', 'Yeet Bot', 'yeet') ]
 ])
 
 const consoleInterface = createInterface({

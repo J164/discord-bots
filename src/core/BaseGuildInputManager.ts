@@ -16,7 +16,7 @@ export abstract class BaseGuildInputManager {
         this.database = database
         this.commands = new Collection<string, BaseCommand>()
         this.getUsers()
-        const commandFiles = readdirSync(`./src/bots/${botName}/commands`).filter(file => file.endsWith('.js'))
+        const commandFiles = readdirSync(`./bots/${botName}/commands`).filter(file => file.endsWith('.js'))
 
         for (const file of commandFiles) {
             // eslint-disable-next-line @typescript-eslint/no-var-requires
