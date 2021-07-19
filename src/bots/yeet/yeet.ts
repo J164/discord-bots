@@ -1,5 +1,5 @@
 import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
-import { sysData } from '../../core/common'
+import { celebrate, sysData } from '../../core/common'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { YeetGuildInputManager } from './YeetGuildInputManager'
 
@@ -44,6 +44,12 @@ process.on('message', arg => {
             client = new Client({ ws: { intents: intents } })
             defineEvents()
             client.login(sysData.yeetKey)
+            break
+        case 'celebrate':
+            celebrate(client).then(channel => {
+                channel.send('https://tenor.com/view/excited-yay-grin-dog-welcome-back-gif-16956636')
+                channel.send('YEEEEEEEEEEEEET')
+            })
             break
         default:
             break

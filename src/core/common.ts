@@ -1,4 +1,4 @@
-import { Client, GuildMember, MessageEmbed, Snowflake, VoiceState } from 'discord.js'
+import { Client, GuildMember, MessageEmbed, Snowflake, TextChannel, VoiceState } from 'discord.js'
 import { createCanvas, loadImage } from 'canvas'
 import * as axios from 'axios'
 import { readFileSync } from 'fs'
@@ -7,6 +7,12 @@ export const home = 'D:/Bot Resources'
 export const root = './..'
 export const sysData = JSON.parse(readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
 export let userData = JSON.parse(readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
+
+export async function celebrate(client: Client): Promise<TextChannel> {
+    const guild = await client.guilds.fetch('619975185029922817')
+    const channel = <TextChannel> guild.channels.resolve('619975185029922819')
+    return channel
+}
 
 export function voiceKick(count: number, voiceState: VoiceState): void {
     if (voiceState.channelID) {

@@ -1,5 +1,5 @@
 import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
-import { sysData } from '../../core/common'
+import { celebrate, sysData } from '../../core/common'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { SwearGuildInputManager } from './SwearGuildInputManager'
 
@@ -47,6 +47,11 @@ process.on('message', arg => {
             client = new Client({ ws: { intents: intents } })
             defineEvents()
             client.login(sysData.swearKey)
+            break
+        case 'celebrate':
+            celebrate(client).then(channel => {
+                channel.send('https://tenor.com/view/im-back-bitches-announcement-inform-welcome-sas-gif-13303187')
+            })
             break
         default:
             break

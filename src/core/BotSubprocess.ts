@@ -50,4 +50,8 @@ export class BotSubprocess {
         })
         return true
     }
+
+    public send(arg: string): void {
+        this.process.send(arg)
+    }
 }

@@ -1,5 +1,5 @@
 import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
-import { sysData } from '../../core/common'
+import { celebrate, sysData } from '../../core/common'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { PotatoGuildInputManager } from './PotatoGuildInputManager'
 
@@ -50,6 +50,12 @@ process.on('message', arg => {
             client = new Client({ ws: { intents: intents } })
             defineEvents()
             client.login(sysData.potatoKey)
+            break
+        case 'celebrate':
+            celebrate(client).then(channel => {
+                channel.send('https://tenor.com/view/husky-husky-jump-youre-home-welcome-home-excited-gif-15653370')
+                channel.send('WELCOME BACK!!!!')
+            })
             break
         default:
             break

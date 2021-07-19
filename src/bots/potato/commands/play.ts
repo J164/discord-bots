@@ -1,4 +1,4 @@
-import { Message } from 'discord.js'
+import { Message, TextChannel } from 'discord.js'
 import { existsSync, readFileSync } from 'fs'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { searchYoutube, home } from '../../../core/common'
@@ -76,7 +76,7 @@ async function play(message: Message, info: PotatoGuildInputManager): Promise<st
     } else {
         info.voiceManager.addToQueue(output.duration, output.webpage_url, output.title, output.id, output?.thumbnail)
     }
-    info.voiceManager.bindChannel(message.channel)
+    info.voiceManager.bindChannel(<TextChannel> message.channel)
     info.voiceManager.connect(voiceChannel)
     return 'Added to queue!'
 }

@@ -1,4 +1,4 @@
-import { MessageEmbed, PartialTextBasedChannelFields, VoiceChannel } from 'discord.js'
+import { MessageEmbed, TextChannel, VoiceChannel } from 'discord.js'
 import EventEmitter = require('events')
 import { existsSync, writeFileSync } from 'fs'
 import { home, genericEmbedResponse } from '../../core/common'
@@ -76,7 +76,7 @@ export class PotatoVoiceManager extends VoiceManager {
 
     private queue: QueueItem[]
     private downloadQueue: QueueItem[]
-    private boundChannel: PartialTextBasedChannelFields
+    private boundChannel: TextChannel
     private downloading: boolean
     private nowPlaying: MessageEmbed
     private queueLoop: boolean
@@ -113,7 +113,7 @@ export class PotatoVoiceManager extends VoiceManager {
         this.checkSongStatus()
     }
 
-    public bindChannel(channel: PartialTextBasedChannelFields): void {
+    public bindChannel(channel: TextChannel): void {
         this.boundChannel = channel
     }
 

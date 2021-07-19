@@ -1,5 +1,5 @@
 import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
-import { sysData } from '../../core/common'
+import { celebrate, sysData } from '../../core/common'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { KrenkoGuildInputManager } from './KrenkoGuildInputManager'
 
@@ -44,6 +44,11 @@ process.on('message', function (arg) {
             client = new Client({ ws: { intents: intents } })
             defineEvents()
             client.login(sysData.krenkoKey)
+            break
+        case 'celebrate':
+            celebrate(client).then(channel => {
+                channel.send('https://tenor.com/view/husky-husky-jump-youre-home-welcome-home-excited-gif-15653370')
+            })
             break
         default:
             break

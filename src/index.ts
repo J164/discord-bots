@@ -83,6 +83,12 @@ function list(): void {
     }
 }
 
+async function celebrate(): Promise<void> {
+    for (const [ , bot ] of bots) {
+        bot.send('celebrate')
+    }
+}
+
 function prompt(): void {
     consoleInterface.question('', (input) => {
         const parsedInput = input.split(' ')
@@ -95,6 +101,9 @@ function prompt(): void {
                 break
             case 'list':
                 list()
+                break
+            case 'celebrate':
+                celebrate()
                 break
             default:
                 console.log('start <name> (start a bot or use "all" to start all of them)')
