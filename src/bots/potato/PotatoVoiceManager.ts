@@ -104,13 +104,16 @@ export class PotatoVoiceManager extends VoiceManager {
         }
     }
 
-    public async connect(voiceChannel: VoiceChannel): Promise<void> {
-        await super.connect(voiceChannel)
-        if (this.queue.length < 1) {
-            this.reset()
+    public async connect(voiceChannel: VoiceChannel): Promise<boolean> {
+        if (!await super.connect(voiceChannel)) {
             return
         }
+        if (this.queue.length < 1) {
+            this.reset()
+            return false
+        }
         this.checkSongStatus()
+        return true
     }
 
     public bindChannel(channel: TextChannel): void {

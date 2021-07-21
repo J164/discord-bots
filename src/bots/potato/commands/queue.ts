@@ -4,7 +4,7 @@ import { genericEmbedResponse } from '../../../core/common'
 import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
 import { QueueItem } from '../PotatoVoiceManager'
 
-async function queue(message: Message, info: PotatoGuildInputManager, queueArray: QueueItem[][] = null, index = 0): Promise<void> {
+async function queue(message: Message, info: PotatoGuildInputManager, queueArray: QueueItem[][] = null, i = 0): Promise<void> {
     if (!queueArray) {
         queueArray = info.voiceManager.getQueue()
         if (!queueArray) {
@@ -12,35 +12,53 @@ async function queue(message: Message, info: PotatoGuildInputManager, queueArray
             return
         }
     }
-    const queueMessage = genericEmbedResponse('Queue')
-    for (const [ i, entry ] of queueArray[index].entries()) {
-        queueMessage.addField(`${i + 1}.`, `${entry.title}\n${entry.webpageUrl}`)
-    }
+    let title = 'Queue'
     if (info.voiceManager.getQueueLoop()) {
-        queueMessage.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png')
+        title += ' (Looping)'
+    }
+    const queueMessage = genericEmbedResponse(title).setFooter(`${i + 1}/${queueArray.length}`)
+    for (const [ index, entry ] of queueArray[i].entries()) {
+        queueMessage.addField(`${index + 1}.`, `${entry.title}\n${entry.webpageUrl}`)
     }
     const menu = await message.channel.send(queueMessage)
     const emojiList = [ '\u274C' ]
-    if (index > 0) {
+    if (i !== 0) {
         emojiList.unshift('\u2B05\uFE0F')
+        emojiList.unshift('\u23EA')
     }
-    if (index < queueArray.length - 1) {
+    if (i !== queueArray.length - 1) {
         emojiList.push('\u27A1\uFE0F')
+        emojiList.push('\u23E9')
     }
+    const reactions: MessageReaction[] = []
     for (const emoji of emojiList) {
-        await menu.react(emoji)
+        reactions.push(await menu.react(emoji))
     }
     function filter(reaction: MessageReaction): boolean { return reaction.client === message.client }
-    const reactionCollection = await menu.awaitReactions(filter, { max: 1 })
+    const reactionCollection = await menu.awaitReactions(filter, { max: 1, time: 60000})
     const reactionResult = reactionCollection.first()
+    if (!reactionResult) {
+        for (const reaction of reactions) {
+            reaction.remove()
+        }
+        return
+    }
     switch (reactionResult.emoji.name) {
         case '\u2B05\uFE0F':
             await menu.delete()
-            queue(message, info, queueArray, index - 1)
+            queue(message, info, queueArray, i - 1)
+            break
+        case '\u23EA':
+            await menu.delete()
+            queue(message, info, queueArray)
             break
         case '\u27A1\uFE0F':
             await menu.delete()
-            queue(message, info, queueArray, index + 1)
+            queue(message, info, queueArray, i + 1)
+            break
+        case '\u23E9':
+            await menu.delete()
+            queue(message, info, queueArray, queueArray.length - 1)
             break
         default:
             menu.delete()

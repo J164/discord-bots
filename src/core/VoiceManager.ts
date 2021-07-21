@@ -10,12 +10,13 @@ export abstract class VoiceManager {
         this.playing = false
     }
 
-    public async connect(voiceChannel: VoiceChannel): Promise<void> {
+    public async connect(voiceChannel: VoiceChannel): Promise<boolean> {
         if (this.playing) {
-            return
+            return false
         }
         this.playing = true
         this.voiceConnection = await voiceChannel.join()
+        return true
     }
 
     public createStream(path: string): void {
