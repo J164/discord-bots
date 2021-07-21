@@ -1,15 +1,22 @@
-import { Message, MessageEmbed, MessageReaction } from 'discord.js'
+import { Message, MessageAttachment, MessageEmbed, MessageReaction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { genericEmbedResponse, makeGetRequest } from '../../../core/common'
+import { genericEmbedResponse, makeGetRequest, mergeImages } from '../../../core/common'
 import { KrenkoGuildInputManager } from '../KrenkoGuildInputManager'
 
 interface Card {
     name: string,
     uri: string,
     // eslint-disable-next-line camelcase
-    image_uris: {
+    image_uris?: {
         large: string
     }
+    // eslint-disable-next-line camelcase
+    card_faces?: {
+        // eslint-disable-next-line camelcase
+        image_uris: {
+            large: string
+        }
+    }[]
     prices: {
         usd: string
     }
@@ -51,6 +58,18 @@ function generateEmojiList(results: Card[][], i: number): string[] {
     return emojiList
 }
 
+async function generateResponse(results: Card[][], r: number, i: number): Promise<MessageEmbed> {
+    const card = results[r][i]
+    const embed = genericEmbedResponse(card.name)
+    if (card.card_faces) {
+        const attachment = new MessageAttachment(await mergeImages([ card.card_faces[0].image_uris.large, card.card_faces[1].image_uris.large ], { width: 1344, height: 936 }), 'card.jpg')
+        embed.attachFiles([ attachment ]).setImage('attachment://card.jpg')
+    } else {
+        embed.setImage(card.image_uris.large)
+    }
+    return embed.setFooter(`Price ($): ${card.prices.usd ?? 'unknown (not for sale)'}`)
+}
+
 async function search(message: Message, info: KrenkoGuildInputManager, results: Card[][] = null, i = 0): Promise<MessageEmbed> {
     if (!results) {
         const searchArr = message.content.split(' ')
@@ -84,8 +103,7 @@ async function search(message: Message, info: KrenkoGuildInputManager, results: 
     }
     if (reactionResult.emoji.name.slice(1) === '\uFE0F\u20E3' && parseInt(reactionResult.emoji.name[0]) <= results[i].length) {
         menu.delete()
-        const card = results[i][parseInt(reactionResult.emoji.name[0]) - 1]
-        return genericEmbedResponse(card.name).setImage(card.image_uris.large).setFooter(`$${card.prices.usd}`)
+        return generateResponse(results, i, parseInt(reactionResult.emoji.name[0]) - 1)
     }
     switch (reactionResult.emoji.name) {
         case '\u2B05\uFE0F':
