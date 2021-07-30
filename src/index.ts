@@ -33,6 +33,13 @@ async function stopAll(): Promise<void> {
     process.exit()
 }
 
+async function deploy(): Promise<void> {
+    for (const [ , bot ] of bots) {
+        bot.deploy()
+    }
+    console.log('Success')
+}
+
 function stop(input: string[]): void {
     if (input.length < 2) {
         console.log('This command takes 1 parameter (Bot Name)')
@@ -105,10 +112,14 @@ function prompt(): void {
             case 'celebrate':
                 celebrate()
                 break
+            case 'deploy':
+                deploy()
+                break
             default:
                 console.log('start <name> (start a bot or use "all" to start all of them)')
                 console.log('stop <name> (stop a bot or use "all" to stop all of them)')
                 console.log('list (list all bots and their running status)')
+                console.log('deploy (Deploys all slash commands)')
                 break
         }
         prompt()

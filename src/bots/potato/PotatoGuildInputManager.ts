@@ -1,4 +1,5 @@
-import { Guild, Message, MessageEmbed } from 'discord.js'
+import { Collection, Guild, Message } from 'discord.js'
+import { BaseCommand } from '../../core/BaseCommand'
 import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
 import { sysData, voiceKick } from '../../core/common'
 import { DatabaseManager } from '../../core/DatabaseManager'
@@ -6,15 +7,14 @@ import { PotatoVoiceManager } from './PotatoVoiceManager'
 
 export class PotatoGuildInputManager extends BaseGuildInputManager {
 
-    private static readonly prefix = '&'
     public readonly voiceManager: PotatoVoiceManager
 
-    public constructor(guild: Guild, database: DatabaseManager) {
-        super(guild, database, 'potato')
+    public constructor(guild: Guild, database: DatabaseManager, commands: Collection<string, BaseCommand>) {
+        super(guild, database, commands)
         this.voiceManager = new PotatoVoiceManager()
     }
 
-    public async parseInput(message: Message): Promise<MessageEmbed | string | void> {
+    public parseGenericMessage(message: Message): void {
         if (!message.guild) {
             return
         }
@@ -26,14 +26,6 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
             return
         }
 
-        if (!message.content.startsWith(PotatoGuildInputManager.prefix)) {
-            return this.genericMessageParse(message)
-        }
-
-        return this.parseCommand(message)
-    }
-
-    private genericMessageParse(message: Message): void {
         let mentionPotato = false
         let mentionSwear = false
         let mentionInsult = false
@@ -54,7 +46,7 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
             }
         }
         if (mentionPotato && (mentionSwear || mentionInsult)) {
-            message.reply('FOOL! HOW DARE YOU BLASPHEMISE THE HOLY ORDER OF THE POTATOES! EAT POTATOES!', { 'tts': true })
+            message.reply('FOOL! HOW DARE YOU BLASPHEMISE THE HOLY ORDER OF THE POTATOES! EAT POTATOES!')
             message.client.user.setActivity(`Teaching ${message.author.tag} the value of potatoes`, {
                 type: 'STREAMING',
                 url: 'https://www.youtube.com/watch?v=fLNWeEen35Y'

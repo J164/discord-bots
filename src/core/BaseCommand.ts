@@ -1,13 +1,13 @@
-import { Message, MessageEmbed } from 'discord.js'
+import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseGuildInputManager } from './BaseGuildInputManager'
 
 export class BaseCommand {
 
-    public readonly aliases: string[]
-    public readonly execute: (message: Message, info: BaseGuildInputManager) => Promise<string | MessageEmbed | void> | string | MessageEmbed | void
+    public readonly data: ApplicationCommandData
+    public readonly execute: (interaction: CommandInteraction, info: BaseGuildInputManager) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void
 
-    public constructor(aliases: string[], execute: (message: Message, info: BaseGuildInputManager) => Promise<string | MessageEmbed | void> | string | MessageEmbed | void) {
-        this.aliases = aliases
+    public constructor(data: ApplicationCommandData, execute: (interaction: CommandInteraction, info: BaseGuildInputManager) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void) {
+        this.data = data
         this.execute = execute
     }
 }

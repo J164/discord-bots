@@ -1,44 +1,41 @@
-import { Collection, Guild, GuildMember, Message, MessageEmbed } from 'discord.js'
-import { readdirSync } from 'fs'
+import { Collection, CommandInteraction, Guild, GuildMember, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from './BaseCommand'
 import { DatabaseManager } from './DatabaseManager'
 
-export abstract class BaseGuildInputManager {
+export class BaseGuildInputManager {
 
     private readonly guild: Guild
     public readonly users: Map<string, GuildMember>
     public readonly database: DatabaseManager
     private readonly commands: Collection<string, BaseCommand>
 
-    protected constructor(guild: Guild, database: DatabaseManager, botName: string) {
+    public constructor(guild: Guild, database: DatabaseManager, commands: Collection<string, BaseCommand>) {
         this.guild = guild
         this.users = new Map<string, GuildMember>()
         this.database = database
-        this.commands = new Collection<string, BaseCommand>()
+        this.commands = commands
         this.getUsers()
-        const commandFiles = readdirSync(`./bots/${botName}/commands`).filter(file => file.endsWith('.js'))
-
-        for (const file of commandFiles) {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            const command = require(`../bots/${botName}/commands/${file}`)
-            this.commands.set(command.aliases[0], command)
-        }
     }
 
-    public parseInput(message: Message): Promise<MessageEmbed | string | void> {
-        console.log(message)
-        return null
-    }
+    public async parseCommand(interaction: CommandInteraction): Promise<InteractionReplyOptions | void> {
+        await interaction.defer()
 
-    protected async parseCommand(message: Message): Promise<MessageEmbed | string | void> {
-        const commandName = message.content.split(' ')[0].slice(1).toLowerCase()
-        const command = this.commands.get(commandName) || this.commands.find(cmd => cmd.aliases.includes(commandName))
+        const command = this.commands.get(interaction.commandName)
 
         if (!command) {
-            return 'Command not recognized'
+            return { content: 'Command not recognized (Please wait a few minutes and try again)' }
         }
 
-        return command.execute(message, this)
+        const channel = await interaction.client.channels.fetch(interaction.channelId)
+        if (!channel.isText()) {
+            return
+        }
+
+        if (channel.type !== 'GUILD_TEXT') {
+            return { content: 'Please only use slash commands in servers!' }
+        }
+
+        return command.execute(interaction, this)
     }
 
     private async getUsers(): Promise<void> {

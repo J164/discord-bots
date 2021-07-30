@@ -1,10 +1,18 @@
-import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
-import { celebrate, sysData } from '../../core/common'
+import { Client, ClientOptions, Collection, Intents } from 'discord.js'
+import { BaseCommand } from '../../core/BaseCommand'
+import { celebrate, deployCommands, getCommands, sysData } from '../../core/common'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { PotatoGuildInputManager } from './PotatoGuildInputManager'
 
-const intents: BitFieldResolvable<IntentsString> = [ 'GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS', 'GUILD_VOICE_STATES', 'DIRECT_MESSAGES', 'DIRECT_MESSAGE_REACTIONS' ]
-let client = new Client({ ws: { intents: intents } })
+process.on('uncaughtException', err => {
+    if (err.message !== 'Unknown interaction') {
+        console.log(err)
+    }
+})
+
+const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.DIRECT_MESSAGE_REACTIONS, Intents.FLAGS.GUILD_VOICE_STATES ], partials: [ 'CHANNEL' ] }
+let client = new Client(clientOptions)
+let commands: Collection<string, BaseCommand>
 const database = new DatabaseManager()
 const guildStatus = new Map<string, PotatoGuildInputManager>()
 
@@ -15,8 +23,14 @@ function defineEvents() {
 
         client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)])
 
+        getCommands(client, 'potato')
+            .then(result => { commands = result })
+
         setInterval(() => {
             client.user.setActivity(sysData.potatoStatus[Math.floor(Math.random() * sysData.potatoStatus.length)])
+
+            getCommands(client, 'potato')
+                .then(result => { commands = result })
 
             for (const [ , guildManager ] of guildStatus) {
                 guildManager.voiceManager.checkIsIdle()
@@ -24,15 +38,27 @@ function defineEvents() {
         }, 60000)
     })
 
-    client.on('message', message => {
+    client.on('messageCreate', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new PotatoGuildInputManager(message.guild, database))
+            guildStatus.set(message.guild.id, new PotatoGuildInputManager(message.guild, database, commands))
         }
 
-        guildStatus.get(message.guild.id).parseInput(message)
+        guildStatus.get(message.guild.id).parseGenericMessage(message)
+    })
+
+    client.on('interactionCreate', interaction => {
+        if (!interaction.isCommand()) {
+            return
+        }
+
+        if (!guildStatus.has(interaction.guild.id)) {
+            guildStatus.set(interaction.guild.id, new PotatoGuildInputManager(interaction.guild, database, commands))
+        }
+
+        guildStatus.get(interaction.guild.id).parseCommand(interaction)
             .then(response => {
                 if (response) {
-                    message.reply(response)
+                    interaction.editReply(response)
                 }
             })
     })
@@ -47,7 +73,7 @@ process.on('message', arg => {
             process.send('stop')
             break
         case 'start':
-            client = new Client({ ws: { intents: intents } })
+            client = new Client(clientOptions)
             defineEvents()
             client.login(sysData.potatoKey)
             break
@@ -56,6 +82,9 @@ process.on('message', arg => {
                 channel.send('https://tenor.com/view/husky-husky-jump-youre-home-welcome-home-excited-gif-15653370')
                 channel.send('WELCOME BACK!!!!')
             })
+            break
+        case 'deploy':
+            deployCommands(client, 'potato')
             break
         default:
             break

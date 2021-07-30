@@ -1,13 +1,14 @@
-import { MessageEmbed, TextChannel, VoiceChannel } from 'discord.js'
+import { InteractionReplyOptions, MessageEmbed, TextChannel, VoiceChannel } from 'discord.js'
 import EventEmitter = require('events')
 import { existsSync, writeFileSync } from 'fs'
 import { home, genericEmbedResponse } from '../../core/common'
 import { VoiceManager } from '../../core/VoiceManager'
-import * as ffmpeg from 'fluent-ffmpeg'
+import { AudioPlayerStatus } from '@discordjs/voice'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
 
 export class QueueItem extends EventEmitter {
+
     public readonly webpageUrl: string
     public readonly title: string
     public readonly id: string
@@ -59,16 +60,8 @@ export class QueueItem extends EventEmitter {
             thumbnail: this.thumbnail,
             duration: this.duration
         })
-        ffmpeg(`${home}/music_files/playback/${this.id}.mp3`)
-            .format('ogg')
-            .audioBitrate('96k')
-            .once('end', () => {
-                //unlinkSync(`${home}/music_files/playback/${this.id}.mp3`)
-                writeFileSync(`${home}/music_files/playback/${this.id}.json`, metaData)
-                this.emit('downloaded')
-            })
-            .on('error', err => { console.log(err) })
-            .save(`${home}/music_files/playback/${this.id}.ogg`)
+        writeFileSync(`${home}/music_files/playback/${this.id}.json`, metaData)
+        this.emit('downloaded')
     }
 }
 
@@ -106,7 +99,7 @@ export class PotatoVoiceManager extends VoiceManager {
 
     public async connect(voiceChannel: VoiceChannel): Promise<boolean> {
         if (!await super.connect(voiceChannel)) {
-            return
+            return false
         }
         if (this.queue.length < 1) {
             this.reset()
@@ -122,13 +115,14 @@ export class PotatoVoiceManager extends VoiceManager {
 
     private async checkSongStatus(): Promise<void> {
         if (this.queue.length < 1) {
-            this.reset()
             return
         }
-        this.playing = true
+
         const song = this.queue.shift()
         if (!song.isDownloaded()) {
+            this.awaitingResource = true
             song.once('downloaded', () => {
+                this.awaitingResource = false
                 this.playSong(song)
             })
             return
@@ -137,24 +131,26 @@ export class PotatoVoiceManager extends VoiceManager {
     }
 
     private async playSong(song: QueueItem): Promise<void> {
-        this.createStream(`${home}/music_files/playback/${song.id}.mp3`)
-        this.nowPlaying = genericEmbedResponse(`Now Playing: ${song.title}`)
-        this.nowPlaying.setImage(song.thumbnail)
-        this.nowPlaying.addField('URL:', song.webpageUrl)
+        if (!await this.createStream(`${home}/music_files/playback/${song.id}.mp3`)) {
+            this.boundChannel.send('Something went wrong while preparing song')
+            return
+        }
+        this.nowPlaying = genericEmbedResponse(`Now Playing: ${song.title}`).setImage(song.thumbnail).addField('URL:', song.webpageUrl)
         if (!song.looping) {
-            this.boundChannel.send(this.nowPlaying)
+            this.boundChannel.send({ embeds: [ this.nowPlaying ] })
         }
         if (this.songLoop) {
             song.looping = true
         }
-        this.streamDispatcher.once('finish', () => {
+        this.player.on('stateChange', (oldState, newState) => {
+            if (newState.status !== AudioPlayerStatus.Idle || oldState.status !== AudioPlayerStatus.Idle) {
+                return
+            }
             if (this.queueLoop) {
                 this.queue.push(song)
             } else if (this.songLoop) {
                 this.queue.unshift(song)
             }
-            this.streamDispatcher.destroy()
-            this.playing = false
             this.checkSongStatus()
         })
     }
@@ -173,7 +169,7 @@ export class PotatoVoiceManager extends VoiceManager {
     }
 
     public loopSong(): string {
-        if (!this.streamDispatcher) {
+        if (this.player?.state.status !== AudioPlayerStatus.Playing && this.player?.state.status !== AudioPlayerStatus.Paused) {
             return 'Nothing is playing!'
         }
         if (this.songLoop) {
@@ -187,8 +183,8 @@ export class PotatoVoiceManager extends VoiceManager {
     }
 
     public loopQueue(): string {
-        if (!this.streamDispatcher) {
-            return 'Nothing is playing!'
+        if (!this.player || this.queue.length < 1) {
+            return 'Nothing is queued!'
         }
         if (this.queueLoop) {
             this.queueLoop = false
@@ -209,10 +205,10 @@ export class PotatoVoiceManager extends VoiceManager {
     }
 
     public skip(): boolean {
-        if (!this.streamDispatcher) {
+        if (this.player?.state.status !== AudioPlayerStatus.Playing && this.player?.state.status !== AudioPlayerStatus.Paused) {
             return false
         }
-        this.streamDispatcher.end()
+        this.player.stop(true)
         return true
     }
 
@@ -229,11 +225,11 @@ export class PotatoVoiceManager extends VoiceManager {
         return true
     }
 
-    public getNowPlaying(): string | MessageEmbed {
+    public getNowPlaying(): InteractionReplyOptions {
         if (!this.nowPlaying) {
-            return 'Nothing has played yet!'
+            return { content: 'Nothing has played yet!' }
         }
-        return this.nowPlaying
+        return { embeds: [ this.nowPlaying ] }
     }
 
     public getQueue(): QueueItem[][] {

@@ -1,14 +1,19 @@
-import { Message, MessageReaction } from 'discord.js'
+import { ApplicationCommandData, CommandInteraction, MessageReaction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { genericEmbedResponse } from '../../../core/common'
+import { clearReactions, genericEmbedResponse } from '../../../core/common'
 import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
 import { QueueItem } from '../PotatoVoiceManager'
 
-async function queue(message: Message, info: PotatoGuildInputManager, queueArray: QueueItem[][] = null, i = 0): Promise<void> {
+const data: ApplicationCommandData = {
+    name: 'queue',
+    description: 'Get the song queue'
+}
+
+async function queue(interaction: CommandInteraction, info: PotatoGuildInputManager, queueArray: QueueItem[][] = null, i = 0): Promise<void> {
     if (!queueArray) {
         queueArray = info.voiceManager.getQueue()
         if (!queueArray) {
-            message.reply('There is no queue!')
+            interaction.editReply({ content: 'There is no queue!' })
             return
         }
     }
@@ -20,7 +25,8 @@ async function queue(message: Message, info: PotatoGuildInputManager, queueArray
     for (const [ index, entry ] of queueArray[i].entries()) {
         queueMessage.addField(`${index + 1}.`, `${entry.title}\n${entry.webpageUrl}`)
     }
-    const menu = await message.channel.send(queueMessage)
+    const rawMenu = await interaction.editReply({ embeds: [ queueMessage ] })
+    const menu = await interaction.channel.messages.fetch(rawMenu.id)
     const emojiList = [ '\u274C' ]
     if (i !== 0) {
         emojiList.unshift('\u2B05\uFE0F')
@@ -34,31 +40,29 @@ async function queue(message: Message, info: PotatoGuildInputManager, queueArray
     for (const emoji of emojiList) {
         reactions.push(await menu.react(emoji))
     }
-    function filter(reaction: MessageReaction): boolean { return reaction.client === message.client }
-    const reactionCollection = await menu.awaitReactions(filter, { max: 1, time: 60000})
+    function filter(reaction: MessageReaction): boolean { return reaction.client === interaction.client }
+    const reactionCollection = await menu.awaitReactions({ filter, max: 1, time: 60000})
     const reactionResult = reactionCollection.first()
     if (!reactionResult) {
-        for (const reaction of reactions) {
-            reaction.remove()
-        }
+        clearReactions(reactions)
         return
     }
     switch (reactionResult.emoji.name) {
         case '\u2B05\uFE0F':
-            await menu.delete()
-            queue(message, info, queueArray, i - 1)
+            await clearReactions(reactions)
+            queue(interaction, info, queueArray, i - 1)
             break
         case '\u23EA':
-            await menu.delete()
-            queue(message, info, queueArray)
+            await clearReactions(reactions)
+            queue(interaction, info, queueArray)
             break
         case '\u27A1\uFE0F':
-            await menu.delete()
-            queue(message, info, queueArray, i + 1)
+            await clearReactions(reactions)
+            queue(interaction, info, queueArray, i + 1)
             break
         case '\u23E9':
-            await menu.delete()
-            queue(message, info, queueArray, queueArray.length - 1)
+            await clearReactions(reactions)
+            queue(interaction, info, queueArray, queueArray.length - 1)
             break
         default:
             menu.delete()
@@ -66,4 +70,4 @@ async function queue(message: Message, info: PotatoGuildInputManager, queueArray
     }
 }
 
-module.exports = new BaseCommand([ 'queue' ], queue)
+module.exports = new BaseCommand(data, queue)

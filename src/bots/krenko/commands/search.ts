@@ -1,7 +1,7 @@
-import { Message, MessageAttachment, MessageEmbed, MessageReaction } from 'discord.js'
+import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, MessageAttachment, MessageReaction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { genericEmbedResponse, makeGetRequest, mergeImages } from '../../../core/common'
-import { KrenkoGuildInputManager } from '../KrenkoGuildInputManager'
+import { BaseGuildInputManager } from '../../../core/BaseGuildInputManager'
+import { clearReactions, genericEmbedResponse, makeGetRequest, mergeImages } from '../../../core/common'
 
 interface Card {
     name: string,
@@ -25,6 +25,17 @@ interface Card {
 interface ScryfallResponse {
     status?: string
     data: Card[]
+}
+
+const data: ApplicationCommandData = {
+    name: 'search',
+    description: 'Search for Magic cards',
+    options: [ {
+        name: 'query',
+        description: 'What to search for',
+        type: 'STRING',
+        required: true
+    } ]
 }
 
 function formatResponse(response: ScryfallResponse): Card[][] {
@@ -58,69 +69,71 @@ function generateEmojiList(results: Card[][], i: number): string[] {
     return emojiList
 }
 
-async function generateResponse(results: Card[][], r: number, i: number): Promise<MessageEmbed> {
+async function generateResponse(results: Card[][], r: number, i: number): Promise<InteractionReplyOptions> {
     const card = results[r][i]
     const embed = genericEmbedResponse(card.name)
+    let reply: InteractionReplyOptions
     if (card.card_faces) {
         const attachment = new MessageAttachment(await mergeImages([ card.card_faces[0].image_uris.large, card.card_faces[1].image_uris.large ], { width: 1344, height: 936 }), 'card.jpg')
-        embed.attachFiles([ attachment ]).setImage('attachment://card.jpg')
+        embed.setImage('attachment://card.jpg')
+        reply = { embeds: [ embed.setFooter(`Price ($): ${card.prices.usd ?? 'unknown (not for sale)'}`) ], files: [ attachment ] }
     } else {
         embed.setImage(card.image_uris.large)
+        reply = { embeds: [ embed.setFooter(`Price ($): ${card.prices.usd ?? 'unknown (not for sale)'}`) ] }
     }
-    return embed.setFooter(`Price ($): ${card.prices.usd ?? 'unknown (not for sale)'}`)
+    return reply
 }
 
-async function search(message: Message, info: KrenkoGuildInputManager, results: Card[][] = null, i = 0): Promise<MessageEmbed> {
+async function search(interaction: CommandInteraction, info: BaseGuildInputManager, results: Card[][] = null, i = 0): Promise<InteractionReplyOptions> {
     if (!results) {
-        const searchArr = message.content.split(' ')
-        searchArr.shift()
-        const searchTerm = searchArr.join(' ')
+        const searchTerm = interaction.options.getString('query')
         try {
         const response = <ScryfallResponse> await makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)
         results = formatResponse(response)
         } catch {
-            return genericEmbedResponse('Card Not Found').addField(`${searchTerm} not found`, 'Check your spelling and/or try using a more general search term')
+            return { embeds: [ genericEmbedResponse('Card Not Found').addField(`${searchTerm} not found`, 'Check your spelling and/or try using a more general search term') ] }
         }
     }
     const embed = genericEmbedResponse('Results').setFooter(`${i + 1}/${results.length}`)
     for (const [ index, entry ] of results[i].entries()) {
         embed.addField(`${index + 1}.`, `${entry.name}`)
     }
-    const menu = await message.channel.send(embed)
+    const rawMenu = await interaction.editReply({ embeds: [ embed ] })
+    const menu = await interaction.channel.messages.fetch(rawMenu.id)
     const emojiList = generateEmojiList(results, i)
     const reactions: MessageReaction[] = []
     for (const emoji of emojiList) {
         reactions.push(await menu.react(emoji))
     }
-    function filter(reaction: MessageReaction): boolean { return reaction.client === message.client }
-    const reactionCollection = await menu.awaitReactions(filter, { max: 1, time: 60000})
+    function filter(reaction: MessageReaction): boolean { return reaction.client === interaction.client }
+    const reactionCollection = await menu.awaitReactions({ filter, max: 1, time: 60000 })
     const reactionResult = reactionCollection.first()
     if (!reactionResult) {
-        for (const reaction of reactions) {
-            reaction.remove()
-        }
+        clearReactions(reactions)
         return
     }
-    if (reactionResult.emoji.name.slice(1) === '\uFE0F\u20E3' && parseInt(reactionResult.emoji.name[0]) <= results[i].length) {
-        menu.delete()
-        return generateResponse(results, i, parseInt(reactionResult.emoji.name[0]) - 1)
+    const resultNum = parseInt(reactionResult.emoji.name[0])
+    if (reactionResult.emoji.name.slice(1) === '\uFE0F\u20E3' && resultNum <= results[i].length) {
+        await clearReactions(reactions)
+        interaction.editReply(await generateResponse(results, i, resultNum - 1))
+        return
     }
     switch (reactionResult.emoji.name) {
         case '\u2B05\uFE0F':
-            await menu.delete()
-            search(message, info, results, i - 1)
+            await clearReactions(reactions)
+            search(interaction, info, results, i - 1)
             break
         case '\u23EA':
-            await menu.delete()
-            search(message, info, results)
+            await clearReactions(reactions)
+            search(interaction, info, results)
             break
         case '\u27A1\uFE0F':
-            await menu.delete()
-            search(message, info, results, i + 1)
+            await clearReactions(reactions)
+            search(interaction, info, results, i + 1)
             break
         case '\u23E9':
-            await menu.delete()
-            search(message, info, results, results.length - 1)
+            await clearReactions(reactions)
+            search(interaction, info, results, results.length - 1)
             break
         default:
             menu.delete()
@@ -128,4 +141,4 @@ async function search(message: Message, info: KrenkoGuildInputManager, results: 
     }
 }
 
-module.exports = new BaseCommand([ 'search' ], search)
+module.exports = new BaseCommand(data, search)

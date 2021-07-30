@@ -1,10 +1,15 @@
-import { Message } from 'discord.js'
+import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
 
-function stop(message: Message, info: PotatoGuildInputManager): string {
-    info.voiceManager.reset()
-    return 'Success'
+const data: ApplicationCommandData = {
+    name: 'stop',
+    description: 'Disconnects Potato Bot from voice'
 }
 
-module.exports = new BaseCommand([ 'stop', 'disconnect' ], stop)
+function stop(interaction: CommandInteraction, info: PotatoGuildInputManager): InteractionReplyOptions {
+    info.voiceManager.reset()
+    return { content: 'Success' }
+}
+
+module.exports = new BaseCommand(data, stop)

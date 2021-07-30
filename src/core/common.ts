@@ -1,12 +1,36 @@
-import { Client, GuildMember, MessageEmbed, Snowflake, TextChannel, VoiceState } from 'discord.js'
+import { ApplicationCommandData, Client, Collection, GuildMember, MessageEmbed, MessageReaction, Snowflake, TextChannel, VoiceState } from 'discord.js'
 import { createCanvas, loadImage } from 'canvas'
 import * as axios from 'axios'
-import { readFileSync } from 'fs'
+import { readdirSync, readFileSync } from 'fs'
+import { BaseCommand } from './BaseCommand'
 
 export const home = 'D:/Bot Resources'
 export const root = './..'
 export const sysData = JSON.parse(readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
 export let userData = JSON.parse(readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
+
+export async function getCommands(client: Client, botName: string): Promise<Collection<string, BaseCommand>> {
+    const currentCommands = await client.application.commands.fetch()
+    const commands = new Collection<string, BaseCommand>()
+    for (const [ , command ] of currentCommands) {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        commands.set(command.name, <BaseCommand> require(`../bots/${botName}/commands/${command.name}.js`))
+    }
+    return commands
+}
+
+export async function deployCommands(client: Client, botName: string): Promise<void> {
+    const commandFiles = readdirSync(`./bots/${botName}/commands`).filter(file => file.endsWith('.js'))
+    const commandData: ApplicationCommandData[] = []
+
+    for (const file of commandFiles) {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const command = <BaseCommand> require(`../bots/${botName}/commands/${file}`)
+        commandData.push(command.data)
+    }
+
+    client.application.commands.set(commandData)
+}
 
 export async function celebrate(client: Client): Promise<TextChannel> {
     const guild = await client.guilds.fetch('619975185029922817')
@@ -15,7 +39,7 @@ export async function celebrate(client: Client): Promise<TextChannel> {
 }
 
 export function voiceKick(count: number, voiceState: VoiceState): void {
-    if (voiceState.channelID) {
+    if (voiceState.channelId) {
         voiceState.kick()
         return
     }
@@ -23,6 +47,12 @@ export function voiceKick(count: number, voiceState: VoiceState): void {
         return
     }
     setTimeout(() => voiceKick(count + 1, voiceState), 2000)
+}
+
+export async function clearReactions(reactions: MessageReaction[]): Promise<void> {
+    for (const reaction of reactions) {
+        reaction.remove()
+    }
 }
 
 export async function searchYoutube(parameter: string): Promise<string> {

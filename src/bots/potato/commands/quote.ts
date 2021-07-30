@@ -1,10 +1,16 @@
+import { ApplicationCommandData, InteractionReplyOptions } from 'discord.js'
 import { readFileSync } from 'fs'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { root } from '../../../core/common'
 
-function getQuotes(): string {
-    const quotes = readFileSync(`${root}/assets/static/quotes.txt`, 'utf8').split('}')
-    return quotes[Math.floor(Math.random() * quotes.length)]
+const data: ApplicationCommandData = {
+    name: 'quote',
+    description: 'Potato Bot will say a random funny quote'
 }
 
-module.exports = new BaseCommand([ 'quotes', 'quote' ], getQuotes)
+function quote(): InteractionReplyOptions {
+    const quotes = readFileSync(`${root}/assets/static/quotes.txt`, 'utf8').split('}')
+    return { content: quotes[Math.floor(Math.random() * quotes.length)], tts: true }
+}
+
+module.exports = new BaseCommand(data, quote)

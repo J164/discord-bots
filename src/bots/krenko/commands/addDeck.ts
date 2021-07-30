@@ -1,15 +1,23 @@
-import { Message } from 'discord.js'
+import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
+import { BaseGuildInputManager } from '../../../core/BaseGuildInputManager'
 import { Deck } from '../../../core/modules/Deck'
-import { KrenkoGuildInputManager } from '../KrenkoGuildInputManager'
 
-async function addDeck(message: Message, info: KrenkoGuildInputManager): Promise<string> {
-    if (message.content.split(' ').length < 2) {
-        return 'Please enter a deckstats URL!'
-    }
+const data: ApplicationCommandData = {
+    name: 'adddeck',
+    description: 'Add a deck to Krenko\'s database',
+    options: [ {
+        name: 'url',
+        description: 'Deckstats URL for the new deck',
+        type: 'STRING',
+        required: true
+    } ]
+}
+
+async function addDeck(interaction: CommandInteraction, info: BaseGuildInputManager): Promise<InteractionReplyOptions> {
     const deck = new Deck()
-    if (!await deck.getInfo(message.content.split(' ')[1])) {
-        return 'Something went wrong... (Make sure you are using a valid deck url from deckstats.net)'
+    if (!await deck.getInfo(<string> interaction.options.getString('url'))) {
+        return { content: 'Something went wrong... (Make sure you are using a valid deck url from deckstats.net)' }
     }
     try {
         info.database.insert('decks', new Map<string, string>([
@@ -19,9 +27,9 @@ async function addDeck(message: Message, info: KrenkoGuildInputManager): Promise
             [ 'api_url', deck.getApiUrl() ]
         ]))
     } catch {
-        return 'Failed! (Make sure the deck isn\'t a duplicate)'
+        return { content: 'Failed! (Make sure the deck isn\'t a duplicate)' }
     }
-    return 'Success!'
+    return { content: 'Success!' }
 }
 
-module.exports = new BaseCommand([ 'adddeck', 'add' ], addDeck)
+module.exports = new BaseCommand(data, addDeck)

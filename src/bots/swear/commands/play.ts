@@ -1,27 +1,44 @@
-import { Message } from 'discord.js'
+import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { userData, home } from '../../../core/common'
 import { SwearGuildInputManager } from '../SwearGuildInputManager'
 
-async function play(message: Message, info: SwearGuildInputManager): Promise<string> {
-    let songNum
-    const voiceChannel = message.member.voice.channel
-    if (!voiceChannel?.joinable) {
-        return 'info command can only be used while in a visable voice channel!'
-    }
-    try {
-        if (parseInt(message.content.split(' ')[1]) <= userData.swearSongs.length && parseInt(message.content.split(' ')[1]) > 0) {
-            songNum = parseInt(message.content.split(' ')[1]) - 1
-        } else {
-            songNum = Math.floor(Math.random() * userData.swearSongs.length)
+let implementName: any
+
+const data: ApplicationCommandData = {
+    name: 'play',
+    description: 'Play a swear song from Swear Bot\'s database',
+    options: [
+        {
+            name: 'number',
+            description: 'The song number',
+            type: 'INTEGER',
+            required: false
+        },
+        {
+            name: 'name',
+            description: 'The name of the song',
+            type: 'STRING',
+            required: false
         }
-    } catch {
+    ]
+}
+
+async function play(interaction: CommandInteraction, info: SwearGuildInputManager): Promise<InteractionReplyOptions> {
+    let songNum
+    const member = await interaction.guild.members.fetch(interaction.user)
+    const voiceChannel = member.voice.channel
+    if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
+        return { content: 'This command can only be used while in a visable voice channel!' }
+    }
+    if (interaction.options.getInteger('number') <= userData.swearSongs.length && interaction.options.getInteger('number') > 0) {
+            songNum = interaction.options.getInteger('number') - 1
+    } else {
         songNum = Math.floor(Math.random() * userData.swearSongs.length)
     }
     await info.voiceManager.connect(voiceChannel)
-    info.voiceManager.destroyDispatcher()
     info.voiceManager.createStream(`${home}/music_files/swear_songs/${userData.swearSongs[songNum]}`)
-    info.voiceManager.defineDispatcherFinish()
+    return { content: 'Now Playing!' }
 }
 
-module.exports = new BaseCommand([ 'play' ], play)
+module.exports = new BaseCommand(data, play)

@@ -1,12 +1,17 @@
-import { Message } from 'discord.js'
+import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
 
-function shuffle(message: Message, info: PotatoGuildInputManager): string {
-    if (info.voiceManager.shuffleQueue()) {
-        return 'The queue has been shuffled'
-    }
-    return 'There is nothing to shuffle!'
+const data: ApplicationCommandData = {
+    name: 'shuffle',
+    description: 'Shuffles the song queue'
 }
 
-module.exports = new BaseCommand([ 'shuffle' ], shuffle)
+function shuffle(interaction: CommandInteraction, info: PotatoGuildInputManager): InteractionReplyOptions {
+    if (info.voiceManager.shuffleQueue()) {
+        return { content: 'The queue has been shuffled' }
+    }
+    return { content: 'There is nothing to shuffle!' }
+}
+
+module.exports = new BaseCommand(data, shuffle)

@@ -1,4 +1,4 @@
-import { Message, TextChannel } from 'discord.js'
+import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
 import { existsSync, readFileSync } from 'fs'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { searchYoutube, home } from '../../../core/common'
@@ -6,40 +6,70 @@ import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
 
-async function play(message: Message, info: PotatoGuildInputManager): Promise<string> {
-    const voiceChannel = message.member.voice.channel
-    if (!voiceChannel?.joinable) {
-        return 'This command can only be used while in a visable voice channel!'
+const data: ApplicationCommandData = {
+    name: 'play',
+    description: 'Play a song from Youtube',
+    options: [
+        {
+            name: 'search',
+            description: 'Get the song from a URL or search terms',
+            type: 'SUB_COMMAND',
+            options: [ {
+                name: 'name',
+                description: 'The URL or title of the song',
+                type: 'STRING',
+                required: true
+            } ]
+        },
+        {
+            name: 'featured',
+            description: 'Get the song from the list of featured playlists',
+            type: 'SUB_COMMAND',
+            options: [ {
+                name: 'name',
+                description: 'The name of the playlist',
+                type: 'STRING',
+                required: true,
+                choices: [
+                    {
+                        name: 'epic',
+                        value: 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY4lfQYkEb60nitxrJMpN5a2'
+                    },
+                    {
+                        name: 'magic',
+                        value: 'https://www.youtube.com/playlist?list=PLt3HR7cu4NMNUoQx1q5ullRMW-ZwosuNl'
+                    },
+                    {
+                        name: 'undertale',
+                        value: 'https://www.youtube.com/playlist?list=PLLSgIflCqVYMBjn63DEn0b6-sqKZ9xh_x'
+                    },
+                    {
+                        name: 'fun',
+                        value: 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY77NZ6oE4PbkFarsOIyQcGD'
+                    }
+                ]
+            } ]
+        }
+    ]
+}
+
+async function play(interaction: CommandInteraction, info: PotatoGuildInputManager): Promise<InteractionReplyOptions> {
+    const member = await interaction.guild.members.fetch(interaction.user)
+    const voiceChannel = member.voice.channel
+    if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
+        return { content: 'This command can only be used while in a visable voice channel!' }
     }
-    if (message.content.split(' ').length < 2) {
-        return 'Please enter a video url or search terms when using this command'
-    }
-    let url = message.content.split(' ')[1]
-    switch (url.toLowerCase()) {
-        case 'epic':
-            url = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY4lfQYkEb60nitxrJMpN5a2'
-            break
-        case 'magic':
-            url = 'https://www.youtube.com/playlist?list=PLt3HR7cu4NMNUoQx1q5ullRMW-ZwosuNl'
-            break
-        case 'undertale':
-            url = 'https://www.youtube.com/playlist?list=PLLSgIflCqVYMBjn63DEn0b6-sqKZ9xh_x'
-            break
-        case 'fun':
-            url = 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY77NZ6oE4PbkFarsOIyQcGD'
-            break
-        default:
-            break
-    }
-    message.channel.send('Boiling potatoes...')
-    if (!url.match(/(\.|^)youtube\.com\//)) {
-        const arg = message.content.split(' ')
-        arg.shift()
-        const term = await searchYoutube(arg.join(' '))
+    const arg = <string> interaction.options.getString('name')
+    interaction.editReply({ content: 'Boiling potatoes...' })
+    let url: string
+    if (!arg.match(/(\.|^)youtube\.com\//)) {
+        const term = await searchYoutube(arg)
         if (!term) {
-            return `No results found for '${arg.join(' ')}'`
+            return { content: `No results found for "${arg}"` }
         }
         url = `https://www.youtube.com/watch?v=${term}`
+    } else {
+        url = arg
     }
     let output
     if (url.split(/[?&]+/)[1].startsWith('list') || !existsSync(`${home}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`)) {
@@ -58,27 +88,29 @@ async function play(message: Message, info: PotatoGuildInputManager): Promise<st
             })
         } catch (err) {
             console.log(err)
-            return 'Please enter a valid url'
+            return { content: 'Please enter a valid url' }
         }
     } else {
         output = JSON.parse(readFileSync(`${home}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`, { encoding: 'utf8' }))
     }
     if ('entries' in output) {
         for (const entry of output.entries) {
-            let data
+            let songData
             if (existsSync(`${home}/music_files/playback/${entry.id}.json`)) {
-                data = JSON.parse(readFileSync(`${home}/music_files/playback/${entry.id}.json`, { encoding: 'utf8' }))
+                songData = JSON.parse(readFileSync(`${home}/music_files/playback/${entry.id}.json`, { encoding: 'utf8' }))
             } else {
-                data = entry
+                songData = entry
             }
-            info.voiceManager.addToQueue(data.duration, `https://www.youtube.com/watch?v=${data.id}`, data.title, data.id, data?.thumbnail)
+            info.voiceManager.addToQueue(songData.duration, `https://www.youtube.com/watch?v=${songData.id}`, songData.title, songData.id, songData?.thumbnail)
         }
     } else {
         info.voiceManager.addToQueue(output.duration, output.webpage_url, output.title, output.id, output?.thumbnail)
     }
-    info.voiceManager.bindChannel(<TextChannel> message.channel)
-    info.voiceManager.connect(voiceChannel)
-    return 'Added to queue!'
+    info.voiceManager.bindChannel(<TextChannel> interaction.channel)
+    if (!info.voiceManager.connect(voiceChannel)) {
+        return { content: 'Something went wrong when connecting to voice' }
+    }
+    return { content: 'Added to queue!' }
 }
 
-module.exports = new BaseCommand([ 'play' ], play)
+module.exports = new BaseCommand(data, play)
