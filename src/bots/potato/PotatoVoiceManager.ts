@@ -49,8 +49,8 @@ export class QueueItem extends EventEmitter {
             ignoreErrors: true,
             geoBypass: true,
             printJson: true,
-            format: 'bestaudio',
-            output: `${home}/music_files/playback/%(id)s.mp3`
+            format: 'bestaudio[ext=webm+acodec=opus+asr=48000]',
+            output: `${home}/music_files/playback/%(id)s.%(ext)s`
         })
         this.thumbnail = output.thumbnails[0].url
         const metaData = JSON.stringify({
@@ -131,7 +131,7 @@ export class PotatoVoiceManager extends VoiceManager {
     }
 
     private async playSong(song: QueueItem): Promise<void> {
-        if (!await this.createStream(`${home}/music_files/playback/${song.id}.mp3`)) {
+        if (!await this.createStream(`${home}/music_files/playback/${song.id}.webm`)) {
             this.boundChannel.send('Something went wrong while preparing song')
             return
         }
@@ -143,7 +143,7 @@ export class PotatoVoiceManager extends VoiceManager {
             song.looping = true
         }
         this.player.on('stateChange', (oldState, newState) => {
-            if (newState.status !== AudioPlayerStatus.Idle || oldState.status !== AudioPlayerStatus.Idle) {
+            if (newState.status !== AudioPlayerStatus.Idle || oldState.status === AudioPlayerStatus.Idle) {
                 return
             }
             if (this.queueLoop) {
@@ -162,10 +162,10 @@ export class PotatoVoiceManager extends VoiceManager {
         }
         this.downloading = true
         const currentItem = this.downloadQueue.shift()
-        await currentItem.download()
         currentItem.once('downloaded', () => {
             this.download()
         })
+        currentItem.download()
     }
 
     public loopSong(): string {

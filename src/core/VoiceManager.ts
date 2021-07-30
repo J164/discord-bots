@@ -1,5 +1,6 @@
-import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState, joinVoiceChannel, PlayerSubscription, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice'
+import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, joinVoiceChannel, PlayerSubscription, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice'
 import { VoiceChannel } from 'discord.js'
+import { createReadStream } from 'fs'
 
 export class VoiceManager {
 
@@ -37,7 +38,8 @@ export class VoiceManager {
     }
 
     public async createStream(path: string): Promise<boolean> {
-        this.player.play(createAudioResource(path))
+        const { stream, type } = await demuxProbe(createReadStream(path))
+        this.player.play(createAudioResource(stream, { inputType: type }))
         try {
             await entersState(this.player, AudioPlayerStatus.Playing, 30e3)
         } catch (err) {
