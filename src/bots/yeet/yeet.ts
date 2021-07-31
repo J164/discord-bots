@@ -1,13 +1,12 @@
 import { Client, ClientOptions, Collection, Intents } from 'discord.js'
 import { BaseCommand } from '../../core/BaseCommand'
-import { celebrate, deployCommands, getCommands, sysData } from '../../core/common'
-import { DatabaseManager } from '../../core/DatabaseManager'
+import { celebrate, deployCommands, getCommands } from '../../core/commonFunctions'
+import { config } from '../../core/constants'
 import { YeetGuildInputManager } from './YeetGuildInputManager'
 
 const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ] }
 let client = new Client(clientOptions)
 let commands: Collection<string, BaseCommand>
-const database = new DatabaseManager()
 const guildStatus = new Map<string, YeetGuildInputManager>()
 
 function defineEvents() {
@@ -18,18 +17,18 @@ function defineEvents() {
         getCommands(client, 'yeet')
             .then(result => { commands = result })
 
-        client.user.setActivity(sysData.yeetStatus[Math.floor(Math.random() * sysData.yeetStatus.length)])
+        client.user.setActivity(config.yeetStatus[Math.floor(Math.random() * config.yeetStatus.length)])
         setInterval(() => {
             getCommands(client, 'yeet')
                 .then(result => { commands = result })
 
-            client.user.setActivity(sysData.yeetStatus[Math.floor(Math.random() * sysData.yeetStatus.length)])
+            client.user.setActivity(config.yeetStatus[Math.floor(Math.random() * config.yeetStatus.length)])
         }, 60000)
     })
 
     client.on('messageCreate', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new YeetGuildInputManager(message.guild, database, commands))
+            guildStatus.set(message.guild.id, new YeetGuildInputManager(message.guild, commands))
         }
 
         guildStatus.get(message.guild.id).parseGenericMessage(message)
@@ -41,7 +40,7 @@ function defineEvents() {
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new YeetGuildInputManager(interaction.guild, database, commands))
+            guildStatus.set(interaction.guild.id, new YeetGuildInputManager(interaction.guild, commands))
         }
 
         guildStatus.get(interaction.guild.id).parseCommand(interaction)
@@ -64,7 +63,7 @@ process.on('message', arg => {
         case 'start':
             client = new Client(clientOptions)
             defineEvents()
-            client.login(sysData.yeetKey)
+            client.login(config.yeetKey)
             break
         case 'celebrate':
             celebrate(client).then(channel => {

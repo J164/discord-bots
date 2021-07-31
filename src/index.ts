@@ -4,9 +4,6 @@ process.on('uncaughtException', err => {
 
 import { BotSubprocess } from './core/BotSubprocess'
 import { createInterface } from 'readline'
-import { refreshData } from './core/common'
-
-setInterval(() => { refreshData() }, 60000)
 
 const bots = new Map<string, BotSubprocess>([
     [ 'potato', new BotSubprocess('./bots/potato/potato.js', 'Potato Bot', 'potato') ],

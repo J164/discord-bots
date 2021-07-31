@@ -1,31 +1,8 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, MessageAttachment, MessageReaction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { BaseGuildInputManager } from '../../../core/BaseGuildInputManager'
-import { clearReactions, genericEmbedResponse, makeGetRequest, mergeImages } from '../../../core/common'
-
-interface Card {
-    name: string,
-    uri: string,
-    // eslint-disable-next-line camelcase
-    image_uris?: {
-        large: string
-    }
-    // eslint-disable-next-line camelcase
-    card_faces?: {
-        // eslint-disable-next-line camelcase
-        image_uris: {
-            large: string
-        }
-    }[]
-    prices: {
-        usd: string
-    }
-}
-
-interface ScryfallResponse {
-    status?: string
-    data: Card[]
-}
+import { clearReactions, genericEmbedResponse, makeGetRequest, mergeImages } from '../../../core/commonFunctions'
+import { ScryfallResponse, MagicCard } from '../../../core/interfaces'
+import { KrenkoGuildInputManager } from '../KrenkoGuildInputManager'
 
 const data: ApplicationCommandData = {
     name: 'search',
@@ -38,8 +15,8 @@ const data: ApplicationCommandData = {
     } ]
 }
 
-function formatResponse(response: ScryfallResponse): Card[][] {
-    const cards: Card[][] = []
+function formatResponse(response: ScryfallResponse): MagicCard[][] {
+    const cards: MagicCard[][] = []
     for (let r = 0; r < Math.ceil(response.data.length / 5); r++) {
         cards.push([])
         for (let i = 0; i < 5; i++) {
@@ -52,7 +29,7 @@ function formatResponse(response: ScryfallResponse): Card[][] {
     return cards
 }
 
-function generateEmojiList(results: Card[][], i: number): string[] {
+function generateEmojiList(results: MagicCard[][], i: number): string[] {
     const emojiList = []
     for (let r = 1; r <= results[i].length; r++) {
         emojiList.push(`${r}\uFE0F\u20E3`)
@@ -69,7 +46,7 @@ function generateEmojiList(results: Card[][], i: number): string[] {
     return emojiList
 }
 
-async function generateResponse(results: Card[][], r: number, i: number): Promise<InteractionReplyOptions> {
+async function generateResponse(results: MagicCard[][], r: number, i: number): Promise<InteractionReplyOptions> {
     const card = results[r][i]
     const embed = genericEmbedResponse(card.name)
     let reply: InteractionReplyOptions
@@ -84,7 +61,7 @@ async function generateResponse(results: Card[][], r: number, i: number): Promis
     return reply
 }
 
-async function search(interaction: CommandInteraction, info: BaseGuildInputManager, results: Card[][] = null, i = 0): Promise<InteractionReplyOptions> {
+async function search(interaction: CommandInteraction, info: KrenkoGuildInputManager, results: MagicCard[][] = null, i = 0): Promise<InteractionReplyOptions> {
     if (!results) {
         const searchTerm = interaction.options.getString('query')
         try {

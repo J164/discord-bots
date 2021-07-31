@@ -1,13 +1,9 @@
 import { ApplicationCommandData, Client, Collection, GuildMember, MessageEmbed, MessageReaction, Snowflake, TextChannel, VoiceState } from 'discord.js'
 import { createCanvas, loadImage } from 'canvas'
 import * as axios from 'axios'
-import { readdirSync, readFileSync } from 'fs'
+import { readdirSync } from 'fs'
 import { BaseCommand } from './BaseCommand'
-
-export const home = 'D:/Bot Resources'
-export const root = './..'
-export const sysData = JSON.parse(readFileSync(`${root}/assets/static/static.json`, { encoding: 'utf8' }))
-export let userData = JSON.parse(readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
+import { config } from './constants'
 
 export async function getCommands(client: Client, botName: string): Promise<Collection<string, BaseCommand>> {
     const currentCommands = await client.application.commands.fetch()
@@ -56,7 +52,7 @@ export async function clearReactions(reactions: MessageReaction[]): Promise<void
 }
 
 export async function searchYoutube(parameter: string): Promise<string> {
-    const searchResult = await axios.default.get(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&order=relevance&q=${encodeURIComponent(parameter)}&type=video&videoDefinition=high&key=${sysData.googleKey}`)
+    const searchResult = await axios.default.get(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&order=relevance&q=${encodeURIComponent(parameter)}&type=video&videoDefinition=high&key=${config.googleKey}`)
     if (searchResult.data.pageInfo.totalResults < 1) {
         return null
     }
@@ -88,8 +84,4 @@ export async function makeGetRequest(path: string): Promise<unknown> {
 export async function getUser(guildID: Snowflake, userID: Snowflake, client: Client): Promise<GuildMember> {
     const guild = await client.guilds.fetch(guildID)
     return guild.members.fetch({ user: userID })
-}
-
-export function refreshData(): void {
-    userData = JSON.parse(readFileSync(`${home}/sys_files/bots.json`, { encoding: 'utf8' }))
 }

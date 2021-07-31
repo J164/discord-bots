@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, MessageReaction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { clearReactions, genericEmbedResponse } from '../../../core/common'
+import { clearReactions, genericEmbedResponse } from '../../../core/commonFunctions'
 import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
 import { QueueItem } from '../PotatoVoiceManager'
 

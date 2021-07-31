@@ -1,23 +1,16 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, MessageReaction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { BaseGuildInputManager } from '../../../core/BaseGuildInputManager'
-import { clearReactions } from '../../../core/common'
+import { clearReactions } from '../../../core/commonFunctions'
+import { DeckInfo } from '../../../core/interfaces'
 import { Deck } from '../../../core/modules/Deck'
-
-interface deckInfo {
-    name: string,
-    image: string,
-    url: string,
-    // eslint-disable-next-line camelcase
-    api_url: string
-}
+import { KrenkoGuildInputManager } from '../KrenkoGuildInputManager'
 
 const data: ApplicationCommandData = {
     name: 'getdeck',
     description: 'Get a deck from Krenko\'s database'
 }
 
-async function parseDeck(interaction: CommandInteraction, info: BaseGuildInputManager, decks: deckInfo[], i = 0): Promise<InteractionReplyOptions> {
+async function parseDeck(interaction: CommandInteraction, info: KrenkoGuildInputManager, decks: DeckInfo[], i = 0): Promise<InteractionReplyOptions> {
     const deck = new Deck()
     deck.fill(decks[i])
     const rawMenu = await interaction.editReply({ embeds: [ deck.getPreview().setFooter(`${i + 1}/${decks.length}`) ] })
@@ -69,9 +62,9 @@ async function parseDeck(interaction: CommandInteraction, info: BaseGuildInputMa
     }
 }
 
-async function getDeck(interaction: CommandInteraction, info: BaseGuildInputManager): Promise<void> {
+function getDeck(interaction: CommandInteraction, info: KrenkoGuildInputManager): void {
     info.database.select('decks', results => {
-        parseDeck(interaction, info, <deckInfo[]> results)
+        parseDeck(interaction, info, <DeckInfo[]> results)
     })
 }
 

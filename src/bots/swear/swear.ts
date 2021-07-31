@@ -1,6 +1,7 @@
 import { Client, ClientOptions, Collection, Intents } from 'discord.js'
 import { BaseCommand } from '../../core/BaseCommand'
-import { celebrate, deployCommands, getCommands, sysData } from '../../core/common'
+import { celebrate, deployCommands, getCommands } from '../../core/commonFunctions'
+import { config } from '../../core/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { SwearGuildInputManager } from './SwearGuildInputManager'
 
@@ -21,13 +22,13 @@ function defineEvents() {
         console.log('We have logged in as ' + client.user.tag)
         process.send('start')
 
-        client.user.setActivity(sysData.swearStatus[Math.floor(Math.random() * sysData.swearStatus.length)])
+        client.user.setActivity(config.swearStatus[Math.floor(Math.random() * config.swearStatus.length)])
 
         getCommands(client, 'swear')
             .then(result => { commands = result })
 
         setInterval(() => {
-            client.user.setActivity(sysData.swearStatus[Math.floor(Math.random() * sysData.swearStatus.length)])
+            client.user.setActivity(config.swearStatus[Math.floor(Math.random() * config.swearStatus.length)])
 
             getCommands(client, 'swear')
                 .then(result => { commands = result })
@@ -40,7 +41,7 @@ function defineEvents() {
 
     client.on('messageCreate', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new SwearGuildInputManager(message.guild, database, commands))
+            guildStatus.set(message.guild.id, new SwearGuildInputManager(message.guild, commands, database))
         }
 
         guildStatus.get(message.guild.id).parseGenericMessage(message)
@@ -52,7 +53,7 @@ function defineEvents() {
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new SwearGuildInputManager(interaction.guild, database, commands))
+            guildStatus.set(interaction.guild.id, new SwearGuildInputManager(interaction.guild, commands, database))
         }
 
         guildStatus.get(interaction.guild.id).parseCommand(interaction)
@@ -75,7 +76,7 @@ process.on('message', arg => {
         case 'start':
             client = new Client(clientOptions)
             defineEvents()
-            client.login(sysData.swearKey)
+            client.login(config.swearKey)
             break
         case 'celebrate':
             celebrate(client).then(channel => {

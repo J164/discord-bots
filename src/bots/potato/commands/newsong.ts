@@ -1,14 +1,10 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { writeFileSync } from 'fs'
+import { ApplicationCommandData, CommandInteraction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { home, refreshData, userData } from '../../../core/common'
+import { home } from '../../../core/constants'
+import { SwearSongInfo } from '../../../core/interfaces'
 import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
-
-let feature: any
-
-//add custom name feature
 
 const data: ApplicationCommandData = {
     name: 'newsong',
@@ -29,9 +25,16 @@ const data: ApplicationCommandData = {
     ]
 }
 
-async function newSong(interaction: CommandInteraction, info: PotatoGuildInputManager): Promise<InteractionReplyOptions> {
+async function newSong(interaction: CommandInteraction, info: PotatoGuildInputManager, songs: SwearSongInfo[]): Promise<void> {
     if (interaction.member !== info.users.get('admin') && interaction.member !== info.users.get('swear')) {
-        return { content: 'You don\'t have permission to use this command!' }
+        interaction.editReply({ content: 'You don\'t have permission to use this command!' })
+        return
+    }
+    for (const song of songs) {
+        if (song.name === interaction.options.getString('name')) {
+            interaction.editReply({ content: 'Please enter a unique name' })
+            return
+        }
     }
     interaction.editReply({ content: 'Getting information on new song...' })
     const output = await youtubedl(interaction.options.getString('url'), {
@@ -44,13 +47,16 @@ async function newSong(interaction: CommandInteraction, info: PotatoGuildInputMa
         ignoreErrors: true
     })
     if (!output) {
-        return { content: 'It appears the video was unavailable' }
+        interaction.editReply({ content: 'It appears the video was unavailable' })
+        return
     }
     if ('entries' in output) {
-        return { content: 'Please only enter a single video at a time' }
+        interaction.editReply({ content: 'Please only enter a single video at a time' })
+        return
     }
     if (output.duration > 1200) {
-        return { content: 'The video length limit is 20 minutes! Aborting...' }
+        interaction.editReply({ content: 'The video length limit is 20 minutes! Aborting...' })
+        return
     }
     interaction.editReply({ content: 'Downloading...' })
     youtubedl(interaction.options.getString('url'), {
@@ -59,13 +65,19 @@ async function newSong(interaction: CommandInteraction, info: PotatoGuildInputMa
         noCheckCertificate: true,
         preferFreeFormats: true,
         format: 'bestaudio',
-        output: `${home}/music_files/swear_songs/song${userData.swearSongs.length + 1}.mp3`
+        output: `${home}/music_files/swear_songs/${interaction.options.getString('name')}.mp3`
     })
-    refreshData()
-    userData.swearSongs.push(`song${userData.swearSongs.length + 1}.mp3`)
-    const jsonString = JSON.stringify(userData)
-    writeFileSync(`${home}/sys_files/bots.json`, jsonString)
-    return { content: 'Success!' }
+    const song = new Map<string, string>([
+        [ 'name', interaction.options.getString('name') ]
+    ])
+    info.database.insert('swear_songs', song)
+    interaction.editReply({ content: 'Success!' })
 }
 
-module.exports = new BaseCommand(data, newSong)
+function getSongs(interaction: CommandInteraction, info: PotatoGuildInputManager): void {
+    info.database.select('swear_songs', results => {
+        newSong(interaction, info, <SwearSongInfo[]> results)
+    })
+}
+
+module.exports = new BaseCommand(data, getSongs)

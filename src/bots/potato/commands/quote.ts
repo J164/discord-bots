@@ -1,7 +1,7 @@
 import { ApplicationCommandData, InteractionReplyOptions } from 'discord.js'
 import { readFileSync } from 'fs'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { root } from '../../../core/common'
+import { root } from '../../../core/constants'
 
 const data: ApplicationCommandData = {
     name: 'quote',
@@ -9,7 +9,7 @@ const data: ApplicationCommandData = {
 }
 
 function quote(): InteractionReplyOptions {
-    const quotes = readFileSync(`${root}/assets/static/quotes.txt`, 'utf8').split('}')
+    const quotes = readFileSync(`${root}/assets/data/quotes.txt`, 'utf8').split('}')
     return { content: quotes[Math.floor(Math.random() * quotes.length)], tts: true }
 }
 

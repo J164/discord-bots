@@ -1,6 +1,6 @@
 import { ApplicationCommandData, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { genericEmbedResponse } from '../../../core/common'
+import { genericEmbedResponse } from '../../../core/commonFunctions'
 
 const data: ApplicationCommandData = {
     name: 'flip',

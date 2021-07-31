@@ -1,17 +1,20 @@
 import { Collection, Guild, Message } from 'discord.js'
 import { BaseCommand } from '../../core/BaseCommand'
 import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
-import { sysData, voiceKick } from '../../core/common'
+import { voiceKick } from '../../core/commonFunctions'
+import { config } from '../../core/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { PotatoVoiceManager } from './PotatoVoiceManager'
 
 export class PotatoGuildInputManager extends BaseGuildInputManager {
 
     public readonly voiceManager: PotatoVoiceManager
+    public readonly database: DatabaseManager
 
-    public constructor(guild: Guild, database: DatabaseManager, commands: Collection<string, BaseCommand>) {
-        super(guild, database, commands)
+    public constructor(guild: Guild, commands: Collection<string, BaseCommand>, database: DatabaseManager) {
+        super(guild, commands)
         this.voiceManager = new PotatoVoiceManager()
+        this.database = database
     }
 
     public parseGenericMessage(message: Message): void {
@@ -33,13 +36,13 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
         if (input.match(/(\W|^)potato(s|es)?(\W|$)/)) {
             mentionPotato = true
         }
-        for (const swear of sysData.blacklist.swears) {
+        for (const swear of config.blacklist.swears) {
             if (input.match(new RegExp(`(\\W|^)${swear}(\\W|$)`))) {
                 mentionSwear = true
                 break
             }
         }
-        for (const insult of sysData.blacklist.insults) {
+        for (const insult of config.blacklist.insults) {
             if (input.match(new RegExp(`(\\W|^)${insult}(\\W|$)`))) {
                 mentionInsult = true
                 break

@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { genericEmbedResponse } from '../../../core/common'
+import { genericEmbedResponse } from '../../../core/commonFunctions'
 import { Euchre } from '../../../core/modules/games/Euchre'
 
 const data: ApplicationCommandData = {

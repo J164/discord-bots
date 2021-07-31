@@ -1,31 +1,15 @@
 import { MessageAttachment, MessageEmbed, MessageReaction, User } from 'discord.js'
 import * as axios from 'axios'
-import { genericEmbedResponse, mergeImages, root } from '../../common'
-
-interface Team {
-    tricks: number;
-    score: number;
-}
-
-interface Card {
-    code: string;
-    suit: string;
-    value: string;
-}
-
-interface Player {
-    id: number;
-    user: User;
-    hand: Card[];
-    team: Team;
-}
+import { genericEmbedResponse, mergeImages } from '../../commonFunctions'
+import { Card, EuchrePlayer, EuchreTeam } from '../../interfaces'
+import { root } from '../../constants'
 
 export class Euchre {
 
-    private team1: Team
-    private team2: Team
+    private team1: EuchreTeam
+    private team2: EuchreTeam
     private gameState: { top: Card; inPlay: Card[]; trump: string }
-    private players: Player[]
+    private players: EuchrePlayer[]
 
     public constructor(players: User[]) {
         this.team1 = {
@@ -104,7 +88,7 @@ export class Euchre {
             await this.sendHand(player)
         }
         await this.sendCards( [ this.gameState.top ], 'Top of Stack:')
-        const playerUsers: Player[] = []
+        const playerUsers: EuchrePlayer[] = []
         for (const player of this.players) {
             playerUsers.push(player)
         }
@@ -173,7 +157,7 @@ export class Euchre {
         }
     }
 
-    private async tricks(activePlayers: Player[], leader: Team, solo: boolean): Promise<void> {
+    private async tricks(activePlayers: EuchrePlayer[], leader: EuchreTeam, solo: boolean): Promise<void> {
         for (let r = 0; r < 5; r++) {
             const table: Card[] = []
             let lead: string
@@ -211,7 +195,7 @@ export class Euchre {
                 await this.sendHand(player)
                 await this.sendCards(table, 'Table:')
             }
-            let leadingPlayer: Player
+            let leadingPlayer: EuchrePlayer
             let leadingScore = 0
             for (const [ i, card ] of table.entries()) {
                 if (this.realSuit(card) === this.gameState.trump) {
@@ -314,7 +298,7 @@ export class Euchre {
                 await channel.send({ embeds: [ tricksWon ] })
             }
         }
-        let winningTeam: Team
+        let winningTeam: EuchreTeam
         if (this.team1.tricks > this.team2.tricks) {
             winningTeam = this.team1
         } else {
@@ -402,7 +386,7 @@ export class Euchre {
         }
     }
 
-    private async sendHand(player: Player): Promise<void> {
+    private async sendHand(player: EuchrePlayer): Promise<void> {
         const filePaths: string[] = []
         const hand = genericEmbedResponse('^ Your Hand:')
         for (const card of player.hand) {

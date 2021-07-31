@@ -1,28 +1,18 @@
-import { GuildMember, MessageEmbed, Snowflake } from 'discord.js'
-import { genericEmbedResponse } from '../../common'
-
-interface Player {
-    name: string,
-    life: number,
-    poison: number
-    isAlive: boolean
-    commander?: {
-        name: string,
-        timesCast: number,
-    }
-}
+import { MessageEmbed, Snowflake, User } from 'discord.js'
+import { genericEmbedResponse } from '../../commonFunctions'
+import { MagicPlayer } from '../../interfaces'
 
 export class BaseMagicGame {
 
-    private readonly playerData: Map<Snowflake, Player>
-    private numAlive: number
+    protected readonly playerData: Map<Snowflake, MagicPlayer>
+    protected numAlive: number
 
-    public constructor(playerList: GuildMember[]) {
+    public constructor(playerList: User[]) {
         this.numAlive = playerList.length
-        this.playerData = new Map<Snowflake, Player>()
+        this.playerData = new Map<Snowflake, MagicPlayer>()
         for (const player of playerList) {
             this.playerData.set(player.id, {
-                name: player.nickname,
+                name: player.username,
                 life: 20,
                 poison: 0,
                 isAlive: true

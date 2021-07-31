@@ -1,8 +1,9 @@
 import { Client, ClientOptions, Collection, Intents } from 'discord.js'
 import { BaseCommand } from '../../core/BaseCommand'
-import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
-import { celebrate, deployCommands, getCommands, sysData } from '../../core/common'
+import { celebrate, deployCommands, getCommands } from '../../core/commonFunctions'
+import { config } from '../../core/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
+import { KrenkoGuildInputManager } from './KrenkoGuildInputManager'
 
 process.on('uncaughtException', err => {
     if (err.message !== 'Unknown interaction') {
@@ -14,20 +15,20 @@ const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.
 let client = new Client(clientOptions)
 let commands: Collection<string, BaseCommand>
 const database = new DatabaseManager()
-const guildStatus = new Map<string, BaseGuildInputManager>()
+const guildStatus = new Map<string, KrenkoGuildInputManager>()
 
 function defineEvents() {
     client.on('ready', () => {
         console.log(`We have logged in as ${client.user.tag}`)
         process.send('start')
 
-        client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)])
+        client.user.setActivity(config.krenkoStatus[Math.floor(Math.random() * config.krenkoStatus.length)])
 
         getCommands(client, 'krenko')
             .then(result => { commands = result })
 
         setInterval(() => {
-            client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)])
+            client.user.setActivity(config.krenkoStatus[Math.floor(Math.random() * config.krenkoStatus.length)])
 
             getCommands(client, 'krenko')
                 .then(result => { commands = result })
@@ -40,7 +41,7 @@ function defineEvents() {
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new BaseGuildInputManager(interaction.guild, database, commands))
+            guildStatus.set(interaction.guild.id, new KrenkoGuildInputManager(interaction.guild, commands, database))
         }
 
         guildStatus.get(interaction.guild.id).parseCommand(interaction)
@@ -63,7 +64,7 @@ process.on('message', function (arg) {
         case 'start':
             client = new Client(clientOptions)
             defineEvents()
-            client.login(sysData.krenkoKey)
+            client.login(config.krenkoKey)
             break
         case 'celebrate':
             celebrate(client).then(channel => {

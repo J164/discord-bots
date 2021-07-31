@@ -1,12 +1,8 @@
 import { ApplicationCommandData, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { makeGetRequest, sysData } from '../../../core/common'
-
-interface tenorResponse {
-    results: {
-        itemurl: string
-    }[]
-}
+import { makeGetRequest } from '../../../core/commonFunctions'
+import { config } from '../../../core/constants'
+import { TenorResponse } from '../../../core/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'gif',
@@ -14,7 +10,7 @@ const data: ApplicationCommandData = {
 }
 
 async function gif(): Promise<InteractionReplyOptions> {
-    const gifs = <tenorResponse> await makeGetRequest(`https://g.tenor.com/v1/search?q=yeet&key=${sysData.tenorKey}&limit=50&contentfilter=medium`)
+    const gifs = <TenorResponse> await makeGetRequest(`https://g.tenor.com/v1/search?q=yeet&key=${config.tenorKey}&limit=50&contentfilter=medium`)
     return { content: gifs.results[Math.floor(Math.random() * gifs.results.length)].itemurl }
 }
 
