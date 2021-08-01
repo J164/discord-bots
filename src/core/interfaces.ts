@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 
-import { Snowflake, User } from 'discord.js'
+import { User } from 'discord.js'
 
 export interface BotConfig {
     potatoKey: string,
@@ -104,14 +104,9 @@ export interface DeckstatsListResponse {
 export interface MagicPlayer {
     name: string,
     life: number,
-    poison: number
-    isAlive: boolean
-}
-
-export interface Commander {
-    name: string,
-    image: string,
-    opponents: Map<Snowflake, number>
+    poison: number,
+    isAlive: boolean,
+    commanderDamage?: Map<string, number>
 }
 
 export interface EuchreTeam {

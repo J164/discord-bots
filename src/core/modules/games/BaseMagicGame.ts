@@ -64,7 +64,7 @@ export class BaseMagicGame {
         }
     }
 
-    private checkStatus(player: Snowflake): MessageEmbed {
+    protected checkStatus(player: Snowflake): MessageEmbed {
         if (this.playerData.get(player).life < 1 || this.playerData.get(player).poison >= 10) {
             return this.eliminate(player)
         }

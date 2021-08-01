@@ -1,4 +1,4 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, Snowflake, User } from 'discord.js'
+import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { BaseMagicGame } from '../../../core/modules/games/BaseMagicGame'
 import { CommanderMagicGame } from '../../../core/modules/games/CommanderMagicGame'
@@ -109,12 +109,14 @@ function play(interaction: CommandInteraction, info: KrenkoGuildInputManager): I
     if (interaction.options.getSubcommand() === 'basic') {
         info.game = new BaseMagicGame(playerlist)
     } else {
-        const commanders = new Map<Snowflake, string[]>()
+        const commanders: string[] = []
         for (let i = 0; i < playerlist.length; i++) {
             if (!interaction.options.getString(`commander${i + 1}`)) {
                 return { content: 'Please enter a commander for each player' }
             }
-            commanders.set(playerlist[i].id, interaction.options.getString(`commander${i + 1}`).split('.'))
+            for (const commander of interaction.options.getString(`commander${i + 1}`).split('.')) {
+                commanders.push(commander)
+            }
         }
         info.game = new CommanderMagicGame(playerlist, commanders)
     }

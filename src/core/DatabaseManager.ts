@@ -7,8 +7,7 @@ export class DatabaseManager {
 
     public constructor() {
         this.connect()
-        this.connection.on('error', err => {
-            console.log(err)
+        this.connection.on('error', () => {
             this.connection.end()
             this.connect()
         })
