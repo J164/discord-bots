@@ -38,7 +38,7 @@ export class VoiceManager {
     }
 
     public async createStream(path: string): Promise<boolean> {
-        const { stream, type } = await demuxProbe(createReadStream(path))
+        const { stream, type } = await demuxProbe(createReadStream(path, { highWaterMark: 250 }))
         this.player.play(createAudioResource(stream, { inputType: type }))
         try {
             await entersState(this.player, AudioPlayerStatus.Playing, 30e3)
@@ -74,6 +74,7 @@ export class VoiceManager {
     public reset(): void {
         this.voiceConnection?.destroy()
         this.voiceConnection = null
+        this.player?.removeAllListeners()
         this.player?.stop(true)
         this.player = null
         this.subscription.unsubscribe()

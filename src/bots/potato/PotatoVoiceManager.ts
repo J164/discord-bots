@@ -143,7 +143,7 @@ export class PotatoVoiceManager extends VoiceManager {
         if (this.songLoop) {
             song.looping = true
         }
-        this.player.on('stateChange', (oldState, newState) => {
+        this.player.once('stateChange', (oldState, newState) => {
             if (newState.status !== AudioPlayerStatus.Idle || oldState.status === AudioPlayerStatus.Idle) {
                 return
             }
