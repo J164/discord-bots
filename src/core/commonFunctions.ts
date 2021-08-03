@@ -1,4 +1,4 @@
-import { ApplicationCommandData, Client, Collection, GuildMember, MessageEmbed, MessageReaction, Snowflake, TextChannel, VoiceState } from 'discord.js'
+import { ApplicationCommandData, Client, Collection, GuildMember, MessageEmbed, Snowflake, TextChannel, VoiceState } from 'discord.js'
 import { createCanvas, loadImage } from 'canvas'
 import * as axios from 'axios'
 import { readdirSync } from 'fs'
@@ -43,12 +43,6 @@ export function voiceKick(count: number, voiceState: VoiceState): void {
         return
     }
     setTimeout(() => voiceKick(count + 1, voiceState), 2000)
-}
-
-export async function clearReactions(reactions: MessageReaction[]): Promise<void> {
-    for (const reaction of reactions) {
-        reaction.remove()
-    }
 }
 
 export async function searchYoutube(parameter: string): Promise<string> {

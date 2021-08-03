@@ -1,6 +1,5 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, MessageReaction } from 'discord.js'
+import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { clearReactions } from '../../../core/commonFunctions'
 import { DeckInfo } from '../../../core/interfaces'
 import { Deck } from '../../../core/modules/Deck'
 import { KrenkoGuildInputManager } from '../KrenkoGuildInputManager'
@@ -10,56 +9,58 @@ const data: ApplicationCommandData = {
     description: 'Get a deck from Krenko\'s database'
 }
 
-async function parseDeck(interaction: CommandInteraction, info: KrenkoGuildInputManager, decks: DeckInfo[], i = 0): Promise<InteractionReplyOptions> {
+async function parseDeck(interaction: CommandInteraction, info: KrenkoGuildInputManager, decks: DeckInfo[], button: ButtonInteraction = null, i = 0): Promise<void> {
     const deck = new Deck()
     deck.fill(decks[i])
-    const rawMenu = await interaction.editReply({ embeds: [ deck.getPreview().setFooter(`${i + 1}/${decks.length}`) ] })
-    const menu = await interaction.channel.messages.fetch(rawMenu.id)
-    const emojiList = [ '\uD83D\uDCC4', '\u274C' ]
-    if (i !== 0) {
-        emojiList.unshift('\u2B05\uFE0F')
-        emojiList.unshift('\u23EA')
+    const components = [ new MessageButton({ customId: 'getdeck-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY' }),
+                         new MessageButton({ customId: 'getdeck-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY' }),
+                         new MessageButton({ customId: 'getdeck-list', emoji: '\uD83D\uDCC4', label: 'Decklist', style: 'PRIMARY' }),
+                         new MessageButton({ customId: 'getdeck-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY' }),
+                         new MessageButton({ customId: 'getdeck-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY' }) ]
+    if (i === 0) {
+        components[0].setDisabled(true)
+        components[1].setDisabled(true)
     }
-    if (i !== decks.length - 1) {
-        emojiList.push('\u27A1\uFE0F')
-        emojiList.push('\u23E9')
+    if (i === decks.length - 1) {
+        components[3].setDisabled(true)
+        components[4].setDisabled(true)
     }
-    const reactions: MessageReaction[] = []
-    for (const emoji of emojiList) {
-        reactions.push(await menu.react(emoji))
+    const row1 = new MessageActionRow().addComponents(components)
+    const options: InteractionReplyOptions = { embeds: [ deck.getPreview().setFooter(`${i + 1}/${decks.length}`) ], components: [ row1 ] }
+    if (!button) {
+        await interaction.editReply(options)
+    } else {
+        await button.update(options)
     }
-    function filter(reaction: MessageReaction): boolean { return reaction.client === interaction.client }
-    const reactionCollection = await menu.awaitReactions({ filter, max: 1, time: 60000 })
-    const reactionResult = reactionCollection.first()
-    if (!reactionResult) {
-        clearReactions(reactions)
-        return
-    }
-    switch (reactionResult.emoji.name) {
-        case '\uD83D\uDCC4':
-            await clearReactions(reactions)
-            interaction.editReply({ content: await deck.getList(), embeds: [] })
-            return
-        case '\u2B05\uFE0F':
-            await clearReactions(reactions)
-            parseDeck(interaction, info, decks, i - 1)
-            return
-        case '\u23EA':
-            await clearReactions(reactions)
-            parseDeck(interaction, info, decks)
-            return
-        case '\u27A1\uFE0F':
-            await clearReactions(reactions)
-            parseDeck(interaction, info, decks, i + 1)
-            return
-        case '\u23E9':
-            await clearReactions(reactions)
-            parseDeck(interaction, info, decks, decks.length - 1)
-            return
-        default:
-            menu.delete()
-            break
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const filter: CollectorFilter<[any]> = b => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
+    const collector = <InteractionCollector<ButtonInteraction>> interaction.channel.createMessageComponentCollector({ filter: filter, time: 60000 })
+    collector.once('collect', async b => {
+        switch (b.customId) {
+            case 'getdeck-doublearrowleft':
+                parseDeck(interaction, info, decks, b)
+                break
+            case 'getdeck-arrowleft':
+                parseDeck(interaction, info, decks, b, i - 1)
+                break
+            case 'getdeck-list':
+                try {
+                    b.update({ content: await deck.getList(), embeds: [], components: [] })
+                } catch {
+                    b.update({ content: 'There seems to be something wrong with the Deckstats API at the moment. Try again later', embeds: [], components: [] })
+                }
+                break
+            case 'getdeck-arrowright':
+                parseDeck(interaction, info, decks, b, i + 1)
+                break
+            case 'getdeck-doublearrowright':
+                parseDeck(interaction, info, decks, b, decks.length - 1)
+                break
+            default:
+                break
+        }
+    })
+    collector.once('end', () => { interaction.editReply({ components: [] }) })
 }
 
 function getDeck(interaction: CommandInteraction, info: KrenkoGuildInputManager): void {

@@ -11,7 +11,7 @@ process.on('uncaughtException', err => {
     }
 })
 
-const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGE_REACTIONS ] }
+const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS ] }
 let client = new Client(clientOptions)
 let commands: Collection<string, BaseCommand>
 const database = new DatabaseManager()

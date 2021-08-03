@@ -35,6 +35,7 @@ const data: ApplicationCommandData = {
 }
 
 async function setupEuchre(interaction: CommandInteraction): Promise<void> {
+    return
     const players = genericEmbedResponse('Teams')
     const channel = interaction.channel
     players.addField('Team 1:', `${interaction.options.getUser('player1').username}, ${interaction.options.getUser('player3').username}`)
