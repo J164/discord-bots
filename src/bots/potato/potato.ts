@@ -11,7 +11,7 @@ process.on('uncaughtException', err => {
     }
 })
 
-const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES ], partials: [ 'CHANNEL' ] }
+const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES ] }
 let client = new Client(clientOptions)
 let commands: Collection<string, BaseCommand>
 const database = new DatabaseManager()

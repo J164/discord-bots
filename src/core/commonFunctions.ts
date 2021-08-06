@@ -36,7 +36,7 @@ export async function celebrate(client: Client): Promise<TextChannel> {
 
 export function voiceKick(count: number, voiceState: VoiceState): void {
     if (voiceState.channelId) {
-        voiceState.kick()
+        voiceState.disconnect()
         return
     }
     if (count > 5) {

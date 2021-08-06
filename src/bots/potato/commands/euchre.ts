@@ -1,4 +1,4 @@
-import { ApplicationCommandData, CommandInteraction } from 'discord.js'
+import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { genericEmbedResponse } from '../../../core/commonFunctions'
 import { Euchre } from '../../../core/modules/games/Euchre'
@@ -34,8 +34,8 @@ const data: ApplicationCommandData = {
     ]
 }
 
-async function setupEuchre(interaction: CommandInteraction): Promise<void> {
-    return
+async function setupEuchre(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
+    return { content: 'This command is currently under construction!' }
     const players = genericEmbedResponse('Teams')
     const channel = interaction.channel
     players.addField('Team 1:', `${interaction.options.getUser('player1').username}, ${interaction.options.getUser('player3').username}`)

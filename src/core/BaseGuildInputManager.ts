@@ -15,7 +15,7 @@ export abstract class BaseGuildInputManager {
     }
 
     public async parseCommand(interaction: CommandInteraction): Promise<InteractionReplyOptions | void> {
-        await interaction.defer()
+        await interaction.deferReply()
 
         const command = this.commands.get(interaction.commandName)
 

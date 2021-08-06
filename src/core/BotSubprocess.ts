@@ -4,13 +4,11 @@ export class BotSubprocess {
     private readonly process: ChildProcess
     private online: boolean
     public readonly name: string
-    private readonly id: string
 
-    public constructor(path: string, name: string, id: string) {
+    public constructor(path: string, name: string) {
         this.process = fork(path)
         this.online = false
         this.name = name
-        this.id = id
         this.process.once('message', arg => {
             if (arg !== 'ready') {
                 return

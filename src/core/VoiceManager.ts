@@ -23,7 +23,7 @@ export class VoiceManager {
         this.voiceConnection = joinVoiceChannel({
             channelId: voiceChannel.id,
             guildId: voiceChannel.guild.id,
-            adapterCreator: voiceChannel.guild.voiceAdapterCreator
+            adapterCreator: <any> voiceChannel.guild.voiceAdapterCreator
         })
         try {
             await entersState(this.voiceConnection, VoiceConnectionStatus.Ready, 30e3)
@@ -50,19 +50,11 @@ export class VoiceManager {
     }
 
     public pause(): boolean {
-        if (this.player?.state.status !== AudioPlayerStatus.Playing) {
-            return false
-        }
-        this.player.pause(true)
-        return true
+        return this.player?.pause(true)
     }
 
     public resume(): boolean {
-        if (this.player?.state.status !== AudioPlayerStatus.Paused) {
-            return false
-        }
-        this.player.unpause()
-        return true
+        return this.player?.unpause()
     }
 
     public checkIsIdle(): void {
@@ -77,7 +69,7 @@ export class VoiceManager {
         this.player?.removeAllListeners()
         this.player?.stop(true)
         this.player = null
-        this.subscription.unsubscribe()
+        this.subscription?.unsubscribe()
         this.subscription = null
     }
 }

@@ -207,11 +207,7 @@ export class PotatoVoiceManager extends VoiceManager {
     }
 
     public skip(): boolean {
-        if (this.player?.state.status !== AudioPlayerStatus.Playing && this.player?.state.status !== AudioPlayerStatus.Paused) {
-            return false
-        }
-        this.player.stop(true)
-        return true
+        return this.player?.stop(true)
     }
 
     public shuffleQueue(): boolean {
@@ -252,10 +248,7 @@ export class PotatoVoiceManager extends VoiceManager {
     }
 
     public getQueueLoop(): boolean {
-        if (this.queueLoop) {
-            return true
-        }
-        return false
+        return this.queueLoop
     }
 
     public reset(): void {

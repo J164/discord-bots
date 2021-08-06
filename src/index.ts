@@ -6,10 +6,10 @@ import { BotSubprocess } from './core/BotSubprocess'
 import { createInterface } from 'readline'
 
 const bots = new Map<string, BotSubprocess>([
-    [ 'potato', new BotSubprocess('./bots/potato/potato.js', 'Potato Bot', 'potato') ],
-    [ 'krenko', new BotSubprocess('./bots/krenko/krenko.js', 'Krenko Bot', 'krenko') ],
-    [ 'swear', new BotSubprocess('./bots/swear/swear.js', 'Swear Bot', 'swear') ],
-    [ 'yeet', new BotSubprocess('./bots/yeet/yeet.js', 'Yeet Bot', 'yeet') ]
+    [ 'potato', new BotSubprocess('./bots/potato/potato.js', 'Potato Bot') ],
+    [ 'krenko', new BotSubprocess('./bots/krenko/krenko.js', 'Krenko Bot') ],
+    [ 'swear', new BotSubprocess('./bots/swear/swear.js', 'Swear Bot') ],
+    [ 'yeet', new BotSubprocess('./bots/yeet/yeet.js', 'Yeet Bot') ]
 ])
 
 const consoleInterface = createInterface({
