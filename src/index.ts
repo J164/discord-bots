@@ -4,15 +4,12 @@ process.on('uncaughtException', err => {
 
 import { BotSubprocess } from './core/BotSubprocess'
 import { createInterface } from 'readline'
-import { refreshData } from './core/common'
-
-setInterval(() => { refreshData() }, 60000)
 
 const bots = new Map<string, BotSubprocess>([
-    [ 'potato', new BotSubprocess('./bots/potato/potato.js', 'Potato Bot', 'potato') ],
-    [ 'krenko', new BotSubprocess('./bots/krenko/krenko.js', 'Krenko Bot', 'krenko') ],
-    [ 'swear', new BotSubprocess('./bots/swear/swear.js', 'Swear Bot', 'swear') ],
-    [ 'yeet', new BotSubprocess('./bots/yeet/yeet.js', 'Yeet Bot', 'yeet') ]
+    [ 'potato', new BotSubprocess('./bots/potato/potato.js', 'Potato Bot') ],
+    [ 'krenko', new BotSubprocess('./bots/krenko/krenko.js', 'Krenko Bot') ],
+    [ 'swear', new BotSubprocess('./bots/swear/swear.js', 'Swear Bot') ],
+    [ 'yeet', new BotSubprocess('./bots/yeet/yeet.js', 'Yeet Bot') ]
 ])
 
 const consoleInterface = createInterface({
@@ -31,6 +28,13 @@ async function stopAll(): Promise<void> {
         bot.stop()
     }
     process.exit()
+}
+
+async function deploy(): Promise<void> {
+    for (const [ , bot ] of bots) {
+        bot.deploy()
+    }
+    console.log('Success')
 }
 
 function stop(input: string[]): void {
@@ -105,10 +109,14 @@ function prompt(): void {
             case 'celebrate':
                 celebrate()
                 break
+            case 'deploy':
+                deploy()
+                break
             default:
                 console.log('start <name> (start a bot or use "all" to start all of them)')
                 console.log('stop <name> (stop a bot or use "all" to stop all of them)')
                 console.log('list (list all bots and their running status)')
+                console.log('deploy (Deploys all slash commands)')
                 break
         }
         prompt()

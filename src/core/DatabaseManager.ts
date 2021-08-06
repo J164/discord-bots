@@ -1,5 +1,5 @@
 import { Connection, createConnection } from 'mysql'
-import { sysData } from './common'
+import { config } from './constants'
 
 export class DatabaseManager {
 
@@ -7,8 +7,7 @@ export class DatabaseManager {
 
     public constructor() {
         this.connect()
-        this.connection.on('error', err => {
-            console.log(err)
+        this.connection.on('error', () => {
             this.connection.end()
             this.connect()
         })
@@ -18,7 +17,7 @@ export class DatabaseManager {
         this.connection = createConnection({
             host: 'localhost',
             user: 'DiscordBots',
-            password: sysData.sqlPass,
+            password: config.sqlPass,
             database: 'discord_data'
         })
 

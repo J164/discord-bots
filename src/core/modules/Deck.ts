@@ -1,36 +1,6 @@
 import { MessageEmbed } from 'discord.js'
-import { makeGetRequest, genericEmbedResponse } from '../common'
-
-interface DeckJson {
-    image: string;
-    name: string;
-    url: string;
-    // eslint-disable-next-line camelcase
-    api_url: string;
-}
-
-interface deckstatsResponse {
-    name: string
-    sections: {
-        cards: {
-            name: string
-            isCommander: boolean
-        }[]
-    }[]
-}
-
-interface deckstatsListResponse {
-    list: string
-}
-
-interface scryfallResponse {
-    data: {
-        // eslint-disable-next-line camelcase
-        image_uris: {
-            large: string
-        }
-    }[]
-}
+import { makeGetRequest, genericEmbedResponse } from '../commonFunctions'
+import { DeckJson, DeckstatsResponse, DeckstatsListResponse, ScryfallResponse } from '../interfaces'
 
 export class Deck {
 
@@ -76,7 +46,7 @@ export class Deck {
         this.apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`
         let deckJson
         try {
-            deckJson = <deckstatsResponse> await makeGetRequest(this.apiUrl + 'json')
+            deckJson = <DeckstatsResponse> await makeGetRequest(this.apiUrl + 'json')
         } catch {
             return false
         }
@@ -84,7 +54,7 @@ export class Deck {
         for (const section of deckJson.sections) {
             for (const card of section.cards) {
                 if (card.isCommander) {
-                    const cardInfo = <scryfallResponse> await makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(card.name)}`)
+                    const cardInfo = <ScryfallResponse> await makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(card.name)}`)
                     this.image = cardInfo.data[0].image_uris.large
                     return true
                 }
@@ -101,7 +71,7 @@ export class Deck {
     }
 
     public async getList(): Promise<string> {
-        const decklist = <deckstatsListResponse> await makeGetRequest(this.apiUrl + 'list')
+        const decklist = <DeckstatsListResponse> await makeGetRequest(this.apiUrl + 'list')
         const decklistArray = decklist.list.split('\n')
         for (let i = 0; i < decklistArray.length; i++) {
             if (!decklistArray[i] || decklistArray[i].startsWith('//')) {

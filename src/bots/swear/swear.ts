@@ -1,10 +1,19 @@
-import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
-import { celebrate, sysData } from '../../core/common'
+import { Client, ClientOptions, Collection, Intents } from 'discord.js'
+import { BaseCommand } from '../../core/BaseCommand'
+import { celebrate, deployCommands, getCommands } from '../../core/commonFunctions'
+import { config } from '../../core/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { SwearGuildInputManager } from './SwearGuildInputManager'
 
-const intents: BitFieldResolvable<IntentsString> = [ 'GUILDS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES' ]
-let client: Client = new Client({ ws: { intents: intents } })
+process.on('uncaughtException', err => {
+    if (err.message !== 'Unknown interaction') {
+        console.log(err)
+    }
+})
+
+const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES ] }
+let client: Client = new Client(clientOptions)
+let commands: Collection<string, BaseCommand>
 const database = new DatabaseManager()
 const guildStatus = new Map<string, SwearGuildInputManager>()
 
@@ -12,24 +21,45 @@ function defineEvents() {
     client.on('ready', () => {
         console.log('We have logged in as ' + client.user.tag)
         process.send('start')
-        client.user.setActivity(sysData.swearStatus[Math.floor(Math.random() * sysData.swearStatus.length)])
+
+        client.user.setActivity(config.swearStatus[Math.floor(Math.random() * config.swearStatus.length)])
+
+        getCommands(client, 'swear')
+            .then(result => { commands = result })
+
         setInterval(() => {
-            client.user.setActivity(sysData.swearStatus[Math.floor(Math.random() * sysData.swearStatus.length)])
+            client.user.setActivity(config.swearStatus[Math.floor(Math.random() * config.swearStatus.length)])
+
+            getCommands(client, 'swear')
+                .then(result => { commands = result })
+
             for (const [ , guildManager ] of guildStatus) {
                 guildManager.voiceManager.checkIsIdle()
             }
         }, 60000)
     })
 
-    client.on('message', message => {
+    client.on('messageCreate', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new SwearGuildInputManager(message.guild, database))
+            guildStatus.set(message.guild.id, new SwearGuildInputManager(message.guild, commands, database))
         }
 
-        guildStatus.get(message.guild.id).parseInput(message)
+        guildStatus.get(message.guild.id).parseGenericMessage(message)
+    })
+
+    client.on('interactionCreate', interaction => {
+        if (!interaction.isCommand()) {
+            return
+        }
+
+        if (!guildStatus.has(interaction.guild.id)) {
+            guildStatus.set(interaction.guild.id, new SwearGuildInputManager(interaction.guild, commands, database))
+        }
+
+        guildStatus.get(interaction.guild.id).parseCommand(interaction)
             .then(response => {
                 if (response) {
-                    message.reply(response)
+                    interaction.editReply(response)
                 }
             })
     })
@@ -44,14 +74,17 @@ process.on('message', arg => {
             process.send('stop')
             break
         case 'start':
-            client = new Client({ ws: { intents: intents } })
+            client = new Client(clientOptions)
             defineEvents()
-            client.login(sysData.swearKey)
+            client.login(config.swearKey)
             break
         case 'celebrate':
             celebrate(client).then(channel => {
                 channel.send('https://tenor.com/view/im-back-bitches-announcement-inform-welcome-sas-gif-13303187')
             })
+            break
+        case 'deploy':
+            deployCommands(client, 'swear')
             break
         default:
             break

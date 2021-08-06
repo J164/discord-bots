@@ -1,10 +1,19 @@
-import { BitFieldResolvable, Client, IntentsString } from 'discord.js'
-import { celebrate, sysData } from '../../core/common'
+import { Client, ClientOptions, Collection, Intents } from 'discord.js'
+import { BaseCommand } from '../../core/BaseCommand'
+import { celebrate, deployCommands, getCommands } from '../../core/commonFunctions'
+import { config } from '../../core/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { KrenkoGuildInputManager } from './KrenkoGuildInputManager'
 
-const intents: BitFieldResolvable<IntentsString> = [ 'GUILDS', 'GUILD_MESSAGES', 'GUILD_MESSAGE_REACTIONS' ]
-let client = new Client({ ws: { intents: intents} })
+process.on('uncaughtException', err => {
+    if (err.message !== 'Unknown interaction') {
+        console.log(err)
+    }
+})
+
+const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS ] }
+let client = new Client(clientOptions)
+let commands: Collection<string, BaseCommand>
 const database = new DatabaseManager()
 const guildStatus = new Map<string, KrenkoGuildInputManager>()
 
@@ -12,21 +21,33 @@ function defineEvents() {
     client.on('ready', () => {
         console.log(`We have logged in as ${client.user.tag}`)
         process.send('start')
-        client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)])
+
+        client.user.setActivity(config.krenkoStatus[Math.floor(Math.random() * config.krenkoStatus.length)])
+
+        getCommands(client, 'krenko')
+            .then(result => { commands = result })
+
         setInterval(() => {
-            client.user.setActivity(sysData.krenkoStatus[Math.floor(Math.random() * sysData.krenkoStatus.length)])
+            client.user.setActivity(config.krenkoStatus[Math.floor(Math.random() * config.krenkoStatus.length)])
+
+            getCommands(client, 'krenko')
+                .then(result => { commands = result })
         }, 60000)
     })
 
-    client.on('message', message => {
-        if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new KrenkoGuildInputManager(message.guild, database))
+    client.on('interactionCreate', interaction => {
+        if (!interaction.isCommand()) {
+            return
         }
 
-        guildStatus.get(message.guild.id).parseInput(message)
+        if (!guildStatus.has(interaction.guild.id)) {
+            guildStatus.set(interaction.guild.id, new KrenkoGuildInputManager(interaction.guild, commands, database))
+        }
+
+        guildStatus.get(interaction.guild.id).parseCommand(interaction)
             .then(response => {
                 if (response) {
-                    message.reply(response)
+                    interaction.editReply(response)
                 }
             })
     })
@@ -41,14 +62,17 @@ process.on('message', function (arg) {
             process.send('stop')
             break
         case 'start':
-            client = new Client({ ws: { intents: intents } })
+            client = new Client(clientOptions)
             defineEvents()
-            client.login(sysData.krenkoKey)
+            client.login(config.krenkoKey)
             break
         case 'celebrate':
             celebrate(client).then(channel => {
                 channel.send('https://tenor.com/view/husky-husky-jump-youre-home-welcome-home-excited-gif-15653370')
             })
+            break
+        case 'deploy':
+            deployCommands(client, 'krenko')
             break
         default:
             break

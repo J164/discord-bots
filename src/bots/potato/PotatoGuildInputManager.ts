@@ -1,20 +1,23 @@
-import { Guild, Message, MessageEmbed } from 'discord.js'
+import { Collection, Guild, Message } from 'discord.js'
+import { BaseCommand } from '../../core/BaseCommand'
 import { BaseGuildInputManager } from '../../core/BaseGuildInputManager'
-import { sysData, voiceKick } from '../../core/common'
+import { voiceKick } from '../../core/commonFunctions'
+import { config } from '../../core/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { PotatoVoiceManager } from './PotatoVoiceManager'
 
 export class PotatoGuildInputManager extends BaseGuildInputManager {
 
-    private static readonly prefix = '&'
     public readonly voiceManager: PotatoVoiceManager
+    public readonly database: DatabaseManager
 
-    public constructor(guild: Guild, database: DatabaseManager) {
-        super(guild, database, 'potato')
+    public constructor(guild: Guild, commands: Collection<string, BaseCommand>, database: DatabaseManager) {
+        super(guild, commands)
         this.voiceManager = new PotatoVoiceManager()
+        this.database = database
     }
 
-    public async parseInput(message: Message): Promise<MessageEmbed | string | void> {
+    public parseGenericMessage(message: Message): void {
         if (!message.guild) {
             return
         }
@@ -26,14 +29,6 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
             return
         }
 
-        if (!message.content.startsWith(PotatoGuildInputManager.prefix)) {
-            return this.genericMessageParse(message)
-        }
-
-        return this.parseCommand(message)
-    }
-
-    private genericMessageParse(message: Message): void {
         let mentionPotato = false
         let mentionSwear = false
         let mentionInsult = false
@@ -41,20 +36,20 @@ export class PotatoGuildInputManager extends BaseGuildInputManager {
         if (input.match(/(\W|^)potato(s|es)?(\W|$)/)) {
             mentionPotato = true
         }
-        for (const swear of sysData.blacklist.swears) {
+        for (const swear of config.blacklist.swears) {
             if (input.match(new RegExp(`(\\W|^)${swear}(\\W|$)`))) {
                 mentionSwear = true
                 break
             }
         }
-        for (const insult of sysData.blacklist.insults) {
+        for (const insult of config.blacklist.insults) {
             if (input.match(new RegExp(`(\\W|^)${insult}(\\W|$)`))) {
                 mentionInsult = true
                 break
             }
         }
         if (mentionPotato && (mentionSwear || mentionInsult)) {
-            message.reply('FOOL! HOW DARE YOU BLASPHEMISE THE HOLY ORDER OF THE POTATOES! EAT POTATOES!', { 'tts': true })
+            message.reply('FOOL! HOW DARE YOU BLASPHEMISE THE HOLY ORDER OF THE POTATOES! EAT POTATOES!')
             message.client.user.setActivity(`Teaching ${message.author.tag} the value of potatoes`, {
                 type: 'STREAMING',
                 url: 'https://www.youtube.com/watch?v=fLNWeEen35Y'

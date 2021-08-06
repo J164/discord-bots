@@ -1,31 +1,15 @@
-import { MessageEmbed, MessageReaction, User } from 'discord.js'
+import { MessageAttachment, MessageEmbed, MessageReaction, User } from 'discord.js'
 import * as axios from 'axios'
-import { genericEmbedResponse, mergeImages, root } from '../../common'
-
-interface Team {
-    tricks: number;
-    score: number;
-}
-
-interface Card {
-    code: string;
-    suit: string;
-    value: string;
-}
-
-interface Player {
-    id: number;
-    user: User;
-    hand: Card[];
-    team: Team;
-}
+import { genericEmbedResponse, mergeImages } from '../../commonFunctions'
+import { Card, EuchrePlayer, EuchreTeam } from '../../interfaces'
+import { root } from '../../constants'
 
 export class Euchre {
 
-    private team1: Team
-    private team2: Team
+    private team1: EuchreTeam
+    private team2: EuchreTeam
     private gameState: { top: Card; inPlay: Card[]; trump: string }
-    private players: Player[]
+    private players: EuchrePlayer[]
 
     public constructor(players: User[]) {
         this.team1 = {
@@ -104,7 +88,7 @@ export class Euchre {
             await this.sendHand(player)
         }
         await this.sendCards( [ this.gameState.top ], 'Top of Stack:')
-        const playerUsers: Player[] = []
+        const playerUsers: EuchrePlayer[] = []
         for (const player of this.players) {
             playerUsers.push(player)
         }
@@ -173,7 +157,7 @@ export class Euchre {
         }
     }
 
-    private async tricks(activePlayers: Player[], leader: Team, solo: boolean): Promise<void> {
+    private async tricks(activePlayers: EuchrePlayer[], leader: EuchreTeam, solo: boolean): Promise<void> {
         for (let r = 0; r < 5; r++) {
             const table: Card[] = []
             let lead: string
@@ -211,7 +195,7 @@ export class Euchre {
                 await this.sendHand(player)
                 await this.sendCards(table, 'Table:')
             }
-            let leadingPlayer: Player
+            let leadingPlayer: EuchrePlayer
             let leadingScore = 0
             for (const [ i, card ] of table.entries()) {
                 if (this.realSuit(card) === this.gameState.trump) {
@@ -307,14 +291,14 @@ export class Euchre {
                 this.team2.tricks++
             }
             const tricksWon = genericEmbedResponse('Tricks Won:')
-            tricksWon.addField('Team 1:', this.team1.tricks)
-            tricksWon.addField('Team 2:', this.team2.tricks)
+            tricksWon.addField('Team 1:', this.team1.tricks.toString())
+            tricksWon.addField('Team 2:', this.team2.tricks.toString())
             for (const player of this.players) {
                 const channel = await player.user.createDM()
-                await channel.send(tricksWon)
+                await channel.send({ embeds: [ tricksWon ] })
             }
         }
-        let winningTeam: Team
+        let winningTeam: EuchreTeam
         if (this.team1.tricks > this.team2.tricks) {
             winningTeam = this.team1
         } else {
@@ -334,11 +318,11 @@ export class Euchre {
             winningTeam.score += 2
         }
         const standings = genericEmbedResponse('Tricks Won:')
-        standings.addField('Team 1:', this.team1.score)
-        standings.addField('Team 2:', this.team2.score)
+        standings.addField('Team 1:', this.team1.score.toString())
+        standings.addField('Team 2:', this.team2.score.toString())
         for (const player of this.players) {
             const channel = await player.user.createDM()
-            await channel.send(standings)
+            await channel.send({ embeds: [ standings ] })
         }
     }
 
@@ -387,13 +371,13 @@ export class Euchre {
         for (let i = 0; i < responses.length; i++) {
             prompt.addField(`${i + 1}. `, responses[i])
         }
-        const message = await channel.send(prompt)
+        const message = await channel.send({ embeds: [ prompt ] })
         const emojiList = [ '1\ufe0f\u20e3', '2\ufe0f\u20e3', '3\ufe0f\u20e3', '4\ufe0f\u20e3', '5\ufe0f\u20e3', '6\ufe0f\u20e3', '7\ufe0f\u20e3', '8\ufe0f\u20e3', '9\ufe0f\u20e3', '\ud83d\udd1f' ]
         for (let i = 0; i < responses.length; i++) {
             await message.react(emojiList[i])
         }
         function filter(reaction: MessageReaction): boolean { return reaction.client === message.client }
-        const reactionCollection = await message.awaitReactions(filter, { max: 1 })
+        const reactionCollection = await message.awaitReactions({ filter: filter, max: 1 })
         const reactionResult = reactionCollection.first()
         for (let i = 0; i < emojiList.length; i++) {
             if (reactionResult.emoji.name === emojiList[i]) {
@@ -402,31 +386,26 @@ export class Euchre {
         }
     }
 
-    private async sendHand(player: Player): Promise<void> {
+    private async sendHand(player: EuchrePlayer): Promise<void> {
         const filePaths: string[] = []
         const hand = genericEmbedResponse('^ Your Hand:')
         for (const card of player.hand) {
             filePaths.push(`${root}/assets/img/cards/${card.code}.png`)
         }
         if (filePaths.length === 1) {
-            hand.attachFiles([ {
-                attachment: filePaths[0],
-                name: 'hand.png'
-            } ])
+            const card = new MessageAttachment(filePaths[0], 'hand.png')
+            hand.setImage('attachment://hand.png')
             const channel = await player.user.createDM()
-            await channel.send(hand)
+            await channel.send({ embeds: [ hand ], files: [ card ] })
             return
         }
-        const image = await mergeImages(filePaths, {
+        const image = new MessageAttachment(await mergeImages(filePaths, {
             width: filePaths.length * 226,
             height: 314
-        })
-        hand.attachFiles([ {
-            attachment: image,
-            name: 'hand.png'
-        } ])
+        }), 'hand.jpg')
+        hand.setImage('attachment://hand.jpg')
         const channel = await player.user.createDM()
-        await channel.send(hand)
+        await channel.send({ embeds: [ hand ], files: [ image ] })
     }
 
     private async sendCards(cards: Card[], message: string): Promise<void> {
@@ -435,17 +414,14 @@ export class Euchre {
         for (const card of cards) {
             filePaths.push(`${root}/assets/img/cards/${card.code}.png`)
         }
-        const image = await mergeImages(filePaths, {
+        const image = new MessageAttachment(await mergeImages(filePaths, {
             width: filePaths.length * 226,
             height: 314
-        })
-        response.attachFiles([ {
-            attachment: image,
-            name: `${message}.png`
-        } ])
+        }), 'cards.jpg')
+        response.setImage('attachment://cards.jpg')
         for (const player of this.players) {
             const channel = await player.user.createDM()
-            await channel.send(response)
+            await channel.send({ embeds: [ response ], files: [ image ] })
         }
     }
 }
