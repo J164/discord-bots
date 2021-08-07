@@ -17,6 +17,7 @@ export class QueueItem extends EventEmitter {
     public readonly duration: number
     public looping: boolean
     private downloading: boolean
+    public failed: boolean
 
     public constructor(webpageUrl: string, title: string, id: string, thumbnail: string, duration: number) {
         super()
@@ -27,6 +28,7 @@ export class QueueItem extends EventEmitter {
         this.duration = duration
         this.looping = false
         this.downloading = false
+        this.failed = false
     }
 
     public isDownloaded(): boolean {
@@ -42,17 +44,26 @@ export class QueueItem extends EventEmitter {
             return
         }
         this.downloading = true
-        const output = await youtubedl(this.webpageUrl, {
-            noWarnings: true,
-            noCallHome: true,
-            noCheckCertificate: true,
-            preferFreeFormats: true,
-            ignoreErrors: true,
-            geoBypass: true,
-            printJson: true,
-            format: 'bestaudio[ext=webm+acodec=opus+asr=48000]',
-            output: `${home}/music_files/playback/%(id)s.%(ext)s`
-        })
+        let output
+        try {
+            output = await youtubedl(this.webpageUrl, {
+                noWarnings: true,
+                noCallHome: true,
+                noCheckCertificate: true,
+                preferFreeFormats: true,
+                ignoreErrors: true,
+                geoBypass: true,
+                printJson: true,
+                format: 'bestaudio[ext=webm+acodec=opus+asr=48000]',
+                output: `${home}/music_files/playback/%(id)s.%(ext)s`
+            })
+        } catch (err) {
+            console.log('could not download song')
+            console.log(err)
+            this.failed = true
+            this.emit('failed')
+            return
+        }
         this.thumbnail = output.thumbnails[0].url
         const metaData = JSON.stringify({
             webpageUrl: this.webpageUrl,
@@ -118,13 +129,18 @@ export class PotatoVoiceManager extends VoiceManager {
         if (this.queue.length < 1) {
             return
         }
-
         const song = this.queue.shift()
+        if (song.failed) {
+            this.checkSongStatus()
+        }
         if (!song.isDownloaded()) {
             this.awaitingResource = true
             song.once('downloaded', () => {
                 this.awaitingResource = false
                 this.playSong(song)
+            })
+            song.once('failed', () => {
+                this.checkSongStatus()
             })
             return
         }
