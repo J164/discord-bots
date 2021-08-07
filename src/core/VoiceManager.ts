@@ -23,7 +23,7 @@ export class VoiceManager {
         this.voiceConnection = joinVoiceChannel({
             channelId: voiceChannel.id,
             guildId: voiceChannel.guild.id,
-            adapterCreator: <any> voiceChannel.guild.voiceAdapterCreator
+            adapterCreator: voiceChannel.guild.voiceAdapterCreator
         })
         try {
             await entersState(this.voiceConnection, VoiceConnectionStatus.Ready, 30e3)
