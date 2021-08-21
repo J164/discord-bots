@@ -3,8 +3,11 @@ import { BaseMagicGame } from './BaseMagicGame'
 
 export class CommanderMagicGame extends BaseMagicGame {
 
+    public readonly commanderList: string[]
+
     public constructor(playerList: User[], commanderList: string[]) {
         super(playerList)
+        this.commanderList = commanderList
         for (const [ , player ] of this.playerData) {
             for (const commander of commanderList) {
                 player.commanderDamage.set(commander, 0)

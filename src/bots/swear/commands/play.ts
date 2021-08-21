@@ -44,12 +44,12 @@ async function play(interaction: CommandInteraction, info: SwearGuildInputManage
         songNum = Math.floor(Math.random() * songs.length)
     }
     await info.voiceManager.connect(voiceChannel)
-    info.voiceManager.createStream(`${home}/music_files/swear_songs/${songs[songNum].name}`)
+    info.voiceManager.createStream(`${home}/music_files/swear_songs/${songs[songNum].name}.mp3`)
     interaction.editReply({ content: 'Now Playing!' })
 }
 
 function getSongs(interaction: CommandInteraction, info: SwearGuildInputManager): void {
-    info.database.select('swear_songs', results => {
+    info.database.customSelect('swear_songs', 'index', results => {
         play(interaction, info, <SwearSongInfo[]> results)
     })
 }

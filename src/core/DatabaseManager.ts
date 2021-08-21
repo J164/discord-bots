@@ -33,6 +33,15 @@ export class DatabaseManager {
         })
     }
 
+    public customSelect(table: string, sort: string, callback: (results: unknown[]) => void): void {
+        this.connection.query(`SELECT * FROM ${table} AS solution ORDER BY \`${sort}\``, (error, results) => {
+            if (error) {
+                return
+            }
+            return callback(results)
+        })
+    }
+
     public insert(table: string, data: Map<string, string>): void {
         let columns
         let values

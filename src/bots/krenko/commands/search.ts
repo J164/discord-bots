@@ -113,47 +113,6 @@ async function search(interaction: CommandInteraction, info: KrenkoGuildInputMan
         }
     })
     collector.once('end', () => { interaction.editReply({ components: [] }) })
-    /*const rawMenu = await interaction.editReply({ embeds: [ embed ] })
-    const menu = await interaction.channel.messages.fetch(rawMenu.id)
-    const emojiList = generateEmojiList(results, i)
-    const reactions: MessageReaction[] = []
-    for (const emoji of emojiList) {
-        reactions.push(await menu.react(emoji))
-    }
-    function filter(reaction: MessageReaction): boolean { return reaction.client === interaction.client }
-    const reactionCollection = await menu.awaitReactions({ filter, max: 1, time: 60000 })
-    const reactionResult = reactionCollection.first()
-    if (!reactionResult) {
-        clearReactions(reactions)
-        return
-    }
-    const resultNum = parseInt(reactionResult.emoji.name[0])
-    if (reactionResult.emoji.name.slice(1) === '\uFE0F\u20E3' && resultNum <= results[i].length) {
-        await clearReactions(reactions)
-        interaction.editReply(await generateResponse(results, i, resultNum - 1))
-        return
-    }
-    switch (reactionResult.emoji.name) {
-        case '\u2B05\uFE0F':
-            await clearReactions(reactions)
-            search(interaction, info, results, i - 1)
-            break
-        case '\u23EA':
-            await clearReactions(reactions)
-            search(interaction, info, results)
-            break
-        case '\u27A1\uFE0F':
-            await clearReactions(reactions)
-            search(interaction, info, results, i + 1)
-            break
-        case '\u23E9':
-            await clearReactions(reactions)
-            search(interaction, info, results, results.length - 1)
-            break
-        default:
-            menu.delete()
-            break
-    }*/
 }
 
 module.exports = new BaseCommand(data, search)

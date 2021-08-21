@@ -6,8 +6,10 @@ export class BaseMagicGame {
 
     protected readonly playerData: Map<Snowflake, MagicPlayer>
     protected numAlive: number
+    public isActive: boolean
 
     public constructor(playerList: User[]) {
+        this.isActive = true
         this.numAlive = playerList.length
         this.playerData = new Map<Snowflake, MagicPlayer>()
         for (const player of playerList) {
@@ -55,6 +57,7 @@ export class BaseMagicGame {
     }
 
     public finishGame(): MessageEmbed {
+        this.isActive = false
         if (this.numAlive > 1) {
             return this.printStandings()
         }

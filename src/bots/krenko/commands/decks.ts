@@ -5,7 +5,7 @@ import { Deck } from '../../../core/modules/Deck'
 import { KrenkoGuildInputManager } from '../KrenkoGuildInputManager'
 
 const data: ApplicationCommandData = {
-    name: 'getdeck',
+    name: 'decks',
     description: 'Get a deck from Krenko\'s database'
 }
 
