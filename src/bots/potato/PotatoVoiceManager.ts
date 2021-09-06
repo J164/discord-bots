@@ -4,7 +4,7 @@ import { existsSync, writeFileSync } from 'fs'
 import { genericEmbedResponse } from '../../core/commonFunctions'
 import { VoiceManager } from '../../core/VoiceManager'
 import { AudioPlayerStatus } from '@discordjs/voice'
-import { home } from '../../core/constants'
+import { config } from '../../core/constants'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
 
@@ -32,7 +32,7 @@ export class QueueItem extends EventEmitter {
     }
 
     public isDownloaded(): boolean {
-        if (existsSync(`${home}/music_files/playback/${this.id}.json`)) {
+        if (existsSync(`${config.data}/music_files/playback/${this.id}.json`)) {
             return true
         }
         this.download()
@@ -55,7 +55,7 @@ export class QueueItem extends EventEmitter {
                 geoBypass: true,
                 printJson: true,
                 format: 'bestaudio[ext=webm+acodec=opus+asr=48000]',
-                output: `${home}/music_files/playback/%(id)s.%(ext)s`
+                output: `${config.data}/music_files/playback/%(id)s.%(ext)s`
             })
         } catch (err) {
             console.log('could not download song')
@@ -72,7 +72,7 @@ export class QueueItem extends EventEmitter {
             thumbnail: this.thumbnail,
             duration: this.duration
         })
-        writeFileSync(`${home}/music_files/playback/${this.id}.json`, metaData)
+        writeFileSync(`${config.data}/music_files/playback/${this.id}.json`, metaData)
         this.emit('downloaded')
     }
 }
@@ -148,7 +148,7 @@ export class PotatoVoiceManager extends VoiceManager {
     }
 
     private async playSong(song: QueueItem): Promise<void> {
-        if (!await this.createStream(`${home}/music_files/playback/${song.id}.webm`)) {
+        if (!await this.createStream(`${config.data}/music_files/playback/${song.id}.webm`)) {
             this.boundChannel.send('Something went wrong while preparing song')
             return
         }

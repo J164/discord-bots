@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
 import { existsSync } from 'fs'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { home } from '../../../core/constants'
+import { config } from '../../../core/constants'
 import { SwearSongInfo } from '../../../core/interfaces'
 import { SwearGuildInputManager } from '../SwearGuildInputManager'
 
@@ -45,10 +45,10 @@ async function play(interaction: CommandInteraction, info: SwearGuildInputManage
         songNum = Math.floor(Math.random() * songs.length)
     }
     await info.voiceManager.connect(voiceChannel)
-    if (existsSync(`${home}/music_files/swear_songs/${songs[songNum].name}.webm`)) {
-        info.voiceManager.createStream(`${home}/music_files/swear_songs/${songs[songNum].name}.webm`)
+    if (existsSync(`${config.data}/music_files/swear_songs/${songs[songNum].name}.webm`)) {
+        info.voiceManager.createStream(`${config.data}/music_files/swear_songs/${songs[songNum].name}.webm`)
     } else {
-        info.voiceManager.createStream(`${home}/music_files/swear_songs/${songs[songNum].name}.mp3`)
+        info.voiceManager.createStream(`${config.data}/music_files/swear_songs/${songs[songNum].name}.mp3`)
     }
     interaction.editReply({ content: 'Now Playing!' })
 }

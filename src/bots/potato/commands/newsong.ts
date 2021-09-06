@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { home } from '../../../core/constants'
+import { config } from '../../../core/constants'
 import { SwearSongInfo } from '../../../core/interfaces'
 import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -65,7 +65,7 @@ async function newSong(interaction: CommandInteraction, info: PotatoGuildInputMa
         noCheckCertificate: true,
         preferFreeFormats: true,
         format: 'bestaudio',
-        output: `${home}/music_files/swear_songs/${interaction.options.getString('name')}.mp3`
+        output: `${config.data}/music_files/swear_songs/${interaction.options.getString('name')}.mp3`
     })
     const song = new Map<string, string>([
         [ 'name', interaction.options.getString('name') ]

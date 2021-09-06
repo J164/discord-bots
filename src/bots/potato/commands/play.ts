@@ -2,7 +2,7 @@ import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, Te
 import { existsSync, readFileSync } from 'fs'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { searchYoutube } from '../../../core/commonFunctions'
-import { home } from '../../../core/constants'
+import { config } from '../../../core/constants'
 import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
@@ -73,7 +73,7 @@ async function play(interaction: CommandInteraction, info: PotatoGuildInputManag
         url = arg
     }
     let output
-    if (url.split(/[?&]+/)[1].startsWith('list') || !existsSync(`${home}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`)) {
+    if (url.split(/[?&]+/)[1].startsWith('list') || !existsSync(`${config.data}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`)) {
         try {
             output = await youtubedl(url, {
                 dumpSingleJson: true,
@@ -92,13 +92,13 @@ async function play(interaction: CommandInteraction, info: PotatoGuildInputManag
             return { content: 'Please enter a valid url' }
         }
     } else {
-        output = JSON.parse(readFileSync(`${home}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`, { encoding: 'utf8' }))
+        output = JSON.parse(readFileSync(`${config.data}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`, { encoding: 'utf8' }))
     }
     if ('entries' in output) {
         for (const entry of output.entries) {
             let songData
-            if (existsSync(`${home}/music_files/playback/${entry.id}.json`)) {
-                songData = JSON.parse(readFileSync(`${home}/music_files/playback/${entry.id}.json`, { encoding: 'utf8' }))
+            if (existsSync(`${config.data}/music_files/playback/${entry.id}.json`)) {
+                songData = JSON.parse(readFileSync(`${config.data}/music_files/playback/${entry.id}.json`, { encoding: 'utf8' }))
             } else {
                 songData = entry
             }

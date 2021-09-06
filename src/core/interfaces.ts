@@ -10,6 +10,7 @@ export interface BotConfig {
     googleKey: string,
     tenorKey: string,
     sqlPass: string,
+    data: string,
     potatoStatus: string[],
     swearStatus: string[],
     krenkoStatus: string[],
