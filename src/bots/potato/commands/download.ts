@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { home } from '../../../core/constants'
+import { config } from '../../../core/constants'
 import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
@@ -34,7 +34,7 @@ async function download(interaction: CommandInteraction, info: PotatoGuildInputM
         noCheckCertificate: true,
         preferFreeFormats: true,
         format: 'bestaudio',
-        output: `${home}/New Downloads/%(title)s.%(ext)s`,
+        output: `${config.data}/New Downloads/%(title)s.%(ext)s`,
         ignoreErrors: true
     }
     if (interaction.options.getBoolean('audioonly')) {
