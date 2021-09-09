@@ -12,11 +12,11 @@ const data: ApplicationCommandData = {
 async function parseDeck(interaction: CommandInteraction, info: KrenkoGuildInputManager, decks: DeckInfo[], button: ButtonInteraction = null, i = 0): Promise<void> {
     const deck = new Deck()
     deck.fill(decks[i])
-    const components = [ new MessageButton({ customId: 'getdeck-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY' }),
-                         new MessageButton({ customId: 'getdeck-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY' }),
-                         new MessageButton({ customId: 'getdeck-list', emoji: '\uD83D\uDCC4', label: 'Decklist', style: 'PRIMARY' }),
-                         new MessageButton({ customId: 'getdeck-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY' }),
-                         new MessageButton({ customId: 'getdeck-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY' }) ]
+    const components = [ new MessageButton({ customId: 'decks-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY' }),
+                         new MessageButton({ customId: 'decks-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY' }),
+                         new MessageButton({ customId: 'decks-list', emoji: '\uD83D\uDCC4', label: 'Decklist', style: 'PRIMARY' }),
+                         new MessageButton({ customId: 'decks-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY' }),
+                         new MessageButton({ customId: 'decks-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY' }) ]
     if (i === 0) {
         components[0].setDisabled(true)
         components[1].setDisabled(true)
@@ -37,23 +37,23 @@ async function parseDeck(interaction: CommandInteraction, info: KrenkoGuildInput
     const collector = <InteractionCollector<ButtonInteraction>> interaction.channel.createMessageComponentCollector({ filter: filter, time: 60000 })
     collector.once('collect', async b => {
         switch (b.customId) {
-            case 'getdeck-doublearrowleft':
+            case 'decks-doublearrowleft':
                 parseDeck(interaction, info, decks, b)
                 break
-            case 'getdeck-arrowleft':
+            case 'decks-arrowleft':
                 parseDeck(interaction, info, decks, b, i - 1)
                 break
-            case 'getdeck-list':
+            case 'decks-list':
                 try {
                     b.update({ content: await deck.getList(), embeds: [], components: [] })
                 } catch {
                     b.update({ content: 'There seems to be something wrong with the Deckstats API at the moment. Try again later', embeds: [], components: [] })
                 }
                 break
-            case 'getdeck-arrowright':
+            case 'decks-arrowright':
                 parseDeck(interaction, info, decks, b, i + 1)
                 break
-            case 'getdeck-doublearrowright':
+            case 'decks-doublearrowright':
                 parseDeck(interaction, info, decks, b, decks.length - 1)
                 break
             default:

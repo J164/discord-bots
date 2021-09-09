@@ -39,7 +39,7 @@ function hit(interaction: CommandInteraction, info: KrenkoGuildInputManager): In
         return { content: 'There is currently no active game' }
     }
     let standings: MessageEmbed
-    info.game.changeLife(interaction.options.getUser('player').id, interaction.options.getInteger('amount') * -1)
+    standings = info.game.changeLife(interaction.options.getUser('player').id, interaction.options.getInteger('amount') * -1)
     if (interaction.options.getBoolean('posion') && info.game.isActive) {
         standings = info.game.changePoison(interaction.options.getUser('player').id, interaction.options.getInteger('amount'))
     }

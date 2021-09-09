@@ -1,4 +1,4 @@
-import { ApplicationCommandData, Client, Collection, GuildMember, MessageEmbed, Snowflake, TextChannel, VoiceState } from 'discord.js'
+import { ApplicationCommandData, Client, Collection, GuildMember, MessageEmbed, Snowflake, VoiceState } from 'discord.js'
 import { createCanvas, loadImage } from 'canvas'
 import * as axios from 'axios'
 import { readdirSync } from 'fs'
@@ -26,12 +26,6 @@ export async function deployCommands(client: Client, botName: string): Promise<v
     }
 
     client.application.commands.set(commandData)
-}
-
-export async function celebrate(client: Client): Promise<TextChannel> {
-    const guild = await client.guilds.fetch('619975185029922817')
-    const channel = <TextChannel> guild.channels.resolve('619975185029922819')
-    return channel
 }
 
 export function voiceKick(count: number, voiceState: VoiceState): void {

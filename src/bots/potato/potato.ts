@@ -1,6 +1,6 @@
 import { Client, ClientOptions, Collection, Intents } from 'discord.js'
 import { BaseCommand } from '../../core/BaseCommand'
-import { celebrate, deployCommands, getCommands } from '../../core/commonFunctions'
+import { deployCommands, getCommands } from '../../core/commonFunctions'
 import { config } from '../../core/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { PotatoGuildInputManager } from './PotatoGuildInputManager'
@@ -77,12 +77,6 @@ process.on('message', arg => {
             client = new Client(clientOptions)
             defineEvents()
             client.login(config.potatoKey)
-            break
-        case 'celebrate':
-            celebrate(client).then(channel => {
-                channel.send('https://tenor.com/view/husky-husky-jump-youre-home-welcome-home-excited-gif-15653370')
-                channel.send('WELCOME BACK!!!!')
-            })
             break
         case 'deploy':
             deployCommands(client, 'potato')

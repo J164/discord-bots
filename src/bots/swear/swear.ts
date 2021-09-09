@@ -1,6 +1,6 @@
 import { Client, ClientOptions, Collection, Intents } from 'discord.js'
 import { BaseCommand } from '../../core/BaseCommand'
-import { celebrate, deployCommands, getCommands } from '../../core/commonFunctions'
+import { deployCommands, getCommands } from '../../core/commonFunctions'
 import { config } from '../../core/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { SwearGuildInputManager } from './SwearGuildInputManager'
@@ -77,11 +77,6 @@ process.on('message', arg => {
             client = new Client(clientOptions)
             defineEvents()
             client.login(config.swearKey)
-            break
-        case 'celebrate':
-            celebrate(client).then(channel => {
-                channel.send('https://tenor.com/view/im-back-bitches-announcement-inform-welcome-sas-gif-13303187')
-            })
             break
         case 'deploy':
             deployCommands(client, 'swear')

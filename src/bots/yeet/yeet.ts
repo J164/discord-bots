@@ -1,6 +1,6 @@
 import { Client, ClientOptions, Collection, Intents } from 'discord.js'
 import { BaseCommand } from '../../core/BaseCommand'
-import { celebrate, deployCommands, getCommands } from '../../core/commonFunctions'
+import { deployCommands, getCommands } from '../../core/commonFunctions'
 import { config } from '../../core/constants'
 import { YeetGuildInputManager } from './YeetGuildInputManager'
 
@@ -64,12 +64,6 @@ process.on('message', arg => {
             client = new Client(clientOptions)
             defineEvents()
             client.login(config.yeetKey)
-            break
-        case 'celebrate':
-            celebrate(client).then(channel => {
-                channel.send('https://tenor.com/view/excited-yay-grin-dog-welcome-back-gif-16956636')
-                channel.send('YEEEEEEEEEEEEET')
-            })
             break
         case 'deploy':
             deployCommands(client, 'yeet')

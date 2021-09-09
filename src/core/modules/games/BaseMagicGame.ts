@@ -62,8 +62,10 @@ export class BaseMagicGame {
             return this.printStandings()
         }
         for (const [ , player ] of this.playerData) {
-            return genericEmbedResponse(`${player.name} Wins!`)
-                .addField(`${player.name}:`, `Life Total: ${player.life}\nPoison Counters: ${player.poison}`)
+            if (player.isAlive) {
+                return genericEmbedResponse(`${player.name} Wins!`)
+                    .addField(`${player.name}:`, `Life Total: ${player.life}\nPoison Counters: ${player.poison}`)
+            }
         }
     }
 

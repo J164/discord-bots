@@ -52,8 +52,4 @@ export class BotSubprocess {
     public deploy(): void {
         this.process.send('deploy')
     }
-
-    public send(arg: string): void {
-        this.process.send(arg)
-    }
 }

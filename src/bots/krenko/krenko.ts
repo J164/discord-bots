@@ -1,6 +1,6 @@
 import { Client, ClientOptions, Collection, Intents } from 'discord.js'
 import { BaseCommand } from '../../core/BaseCommand'
-import { celebrate, deployCommands, getCommands } from '../../core/commonFunctions'
+import { deployCommands, getCommands } from '../../core/commonFunctions'
 import { config } from '../../core/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { KrenkoGuildInputManager } from './KrenkoGuildInputManager'
@@ -65,11 +65,6 @@ process.on('message', function (arg) {
             client = new Client(clientOptions)
             defineEvents()
             client.login(config.krenkoKey)
-            break
-        case 'celebrate':
-            celebrate(client).then(channel => {
-                channel.send('https://tenor.com/view/husky-husky-jump-youre-home-welcome-home-excited-gif-15653370')
-            })
             break
         case 'deploy':
             deployCommands(client, 'krenko')

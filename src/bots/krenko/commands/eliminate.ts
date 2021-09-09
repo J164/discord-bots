@@ -3,12 +3,12 @@ import { BaseCommand } from '../../../core/BaseCommand'
 import { KrenkoGuildInputManager } from '../KrenkoGuildInputManager'
 
 const data: ApplicationCommandData = {
-    name: 'heal',
-    description: 'Increase the life total of a player',
+    name: 'eliminate',
+    description: 'Eliminate a player',
     options: [
         {
             name: 'player',
-            description: 'The player to damage',
+            description: 'The player to eliminate',
             type: 'USER',
             required: true
         }
