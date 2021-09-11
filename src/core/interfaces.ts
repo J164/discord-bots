@@ -9,6 +9,8 @@ export interface BotConfig {
     yeetKey: string,
     googleKey: string,
     tenorKey: string,
+    abstractKey: string,
+    weatherKey: string,
     sqlPass: string,
     data: string,
     potatoStatus: string[],
@@ -18,6 +20,38 @@ export interface BotConfig {
     blacklist: {
         swears: string[],
         insults: string[]
+    }
+}
+
+export interface HolidayResponse {
+    data: {
+        name: string,
+        description: string
+    }[]
+}
+
+export interface WeatherResponse {
+    data: {
+        current: {
+            temp_f: number,
+            condition: {
+                text: string,
+                code: number
+            },
+            wind_mph: number,
+            feelslike_f: number
+        }
+    }
+}
+
+export interface QuoteResponse {
+    data: {
+        contents: {
+            quotes: {
+                quote: string,
+                author: string
+            }[]
+        }
     }
 }
 
