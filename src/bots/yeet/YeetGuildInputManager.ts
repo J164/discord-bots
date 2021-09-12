@@ -9,6 +9,10 @@ export class YeetGuildInputManager extends BaseGuildInputManager {
     }
 
     public parseGenericMessage(message: Message): void {
+        if (!message.guild || message.author.bot) {
+            return
+        }
+
         const input = message.content.toLowerCase()
         if (input.match(/(\W|^)yee+t(\W|$)/)) {
             if (input.substr(input.indexOf('yee') + 1, 10) === 'eeeeeeeeee') {
