@@ -34,7 +34,7 @@ async function deploy(): Promise<void> {
     for (const [ , bot ] of bots) {
         bot.deploy()
     }
-    console.log('Success')
+    console.log('If no errors are logged, deploy occurred successfully')
 }
 
 function stop(input: string[]): void {

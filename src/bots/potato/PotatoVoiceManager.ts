@@ -31,6 +31,23 @@ export class QueueItem extends EventEmitter {
         this.failed = false
     }
 
+    public generateEmbed(): MessageEmbed {
+        const embed = genericEmbedResponse(`Now Playing: ${this.title}`).setImage(this.thumbnail).addField('URL:', this.webpageUrl)
+        if (this.looping) {
+            embed.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png')
+        }
+        return embed
+    }
+
+    public loop(): InteractionReplyOptions {
+        if (this.looping) {
+            this.looping = false
+            return { content: 'No longer looping' }
+        }
+        this.looping = true
+        return { content: 'Now Looping' }
+    }
+
     public isDownloaded(): boolean {
         if (existsSync(`${config.data}/music_files/playback/${this.id}.json`)) {
             return true
@@ -83,9 +100,8 @@ export class PotatoVoiceManager extends VoiceManager {
     private downloadQueue: QueueItem[]
     private boundChannel: TextChannel
     private downloading: boolean
-    private nowPlaying: MessageEmbed
+    private nowPlaying: QueueItem
     private queueLoop: boolean
-    private songLoop: boolean
 
     public constructor() {
         super()
@@ -93,7 +109,6 @@ export class PotatoVoiceManager extends VoiceManager {
         this.downloadQueue = []
         this.downloading = false
         this.queueLoop = false
-        this.songLoop = false
     }
 
     public addToQueue(duration: number, webpageUrl: string, title: string, id: string, thumbnail: string): void {
@@ -152,12 +167,9 @@ export class PotatoVoiceManager extends VoiceManager {
             this.boundChannel.send('Something went wrong while preparing song')
             return
         }
-        this.nowPlaying = genericEmbedResponse(`Now Playing: ${song.title}`).setImage(song.thumbnail).addField('URL:', song.webpageUrl)
+        this.nowPlaying = song
         if (!song.looping) {
-            this.boundChannel.send({ embeds: [ this.nowPlaying ] })
-        }
-        if (this.songLoop) {
-            song.looping = true
+            this.boundChannel.send({ embeds: [ this.nowPlaying.generateEmbed() ] })
         }
         this.player.on('stateChange', (oldState, newState) => {
             if (newState.status !== AudioPlayerStatus.Idle || oldState.status === AudioPlayerStatus.Idle) {
@@ -166,7 +178,7 @@ export class PotatoVoiceManager extends VoiceManager {
             this.player.removeAllListeners('stateChange')
             if (this.queueLoop) {
                 this.queue.push(song)
-            } else if (this.songLoop) {
+            } else if (song.looping) {
                 this.queue.unshift(song)
             }
             this.checkSongStatus()
@@ -186,30 +198,23 @@ export class PotatoVoiceManager extends VoiceManager {
         currentItem.download()
     }
 
-    public loopSong(): string {
+    public loopSong(): InteractionReplyOptions {
         if (this.player?.state.status !== AudioPlayerStatus.Playing && this.player?.state.status !== AudioPlayerStatus.Paused) {
-            return 'Nothing is playing!'
+            return { content: 'Nothing is playing!' }
         }
-        if (this.songLoop) {
-            this.songLoop = false
-            this.nowPlaying.setFooter('')
-            return 'No longer looping'
-        }
-        this.songLoop = true
-        this.nowPlaying.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png')
-        return 'Now looping'
+        return this.nowPlaying.loop()
     }
 
-    public loopQueue(): string {
-        if (!this.player || this.queue.length < 1) {
-            return 'Nothing is queued!'
+    public loopQueue(): InteractionReplyOptions {
+        if (this.player?.state.status !== AudioPlayerStatus.Playing && this.player?.state.status !== AudioPlayerStatus.Paused || this.queue.length < 1) {
+            return { content: 'Nothing is queued!' }
         }
         if (this.queueLoop) {
             this.queueLoop = false
-            return 'No longer looping queue'
+            return { content: 'No longer looping queue' }
         }
         this.queueLoop = true
-        return 'Now looping queue'
+        return { content: 'Now looping queue' }
     }
 
     public clear(): boolean {
@@ -243,19 +248,23 @@ export class PotatoVoiceManager extends VoiceManager {
         if (!this.nowPlaying) {
             return { content: 'Nothing has played yet!' }
         }
-        return { embeds: [ this.nowPlaying ] }
+        return { embeds: [ this.nowPlaying.generateEmbed() ] }
     }
 
     public getQueue(): QueueItem[][] {
-        if (this.queue.length < 1) {
+        if (this.player?.state.status !== AudioPlayerStatus.Playing && this.player?.state.status !== AudioPlayerStatus.Paused) {
             return null
         }
         const queueArray: QueueItem[][] = []
         for (let r = 0; r < Math.ceil(this.queue.length / 25); r++) {
             queueArray.push([])
-            for (let i = 0; i < 25; i++) {
+            for (let i = -1; i < 25; i++) {
                 if (r * 25 + i > this.queue.length - 1) {
                     break
+                }
+                if (r === 0 && i === -1) {
+                    queueArray[r].push(this.nowPlaying)
+                    continue
                 }
                 queueArray[r].push(this.queue[r * 25 + i])
             }
@@ -275,6 +284,5 @@ export class PotatoVoiceManager extends VoiceManager {
         this.downloading = false
         this.nowPlaying = null
         this.queueLoop = false
-        this.songLoop = false
     }
 }

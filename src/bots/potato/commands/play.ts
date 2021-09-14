@@ -12,44 +12,10 @@ const data: ApplicationCommandData = {
     description: 'Play a song from Youtube',
     options: [
         {
-            name: 'search',
-            description: 'Get the song from a URL or search terms',
-            type: 'SUB_COMMAND',
-            options: [ {
-                name: 'name',
-                description: 'The URL or title of the song',
-                type: 'STRING',
-                required: true
-            } ]
-        },
-        {
-            name: 'featured',
-            description: 'Get the song from the list of featured playlists',
-            type: 'SUB_COMMAND',
-            options: [ {
-                name: 'name',
-                description: 'The name of the playlist',
-                type: 'STRING',
-                required: true,
-                choices: [
-                    {
-                        name: 'epic',
-                        value: 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY4lfQYkEb60nitxrJMpN5a2'
-                    },
-                    {
-                        name: 'magic',
-                        value: 'https://www.youtube.com/playlist?list=PLt3HR7cu4NMNUoQx1q5ullRMW-ZwosuNl'
-                    },
-                    {
-                        name: 'undertale',
-                        value: 'https://www.youtube.com/playlist?list=PLLSgIflCqVYMBjn63DEn0b6-sqKZ9xh_x'
-                    },
-                    {
-                        name: 'fun',
-                        value: 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY77NZ6oE4PbkFarsOIyQcGD'
-                    }
-                ]
-            } ]
+            name: 'name',
+            description: 'The URL or title of the song',
+            type: 'STRING',
+            required: true
         }
     ]
 }
@@ -60,7 +26,7 @@ async function play(interaction: CommandInteraction, info: PotatoGuildInputManag
     if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
         return { content: 'This command can only be used while in a visable voice channel!' }
     }
-    const arg = <string> interaction.options.getString('name')
+    const arg = interaction.options.getString('name')
     interaction.editReply({ content: 'Boiling potatoes...' })
     let url: string
     if (!arg.match(/(\.|^)youtube\.com\//)) {
