@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { config } from '../../../core/constants'
-import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
+import { GuildInputManager } from '../../../core/GuildInputManager'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
 
@@ -24,7 +24,7 @@ const data: ApplicationCommandData = {
     ]
 }
 
-async function download(interaction: CommandInteraction, info: PotatoGuildInputManager): Promise<InteractionReplyOptions> {
+async function download(interaction: CommandInteraction, info: GuildInputManager): Promise<InteractionReplyOptions> {
     if (interaction.member !== info.users.get('admin')) {
         return { content: 'You don\'t have permission to use this command!' }
     }

@@ -2,7 +2,7 @@ import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, Te
 import { existsSync, readFileSync } from 'fs'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { config } from '../../../core/constants'
-import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
+import { GuildInputManager } from '../../../core/GuildInputManager'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
 
@@ -35,7 +35,7 @@ const data: ApplicationCommandData = {
     } ]
 }
 
-async function playlist(interaction: CommandInteraction, info: PotatoGuildInputManager): Promise<InteractionReplyOptions> {
+async function playlist(interaction: CommandInteraction, info: GuildInputManager): Promise<InteractionReplyOptions> {
     const member = await interaction.guild.members.fetch(interaction.user)
     const voiceChannel = member.voice.channel
     if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
@@ -59,10 +59,10 @@ async function playlist(interaction: CommandInteraction, info: PotatoGuildInputM
         } else {
             songData = entry
         }
-        info.voiceManager.addToQueue(songData.duration, `https://www.youtube.com/watch?v=${songData.id}`, songData.title, songData.id, songData?.thumbnail)
+        info.getPotatoVoiceManager().addToQueue(songData.duration, `https://www.youtube.com/watch?v=${songData.id}`, songData.title, songData.id, songData?.thumbnail)
     }
-    info.voiceManager.bindChannel(<TextChannel> interaction.channel)
-    if (!info.voiceManager.connect(voiceChannel)) {
+    info.getPotatoVoiceManager().bindChannel(<TextChannel> interaction.channel)
+    if (!info.getPotatoVoiceManager().connect(voiceChannel)) {
         return { content: 'Something went wrong when connecting to voice' }
     }
     return { content: 'Added to queue!' }

@@ -2,12 +2,13 @@ import { Client, ClientOptions, Collection, Intents } from 'discord.js'
 import { BaseCommand } from '../../core/BaseCommand'
 import { deployCommands, getCommands } from '../../core/commonFunctions'
 import { config } from '../../core/constants'
-import { YeetGuildInputManager } from './YeetGuildInputManager'
+import { GuildInputManager } from '../../core/GuildInputManager'
+import { yeetMessageParse } from '../../core/responseFunctions'
 
 const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ] }
 let client = new Client(clientOptions)
 let commands: Collection<string, BaseCommand>
-const guildStatus = new Map<string, YeetGuildInputManager>()
+const guildStatus = new Map<string, GuildInputManager>()
 
 function defineEvents() {
     client.on('ready', () => {
@@ -28,10 +29,10 @@ function defineEvents() {
 
     client.on('messageCreate', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new YeetGuildInputManager(message.guild, commands))
+            guildStatus.set(message.guild.id, new GuildInputManager(message.guild, commands, yeetMessageParse))
         }
 
-        guildStatus.get(message.guild.id).parseGenericMessage(message)
+        guildStatus.get(message.guild.id).parseMessage(message)
     })
 
     client.on('interactionCreate', interaction => {
@@ -40,7 +41,7 @@ function defineEvents() {
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new YeetGuildInputManager(interaction.guild, commands))
+            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, yeetMessageParse))
         }
 
         guildStatus.get(interaction.guild.id).parseCommand(interaction)

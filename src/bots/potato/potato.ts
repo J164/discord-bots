@@ -4,8 +4,10 @@ import { BaseCommand } from '../../core/BaseCommand'
 import { deployCommands, getChannel, getCommands, getStringDate, getWeatherEmoji } from '../../core/commonFunctions'
 import { config } from '../../core/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
+import { GuildInputManager } from '../../core/GuildInputManager'
 import { HolidayResponse, QuoteResponse, WeatherResponse } from '../../core/interfaces'
-import { PotatoGuildInputManager } from './PotatoGuildInputManager'
+import { potatoMessageParse } from '../../core/responseFunctions'
+import { PotatoVoiceManager } from './PotatoVoiceManager'
 
 process.on('uncaughtException', err => {
     if (err.message !== 'Unknown interaction') {
@@ -17,7 +19,7 @@ const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.
 let client = new Client(clientOptions)
 let commands: Collection<string, BaseCommand>
 const database = new DatabaseManager()
-const guildStatus = new Map<string, PotatoGuildInputManager>()
+const guildStatus = new Map<string, GuildInputManager>()
 
 async function dailyReport(date: Date): Promise<MessageOptions> {
     //meme of day
@@ -100,10 +102,10 @@ function defineEvents() {
 
     client.on('messageCreate', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new PotatoGuildInputManager(message.guild, commands, database))
+            guildStatus.set(message.guild.id, new GuildInputManager(message.guild, commands, potatoMessageParse, database, new PotatoVoiceManager()))
         }
 
-        guildStatus.get(message.guild.id).parseGenericMessage(message)
+        guildStatus.get(message.guild.id).parseMessage(message)
     })
 
     client.on('interactionCreate', interaction => {
@@ -112,7 +114,7 @@ function defineEvents() {
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new PotatoGuildInputManager(interaction.guild, commands, database))
+            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, potatoMessageParse, database, new PotatoVoiceManager()))
         }
 
         guildStatus.get(interaction.guild.id).parseCommand(interaction)

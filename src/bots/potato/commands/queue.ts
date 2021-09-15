@@ -1,24 +1,24 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { genericEmbedResponse } from '../../../core/commonFunctions'
-import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
-import { QueueItem } from '../PotatoVoiceManager'
+import { GuildInputManager } from '../../../core/GuildInputManager'
+import { QueueItem } from '../../../core/voiceUtils/QueueItem'
 
 const data: ApplicationCommandData = {
     name: 'queue',
     description: 'Get the song queue'
 }
 
-async function queue(interaction: CommandInteraction, info: PotatoGuildInputManager, queueArray: QueueItem[][] = null, button: ButtonInteraction = null, i = 0): Promise<void> {
+async function queue(interaction: CommandInteraction, info: GuildInputManager, queueArray: QueueItem[][] = null, button: ButtonInteraction = null, i = 0): Promise<void> {
     if (!queueArray) {
-        queueArray = info.voiceManager.getQueue()
+        queueArray = info.getPotatoVoiceManager().getQueue()
         if (!queueArray) {
             interaction.editReply({ content: 'There is no queue!' })
             return
         }
     }
     let title = 'Queue'
-    if (info.voiceManager.getQueueLoop()) {
+    if (info.getPotatoVoiceManager().getQueueLoop()) {
         title += ' (Looping)'
     }
     const queueMessage = genericEmbedResponse(title).setFooter(`${i + 1}/${queueArray.length}`)

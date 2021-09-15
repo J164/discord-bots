@@ -3,7 +3,7 @@ import { BaseCommand } from '../../core/BaseCommand'
 import { deployCommands, getCommands } from '../../core/commonFunctions'
 import { config } from '../../core/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
-import { KrenkoGuildInputManager } from './KrenkoGuildInputManager'
+import { GuildInputManager } from '../../core/GuildInputManager'
 
 process.on('uncaughtException', err => {
     if (err.message !== 'Unknown interaction') {
@@ -15,7 +15,7 @@ const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS ] }
 let client = new Client(clientOptions)
 let commands: Collection<string, BaseCommand>
 const database = new DatabaseManager()
-const guildStatus = new Map<string, KrenkoGuildInputManager>()
+const guildStatus = new Map<string, GuildInputManager>()
 
 function defineEvents() {
     client.on('ready', () => {
@@ -41,7 +41,7 @@ function defineEvents() {
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new KrenkoGuildInputManager(interaction.guild, commands, database))
+            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, null, database))
         }
 
         guildStatus.get(interaction.guild.id).parseCommand(interaction)

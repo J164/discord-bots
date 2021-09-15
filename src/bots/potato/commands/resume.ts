@@ -1,14 +1,14 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
+import { GuildInputManager } from '../../../core/GuildInputManager'
 
 const data: ApplicationCommandData = {
     name: 'resume',
     description: 'Resume song playback'
 }
 
-function resume(interaction: CommandInteraction, info: PotatoGuildInputManager): InteractionReplyOptions {
-    if (info.voiceManager.resume()) {
+function resume(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
+    if (info.getPotatoVoiceManager().resume()) {
         return { content: 'Resumed!' }
     }
     return { content: 'Nothing is playing!' }

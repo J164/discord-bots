@@ -3,7 +3,9 @@ import { BaseCommand } from '../../core/BaseCommand'
 import { deployCommands, getCommands } from '../../core/commonFunctions'
 import { config } from '../../core/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
-import { SwearGuildInputManager } from './SwearGuildInputManager'
+import { GuildInputManager } from '../../core/GuildInputManager'
+import { swearMessageParse } from '../../core/responseFunctions'
+import { VoiceManager } from '../../core/VoiceManager'
 
 process.on('uncaughtException', err => {
     if (err.message !== 'Unknown interaction') {
@@ -15,7 +17,7 @@ const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.
 let client: Client = new Client(clientOptions)
 let commands: Collection<string, BaseCommand>
 const database = new DatabaseManager()
-const guildStatus = new Map<string, SwearGuildInputManager>()
+const guildStatus = new Map<string, GuildInputManager>()
 
 function defineEvents() {
     client.on('ready', () => {
@@ -41,10 +43,10 @@ function defineEvents() {
 
     client.on('messageCreate', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new SwearGuildInputManager(message.guild, commands, database))
+            guildStatus.set(message.guild.id, new GuildInputManager(message.guild, commands, swearMessageParse, database, new VoiceManager()))
         }
 
-        guildStatus.get(message.guild.id).parseGenericMessage(message)
+        guildStatus.get(message.guild.id).parseMessage(message)
     })
 
     client.on('interactionCreate', interaction => {
@@ -53,7 +55,7 @@ function defineEvents() {
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new SwearGuildInputManager(interaction.guild, commands, database))
+            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, swearMessageParse, database, new VoiceManager()))
         }
 
         guildStatus.get(interaction.guild.id).parseCommand(interaction)

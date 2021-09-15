@@ -1,8 +1,8 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { config } from '../../../core/constants'
+import { GuildInputManager } from '../../../core/GuildInputManager'
 import { SwearSongInfo } from '../../../core/interfaces'
-import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
 
@@ -25,7 +25,7 @@ const data: ApplicationCommandData = {
     ]
 }
 
-async function newSong(interaction: CommandInteraction, info: PotatoGuildInputManager, songs: SwearSongInfo[]): Promise<void> {
+async function newSong(interaction: CommandInteraction, info: GuildInputManager, songs: SwearSongInfo[]): Promise<void> {
     if (interaction.member !== info.users.get('admin') && interaction.member !== info.users.get('swear')) {
         interaction.editReply({ content: 'You don\'t have permission to use this command!' })
         return
@@ -74,7 +74,7 @@ async function newSong(interaction: CommandInteraction, info: PotatoGuildInputMa
     interaction.editReply({ content: 'Success!' })
 }
 
-function getSongs(interaction: CommandInteraction, info: PotatoGuildInputManager): void {
+function getSongs(interaction: CommandInteraction, info: GuildInputManager): void {
     info.database.select('swear_songs', results => {
         newSong(interaction, info, <SwearSongInfo[]> results)
     })

@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageEmbed, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
+import { GuildInputManager } from '../../../core/GuildInputManager'
 import { CommanderMagicGame } from '../../../core/modules/games/CommanderMagicGame'
-import { KrenkoGuildInputManager } from '../KrenkoGuildInputManager'
 
 const data: ApplicationCommandData = {
     name: 'hit',
@@ -34,7 +34,7 @@ const data: ApplicationCommandData = {
     ]
 }
 
-function hit(interaction: CommandInteraction, info: KrenkoGuildInputManager): InteractionReplyOptions {
+function hit(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
     if (!info.game?.isActive) {
         return { content: 'There is currently no active game' }
     }

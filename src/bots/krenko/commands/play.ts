@@ -1,8 +1,8 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
+import { GuildInputManager } from '../../../core/GuildInputManager'
 import { BaseMagicGame } from '../../../core/modules/games/BaseMagicGame'
 import { CommanderMagicGame } from '../../../core/modules/games/CommanderMagicGame'
-import { KrenkoGuildInputManager } from '../KrenkoGuildInputManager'
 
 const data: ApplicationCommandData = {
     name: 'play',
@@ -97,7 +97,7 @@ const data: ApplicationCommandData = {
     ]
 }
 
-function play(interaction: CommandInteraction, info: KrenkoGuildInputManager): InteractionReplyOptions {
+function play(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
     const playerlist: User[] = []
     for (let i = 1; i <= 4; i++) {
         if (interaction.options.getUser(`player${i}`)) {

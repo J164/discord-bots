@@ -1,13 +1,13 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { KrenkoGuildInputManager } from '../KrenkoGuildInputManager'
+import { GuildInputManager } from '../../../core/GuildInputManager'
 
 const data: ApplicationCommandData = {
     name: 'end',
     description: 'End the current Magic game'
 }
 
-function end(interaction: CommandInteraction, info: KrenkoGuildInputManager): InteractionReplyOptions {
+function end(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
     if (!info.game?.isActive) {
         return { content: 'There is currently no active game' }
     }

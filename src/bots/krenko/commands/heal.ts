@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { KrenkoGuildInputManager } from '../KrenkoGuildInputManager'
+import { GuildInputManager } from '../../../core/GuildInputManager'
 
 const data: ApplicationCommandData = {
     name: 'heal',
@@ -21,7 +21,7 @@ const data: ApplicationCommandData = {
     ]
 }
 
-function heal(interaction: CommandInteraction, info: KrenkoGuildInputManager): InteractionReplyOptions {
+function heal(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
     if (!info.game?.isActive) {
         return { content: 'There is currently no active game' }
     }

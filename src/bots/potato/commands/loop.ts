@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { PotatoGuildInputManager } from '../PotatoGuildInputManager'
+import { GuildInputManager } from '../../../core/GuildInputManager'
 
 const data: ApplicationCommandData = {
     name: 'loop',
@@ -25,11 +25,11 @@ const data: ApplicationCommandData = {
     ]
 }
 
-function loop(interaction: CommandInteraction, info: PotatoGuildInputManager): InteractionReplyOptions {
+function loop(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
     if (interaction.options.getInteger('name') === 0) {
-        return info.voiceManager.loopSong()
+        return info.getPotatoVoiceManager().loopSong()
     }
-    return info.voiceManager.loopQueue()
+    return info.getPotatoVoiceManager().loopQueue()
 }
 
 module.exports = new BaseCommand(data, loop)
