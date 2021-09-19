@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { genericEmbedResponse } from '../../../core/commonFunctions'
+import { genericEmbed } from '../../../core/commonFunctions'
 
 const data: ApplicationCommandData = {
     name: 'roll',
@@ -22,7 +22,7 @@ function roll(interaction: CommandInteraction): InteractionReplyOptions {
         }
     }
     interaction.editReply({ content: `Rolling a ${dice}-sided die...` })
-    const diceResult = genericEmbedResponse(`${dice}-sided die result`)
+    const diceResult = genericEmbed({ title: `${dice}-sided die result` })
     let chanceMod = 10000
     while (100 / dice * chanceMod < 1) {
         chanceMod *= 10

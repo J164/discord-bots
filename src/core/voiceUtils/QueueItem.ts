@@ -1,7 +1,7 @@
 import { MessageEmbed, InteractionReplyOptions } from 'discord.js'
 import EventEmitter from 'events'
 import { existsSync, writeFileSync } from 'fs'
-import { genericEmbedResponse } from '../commonFunctions'
+import { genericEmbed } from '../commonFunctions'
 import { config } from '../constants'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
@@ -30,7 +30,14 @@ export class QueueItem extends EventEmitter {
     }
 
     public generateEmbed(): MessageEmbed {
-        const embed = genericEmbedResponse(`Now Playing: ${this.title}`).setImage(this.thumbnail).addField('URL:', this.webpageUrl)
+        const embed = genericEmbed({
+            title: `Now Playing: ${this.title}`,
+            fields: [ {
+                name: 'URL:',
+                value: this.webpageUrl
+            } ],
+            image: { url: this.thumbnail }
+        })
         if (this.looping) {
             embed.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png')
         }

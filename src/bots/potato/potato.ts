@@ -1,7 +1,7 @@
 import axios from 'axios'
-import { Client, ClientOptions, Collection, Intents, MessageEmbed, MessageOptions, TextChannel } from 'discord.js'
+import { Client, ClientOptions, Collection, Intents, MessageOptions, TextChannel } from 'discord.js'
 import { BaseCommand } from '../../core/BaseCommand'
-import { deployCommands, getChannel, getCommands, getStringDate, getWeatherEmoji } from '../../core/commonFunctions'
+import { deployCommands, genericEmbed, getChannel, getCommands, getStringDate, getWeatherEmoji } from '../../core/commonFunctions'
 import { config } from '../../core/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { GuildInputManager } from '../../core/GuildInputManager'
@@ -29,7 +29,7 @@ async function dailyReport(date: Date): Promise<MessageOptions> {
     console.log(holiday.data)
     const stringDate = getStringDate(date)
     const weatherEmoji = getWeatherEmoji(weather.data.current.condition.code)
-    const response = { embeds: [ new MessageEmbed({
+    const response = { embeds: [ genericEmbed({
         title: `Daily Report: ${stringDate} ${weatherEmoji}`,
         fields: [
             {
@@ -42,8 +42,7 @@ async function dailyReport(date: Date): Promise<MessageOptions> {
                 value: `It feels like ${weather.data.current.feelslike_f}°F and the wind speed is ${weather.data.current.wind_mph} mph`,
                 inline: false
             }
-        ],
-        color: 0x0099ff
+        ]
     }) ] }
     if (holiday.data.length > 0) {
         response.embeds[0].addField(`Today is ${holiday.data[0].name}`, 'Have a great day!', false)

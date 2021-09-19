@@ -1,5 +1,5 @@
 import { MessageEmbed, Snowflake, User } from 'discord.js'
-import { genericEmbedResponse } from '../../commonFunctions'
+import { genericEmbed } from '../../commonFunctions'
 import { MagicPlayer } from '../../interfaces'
 
 export class BaseMagicGame {
@@ -34,7 +34,7 @@ export class BaseMagicGame {
 
     public eliminate(player: Snowflake): MessageEmbed {
         if (!this.playerData.get(player).isAlive) {
-            return genericEmbedResponse(`${this.playerData.get(player).name} is already eliminated`)
+            return genericEmbed({ title: `${this.playerData.get(player).name} is already eliminated` })
         }
         this.playerData.get(player).isAlive = false
         this.numAlive--
@@ -45,7 +45,7 @@ export class BaseMagicGame {
     }
 
     public printStandings(): MessageEmbed {
-        const embed = genericEmbedResponse('Current Standings')
+        const embed = genericEmbed({ title: 'Current Standings' })
         for (const [ , player ] of this.playerData) {
             if (player.isAlive) {
                 embed.addField(`${player.name}:`, `Life Total: ${player.life}\nPoison Counters: ${player.poison}`)
@@ -63,7 +63,7 @@ export class BaseMagicGame {
         }
         for (const [ , player ] of this.playerData) {
             if (player.isAlive) {
-                return genericEmbedResponse(`${player.name} Wins!`)
+                return genericEmbed({ title: `${player.name} Wins!` })
                     .addField(`${player.name}:`, `Life Total: ${player.life}\nPoison Counters: ${player.poison}`)
             }
         }

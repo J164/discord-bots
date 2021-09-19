@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { genericEmbedResponse } from '../../../core/commonFunctions'
+import { genericEmbed } from '../../../core/commonFunctions'
 import { Euchre } from '../../../core/modules/games/Euchre'
 
 const data: ApplicationCommandData = {
@@ -36,13 +36,22 @@ const data: ApplicationCommandData = {
 
 async function setupEuchre(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     return { content: 'This command is currently under construction!' }
-    const players = genericEmbedResponse('Teams')
-    const channel = interaction.channel
-    players.addField('Team 1:', `${interaction.options.getUser('player1').username}, ${interaction.options.getUser('player3').username}`)
-    players.addField('Team 2:', `${interaction.options.getUser('player2').username}, ${interaction.options.getUser('player4').username}`)
+    const players = genericEmbed({
+        title: 'Teams',
+        fields: [
+            {
+                name: 'Team 1:',
+                value: `${interaction.options.getUser('player1').username}, ${interaction.options.getUser('player3').username}`
+            },
+            {
+                name: 'Team 2:',
+                value: `${interaction.options.getUser('player2').username}, ${interaction.options.getUser('player4').username}`
+            }
+        ]
+    })
     interaction.editReply({ embeds: [ players ] })
     const game = new Euchre([ interaction.options.getUser('player1'), interaction.options.getUser('player2'), interaction.options.getUser('player3'), interaction.options.getUser('player4') ])
-    channel.send({embeds: [ await game.startGame() ] })
+    interaction.channel.send({embeds: [ await game.startGame() ] })
 }
 
 module.exports = new BaseCommand(data, setupEuchre)

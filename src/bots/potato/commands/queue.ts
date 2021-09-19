@@ -1,6 +1,6 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { genericEmbedResponse } from '../../../core/commonFunctions'
+import { genericEmbed } from '../../../core/commonFunctions'
 import { GuildInputManager } from '../../../core/GuildInputManager'
 import { QueueItem } from '../../../core/voiceUtils/QueueItem'
 
@@ -21,7 +21,10 @@ async function queue(interaction: CommandInteraction, info: GuildInputManager, q
     if (info.getPotatoVoiceManager().getQueueLoop()) {
         title += ' (Looping)'
     }
-    const queueMessage = genericEmbedResponse(title).setFooter(`${i + 1}/${queueArray.length}`)
+    const queueMessage = genericEmbed({
+        title: title,
+        footer: { text: `${i + 1}/${queueArray.length}` }
+    })
     for (const [ index, entry ] of queueArray[i].entries()) {
         queueMessage.addField(`${index + 1}.`, `${entry.title}\n${entry.webpageUrl}`)
     }

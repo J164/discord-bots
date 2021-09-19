@@ -1,6 +1,6 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, InteractionUpdateOptions, MessageActionRow, MessageAttachment, MessageButton, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { genericEmbedResponse, makeGetRequest, mergeImages } from '../../../core/commonFunctions'
+import { genericEmbed, makeGetRequest, mergeImages } from '../../../core/commonFunctions'
 import { GuildInputManager } from '../../../core/GuildInputManager'
 import { ScryfallResponse, MagicCard } from '../../../core/interfaces'
 
@@ -31,7 +31,7 @@ function formatResponse(response: ScryfallResponse): MagicCard[][] {
 
 async function generateResponse(results: MagicCard[][], r: number, i: number): Promise<InteractionUpdateOptions> {
     const card = results[r][i]
-    const embed = genericEmbedResponse(card.name)
+    const embed = genericEmbed({ title: card.name })
     let reply: InteractionReplyOptions
     if (card.card_faces) {
         const attachment = new MessageAttachment(await mergeImages([ card.card_faces[0].image_uris.large, card.card_faces[1].image_uris.large ], { width: 1344, height: 936 }), 'card.jpg')
@@ -48,13 +48,22 @@ async function search(interaction: CommandInteraction, info: GuildInputManager, 
     if (!results) {
         const searchTerm = interaction.options.getString('query')
         try {
-        const response = <ScryfallResponse> await makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)
-        results = formatResponse(response)
+            const response = <ScryfallResponse> await makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)
+            results = formatResponse(response)
         } catch {
-            return { embeds: [ genericEmbedResponse('Card Not Found').addField(`${searchTerm} not found`, 'Check your spelling and/or try using a more general search term') ] }
+            return { embeds: [ genericEmbed({
+                title: 'Card Not Found',
+                fields: [ {
+                    name: `${searchTerm} not found`,
+                    value: 'Check your spelling and/or try using a more general search term'
+                } ]
+            }) ]}
         }
     }
-    const embed = genericEmbedResponse('Results').setFooter(`${i + 1}/${results.length}`)
+    const embed = genericEmbed({
+        title: 'Results',
+        footer: { text: `${i + 1}/${results.length}` }
+    })
     for (const [ index, entry ] of results[i].entries()) {
         embed.addField(`${index + 1}.`, `${entry.name}`)
     }

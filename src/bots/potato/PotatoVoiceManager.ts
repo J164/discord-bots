@@ -82,7 +82,7 @@ export class PotatoVoiceManager extends VoiceManager {
             this.boundChannel.send({ embeds: [ this.nowPlaying.generateEmbed() ] })
         }
         this.player.on('stateChange', (oldState, newState) => {
-            if (newState.status !== AudioPlayerStatus.Idle || oldState.status === AudioPlayerStatus.Idle) {
+            if (newState.status !== AudioPlayerStatus.Idle) {
                 return
             }
             this.player.removeAllListeners('stateChange')

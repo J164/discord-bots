@@ -1,6 +1,6 @@
 import { MessageAttachment, MessageEmbed, MessageReaction, User } from 'discord.js'
 import * as axios from 'axios'
-import { genericEmbedResponse, mergeImages } from '../../commonFunctions'
+import { genericEmbed, mergeImages } from '../../commonFunctions'
 import { Card, EuchrePlayer, EuchreTeam } from '../../interfaces'
 import { root } from '../../constants'
 
@@ -58,8 +58,13 @@ export class Euchre {
             this.players = newOrder
             await this.startRound()
         }
-        const results = genericEmbedResponse('Game Over!')
-        results.addField('Players', `${this.players[0].id}, ${this.players[1].id}, ${this.players[2].id}, ${this.players[3].id}`)
+        const results = genericEmbed({
+            title: 'Game Over!',
+            fields: [ {
+                name: 'Players',
+                value: `${this.players[0].id}, ${this.players[1].id}, ${this.players[2].id}, ${this.players[3].id}`
+            } ]
+        })
         if (this.team1.score > 10) {
             results.addField('Team 1 Wins!', `${this.team1.score} - ${this.team2.score}`)
         } else {
@@ -290,9 +295,19 @@ export class Euchre {
             } else {
                 this.team2.tricks++
             }
-            const tricksWon = genericEmbedResponse('Tricks Won:')
-            tricksWon.addField('Team 1:', this.team1.tricks.toString())
-            tricksWon.addField('Team 2:', this.team2.tricks.toString())
+            const tricksWon = genericEmbed({
+                title: 'Tricks Won:',
+                fields: [
+                    {
+                        name: 'Team 1:',
+                        value: this.team1.tricks.toString()
+                    },
+                    {
+                        name: 'Team 2:',
+                        value: this.team2.tricks.toString()
+                    }
+                ]
+            })
             for (const player of this.players) {
                 const channel = await player.user.createDM()
                 await channel.send({ embeds: [ tricksWon ] })
@@ -317,9 +332,19 @@ export class Euchre {
         } else {
             winningTeam.score += 2
         }
-        const standings = genericEmbedResponse('Tricks Won:')
-        standings.addField('Team 1:', this.team1.score.toString())
-        standings.addField('Team 2:', this.team2.score.toString())
+        const standings = genericEmbed({
+            title: 'Tricks Won:',
+            fields: [
+                {
+                    name: 'Team 1:',
+                    value: this.team1.tricks.toString()
+                },
+                {
+                    name: 'Team 2:',
+                    value: this.team2.tricks.toString()
+                }
+            ]
+        })
         for (const player of this.players) {
             const channel = await player.user.createDM()
             await channel.send({ embeds: [ standings ] })
@@ -367,7 +392,7 @@ export class Euchre {
 
     private async askPlayer(player: User, question: string, responses: string[]): Promise<number> {
         const channel = await player.createDM()
-        const prompt = genericEmbedResponse(question)
+        const prompt = genericEmbed({ title: question })
         for (let i = 0; i < responses.length; i++) {
             prompt.addField(`${i + 1}. `, responses[i])
         }
@@ -388,7 +413,7 @@ export class Euchre {
 
     private async sendHand(player: EuchrePlayer): Promise<void> {
         const filePaths: string[] = []
-        const hand = genericEmbedResponse('^ Your Hand:')
+        const hand = genericEmbed({ title: '^ Your Hand:' })
         for (const card of player.hand) {
             filePaths.push(`${root}/assets/img/cards/${card.code}.png`)
         }
@@ -409,7 +434,7 @@ export class Euchre {
     }
 
     private async sendCards(cards: Card[], message: string): Promise<void> {
-        const response = genericEmbedResponse(`^ ${message}`)
+        const response = genericEmbed({ title: `^ ${message}` })
         const filePaths: string[] = []
         for (const card of cards) {
             filePaths.push(`${root}/assets/img/cards/${card.code}.png`)

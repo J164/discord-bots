@@ -1,4 +1,4 @@
-import { ApplicationCommandData, Channel, Client, Collection, GuildMember, MessageEmbed, Snowflake, VoiceState } from 'discord.js'
+import { ApplicationCommandData, Channel, Client, Collection, GuildMember, MessageEmbed, MessageEmbedOptions, Snowflake, VoiceState } from 'discord.js'
 import { createCanvas, loadImage } from 'canvas'
 import * as axios from 'axios'
 import { readdirSync } from 'fs'
@@ -15,16 +15,14 @@ export async function getCommands(client: Client, botName: string): Promise<Coll
     return commands
 }
 
-export async function deployCommands(client: Client, botName: string): Promise<void> {
+export function deployCommands(client: Client, botName: string): void {
     const commandFiles = readdirSync(`./bots/${botName}/commands`).filter(file => file.endsWith('.js'))
     const commandData: ApplicationCommandData[] = []
-
     for (const file of commandFiles) {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const command = <BaseCommand> require(`../bots/${botName}/commands/${file}`)
         commandData.push(command.data)
     }
-
     client.application.commands.set(commandData)
 }
 
@@ -57,11 +55,11 @@ export async function mergeImages(filePaths: string[], options: { width: number;
     return activeCanvas.toBuffer()
 }
 
-export function genericEmbedResponse(title: string): MessageEmbed {
-    const embedVar = new MessageEmbed()
-    embedVar.setTitle(title)
-    embedVar.setColor(0x0099ff)
-    return embedVar
+export function genericEmbed(options: MessageEmbedOptions): MessageEmbed {
+    if (!options.color) {
+        options.color = 0x0099ff
+    }
+    return new MessageEmbed(options)
 }
 
 export async function makeGetRequest(path: string): Promise<unknown> {

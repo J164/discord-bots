@@ -14,11 +14,8 @@ export class VoiceManager {
     }
 
     public async connect(voiceChannel: VoiceChannel): Promise<boolean> {
-        if (this.player?.state.status === AudioPlayerStatus.Idle) {
+        if (this.voiceConnection?.state.status === VoiceConnectionStatus.Ready) {
             return true
-        }
-        if (this.player) {
-            return false
         }
         this.voiceConnection = joinVoiceChannel({
             channelId: voiceChannel.id,
@@ -29,6 +26,9 @@ export class VoiceManager {
             await entersState(this.voiceConnection, VoiceConnectionStatus.Ready, 30e3)
             this.player = createAudioPlayer()
             this.subscription = this.voiceConnection.subscribe(this.player)
+            this.voiceConnection.once('stateChange', () => {
+                this.reset()
+            })
             return true
         } catch (err) {
             console.log(err)
@@ -64,10 +64,11 @@ export class VoiceManager {
     }
 
     public isPotato(): boolean {
-        return 'clear' in this
+        return 'queue' in this
     }
 
     public reset(): void {
+        this.voiceConnection?.removeAllListeners()
         this.voiceConnection?.destroy()
         this.voiceConnection = null
         this.player?.removeAllListeners()

@@ -1,5 +1,5 @@
 import { MessageEmbed } from 'discord.js'
-import { makeGetRequest, genericEmbedResponse } from '../commonFunctions'
+import { makeGetRequest, genericEmbed } from '../commonFunctions'
 import { DeckJson, DeckstatsResponse, DeckstatsListResponse, ScryfallResponse } from '../interfaces'
 
 export class Deck {
@@ -64,7 +64,7 @@ export class Deck {
     }
 
     public getPreview(): MessageEmbed {
-        const preview = genericEmbedResponse(this.name)
+        const preview = genericEmbed({ title: this.name })
         preview.setImage(this.image)
         preview.addField('Deckstats URL:', this.url)
         return preview

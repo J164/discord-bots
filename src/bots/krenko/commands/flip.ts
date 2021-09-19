@@ -1,6 +1,6 @@
 import { ApplicationCommandData, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { genericEmbedResponse } from '../../../core/commonFunctions'
+import { genericEmbed } from '../../../core/commonFunctions'
 
 const data: ApplicationCommandData = {
     name: 'flip',
@@ -9,7 +9,7 @@ const data: ApplicationCommandData = {
 
 function flip(): InteractionReplyOptions {
     const result = Math.random()
-    const flipResult = genericEmbedResponse('Flip Result:')
+    const flipResult = genericEmbed({ title: 'Flip Result:' })
     if (result >= 0.5) {
         flipResult.setImage('https://upload.wikimedia.org/wikipedia/commons/d/dd/2017-D_Roosevelt_dime_obverse_transparent.png')
     } else {

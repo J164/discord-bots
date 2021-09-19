@@ -1,6 +1,6 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, MessageEmbed } from 'discord.js'
+import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { makeGetRequest } from '../../../core/commonFunctions'
+import { genericEmbed, makeGetRequest } from '../../../core/commonFunctions'
 import { WynncraftData } from '../../../core/interfaces'
 
 const data: ApplicationCommandData = {
@@ -17,8 +17,7 @@ const data: ApplicationCommandData = {
 async function wynncraft(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     const playerData = <WynncraftData> await makeGetRequest(`https://api.wynncraft.com/v2/player/${interaction.options.getString('player')}/stats`)
     let status
-    const embedVar = new MessageEmbed()
-    embedVar.setTitle(playerData.data[0].username)
+    const embedVar = genericEmbed({ title: playerData.data[0].username })
     if (playerData.data[0].meta.location.online) {
         status = `Online at: ${playerData.data[0].meta.location.server}`
         embedVar.setColor(0x33cc33)
