@@ -1,4 +1,5 @@
 import { Client, ClientOptions, Collection, Intents } from 'discord.js'
+import { writeFileSync } from 'fs'
 import { BaseCommand } from '../../core/BaseCommand'
 import { deployCommands, getCommands } from '../../core/commonFunctions'
 import { config } from '../../core/constants'
@@ -7,9 +8,15 @@ import { GuildInputManager } from '../../core/GuildInputManager'
 import { swearMessageParse } from '../../core/responseFunctions'
 import { VoiceManager } from '../../core/VoiceManager'
 
-process.on('uncaughtException', err => {
-    if (err.message !== 'Unknown interaction') {
-        console.log(err)
+process.on('SIGKILL', () => {
+    process.exit()
+})
+
+process.on('unhandledRejection', (error: Error) => {
+    if (error.message !== 'Unknown interaction') {
+        const date = new Date()
+        writeFileSync(`${config.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-swear.txt`, `${error.name}\n${error.message}\n${error.stack}`)
+        process.exit()
     }
 })
 

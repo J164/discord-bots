@@ -1,9 +1,22 @@
 import { Client, ClientOptions, Collection, Intents } from 'discord.js'
+import { writeFileSync } from 'fs'
 import { BaseCommand } from '../../core/BaseCommand'
 import { deployCommands, getCommands } from '../../core/commonFunctions'
 import { config } from '../../core/constants'
 import { GuildInputManager } from '../../core/GuildInputManager'
 import { yeetMessageParse } from '../../core/responseFunctions'
+
+process.on('SIGKILL', () => {
+    process.exit()
+})
+
+process.on('unhandledRejection', (error: Error) => {
+    if (error.message !== 'Unknown interaction') {
+        const date = new Date()
+        writeFileSync(`${config.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-yeet.txt`, `${error.name}\n${error.message}\n${error.stack}`)
+        process.exit()
+    }
+})
 
 const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ] }
 let client = new Client(clientOptions)

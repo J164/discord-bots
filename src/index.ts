@@ -1,9 +1,13 @@
-process.on('uncaughtException', err => {
-    setInterval(() => { console.log(err) }, 1000)
-})
-
 import { BotSubprocess } from './core/BotSubprocess'
 import { createInterface } from 'readline'
+import { writeFileSync } from 'fs'
+import { config } from './core/constants'
+
+process.on('uncaughtException', err => {
+    const date = new Date()
+    writeFileSync(`${config.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}.txt`, `${err.name}\n${err.message}\n${err.stack}`)
+    process.exit()
+})
 
 const bots = new Map<string, BotSubprocess>([
     [ 'potato', new BotSubprocess('./bots/potato/potato.js', 'Potato Bot') ],

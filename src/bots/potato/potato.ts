@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { Client, ClientOptions, Collection, Intents, MessageOptions, TextChannel } from 'discord.js'
+import { writeFileSync } from 'fs'
 import { BaseCommand } from '../../core/BaseCommand'
 import { deployCommands, genericEmbed, getChannel, getCommands, getStringDate, getWeatherEmoji } from '../../core/commonFunctions'
 import { config } from '../../core/constants'
@@ -9,9 +10,15 @@ import { HolidayResponse, QuoteResponse, WeatherResponse } from '../../core/inte
 import { potatoMessageParse } from '../../core/responseFunctions'
 import { PotatoVoiceManager } from './PotatoVoiceManager'
 
-process.on('uncaughtException', err => {
-    if (err.message !== 'Unknown interaction') {
-        console.log(err)
+process.on('SIGKILL', () => {
+    process.exit()
+})
+
+process.on('unhandledRejection', (error: Error) => {
+    if (error.message !== 'Unknown interaction') {
+        const date = new Date()
+        writeFileSync(`${config.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-potato.txt`, `${error.name}\n${error.message}\n${error.stack}`)
+        process.exit()
     }
 })
 

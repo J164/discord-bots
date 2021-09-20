@@ -1,20 +1,33 @@
 import { ChildProcess, fork } from 'child_process'
 
 export class BotSubprocess {
-    private readonly process: ChildProcess
+    private process: ChildProcess
     private online: boolean
+    private readonly path: string
     public readonly name: string
 
     public constructor(path: string, name: string) {
-        this.process = fork(path)
         this.online = false
         this.name = name
-        this.process.once('message', arg => {
+        this.path = path
+        this.startProcess()
+    }
+
+    public startProcess(): void {
+        this.process = fork(this.path)
+        this.process.on('close', () => {
+            this.process.removeAllListeners('error')
+            this.online = false
+            this.startProcess()
+        })
+        this.process.on('message', arg => {
             if (arg !== 'ready') {
                 return
             }
+            this.process.removeAllListeners('message')
             this.start()
         })
+
     }
 
     public getOnline(): boolean {
@@ -26,11 +39,14 @@ export class BotSubprocess {
             return false
         }
         this.process.send('stop')
-        this.process.once('message', arg => {
+        this.process.on('message', arg => {
             if (arg !== 'stop') {
                 return
             }
+            this.process.removeAllListeners('message')
+            this.process.removeAllListeners('close')
             this.online = false
+            this.process.kill('SIGKILL')
         })
         return true
     }
@@ -39,11 +55,16 @@ export class BotSubprocess {
         if (this.online) {
             return false
         }
+        if (!this.process.channel) {
+            this.startProcess()
+            return true
+        }
         this.process.send('start')
-        this.process.once('message', arg => {
+        this.process.on('message', arg => {
             if (arg !== 'start') {
                 return
             }
+            this.process.removeAllListeners('message')
             this.online = true
         })
         return true
