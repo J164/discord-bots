@@ -1,5 +1,5 @@
 import { Connection, createConnection } from 'mysql'
-import { config } from './constants'
+import { config } from './utils/constants'
 
 export class DatabaseManager {
 

@@ -1,8 +1,8 @@
 import { MessageAttachment, MessageEmbed, MessageReaction, User } from 'discord.js'
 import * as axios from 'axios'
-import { genericEmbed, mergeImages } from '../../commonFunctions'
-import { Card, EuchrePlayer, EuchreTeam } from '../../interfaces'
-import { root } from '../../constants'
+import { genericEmbed, mergeImages } from '../../utils/commonFunctions'
+import { Card, EuchrePlayer, EuchreTeam } from '../../utils/interfaces'
+import { root } from '../../utils/constants'
 
 export class Euchre {
 

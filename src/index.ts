@@ -1,7 +1,7 @@
 import { BotSubprocess } from './core/BotSubprocess'
 import { createInterface } from 'readline'
 import { writeFileSync } from 'fs'
-import { config } from './core/constants'
+import { config } from './core/utils/constants'
 
 process.on('uncaughtException', err => {
     const date = new Date()

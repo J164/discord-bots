@@ -8,7 +8,7 @@ const data: ApplicationCommandData = {
 }
 
 function skip(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
-    if (info.getPotatoVoiceManager().skip()) {
+    if (info.queueManager.skip()) {
         return { content: 'Skipped' }
     }
     return { content: 'There is nothing to skip!' }

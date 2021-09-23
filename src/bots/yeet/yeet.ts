@@ -1,10 +1,10 @@
 import { Client, ClientOptions, Collection, Intents } from 'discord.js'
 import { writeFileSync } from 'fs'
 import { BaseCommand } from '../../core/BaseCommand'
-import { deployCommands, getCommands } from '../../core/commonFunctions'
-import { config } from '../../core/constants'
+import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
+import { config } from '../../core/utils/constants'
 import { GuildInputManager } from '../../core/GuildInputManager'
-import { yeetMessageParse } from '../../core/responseFunctions'
+import { yeetMessageParse } from '../../core/utils/responseFunctions'
 
 process.on('SIGKILL', () => {
     process.exit()
@@ -42,7 +42,7 @@ function defineEvents() {
 
     client.on('messageCreate', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new GuildInputManager(message.guild, commands, yeetMessageParse))
+            guildStatus.set(message.guild.id, new GuildInputManager(message.guild, commands, { parseMessage: yeetMessageParse }))
         }
 
         guildStatus.get(message.guild.id).parseMessage(message)
@@ -54,7 +54,7 @@ function defineEvents() {
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, yeetMessageParse))
+            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, { parseMessage: yeetMessageParse }))
         }
 
         guildStatus.get(interaction.guild.id).parseCommand(interaction)

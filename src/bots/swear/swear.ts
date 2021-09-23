@@ -1,12 +1,12 @@
 import { Client, ClientOptions, Collection, Intents } from 'discord.js'
 import { writeFileSync } from 'fs'
 import { BaseCommand } from '../../core/BaseCommand'
-import { deployCommands, getCommands } from '../../core/commonFunctions'
-import { config } from '../../core/constants'
+import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
+import { config } from '../../core/utils/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { GuildInputManager } from '../../core/GuildInputManager'
-import { swearMessageParse } from '../../core/responseFunctions'
-import { VoiceManager } from '../../core/VoiceManager'
+import { swearMessageParse } from '../../core/utils/responseFunctions'
+import { VoiceManager } from '../../core/voice/VoiceManager'
 
 process.on('SIGKILL', () => {
     process.exit()
@@ -50,7 +50,7 @@ function defineEvents() {
 
     client.on('messageCreate', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new GuildInputManager(message.guild, commands, swearMessageParse, database, new VoiceManager()))
+            guildStatus.set(message.guild.id, new GuildInputManager(message.guild, commands, { parseMessage: swearMessageParse, database: database, voiceManager: new VoiceManager() }))
         }
 
         guildStatus.get(message.guild.id).parseMessage(message)
@@ -62,7 +62,7 @@ function defineEvents() {
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, swearMessageParse, database, new VoiceManager()))
+            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, { parseMessage: swearMessageParse, database: database, voiceManager: new VoiceManager() }))
         }
 
         guildStatus.get(interaction.guild.id).parseCommand(interaction)

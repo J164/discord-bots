@@ -1,7 +1,7 @@
 import { ApplicationCommandData, InteractionReplyOptions } from 'discord.js'
 import { readFileSync } from 'fs'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { root } from '../../../core/constants'
+import { root } from '../../../core/utils/constants'
 
 const data: ApplicationCommandData = {
     name: 'quote',

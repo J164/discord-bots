@@ -2,7 +2,7 @@ import { ApplicationCommandData, Channel, Client, Collection, GuildMember, Messa
 import { createCanvas, loadImage } from 'canvas'
 import * as axios from 'axios'
 import { readdirSync } from 'fs'
-import { BaseCommand } from './BaseCommand'
+import { BaseCommand } from '../BaseCommand'
 import { config } from './constants'
 
 export async function getCommands(client: Client, botName: string): Promise<Collection<string, BaseCommand>> {
@@ -10,7 +10,7 @@ export async function getCommands(client: Client, botName: string): Promise<Coll
     const commands = new Collection<string, BaseCommand>()
     for (const [ , command ] of currentCommands) {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        commands.set(command.name, <BaseCommand> require(`../bots/${botName}/commands/${command.name}.js`))
+        commands.set(command.name, <BaseCommand> require(`../../bots/${botName}/commands/${command.name}.js`))
     }
     return commands
 }
@@ -20,7 +20,7 @@ export function deployCommands(client: Client, botName: string): void {
     const commandData: ApplicationCommandData[] = []
     for (const file of commandFiles) {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const command = <BaseCommand> require(`../bots/${botName}/commands/${file}`)
+        const command = <BaseCommand> require(`../../bots/${botName}/commands/${file}`)
         commandData.push(command.data)
     }
     client.application.commands.set(commandData)

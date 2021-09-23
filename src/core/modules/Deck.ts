@@ -1,6 +1,6 @@
 import { MessageEmbed } from 'discord.js'
-import { makeGetRequest, genericEmbed } from '../commonFunctions'
-import { DeckJson, DeckstatsResponse, DeckstatsListResponse, ScryfallResponse } from '../interfaces'
+import { makeGetRequest, genericEmbed } from '../utils/commonFunctions'
+import { DeckJson, DeckstatsResponse, DeckstatsListResponse, ScryfallResponse } from '../utils/interfaces'
 
 export class Deck {
 

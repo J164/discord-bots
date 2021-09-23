@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { genericEmbed } from '../../../core/commonFunctions'
+import { genericEmbed } from '../../../core/utils/commonFunctions'
 
 const data: ApplicationCommandData = {
     name: 'roll',

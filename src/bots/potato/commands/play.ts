@@ -1,8 +1,8 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
 import { existsSync, readFileSync } from 'fs'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { searchYoutube } from '../../../core/commonFunctions'
-import { config } from '../../../core/constants'
+import { searchYoutube } from '../../../core/utils/commonFunctions'
+import { config } from '../../../core/utils/constants'
 import { GuildInputManager } from '../../../core/GuildInputManager'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
@@ -68,13 +68,13 @@ async function play(interaction: CommandInteraction, info: GuildInputManager): P
             } else {
                 songData = entry
             }
-            info.getPotatoVoiceManager().addToQueue(songData.duration, `https://www.youtube.com/watch?v=${songData.id}`, songData.title, songData.id, songData?.thumbnail)
+            info.queueManager.addToQueue(songData.duration, `https://www.youtube.com/watch?v=${songData.id}`, songData.title, songData.id, songData?.thumbnail)
         }
     } else {
-        info.getPotatoVoiceManager().addToQueue(output.duration, output.webpage_url, output.title, output.id, output?.thumbnail)
+        info.queueManager.addToQueue(output.duration, output.webpage_url, output.title, output.id, output?.thumbnail)
     }
-    info.getPotatoVoiceManager().bindChannel(<TextChannel> interaction.channel)
-    if (!info.getPotatoVoiceManager().connect(voiceChannel)) {
+    info.queueManager.bindChannel(<TextChannel> interaction.channel)
+    if (!info.queueManager.connect(voiceChannel)) {
         return { content: 'Something went wrong when connecting to voice' }
     }
     return { content: 'Added to queue!' }

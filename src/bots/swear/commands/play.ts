@@ -1,9 +1,9 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
 import { existsSync } from 'fs'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { config } from '../../../core/constants'
+import { config } from '../../../core/utils/constants'
 import { GuildInputManager } from '../../../core/GuildInputManager'
-import { SwearSongInfo } from '../../../core/interfaces'
+import { SwearSongInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'play',

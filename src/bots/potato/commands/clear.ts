@@ -8,7 +8,7 @@ const data: ApplicationCommandData = {
 }
 
 function clear(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
-    if (info.getPotatoVoiceManager().clear()) {
+    if (info.queueManager.clear()) {
         return { content: 'The queue has been cleared' }
     }
     return { content: 'There is no queue!' }

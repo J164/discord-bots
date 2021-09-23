@@ -8,7 +8,7 @@ const data: ApplicationCommandData = {
 }
 
 function nowPlaying(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
-    return info.getPotatoVoiceManager().getNowPlaying()
+    return info.queueManager.getNowPlaying()
 }
 
 module.exports = new BaseCommand(data, nowPlaying)

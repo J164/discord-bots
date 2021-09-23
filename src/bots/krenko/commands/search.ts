@@ -1,8 +1,8 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, InteractionUpdateOptions, MessageActionRow, MessageAttachment, MessageButton, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { genericEmbed, makeGetRequest, mergeImages } from '../../../core/commonFunctions'
+import { genericEmbed, makeGetRequest, mergeImages } from '../../../core/utils/commonFunctions'
 import { GuildInputManager } from '../../../core/GuildInputManager'
-import { ScryfallResponse, MagicCard } from '../../../core/interfaces'
+import { ScryfallResponse, MagicCard } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'search',

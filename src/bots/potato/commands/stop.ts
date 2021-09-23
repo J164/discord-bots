@@ -8,7 +8,7 @@ const data: ApplicationCommandData = {
 }
 
 function stop(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
-    info.getPotatoVoiceManager().reset()
+    info.queueManager.reset()
     return { content: 'Success' }
 }
 

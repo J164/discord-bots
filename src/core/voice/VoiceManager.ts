@@ -63,10 +63,6 @@ export class VoiceManager {
         }
     }
 
-    public isPotato(): boolean {
-        return 'queue' in this
-    }
-
     public reset(): void {
         this.voiceConnection?.removeAllListeners()
         this.voiceConnection?.destroy()

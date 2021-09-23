@@ -1,8 +1,8 @@
 import { Client, ClientOptions, Collection, Intents } from 'discord.js'
 import { writeFileSync } from 'fs'
 import { BaseCommand } from '../../core/BaseCommand'
-import { deployCommands, getCommands } from '../../core/commonFunctions'
-import { config } from '../../core/constants'
+import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
+import { config } from '../../core/utils/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { GuildInputManager } from '../../core/GuildInputManager'
 
@@ -48,7 +48,7 @@ function defineEvents() {
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, null, database))
+            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, { database: database }))
         }
 
         guildStatus.get(interaction.guild.id).parseCommand(interaction)

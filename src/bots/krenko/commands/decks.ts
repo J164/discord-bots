@@ -1,7 +1,7 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { GuildInputManager } from '../../../core/GuildInputManager'
-import { DeckInfo } from '../../../core/interfaces'
+import { DeckInfo } from '../../../core/utils/interfaces'
 import { Deck } from '../../../core/modules/Deck'
 
 const data: ApplicationCommandData = {

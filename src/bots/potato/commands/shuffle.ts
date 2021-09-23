@@ -8,7 +8,7 @@ const data: ApplicationCommandData = {
 }
 
 function shuffle(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
-    if (info.getPotatoVoiceManager().shuffleQueue()) {
+    if (info.queueManager.shuffleQueue()) {
         return { content: 'The queue has been shuffled' }
     }
     return { content: 'There is nothing to shuffle!' }

@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { genericEmbed, makeGetRequest } from '../../../core/commonFunctions'
-import { WynncraftData } from '../../../core/interfaces'
+import { genericEmbed, makeGetRequest } from '../../../core/utils/commonFunctions'
+import { WynncraftData } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'wynncraft',

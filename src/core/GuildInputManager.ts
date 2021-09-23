@@ -1,9 +1,9 @@
 import { Collection, CommandInteraction, Guild, GuildMember, InteractionReplyOptions, Message } from 'discord.js'
-import { PotatoVoiceManager } from '../bots/potato/PotatoVoiceManager'
+import { QueueManager } from './voice/QueueManager'
 import { BaseCommand } from './BaseCommand'
 import { DatabaseManager } from './DatabaseManager'
 import { BaseMagicGame } from './modules/games/BaseMagicGame'
-import { VoiceManager } from './VoiceManager'
+import { VoiceManager } from './voice/VoiceManager'
 
 export class GuildInputManager {
 
@@ -12,23 +12,19 @@ export class GuildInputManager {
     private readonly commands: Collection<string, BaseCommand>
     public readonly database: DatabaseManager
     public readonly voiceManager: VoiceManager
+    public readonly queueManager: QueueManager
     public readonly parseMessage: (message: Message) => void
     public game: BaseMagicGame
 
-    public constructor(guild: Guild, commands: Collection<string, BaseCommand>, parseMessage?: (message: Message) => void, database?: DatabaseManager, voiceManager?: VoiceManager) {
+    public constructor(guild: Guild, commands: Collection<string, BaseCommand>, options?: { parseMessage?: (message: Message) => void, database?: DatabaseManager, voiceManager?: VoiceManager, queueManager?: QueueManager }) {
         this.guild = guild
         this.users = new Map<string, GuildMember>()
         this.commands = commands
-        this.parseMessage = parseMessage
-        this.database = database
-        this.voiceManager = voiceManager
+        this.parseMessage = options?.parseMessage
+        this.database = options?.database
+        this.voiceManager = options?.voiceManager || options?.queueManager
+        this.queueManager = options?.queueManager
         this.getUsers()
-    }
-
-    public getPotatoVoiceManager(): PotatoVoiceManager {
-        if (this.voiceManager.isPotato()) {
-            return <PotatoVoiceManager> this.voiceManager
-        }
     }
 
     public async parseCommand(interaction: CommandInteraction): Promise<InteractionReplyOptions | void> {

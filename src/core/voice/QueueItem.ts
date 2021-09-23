@@ -1,8 +1,8 @@
 import { MessageEmbed, InteractionReplyOptions } from 'discord.js'
 import EventEmitter from 'events'
 import { existsSync, writeFileSync } from 'fs'
-import { genericEmbed } from '../commonFunctions'
-import { config } from '../constants'
+import { genericEmbed } from '../utils/commonFunctions'
+import { config } from '../utils/constants'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
 

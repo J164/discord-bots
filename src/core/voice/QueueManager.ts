@@ -1,10 +1,10 @@
 import { InteractionReplyOptions, TextChannel, VoiceChannel } from 'discord.js'
-import { VoiceManager } from '../../core/VoiceManager'
+import { VoiceManager } from './VoiceManager'
 import { AudioPlayerStatus } from '@discordjs/voice'
-import { config } from '../../core/constants'
-import { QueueItem } from '../../core/voiceUtils/QueueItem'
+import { config } from '../utils/constants'
+import { QueueItem } from './QueueItem'
 
-export class PotatoVoiceManager extends VoiceManager {
+export class QueueManager extends VoiceManager {
 
     private queue: QueueItem[]
     private downloadQueue: QueueItem[]

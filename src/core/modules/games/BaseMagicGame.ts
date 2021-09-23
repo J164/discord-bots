@@ -1,6 +1,6 @@
 import { MessageEmbed, Snowflake, User } from 'discord.js'
-import { genericEmbed } from '../../commonFunctions'
-import { MagicPlayer } from '../../interfaces'
+import { genericEmbed } from '../../utils/commonFunctions'
+import { MagicPlayer } from '../../utils/interfaces'
 
 export class BaseMagicGame {
 

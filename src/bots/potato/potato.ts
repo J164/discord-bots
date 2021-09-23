@@ -2,13 +2,13 @@ import axios from 'axios'
 import { Client, ClientOptions, Collection, Intents, MessageOptions, TextChannel } from 'discord.js'
 import { writeFileSync } from 'fs'
 import { BaseCommand } from '../../core/BaseCommand'
-import { deployCommands, genericEmbed, getChannel, getCommands, getStringDate, getWeatherEmoji } from '../../core/commonFunctions'
-import { config } from '../../core/constants'
+import { deployCommands, genericEmbed, getChannel, getCommands, getStringDate, getWeatherEmoji } from '../../core/utils/commonFunctions'
+import { config } from '../../core/utils/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { GuildInputManager } from '../../core/GuildInputManager'
-import { HolidayResponse, QuoteResponse, WeatherResponse } from '../../core/interfaces'
-import { potatoMessageParse } from '../../core/responseFunctions'
-import { PotatoVoiceManager } from './PotatoVoiceManager'
+import { HolidayResponse, QuoteResponse, WeatherResponse } from '../../core/utils/interfaces'
+import { potatoMessageParse } from '../../core/utils/responseFunctions'
+import { QueueManager } from '../../core/voice/QueueManager'
 
 process.on('SIGKILL', () => {
     process.exit()
@@ -108,7 +108,7 @@ function defineEvents() {
 
     client.on('messageCreate', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new GuildInputManager(message.guild, commands, potatoMessageParse, database, new PotatoVoiceManager()))
+            guildStatus.set(message.guild.id, new GuildInputManager(message.guild, commands, { parseMessage: potatoMessageParse, database: database, queueManager: new QueueManager() }))
         }
 
         guildStatus.get(message.guild.id).parseMessage(message)
@@ -120,7 +120,7 @@ function defineEvents() {
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, potatoMessageParse, database, new PotatoVoiceManager()))
+            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, { parseMessage: potatoMessageParse, database: database, queueManager: new QueueManager() }))
         }
 
         guildStatus.get(interaction.guild.id).parseCommand(interaction)

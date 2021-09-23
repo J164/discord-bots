@@ -1,8 +1,8 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { config } from '../../../core/constants'
+import { config } from '../../../core/utils/constants'
 import { GuildInputManager } from '../../../core/GuildInputManager'
-import { SwearSongInfo } from '../../../core/interfaces'
+import { SwearSongInfo } from '../../../core/utils/interfaces'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
 

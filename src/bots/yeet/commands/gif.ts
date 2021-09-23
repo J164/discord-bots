@@ -1,8 +1,8 @@
 import { ApplicationCommandData, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { makeGetRequest } from '../../../core/commonFunctions'
-import { config } from '../../../core/constants'
-import { TenorResponse } from '../../../core/interfaces'
+import { makeGetRequest } from '../../../core/utils/commonFunctions'
+import { config } from '../../../core/utils/constants'
+import { TenorResponse } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'gif',

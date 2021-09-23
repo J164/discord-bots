@@ -27,9 +27,9 @@ const data: ApplicationCommandData = {
 
 function loop(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
     if (interaction.options.getInteger('name') === 0) {
-        return info.getPotatoVoiceManager().loopSong()
+        return info.queueManager.loopSong()
     }
-    return info.getPotatoVoiceManager().loopQueue()
+    return info.queueManager.loopQueue()
 }
 
 module.exports = new BaseCommand(data, loop)
