@@ -2,7 +2,6 @@ import { MessageAttachment, MessageEmbed, MessageReaction, User } from 'discord.
 import * as axios from 'axios'
 import { genericEmbed, mergeImages } from '../../utils/commonFunctions'
 import { Card, EuchrePlayer, EuchreTeam } from '../../utils/interfaces'
-import { root } from '../../utils/constants'
 
 export class Euchre {
 
@@ -415,7 +414,7 @@ export class Euchre {
         const filePaths: string[] = []
         const hand = genericEmbed({ title: '^ Your Hand:' })
         for (const card of player.hand) {
-            filePaths.push(`${root}/assets/img/cards/${card.code}.png`)
+            filePaths.push(`../../../../assets/img/cards/${card.code}.png`)
         }
         if (filePaths.length === 1) {
             const card = new MessageAttachment(filePaths[0], 'hand.png')
@@ -437,7 +436,7 @@ export class Euchre {
         const response = genericEmbed({ title: `^ ${message}` })
         const filePaths: string[] = []
         for (const card of cards) {
-            filePaths.push(`${root}/assets/img/cards/${card.code}.png`)
+            filePaths.push(`../../../../assets/img/cards/${card.code}.png`)
         }
         const image = new MessageAttachment(await mergeImages(filePaths, {
             width: filePaths.length * 226,
