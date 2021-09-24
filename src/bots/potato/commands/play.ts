@@ -39,7 +39,7 @@ async function play(interaction: CommandInteraction, info: GuildInputManager): P
         url = arg
     }
     let output
-    if (url.split(/[?&]+/)[1].startsWith('list') || !existsSync(`${config.data}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`)) {
+    if (url.split(/[?&]+/)[1].startsWith('list') || !existsSync(`${config.data}/music_files/playback/${url.split(/[?&]+/)[1].substring(2)}.json`)) {
         try {
             output = await youtubedl(url, {
                 dumpSingleJson: true,
@@ -58,7 +58,7 @@ async function play(interaction: CommandInteraction, info: GuildInputManager): P
             return { content: 'Please enter a valid url' }
         }
     } else {
-        output = JSON.parse(readFileSync(`${config.data}/music_files/playback/${url.split(/[?&]+/)[1].substring(3)}.json`, { encoding: 'utf8' }))
+        output = JSON.parse(readFileSync(`${config.data}/music_files/playback/${url.split(/[?&]+/)[1].substring(2)}.json`, { encoding: 'utf8' }))
     }
     if ('entries' in output) {
         for (const entry of output.entries) {
@@ -68,10 +68,10 @@ async function play(interaction: CommandInteraction, info: GuildInputManager): P
             } else {
                 songData = entry
             }
-            info.queueManager.addToQueue(songData.duration, `https://www.youtube.com/watch?v=${songData.id}`, songData.title, songData.id, songData?.thumbnail)
+            info.queueManager.addToQueue(songData.duration, `https://www.youtube.com/watch?v=${songData.id}`, songData.title, songData.id, songData.thumbnail)
         }
     } else {
-        info.queueManager.addToQueue(output.duration, output.webpage_url, output.title, output.id, output?.thumbnail)
+        info.queueManager.addToQueue(output.duration, output.webpage_url, output.title, output.id, output.thumbnail)
     }
     info.queueManager.bindChannel(<TextChannel> interaction.channel)
     if (!info.queueManager.connect(voiceChannel)) {

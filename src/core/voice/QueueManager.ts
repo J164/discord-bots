@@ -42,7 +42,9 @@ export class QueueManager extends VoiceManager {
             this.reset()
             return false
         }
-        this.checkSongStatus()
+        if (this.player?.state.status !== AudioPlayerStatus.Playing && this.player?.state.status !== AudioPlayerStatus.Paused) {
+            this.checkSongStatus()
+        }
         return true
     }
 
@@ -164,6 +166,9 @@ export class QueueManager extends VoiceManager {
     public getQueue(): QueueItem[][] {
         if (this.player?.state.status !== AudioPlayerStatus.Playing && this.player?.state.status !== AudioPlayerStatus.Paused) {
             return null
+        }
+        if (this.queue.length < 1) {
+            return [ [ this.nowPlaying ] ]
         }
         const queueArray: QueueItem[][] = []
         for (let r = 0; r < Math.ceil(this.queue.length / 25); r++) {

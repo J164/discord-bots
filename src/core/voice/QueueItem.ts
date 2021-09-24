@@ -88,7 +88,8 @@ export class QueueItem extends EventEmitter {
         }
         this.thumbnail = output.thumbnails[0].url
         const metaData = JSON.stringify({
-            webpageUrl: this.webpageUrl,
+            // eslint-disable-next-line camelcase
+            webpage_url: this.webpageUrl,
             title: this.title,
             id: this.id,
             thumbnail: this.thumbnail,

@@ -59,7 +59,7 @@ async function playlist(interaction: CommandInteraction, info: GuildInputManager
         } else {
             songData = entry
         }
-        info.queueManager.addToQueue(songData.duration, `https://www.youtube.com/watch?v=${songData.id}`, songData.title, songData.id, songData?.thumbnail)
+        info.queueManager.addToQueue(songData.duration, `https://www.youtube.com/watch?v=${songData.id}`, songData.title, songData.id, songData.thumbnail)
     }
     info.queueManager.bindChannel(<TextChannel> interaction.channel)
     if (!info.queueManager.connect(voiceChannel)) {
