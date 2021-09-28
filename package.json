@@ -22,7 +22,7 @@
   "optionalDependencies": {
     "bufferutil": "4.0.4",
     "erlpack": "0.1.3",
-    "utf-8-validate": "5.0.5",
+    "utf-8-validate": "5.0.6",
     "zlib-sync": "0.1.7"
   },
   "devDependencies": {
