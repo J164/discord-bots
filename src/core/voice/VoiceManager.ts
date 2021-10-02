@@ -6,6 +6,7 @@ export class VoiceManager {
 
     private voiceConnection: VoiceConnection
     private subscription: PlayerSubscription
+    private voiceChannel: VoiceChannel
     protected player: AudioPlayer
     protected awaitingResource: boolean
 
@@ -22,6 +23,7 @@ export class VoiceManager {
             guildId: voiceChannel.guild.id,
             adapterCreator: voiceChannel.guild.voiceAdapterCreator
         })
+        this.voiceChannel = voiceChannel
         try {
             await entersState(this.voiceConnection, VoiceConnectionStatus.Ready, 30e3)
             this.player = createAudioPlayer()
@@ -58,7 +60,8 @@ export class VoiceManager {
     }
 
     public checkIsIdle(): void {
-        if (this.player?.state.status === AudioPlayerStatus.Idle && this.awaitingResource === false) {
+        // eslint-disable-next-line no-extra-parens
+        if ((this.player?.state.status === AudioPlayerStatus.Idle && this.awaitingResource === false) || this.voiceChannel?.members.size <= 1) {
             this.reset()
         }
     }
