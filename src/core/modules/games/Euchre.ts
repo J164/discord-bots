@@ -1,5 +1,6 @@
+/* eslint-disable complexity */
 import { MessageAttachment, MessageEmbed, MessageReaction, User } from 'discord.js'
-import * as axios from 'axios'
+import axios from 'axios'
 import { genericEmbed, mergeImages } from '../../utils/commonFunctions'
 import { Card, EuchrePlayer, EuchreTeam } from '../../utils/interfaces'
 
@@ -77,12 +78,13 @@ export class Euchre {
         let success = false
         while (!success) {
             try {
-                const deck = await axios.default.post('https://deckofcardsapi.com/api/deck/new/shuffle?cards=9S,9D,9C,9H,0S,0D,0C,0H,JS,JD,JC,JH,QS,QD,QC,QH,KS,KD,KC,KH,AS,AD,AC,AH')
-                draws = await axios.default.post(`https://deckofcardsapi.com/api/deck/${deck.data.deck_id}/draw?count=21`)
+                // eslint-disable-next-line camelcase
+                const deck = <{ data: { deck_id: string } }> await axios.post('https://deckofcardsapi.com/api/deck/new/shuffle?cards=9S,9D,9C,9H,0S,0D,0C,0H,JS,JD,JC,JH,QS,QD,QC,QH,KS,KD,KC,KH,AS,AD,AC,AH')
+                draws = await axios.post(`https://deckofcardsapi.com/api/deck/${deck.data.deck_id}/draw?count=21`)
                 success = true
             } catch(err) { console.log(err) }
         }
-        const output = draws.data
+        const output = <{ cards: Card[] }> draws.data
         this.players[0].hand = [ output.cards[0], output.cards[4], output.cards[8], output.cards[12], output.cards[16] ]
         this.players[1].hand = [ output.cards[1], output.cards[5], output.cards[9], output.cards[13], output.cards[17] ]
         this.players[2].hand = [ output.cards[2], output.cards[6], output.cards[10], output.cards[14], output.cards[18] ]

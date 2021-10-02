@@ -1,9 +1,9 @@
 import { ApplicationCommandData, Channel, Client, Collection, GuildMember, MessageEmbed, MessageEmbedOptions, Snowflake, VoiceState } from 'discord.js'
 import { createCanvas, loadImage } from 'canvas'
-import * as axios from 'axios'
 import { readdirSync } from 'fs'
 import { BaseCommand } from '../BaseCommand'
 import { config } from './constants'
+import axios from 'axios'
 
 export async function getCommands(client: Client, botName: string): Promise<Collection<string, BaseCommand>> {
     const currentCommands = await client.application.commands.fetch()
@@ -38,7 +38,7 @@ export function voiceKick(count: number, voiceState: VoiceState): void {
 }
 
 export async function searchYoutube(parameter: string): Promise<string> {
-    const searchResult = await axios.default.get(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&order=relevance&q=${encodeURIComponent(parameter)}&type=video&videoDefinition=high&key=${config.googleKey}`)
+    const searchResult = <{ data: { pageInfo: { totalResults: number }, items: { id: { videoId: string } }[] } }> await axios.get(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&order=relevance&q=${encodeURIComponent(parameter)}&type=video&videoDefinition=high&key=${config.googleKey}`)
     if (searchResult.data.pageInfo.totalResults < 1) {
         return null
     }
@@ -63,7 +63,7 @@ export function genericEmbed(options: MessageEmbedOptions): MessageEmbed {
 }
 
 export async function makeGetRequest(path: string): Promise<unknown> {
-    const response = await axios.default.get(path)
+    const response = await axios.get(path)
     return response.data
 }
 
