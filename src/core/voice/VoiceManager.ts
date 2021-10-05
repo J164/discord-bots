@@ -21,7 +21,7 @@ export class VoiceManager {
         this.voiceConnection = joinVoiceChannel({
             channelId: voiceChannel.id,
             guildId: voiceChannel.guild.id,
-            adapterCreator: voiceChannel.guild.voiceAdapterCreator
+            adapterCreator: <any> voiceChannel.guild.voiceAdapterCreator
         })
         this.voiceChannel = voiceChannel
         try {
