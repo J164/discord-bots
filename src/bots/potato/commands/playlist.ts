@@ -3,8 +3,8 @@ import { existsSync, readFileSync } from 'fs'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { config } from '../../../core/utils/constants'
 import { GuildInputManager } from '../../../core/GuildInputManager'
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const youtubedl = require('youtube-dl-exec')
+import youtubedl from 'youtube-dl-exec'
+import { YTResponse } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'playlist',
@@ -41,7 +41,7 @@ async function playlist(interaction: CommandInteraction, info: GuildInputManager
     if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
         return { content: 'This command can only be used while in a visable voice channel!' }
     }
-    const output = await youtubedl(interaction.options.getString('name'), {
+    const output: YTResponse = await youtubedl(interaction.options.getString('name'), {
         dumpSingleJson: true,
         noWarnings: true,
         noCallHome: true,

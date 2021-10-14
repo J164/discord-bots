@@ -1,6 +1,7 @@
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, joinVoiceChannel, PlayerSubscription, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice'
 import { VoiceChannel } from 'discord.js'
 import { createReadStream } from 'fs'
+import { QueueItem } from './QueueItem'
 
 export class VoiceManager {
 
@@ -8,11 +9,7 @@ export class VoiceManager {
     private subscription: PlayerSubscription
     private voiceChannel: VoiceChannel
     protected player: AudioPlayer
-    protected awaitingResource: boolean
-
-    public constructor() {
-        this.awaitingResource = false
-    }
+    protected awaitingResource: QueueItem
 
     public async connect(voiceChannel: VoiceChannel): Promise<boolean> {
         if (this.voiceConnection?.state.status === VoiceConnectionStatus.Ready) {
@@ -61,7 +58,7 @@ export class VoiceManager {
 
     public checkIsIdle(): void {
         // eslint-disable-next-line no-extra-parens
-        if ((this.player?.state.status === AudioPlayerStatus.Idle && this.awaitingResource === false) || this.voiceChannel?.members.size <= 1) {
+        if ((this.player?.state.status === AudioPlayerStatus.Idle && !this.awaitingResource) || this.voiceChannel?.members.size <= 1) {
             this.reset()
         }
     }

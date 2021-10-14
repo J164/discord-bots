@@ -1,6 +1,7 @@
 /* eslint-disable camelcase */
 
 import { User } from 'discord.js'
+import { YtResponse } from 'youtube-dl-exec'
 
 export interface BotConfig {
     potatoKey: string,
@@ -160,4 +161,12 @@ export interface EuchrePlayer {
     user: User;
     hand: Card[];
     team: EuchreTeam;
+}
+
+export interface YTResponse extends YtResponse {
+    entries?: {
+        duration: number,
+        title: string,
+        id: string
+    }[]
 }

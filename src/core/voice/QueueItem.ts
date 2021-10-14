@@ -3,8 +3,8 @@ import EventEmitter from 'events'
 import { existsSync, writeFileSync } from 'fs'
 import { genericEmbed } from '../utils/commonFunctions'
 import { config } from '../utils/constants'
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const youtubedl = require('youtube-dl-exec')
+import youtubedl from 'youtube-dl-exec'
+import { YTResponse } from '../utils/interfaces'
 
 export class QueueItem extends EventEmitter {
 
@@ -66,7 +66,7 @@ export class QueueItem extends EventEmitter {
             return
         }
         this.downloading = true
-        let output
+        let output: YTResponse
         try {
             output = await youtubedl(this.webpageUrl, {
                 noWarnings: true,

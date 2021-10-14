@@ -59,7 +59,7 @@ async function dailyReport(date: Date): Promise<MessageOptions> {
 
 function defineEvents() {
     client.on('ready', () => {
-        console.log(`We have logged in as ${client.user.tag}`)
+        console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
         process.send('start')
 
         client.user.setActivity(config.potatoStatus[Math.floor(Math.random() * config.potatoStatus.length)])

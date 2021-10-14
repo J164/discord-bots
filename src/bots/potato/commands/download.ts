@@ -2,8 +2,7 @@ import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } f
 import { BaseCommand } from '../../../core/BaseCommand'
 import { config } from '../../../core/utils/constants'
 import { GuildInputManager } from '../../../core/GuildInputManager'
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const youtubedl = require('youtube-dl-exec')
+import youtubedl from 'youtube-dl-exec'
 
 const data: ApplicationCommandData = {
     name: 'download',

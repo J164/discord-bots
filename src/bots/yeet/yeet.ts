@@ -25,7 +25,7 @@ const guildStatus = new Map<string, GuildInputManager>()
 
 function defineEvents() {
     client.on('ready', () => {
-        console.log('We have logged in as ' + client.user.tag)
+        console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
         process.send('start')
 
         getCommands(client, 'yeet')

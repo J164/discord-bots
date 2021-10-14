@@ -12,6 +12,7 @@ export class QueueManager extends VoiceManager {
     private downloading: boolean
     private nowPlaying: QueueItem
     private queueLoop: boolean
+    private currentDownload: QueueItem
 
     public constructor() {
         super()
@@ -61,9 +62,9 @@ export class QueueManager extends VoiceManager {
             this.checkSongStatus()
         }
         if (!song.isDownloaded()) {
-            this.awaitingResource = true
+            this.awaitingResource = song
             song.once('downloaded', () => {
-                this.awaitingResource = false
+                this.awaitingResource = null
                 this.playSong(song)
             })
             song.once('failed', () => {
@@ -103,11 +104,11 @@ export class QueueManager extends VoiceManager {
             return
         }
         this.downloading = true
-        const currentItem = this.downloadQueue.shift()
-        currentItem.once('downloaded', () => {
+        this.currentDownload = this.downloadQueue.shift()
+        this.currentDownload.once('downloaded', () => {
             this.download()
         })
-        currentItem.download()
+        this.currentDownload.download()
     }
 
     public loopSong(): InteractionReplyOptions {
@@ -193,6 +194,8 @@ export class QueueManager extends VoiceManager {
 
     public reset(): void {
         super.reset()
+        this.awaitingResource?.removeAllListeners()
+        this.currentDownload?.removeAllListeners()
         this.queue = []
         this.downloadQueue = []
         this.boundChannel = null

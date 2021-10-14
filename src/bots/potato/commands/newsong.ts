@@ -3,8 +3,7 @@ import { BaseCommand } from '../../../core/BaseCommand'
 import { config } from '../../../core/utils/constants'
 import { GuildInputManager } from '../../../core/GuildInputManager'
 import { SwearSongInfo } from '../../../core/utils/interfaces'
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const youtubedl = require('youtube-dl-exec')
+import youtubedl from 'youtube-dl-exec'
 
 const data: ApplicationCommandData = {
     name: 'newsong',

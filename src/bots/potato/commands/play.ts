@@ -4,8 +4,8 @@ import { BaseCommand } from '../../../core/BaseCommand'
 import { searchYoutube } from '../../../core/utils/commonFunctions'
 import { config } from '../../../core/utils/constants'
 import { GuildInputManager } from '../../../core/GuildInputManager'
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const youtubedl = require('youtube-dl-exec')
+import youtubedl from 'youtube-dl-exec'
+import { YTResponse } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'play',
@@ -38,7 +38,7 @@ async function play(interaction: CommandInteraction, info: GuildInputManager): P
     } else {
         url = arg
     }
-    let output
+    let output: YTResponse
     if (url.split(/[?&]+/)[1].startsWith('list') || !existsSync(`${config.data}/music_files/playback/${url.split(/[?&]+/)[1].substring(2)}.json`)) {
         try {
             output = await youtubedl(url, {

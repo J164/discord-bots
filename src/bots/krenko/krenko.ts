@@ -26,7 +26,7 @@ const guildStatus = new Map<string, GuildInputManager>()
 
 function defineEvents() {
     client.on('ready', () => {
-        console.log(`We have logged in as ${client.user.tag}`)
+        console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
         process.send('start')
 
         client.user.setActivity(config.krenkoStatus[Math.floor(Math.random() * config.krenkoStatus.length)])
