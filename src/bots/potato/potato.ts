@@ -33,7 +33,6 @@ async function dailyReport(date: Date): Promise<MessageOptions> {
     const holiday: HolidayResponse = await axios.get(`https://holidays.abstractapi.com/v1/?api_key=${config.abstractKey}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)
     const weather: WeatherResponse = await axios.get(`http://api.weatherapi.com/v1/current.json?key=${config.weatherKey}&q=60069`)
     const quote: QuoteResponse = await axios.get(`http://quotes.rest/qod.json?category=inspire`)
-    console.log(holiday.data)
     const stringDate = getStringDate(date)
     const weatherEmoji = getWeatherEmoji(weather.data.current.condition.code)
     const response = { embeds: [ genericEmbed({
@@ -58,35 +57,19 @@ async function dailyReport(date: Date): Promise<MessageOptions> {
 }
 
 function defineEvents() {
-    client.on('ready', () => {
-        console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
-        process.send('start')
+    client.on('ready', async () => {
+        commands = await getCommands(client, 'potato')
 
         client.user.setActivity(config.potatoStatus[Math.floor(Math.random() * config.potatoStatus.length)])
 
-        getCommands(client, 'potato')
-            .then(result => { commands = result })
-
         let broadcasted = false
-        let broadcastChannel: TextChannel
+        const broadcastChannel = <TextChannel> await getChannel(client, '619975185029922817', '775752263808974858')
         let date = new Date()
 
-        getChannel(client, '619975185029922817', '775752263808974858')
-            .then(channel => {
-                broadcastChannel = <TextChannel> channel
-                if (date.getHours() === 7) {
-                    dailyReport(date)
-                        .then(message => {
-                            broadcastChannel.send(message)
-                        })
-                }
-            })
+        setInterval(async () => {
+            commands = await getCommands(client, 'potato')
 
-        setInterval(() => {
             client.user.setActivity(config.potatoStatus[Math.floor(Math.random() * config.potatoStatus.length)])
-
-            getCommands(client, 'potato')
-                .then(result => { commands = result })
 
             for (const [ , guildManager ] of guildStatus) {
                 guildManager.voiceManager.checkIsIdle()
@@ -96,14 +79,18 @@ function defineEvents() {
 
             if (date.getHours() === 7 && !broadcasted) {
                 broadcasted = true
-                dailyReport(date)
-                    .then(message => {
-                        broadcastChannel.send(message)
-                    })
+                broadcastChannel.send(await dailyReport(date))
             } else if (date.getHours() === 8) {
                 broadcasted = false
             }
         }, 60000)
+
+        console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
+        process.send('start')
+
+        if (date.getHours() === 7) {
+            broadcastChannel.send(await dailyReport(date))
+        }
     })
 
     client.on('messageCreate', message => {

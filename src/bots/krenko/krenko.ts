@@ -25,21 +25,19 @@ const database = new DatabaseManager()
 const guildStatus = new Map<string, GuildInputManager>()
 
 function defineEvents() {
-    client.on('ready', () => {
-        console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
-        process.send('start')
+    client.on('ready', async () => {
+        commands = await getCommands(client, 'krenko')
 
         client.user.setActivity(config.krenkoStatus[Math.floor(Math.random() * config.krenkoStatus.length)])
 
-        getCommands(client, 'krenko')
-            .then(result => { commands = result })
+        setInterval(async () => {
+            commands = await getCommands(client, 'krenko')
 
-        setInterval(() => {
             client.user.setActivity(config.krenkoStatus[Math.floor(Math.random() * config.krenkoStatus.length)])
-
-            getCommands(client, 'krenko')
-                .then(result => { commands = result })
         }, 60000)
+
+        console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
+        process.send('start')
     })
 
     client.on('interactionCreate', interaction => {

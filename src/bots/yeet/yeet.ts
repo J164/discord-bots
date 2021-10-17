@@ -24,20 +24,19 @@ let commands: Collection<string, BaseCommand>
 const guildStatus = new Map<string, GuildInputManager>()
 
 function defineEvents() {
-    client.on('ready', () => {
-        console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
-        process.send('start')
-
-        getCommands(client, 'yeet')
-            .then(result => { commands = result })
+    client.on('ready', async () => {
+        commands = await getCommands(client, 'yeet')
 
         client.user.setActivity(config.yeetStatus[Math.floor(Math.random() * config.yeetStatus.length)])
-        setInterval(() => {
-            getCommands(client, 'yeet')
-                .then(result => { commands = result })
+
+        setInterval(async () => {
+            commands = await getCommands(client, 'yeet')
 
             client.user.setActivity(config.yeetStatus[Math.floor(Math.random() * config.yeetStatus.length)])
         }, 60000)
+
+        console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
+        process.send('start')
     })
 
     client.on('messageCreate', message => {

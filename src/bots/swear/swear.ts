@@ -27,25 +27,23 @@ const database = new DatabaseManager()
 const guildStatus = new Map<string, GuildInputManager>()
 
 function defineEvents() {
-    client.on('ready', () => {
-        console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
-        process.send('start')
+    client.on('ready', async () => {
+        commands = await getCommands(client, 'swear')
 
         client.user.setActivity(config.swearStatus[Math.floor(Math.random() * config.swearStatus.length)])
 
-        getCommands(client, 'swear')
-            .then(result => { commands = result })
+        setInterval(async () => {
+            commands = await getCommands(client, 'swear')
 
-        setInterval(() => {
             client.user.setActivity(config.swearStatus[Math.floor(Math.random() * config.swearStatus.length)])
-
-            getCommands(client, 'swear')
-                .then(result => { commands = result })
 
             for (const [ , guildManager ] of guildStatus) {
                 guildManager.voiceManager.checkIsIdle()
             }
         }, 60000)
+
+        console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
+        process.send('start')
     })
 
     client.on('messageCreate', message => {
