@@ -43,13 +43,8 @@ async function playlist(interaction: CommandInteraction, info: GuildInputManager
     }
     const output: YTResponse = await youtubedl(interaction.options.getString('name'), {
         dumpSingleJson: true,
-        noWarnings: true,
+        quiet: true,
         noCallHome: true,
-        noCheckCertificate: true,
-        preferFreeFormats: true,
-        youtubeSkipDashManifest: true,
-        ignoreErrors: true,
-        geoBypass: true,
         flatPlaylist: true
     })
     for (const entry of output.entries) {

@@ -69,14 +69,11 @@ export class QueueItem extends EventEmitter {
         let output: YTResponse
         try {
             output = await youtubedl(this.webpageUrl, {
-                noWarnings: true,
+                quiet: true,
                 noCallHome: true,
-                noCheckCertificate: true,
-                preferFreeFormats: true,
-                ignoreErrors: true,
-                geoBypass: true,
                 printJson: true,
                 format: 'bestaudio[ext=webm+acodec=opus+asr=48000]',
+                limitRate: '5M',
                 output: `${config.data}/music_files/playback/%(id)s.%(ext)s`
             })
         } catch (err) {

@@ -43,13 +43,8 @@ async function play(interaction: CommandInteraction, info: GuildInputManager): P
         try {
             output = await youtubedl(url, {
                 dumpSingleJson: true,
-                noWarnings: true,
+                quiet: true,
                 noCallHome: true,
-                noCheckCertificate: true,
-                preferFreeFormats: true,
-                youtubeSkipDashManifest: true,
-                ignoreErrors: true,
-                geoBypass: true,
                 noPlaylist: true,
                 flatPlaylist: true
             })
@@ -77,7 +72,7 @@ async function play(interaction: CommandInteraction, info: GuildInputManager): P
     if (!info.queueManager.connect(voiceChannel)) {
         return { content: 'Something went wrong when connecting to voice' }
     }
-    return { content: 'Added to queue!' }
+    return { content: 'Added to queue! (Songs may take a moment to download)' }
 }
 
 module.exports = new BaseCommand(data, play)

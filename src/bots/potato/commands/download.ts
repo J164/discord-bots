@@ -28,13 +28,12 @@ async function download(interaction: CommandInteraction, info: GuildInputManager
         return { content: 'You don\'t have permission to use this command!' }
     }
     const options = {
-        noWarnings: true,
+        quiet: true,
         noCallHome: true,
-        noCheckCertificate: true,
         preferFreeFormats: true,
         format: 'bestaudio',
-        output: `${config.data}/New Downloads/%(title)s.%(ext)s`,
-        ignoreErrors: true
+        limitRate: '5M',
+        output: `${config.data}/New Downloads/%(title)s.%(ext)s`
     }
     if (interaction.options.getBoolean('audioonly')) {
         options.format = 'bestvideo,bestaudio'

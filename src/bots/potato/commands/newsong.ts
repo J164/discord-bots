@@ -38,12 +38,9 @@ async function newSong(interaction: CommandInteraction, info: GuildInputManager,
     interaction.editReply({ content: 'Getting information on new song...' })
     const output = await youtubedl(interaction.options.getString('url'), {
         dumpJson: true,
-        noWarnings: true,
+        quiet: true,
         noCallHome: true,
-        noCheckCertificate: true,
-        preferFreeFormats: true,
-        youtubeSkipDashManifest: true,
-        ignoreErrors: true
+        noCheckCertificate: true
     })
     if (!output) {
         interaction.editReply({ content: 'It appears the video was unavailable' })
@@ -59,11 +56,11 @@ async function newSong(interaction: CommandInteraction, info: GuildInputManager,
     }
     interaction.editReply({ content: 'Downloading...' })
     youtubedl(interaction.options.getString('url'), {
-        noWarnings: true,
+        quiet: true,
         noCallHome: true,
-        noCheckCertificate: true,
         preferFreeFormats: true,
         format: 'bestaudio',
+        limitRate: '5M',
         output: `${config.data}/music_files/swear_songs/${interaction.options.getString('name')}.mp3`
     })
     const song = new Map<string, string>([
