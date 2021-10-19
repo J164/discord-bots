@@ -13,6 +13,9 @@ process.on('SIGKILL', () => {
 })
 
 process.on('unhandledRejection', (error: Error) => {
+    if (error.name === 'FetchError') {
+        process.exit()
+    }
     if (error.message !== 'Unknown interaction') {
         const date = new Date()
         writeFileSync(`${config.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-swear.txt`, `${error.name}\n${error.message}\n${error.stack}`)
@@ -77,7 +80,7 @@ process.on('message', arg => {
         case 'stop':
             client.destroy()
             guildStatus.clear()
-            console.log('Swear Bot has been logged out')
+            console.log('\x1b[41m', 'Swear Bot has been logged out', '\x1b[0m')
             process.send('stop')
             break
         case 'start':

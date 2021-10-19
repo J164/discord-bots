@@ -3,6 +3,7 @@ import { ChildProcess, fork } from 'child_process'
 export class BotSubprocess {
     private process: ChildProcess
     private online: boolean
+    private fails: number
     private readonly path: string
     public readonly name: string
 
@@ -10,14 +11,21 @@ export class BotSubprocess {
         this.online = false
         this.name = name
         this.path = path
+        this.fails = 0
         this.startProcess()
     }
 
     public startProcess(): void {
         this.process = fork(this.path)
         this.process.on('close', () => {
+            this.fails++
+            setTimeout(() => this.fails--, 300000)
             this.process.removeAllListeners('error')
             this.online = false
+            if (this.fails > 4) {
+                setTimeout(() => this.startProcess(), 120000)
+                return
+            }
             this.startProcess()
         })
         this.process.on('message', arg => {
