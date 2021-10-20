@@ -2,7 +2,8 @@ import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } f
 import { BaseCommand } from '../../../core/BaseCommand'
 import { config } from '../../../core/utils/constants'
 import { GuildInputManager } from '../../../core/GuildInputManager'
-import youtubedl from 'youtube-dl-exec'
+import ytdl from 'ytdl-core'
+import { createWriteStream, writeFileSync } from 'fs'
 
 const data: ApplicationCommandData = {
     name: 'download',
@@ -13,12 +14,6 @@ const data: ApplicationCommandData = {
             description: 'The url of the video you want to download',
             type: 'STRING',
             required: true
-        },
-        {
-            name: 'audioonly',
-            description: 'If you want only audio to download',
-            type: 'BOOLEAN',
-            required: false
         }
     ]
 }
@@ -27,19 +22,12 @@ async function download(interaction: CommandInteraction, info: GuildInputManager
     if (interaction.member !== info.users.get('admin')) {
         return { content: 'You don\'t have permission to use this command!' }
     }
-    const options = {
-        quiet: true,
-        noCallHome: true,
-        preferFreeFormats: true,
-        format: 'bestaudio',
-        limitRate: '5M',
-        output: `${config.data}/New Downloads/%(title)s.%(ext)s`
-    }
-    if (interaction.options.getBoolean('audioonly')) {
-        options.format = 'bestvideo,bestaudio'
-    }
     interaction.editReply({ content: 'Downloading...' })
-    await youtubedl(interaction.options.getString('url'), options)
+    const video = await ytdl.getInfo(interaction.options.getString('url'))
+    writeFileSync(`${config.data}/New Downloads/${video.videoDetails.title}.mp4`, '')
+    ytdl(interaction.options.getString('url'), {
+        filter: filter => filter.container === 'mp4'
+    }).pipe(createWriteStream(`${config.data}/New Downloads/test.mp4`))
     return { content: 'Download Successful!' }
 }
 

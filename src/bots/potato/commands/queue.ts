@@ -26,7 +26,7 @@ async function queue(interaction: CommandInteraction, info: GuildInputManager, q
         footer: { text: `${i + 1}/${queueArray.length}` }
     })
     for (const [ index, entry ] of queueArray[i].entries()) {
-        queueMessage.addField(`${index + 1}.`, `${entry.title}\n${entry.webpageUrl}`)
+        queueMessage.addField(`${index + 1}.`, `${entry.title}\n${entry.url}`)
     }
     const components = [ new MessageButton({ customId: 'queue-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY' }),
                          new MessageButton({ customId: 'queue-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY' }),

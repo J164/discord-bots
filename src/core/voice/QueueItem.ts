@@ -1,32 +1,25 @@
 import { MessageEmbed, InteractionReplyOptions } from 'discord.js'
-import EventEmitter from 'events'
-import { existsSync, writeFileSync } from 'fs'
+import { createWriteStream, writeFileSync } from 'fs'
 import { genericEmbed } from '../utils/commonFunctions'
 import { config } from '../utils/constants'
-import youtubedl from 'youtube-dl-exec'
-import { YTResponse } from '../utils/interfaces'
+import ytdl from 'ytdl-core'
 
-export class QueueItem extends EventEmitter {
+export class QueueItem {
 
-    public readonly webpageUrl: string
+    public readonly url: string
     public readonly title: string
     public readonly id: string
-    public thumbnail: string
+    public readonly thumbnail: string
     public readonly duration: number
     public looping: boolean
-    private downloading: boolean
-    public failed: boolean
 
-    public constructor(webpageUrl: string, title: string, id: string, thumbnail: string, duration: number) {
-        super()
-        this.webpageUrl = webpageUrl
+    public constructor(url: string, title: string, id: string, thumbnail: string, duration: number) {
+        this.url = url
         this.title = title
         this.id = id
         this.thumbnail = thumbnail
         this.duration = duration
         this.looping = false
-        this.downloading = false
-        this.failed = false
     }
 
     public generateEmbed(): MessageEmbed {
@@ -34,7 +27,7 @@ export class QueueItem extends EventEmitter {
             title: `Now Playing: ${this.title}`,
             fields: [ {
                 name: 'URL:',
-                value: this.webpageUrl
+                value: this.url
             } ],
             image: { url: this.thumbnail }
         })
@@ -53,46 +46,16 @@ export class QueueItem extends EventEmitter {
         return { content: 'Now Looping' }
     }
 
-    public isDownloaded(): boolean {
-        if (existsSync(`${config.data}/music_files/playback/${this.id}.json`)) {
-            return true
-        }
-        this.download()
-        return false
-    }
-
+    //untested and unused
     public async download(): Promise<void> {
-        if (this.downloading) {
-            return
-        }
-        this.downloading = true
-        let output: YTResponse
         try {
-            output = await youtubedl(this.webpageUrl, {
-                quiet: true,
-                noCallHome: true,
-                printJson: true,
-                format: 'bestaudio[ext=webm+acodec=opus+asr=48000]',
-                limitRate: '5M',
-                output: `${config.data}/music_files/playback/%(id)s.%(ext)s`
-            })
+            writeFileSync(`${config.data}/music_files/playback/${this.id}.webm`, '')
+            ytdl(this.url, {
+                filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus'
+            }).pipe(createWriteStream(`${config.data}/music_files/playback/${this.id}.webm`))
         } catch (err) {
             console.log('could not download song')
             console.log(err)
-            this.failed = true
-            this.emit('failed')
-            return
         }
-        this.thumbnail = output.thumbnails[0].url
-        const metaData = JSON.stringify({
-            // eslint-disable-next-line camelcase
-            webpage_url: this.webpageUrl,
-            title: this.title,
-            id: this.id,
-            thumbnail: this.thumbnail,
-            duration: this.duration
-        })
-        writeFileSync(`${config.data}/music_files/playback/${this.id}.json`, metaData)
-        this.emit('downloaded')
     }
 }

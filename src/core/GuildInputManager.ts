@@ -22,7 +22,7 @@ export class GuildInputManager {
         this.commands = commands
         this.parseMessage = options?.parseMessage
         this.database = options?.database
-        this.voiceManager = options?.voiceManager || options?.queueManager
+        this.voiceManager = options?.voiceManager || options?.queueManager?.voiceManager
         this.queueManager = options?.queueManager
         this.getUsers()
     }

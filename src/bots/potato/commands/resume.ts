@@ -8,7 +8,7 @@ const data: ApplicationCommandData = {
 }
 
 function resume(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
-    if (info.queueManager.resume()) {
+    if (info.queueManager.voiceManager.resume()) {
         return { content: 'Resumed!' }
     }
     return { content: 'Nothing is playing!' }

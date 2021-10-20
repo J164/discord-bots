@@ -1,50 +1,42 @@
 import { InteractionReplyOptions, TextChannel, VoiceChannel } from 'discord.js'
 import { VoiceManager } from './VoiceManager'
-import { AudioPlayerStatus } from '@discordjs/voice'
-import { config } from '../utils/constants'
 import { QueueItem } from './QueueItem'
+import ytdl from 'ytdl-core'
+import { AudioPlayerStatus } from '@discordjs/voice'
 
-export class QueueManager extends VoiceManager {
+export class QueueManager {
 
+    public voiceManager: VoiceManager
     private queue: QueueItem[]
-    private downloadQueue: QueueItem[]
     private boundChannel: TextChannel
-    private downloading: boolean
     private nowPlaying: QueueItem
     private queueLoop: boolean
-    private currentDownload: QueueItem
+    private queueLock: boolean
 
     public constructor() {
-        super()
+        this.voiceManager = new VoiceManager()
         this.queue = []
-        this.downloadQueue = []
-        this.downloading = false
         this.queueLoop = false
+        this.queueLock = false
     }
 
-    public addToQueue(duration: number, webpageUrl: string, title: string, id: string, thumbnail: string): void {
+    public addToQueue(duration: number, url: string, title: string, id: string, thumbnail: string): void {
         if (duration < 5400) {
-            const song = new QueueItem(webpageUrl, title, id, thumbnail, duration)
+            const song = new QueueItem(url, title, id, thumbnail, duration)
             this.queue.push(song)
-            if (!thumbnail) {
-                this.downloadQueue.push(song)
-                if (!this.downloading) {
-                    this.download()
-                }
-            }
         }
     }
 
     public async connect(voiceChannel: VoiceChannel): Promise<boolean> {
-        if (!await super.connect(voiceChannel)) {
+        if (!await this.voiceManager.connect(voiceChannel)) {
             return false
         }
         if (this.queue.length < 1) {
             this.reset()
             return false
         }
-        if (this.player?.state.status !== AudioPlayerStatus.Playing && this.player?.state.status !== AudioPlayerStatus.Paused) {
-            this.checkSongStatus()
+        if (!this.voiceManager.isActive()) {
+            this.playSong()
         }
         return true
     }
@@ -53,73 +45,58 @@ export class QueueManager extends VoiceManager {
         this.boundChannel = channel
     }
 
-    private async checkSongStatus(): Promise<void> {
-        if (this.queue.length < 1) {
+    private async playSong(): Promise<void> {
+        if (this.queue.length < 1 || this.queueLock) {
             return
         }
-        const song = this.queue.shift()
-        if (song.failed) {
-            this.checkSongStatus()
-        }
-        if (!song.isDownloaded()) {
-            this.awaitingResource = song
-            song.once('downloaded', () => {
-                this.awaitingResource = null
-                this.playSong(song)
-            })
-            song.once('failed', () => {
-                this.checkSongStatus()
-            })
-            return
-        }
-        this.playSong(song)
-    }
 
-    private async playSong(song: QueueItem): Promise<void> {
-        if (!await this.createStream(`${config.data}/music_files/playback/${song.id}.webm`)) {
+        this.queueLock = true
+        const song = this.queue.shift()
+
+        let success = false
+
+        try {
+            success = await this.voiceManager.playStream(ytdl(song.url, {
+                filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus'
+            }))
+        } catch (err) {
+            console.log(err)
+        }
+
+        if (!success) {
             this.boundChannel.send('Something went wrong while preparing song')
+            this.queueLock = false
             return
         }
+
         this.nowPlaying = song
         if (!song.looping) {
             this.boundChannel.send({ embeds: [ this.nowPlaying.generateEmbed() ] })
         }
-        this.player.on('stateChange', (oldState, newState) => {
+        this.voiceManager.player.on('stateChange', (oldState, newState) => {
             if (newState.status !== AudioPlayerStatus.Idle) {
                 return
             }
-            this.player.removeAllListeners('stateChange')
+            this.voiceManager.player.removeAllListeners('stateChange')
             if (this.queueLoop) {
                 this.queue.push(song)
             } else if (song.looping) {
                 this.queue.unshift(song)
             }
-            this.checkSongStatus()
+            this.playSong()
         })
-    }
-
-    public async download(): Promise<void> {
-        if (this.downloadQueue.length < 1) {
-            this.downloading = false
-            return
-        }
-        this.downloading = true
-        this.currentDownload = this.downloadQueue.shift()
-        this.currentDownload.once('downloaded', () => {
-            this.download()
-        })
-        this.currentDownload.download()
+        this.queueLock = false
     }
 
     public loopSong(): InteractionReplyOptions {
-        if (this.player?.state.status !== AudioPlayerStatus.Playing && this.player?.state.status !== AudioPlayerStatus.Paused) {
+        if (!this.voiceManager.isActive()) {
             return { content: 'Nothing is playing!' }
         }
         return this.nowPlaying.loop()
     }
 
     public loopQueue(): InteractionReplyOptions {
-        if (this.player?.state.status !== AudioPlayerStatus.Playing && this.player?.state.status !== AudioPlayerStatus.Paused || this.queue.length < 1) {
+        if (!this.voiceManager.isActive() || this.queue.length < 1) {
             return { content: 'Nothing is queued!' }
         }
         if (this.queueLoop) {
@@ -135,13 +112,12 @@ export class QueueManager extends VoiceManager {
             return false
         }
         this.queue = []
-        this.downloadQueue = []
         this.queueLoop = false
         return true
     }
 
     public skip(): boolean {
-        return this.player?.stop(true)
+        return this.voiceManager.player?.stop(true)
     }
 
     public shuffleQueue(): boolean {
@@ -165,7 +141,7 @@ export class QueueManager extends VoiceManager {
     }
 
     public getQueue(): QueueItem[][] {
-        if (this.player?.state.status !== AudioPlayerStatus.Playing && this.player?.state.status !== AudioPlayerStatus.Paused) {
+        if (!this.voiceManager.isActive()) {
             return null
         }
         if (this.queue.length < 1) {
@@ -193,13 +169,9 @@ export class QueueManager extends VoiceManager {
     }
 
     public reset(): void {
-        super.reset()
-        this.awaitingResource?.removeAllListeners()
-        this.currentDownload?.removeAllListeners()
+        this.voiceManager.reset()
         this.queue = []
-        this.downloadQueue = []
         this.boundChannel = null
-        this.downloading = false
         this.nowPlaying = null
         this.queueLoop = false
     }

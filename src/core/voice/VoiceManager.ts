@@ -1,15 +1,13 @@
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, joinVoiceChannel, PlayerSubscription, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice'
 import { VoiceChannel } from 'discord.js'
-import { createReadStream } from 'fs'
-import { QueueItem } from './QueueItem'
+import { Readable } from 'stream'
 
 export class VoiceManager {
 
     private voiceConnection: VoiceConnection
     private subscription: PlayerSubscription
     private voiceChannel: VoiceChannel
-    protected player: AudioPlayer
-    protected awaitingResource: QueueItem
+    public player: AudioPlayer
 
     public async connect(voiceChannel: VoiceChannel): Promise<boolean> {
         if (this.voiceConnection?.state.status === VoiceConnectionStatus.Ready) {
@@ -36,8 +34,9 @@ export class VoiceManager {
         }
     }
 
-    public async createStream(path: string): Promise<boolean> {
-        const { stream, type } = await demuxProbe(createReadStream(path, { highWaterMark: 1000 }))
+    public async playStream(stream: Readable): Promise<boolean> {
+        const { type } = await demuxProbe(stream)
+        console.log(type)
         this.player.play(createAudioResource(stream, { inputType: type }))
         try {
             await entersState(this.player, AudioPlayerStatus.Playing, 30e3)
@@ -56,9 +55,12 @@ export class VoiceManager {
         return this.player?.unpause()
     }
 
+    public isActive(): boolean {
+        return this.player?.state.status === AudioPlayerStatus.Playing || this.player?.state.status === AudioPlayerStatus.Paused
+    }
+
     public checkIsIdle(): void {
-        // eslint-disable-next-line no-extra-parens
-        if ((this.player?.state.status === AudioPlayerStatus.Idle && !this.awaitingResource) || this.voiceChannel?.members.size <= 1) {
+        if (this.player?.state.status === AudioPlayerStatus.Idle || this.voiceChannel?.members.size <= 1) {
             this.reset()
         }
     }

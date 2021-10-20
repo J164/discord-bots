@@ -8,7 +8,7 @@ const data: ApplicationCommandData = {
 }
 
 function pause(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
-    if (info.queueManager.pause()) {
+    if (info.queueManager.voiceManager.pause()) {
         return { content: 'Paused!' }
     }
     return { content: 'Nothing is playing' }

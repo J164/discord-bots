@@ -1,10 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
-import { existsSync, readFileSync } from 'fs'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { config } from '../../../core/utils/constants'
 import { GuildInputManager } from '../../../core/GuildInputManager'
-import youtubedl from 'youtube-dl-exec'
-import { YTResponse } from '../../../core/utils/interfaces'
+import ytpl from 'ytpl'
 
 const data: ApplicationCommandData = {
     name: 'playlist',
@@ -41,20 +38,9 @@ async function playlist(interaction: CommandInteraction, info: GuildInputManager
     if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
         return { content: 'This command can only be used while in a visable voice channel!' }
     }
-    const output: YTResponse = await youtubedl(interaction.options.getString('name'), {
-        dumpSingleJson: true,
-        quiet: true,
-        noCallHome: true,
-        flatPlaylist: true
-    })
-    for (const entry of output.entries) {
-        let songData
-        if (existsSync(`${config.data}/music_files/playback/${entry.id}.json`)) {
-            songData = JSON.parse(readFileSync(`${config.data}/music_files/playback/${entry.id}.json`, { encoding: 'utf8' }))
-        } else {
-            songData = entry
-        }
-        info.queueManager.addToQueue(songData.duration, `https://www.youtube.com/watch?v=${songData.id}`, songData.title, songData.id, songData.thumbnail)
+    const output = await ytpl(interaction.options.getString('name'))
+    for (const song of output.items) {
+        info.queueManager.addToQueue(song.durationSec, song.url, song.title, song.id, song.bestThumbnail.url)
     }
     info.queueManager.bindChannel(<TextChannel> interaction.channel)
     if (!info.queueManager.connect(voiceChannel)) {
