@@ -1,7 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { config } from '../../../core/utils/constants'
-import { GuildInputManager } from '../../../core/GuildInputManager'
 import ytdl from 'ytdl-core'
 import { createWriteStream, writeFileSync } from 'fs'
 
@@ -18,8 +17,8 @@ const data: ApplicationCommandData = {
     ]
 }
 
-async function download(interaction: CommandInteraction, info: GuildInputManager): Promise<InteractionReplyOptions> {
-    if (interaction.member !== info.users.get('admin')) {
+async function download(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
+    if (interaction.member.user.id !== config.admin) {
         return { content: 'You don\'t have permission to use this command!' }
     }
     interaction.editReply({ content: 'Downloading...' })

@@ -2,7 +2,7 @@ import { Client, ClientOptions, Collection, Intents } from 'discord.js'
 import { writeFileSync } from 'fs'
 import { BaseCommand } from '../../core/BaseCommand'
 import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
-import { config } from '../../core/utils/constants'
+import { config, secrets } from '../../core/utils/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { GuildInputManager } from '../../core/GuildInputManager'
 
@@ -49,7 +49,7 @@ function defineEvents() {
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, { database: database }))
+            guildStatus.set(interaction.guild.id, new GuildInputManager(commands, { database: database }))
         }
 
         guildStatus.get(interaction.guild.id).parseCommand(interaction)
@@ -72,7 +72,7 @@ process.on('message', function (arg) {
         case 'start':
             client = new Client(clientOptions)
             defineEvents()
-            client.login(config.krenkoKey)
+            client.login(secrets.krenkoKey)
             break
         case 'deploy':
             deployCommands(client, 'krenko')

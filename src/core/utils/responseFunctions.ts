@@ -1,16 +1,8 @@
 import { Message } from 'discord.js'
-import { voiceKick } from './commonFunctions'
 import { config } from './constants'
 
 export function potatoMessageParse(message: Message): void {
-    if (!message.guild) {
-        return
-    }
-
-    if (message.author.bot) {
-        if (message.content.indexOf('Never Gonna Give You Up') !== -1) {
-            voiceKick(0, message.member.voice)
-        }
+    if (!message.guild || message.author.bot) {
         return
     }
 

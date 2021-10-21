@@ -26,7 +26,7 @@ const data: ApplicationCommandData = {
 }
 
 async function newSong(interaction: CommandInteraction, info: GuildInputManager, songs: SwearSongInfo[]): Promise<void> {
-    if (interaction.member !== info.users.get('admin') && interaction.member !== info.users.get('swear')) {
+    if (interaction.member.user.id !== config.admin && interaction.member.user.id !== config.swear) {
         interaction.editReply({ content: 'You don\'t have permission to use this command!' })
         return
     }

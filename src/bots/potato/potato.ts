@@ -3,7 +3,7 @@ import { Client, ClientOptions, Collection, Intents, MessageOptions, TextChannel
 import { writeFileSync } from 'fs'
 import { BaseCommand } from '../../core/BaseCommand'
 import { deployCommands, genericEmbed, getChannel, getCommands, getStringDate, getWeatherEmoji } from '../../core/utils/commonFunctions'
-import { config } from '../../core/utils/constants'
+import { config, secrets } from '../../core/utils/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { GuildInputManager } from '../../core/GuildInputManager'
 import { HolidayResponse, QuoteResponse, WeatherResponse } from '../../core/utils/interfaces'
@@ -33,8 +33,8 @@ const guildStatus = new Map<string, GuildInputManager>()
 
 async function dailyReport(date: Date): Promise<MessageOptions> {
     //meme of day
-    const holiday: HolidayResponse = await axios.get(`https://holidays.abstractapi.com/v1/?api_key=${config.abstractKey}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)
-    const weather: WeatherResponse = await axios.get(`http://api.weatherapi.com/v1/current.json?key=${config.weatherKey}&q=60069`)
+    const holiday: HolidayResponse = await axios.get(`https://holidays.abstractapi.com/v1/?api_key=${secrets.abstractKey}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)
+    const weather: WeatherResponse = await axios.get(`http://api.weatherapi.com/v1/current.json?key=${secrets.weatherKey}&q=60069`)
     const quote: QuoteResponse = await axios.get(`http://quotes.rest/qod.json?category=inspire`)
     const stringDate = getStringDate(date)
     const weatherEmoji = getWeatherEmoji(weather.data.current.condition.code)
@@ -75,7 +75,7 @@ function defineEvents() {
             client.user.setActivity(config.potatoStatus[Math.floor(Math.random() * config.potatoStatus.length)])
 
             for (const [ , guildManager ] of guildStatus) {
-                guildManager.voiceManager.checkIsIdle()
+                guildManager.queueManager.voiceManager.checkIsIdle()
             }
 
             date = new Date()
@@ -98,7 +98,7 @@ function defineEvents() {
 
     client.on('messageCreate', message => {
         if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new GuildInputManager(message.guild, commands, { parseMessage: potatoMessageParse, database: database, queueManager: new QueueManager() }))
+            guildStatus.set(message.guild.id, new GuildInputManager(commands, { parseMessage: potatoMessageParse, database: database, queueManager: new QueueManager() }))
         }
 
         guildStatus.get(message.guild.id).parseMessage(message)
@@ -110,7 +110,7 @@ function defineEvents() {
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new GuildInputManager(interaction.guild, commands, { parseMessage: potatoMessageParse, database: database, queueManager: new QueueManager() }))
+            guildStatus.set(interaction.guild.id, new GuildInputManager(commands, { parseMessage: potatoMessageParse, database: database, queueManager: new QueueManager() }))
         }
 
         guildStatus.get(interaction.guild.id).parseCommand(interaction)
@@ -133,7 +133,7 @@ process.on('message', arg => {
         case 'start':
             client = new Client(clientOptions)
             defineEvents()
-            client.login(config.potatoKey)
+            client.login(secrets.potatoKey)
             break
         case 'deploy':
             deployCommands(client, 'potato')

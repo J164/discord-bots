@@ -2,27 +2,6 @@
 
 import { User } from 'discord.js'
 
-export interface BotConfig {
-    potatoKey: string,
-    swearKey: string,
-    krenkoKey: string,
-    yeetKey: string,
-    googleKey: string,
-    tenorKey: string,
-    abstractKey: string,
-    weatherKey: string,
-    sqlPass: string,
-    data: string,
-    potatoStatus: string[],
-    swearStatus: string[],
-    krenkoStatus: string[],
-    yeetStatus: string[],
-    blacklist: {
-        swears: string[],
-        insults: string[]
-    }
-}
-
 export interface HolidayResponse {
     data: {
         name: string,

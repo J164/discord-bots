@@ -1,9 +1,9 @@
-import { ApplicationCommandData, Channel, Client, Collection, GuildMember, MessageEmbed, MessageEmbedOptions, Snowflake, VoiceState } from 'discord.js'
+import { ApplicationCommandData, Channel, Client, Collection, GuildMember, MessageEmbed, MessageEmbedOptions, Snowflake } from 'discord.js'
 import { createCanvas, loadImage } from 'canvas'
 import { readdirSync } from 'fs'
 import { BaseCommand } from '../BaseCommand'
-import { config } from './constants'
 import axios from 'axios'
+import { secrets } from './constants'
 
 export async function getCommands(client: Client, botName: string): Promise<Collection<string, BaseCommand>> {
     const currentCommands = await client.application.commands.fetch()
@@ -26,19 +26,8 @@ export function deployCommands(client: Client, botName: string): void {
     client.application.commands.set(commandData)
 }
 
-export function voiceKick(count: number, voiceState: VoiceState): void {
-    if (voiceState.channelId) {
-        voiceState.disconnect()
-        return
-    }
-    if (count > 5) {
-        return
-    }
-    setTimeout(() => voiceKick(count + 1, voiceState), 2000)
-}
-
 export async function searchYoutube(parameter: string): Promise<string> {
-    const searchResult = <{ data: { pageInfo: { totalResults: number }, items: { id: { videoId: string } }[] } }> await axios.get(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&order=relevance&q=${encodeURIComponent(parameter)}&type=video&videoDefinition=high&key=${config.googleKey}`)
+    const searchResult = <{ data: { pageInfo: { totalResults: number }, items: { id: { videoId: string } }[] } }> await axios.get(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&order=relevance&q=${encodeURIComponent(parameter)}&type=video&videoDefinition=high&key=${secrets.googleKey}`)
     if (searchResult.data.pageInfo.totalResults < 1) {
         return null
     }
