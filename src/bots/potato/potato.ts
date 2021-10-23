@@ -1,12 +1,11 @@
 import axios from 'axios'
-import { Client, ClientOptions, Collection, Intents, MessageOptions, TextChannel } from 'discord.js'
+import { Client, ClientOptions, Intents, MessageOptions, TextChannel } from 'discord.js'
 import { writeFileSync } from 'fs'
-import { BaseCommand } from '../../core/BaseCommand'
 import { deployCommands, genericEmbed, getChannel, getCommands, getStringDate, getWeatherEmoji } from '../../core/utils/commonFunctions'
 import { config, secrets } from '../../core/utils/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { GuildInputManager } from '../../core/GuildInputManager'
-import { HolidayResponse, QuoteResponse, WeatherResponse } from '../../core/utils/interfaces'
+import { Command, HolidayResponse, QuoteResponse, WeatherResponse } from '../../core/utils/interfaces'
 import { potatoMessageParse } from '../../core/utils/responseFunctions'
 import { QueueManager } from '../../core/voice/QueueManager'
 
@@ -27,7 +26,7 @@ process.on('unhandledRejection', (error: Error) => {
 
 const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES ] }
 let client = new Client(clientOptions)
-let commands: Collection<string, BaseCommand>
+let commands: Map<string, Command>
 const database = new DatabaseManager()
 const guildStatus = new Map<string, GuildInputManager>()
 

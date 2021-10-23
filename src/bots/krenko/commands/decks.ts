@@ -1,5 +1,4 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { DeckInfo, GuildInfo } from '../../../core/utils/interfaces'
 import { Deck } from '../../../core/modules/Deck'
 
@@ -68,4 +67,4 @@ function getDeck(interaction: CommandInteraction, info: GuildInfo): void {
     })
 }
 
-module.exports = new BaseCommand(data, getDeck)
+module.exports = { data: data, execute: getDeck }

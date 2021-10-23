@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -14,4 +13,4 @@ function skip(interaction: CommandInteraction, info: GuildInfo): InteractionRepl
     return { content: 'There is nothing to skip!' }
 }
 
-module.exports = new BaseCommand(data, skip)
+module.exports = { data: data, execute: skip }

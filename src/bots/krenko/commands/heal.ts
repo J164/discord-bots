@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -31,4 +30,4 @@ function heal(interaction: CommandInteraction, info: GuildInfo): InteractionRepl
     return { embeds: [ info.game.changeLife(interaction.options.getUser('player').id, interaction.options.getInteger('amount')) ] }
 }
 
-module.exports = new BaseCommand(data, heal)
+module.exports = { data: data, execute: heal }

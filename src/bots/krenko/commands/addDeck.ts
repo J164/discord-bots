@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { Deck } from '../../../core/modules/Deck'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
@@ -32,4 +31,4 @@ async function addDeck(interaction: CommandInteraction, info: GuildInfo): Promis
     return { content: 'Success!' }
 }
 
-module.exports = new BaseCommand(data, addDeck)
+module.exports = { data: data, execute: addDeck }

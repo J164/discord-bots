@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -32,4 +31,4 @@ function loop(interaction: CommandInteraction, info: GuildInfo): InteractionRepl
     return info.queueManager.loopQueue()
 }
 
-module.exports = new BaseCommand(data, loop)
+module.exports = { data: data, execute: loop }

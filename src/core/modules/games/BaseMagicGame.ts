@@ -1,17 +1,15 @@
-import { MessageEmbed, Snowflake, User } from 'discord.js'
+import { Collection, MessageEmbed, Snowflake, User } from 'discord.js'
 import { genericEmbed } from '../../utils/commonFunctions'
 import { MagicPlayer } from '../../utils/interfaces'
 
 export class BaseMagicGame {
 
-    protected readonly playerData: Map<Snowflake, MagicPlayer>
-    protected numAlive: number
+    protected readonly playerData: Collection<Snowflake, MagicPlayer>
     public isActive: boolean
 
     public constructor(playerList: User[]) {
         this.isActive = true
-        this.numAlive = playerList.length
-        this.playerData = new Map<Snowflake, MagicPlayer>()
+        this.playerData = new Collection<Snowflake, MagicPlayer>()
         for (const player of playerList) {
             this.playerData.set(player.id, {
                 name: player.username,
@@ -37,8 +35,7 @@ export class BaseMagicGame {
             return genericEmbed({ title: `${this.playerData.get(player).name} is already eliminated` })
         }
         this.playerData.get(player).isAlive = false
-        this.numAlive--
-        if (this.numAlive < 2) {
+        if (this.playerData.filter(user => user.isAlive).size < 2) {
             return this.finishGame()
         }
         return this.printStandings()
@@ -46,11 +43,11 @@ export class BaseMagicGame {
 
     public printStandings(): MessageEmbed {
         const embed = genericEmbed({ title: 'Current Standings' })
-        for (const [ , player ] of this.playerData) {
-            if (player.isAlive) {
-                embed.addField(`${player.name}:`, `Life Total: ${player.life}\nPoison Counters: ${player.poison}`)
-                continue
-            }
+        const [ alive, dead ] = this.playerData.partition(player => player.isAlive)
+        for (const [ , player ] of alive) {
+            embed.addField(`${player.name}:`, `Life Total: ${player.life}\nPoison Counters: ${player.poison}`)
+        }
+        for (const [ , player ] of dead) {
             embed.addField(`${player.name}:`, 'ELIMINATED')
         }
         return embed
@@ -58,15 +55,11 @@ export class BaseMagicGame {
 
     public finishGame(): MessageEmbed {
         this.isActive = false
-        if (this.numAlive > 1) {
+        const alive = this.playerData.filter(player => player.isAlive)
+        if (alive.size > 1) {
             return this.printStandings()
         }
-        for (const [ , player ] of this.playerData) {
-            if (player.isAlive) {
-                return genericEmbed({ title: `${player.name} Wins!` })
-                    .addField(`${player.name}:`, `Life Total: ${player.life}\nPoison Counters: ${player.poison}`)
-            }
-        }
+        return genericEmbed({ title: `${alive.first().name} Wins!`, fields: [ { name: `${alive.first().name}:`, value: `Life Total: ${alive.first().life}\nPoison Counters: ${alive.first().poison}` } ] })
     }
 
     public userInGame(player: Snowflake): boolean {

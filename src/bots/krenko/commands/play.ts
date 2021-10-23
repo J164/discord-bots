@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { BaseMagicGame } from '../../../core/modules/games/BaseMagicGame'
 import { CommanderMagicGame } from '../../../core/modules/games/CommanderMagicGame'
 import { GuildInfo } from '../../../core/utils/interfaces'
@@ -123,4 +122,4 @@ function play(interaction: CommandInteraction, info: GuildInfo): InteractionRepl
     return { embeds: [ info.game.printStandings() ] }
 }
 
-module.exports = new BaseCommand(data, play)
+module.exports = { data: data, execute: play }

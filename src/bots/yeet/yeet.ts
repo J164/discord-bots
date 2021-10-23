@@ -1,10 +1,10 @@
-import { Client, ClientOptions, Collection, Intents } from 'discord.js'
+import { Client, ClientOptions, Intents } from 'discord.js'
 import { writeFileSync } from 'fs'
-import { BaseCommand } from '../../core/BaseCommand'
 import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
 import { config, secrets } from '../../core/utils/constants'
 import { GuildInputManager } from '../../core/GuildInputManager'
 import { yeetMessageParse } from '../../core/utils/responseFunctions'
+import { Command } from '../../core/utils/interfaces'
 
 process.on('SIGKILL', () => {
     process.exit()
@@ -23,7 +23,7 @@ process.on('unhandledRejection', (error: Error) => {
 
 const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ] }
 let client = new Client(clientOptions)
-let commands: Collection<string, BaseCommand>
+let commands: Map<string, Command>
 const guildStatus = new Map<string, GuildInputManager>()
 
 function defineEvents() {

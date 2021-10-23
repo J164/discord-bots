@@ -2,6 +2,7 @@ import { BotSubprocess } from './core/BotSubprocess'
 import { createInterface } from 'readline'
 import { writeFileSync } from 'fs'
 import { config } from './core/utils/constants'
+import Collection from '@discordjs/collection'
 
 process.on('uncaughtException', err => {
     const date = new Date()
@@ -9,7 +10,7 @@ process.on('uncaughtException', err => {
     process.exit()
 })
 
-const bots = new Map<string, BotSubprocess>([
+const bots = new Collection<string, BotSubprocess>([
     [ 'potato', new BotSubprocess('./bots/potato/potato.js', 'Potato Bot') ],
     [ 'krenko', new BotSubprocess('./bots/krenko/krenko.js', 'Krenko Bot') ],
     [ 'swear', new BotSubprocess('./bots/swear/swear.js', 'Swear Bot') ],
@@ -50,15 +51,14 @@ function stop(input: string[]): void {
         stopAll()
         return
     }
-    for (const [ key, bot ] of bots) {
-        if (key === input[1]) {
-            if (!bot.stop()) {
-                console.log(`${bot.name} is already offline`)
-            }
-            return
-        }
+    const bot = bots.get(input[1])
+    if (!bot) {
+        console.log('Name not recognized')
+        return
     }
-    console.log('Name not recognized')
+    if (!bot.stop()) {
+        console.log(`${bot.name} is already offline`)
+    }
 }
 
 function start(input: string[]): void {
@@ -70,23 +70,22 @@ function start(input: string[]): void {
         startAll()
         return
     }
-    for (const [ key, bot ] of bots) {
-        if (key === input[1]) {
-            if (!bot.start()) {
-                console.log(`${bot.name} is already online`)
-            }
-            return
-        }
+    const bot = bots.get(input[1])
+    if (!bot) {
+        console.log('Name not recognized')
+        return
     }
-    console.log('Name not recognized')
+    if (!bot.start()) {
+        console.log(`${bot.name} is already online`)
+    }
 }
 
 function list(): void {
-    for (const [ , bot ] of bots) {
-        if (bot.getOnline()) {
-            console.log(`${bot.name}: `, '\x1b[42m', 'Online', '\x1b[0m')
-            continue
-        }
+    const [ online, offline ] = bots.partition(bot => bot.getOnline())
+    for (const [ , bot ] of online) {
+        console.log(`${bot.name}: `, '\x1b[42m', 'Online', '\x1b[0m')
+    }
+    for (const [ , bot ] of offline) {
         console.log(`${bot.name}: `, '\x1b[41m', 'Offline', '\x1b[0m')
     }
 }

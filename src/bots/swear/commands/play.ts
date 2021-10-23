@@ -1,6 +1,5 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
 import { createReadStream, existsSync } from 'fs'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { config } from '../../../core/utils/constants'
 import { GuildInfo, SwearSongInfo } from '../../../core/utils/interfaces'
 
@@ -58,4 +57,4 @@ function getSongs(interaction: CommandInteraction, info: GuildInfo): void {
     })
 }
 
-module.exports = new BaseCommand(data, getSongs)
+module.exports = { data: data, execute: getSongs }

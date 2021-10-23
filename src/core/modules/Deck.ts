@@ -52,12 +52,11 @@ export class Deck {
         }
         this.name = deckJson.name
         for (const section of deckJson.sections) {
-            for (const card of section.cards) {
-                if (card.isCommander) {
-                    const cardInfo = <ScryfallResponse> await makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(card.name)}`)
-                    this.image = cardInfo.data[0].image_uris.large
-                    return true
-                }
+            const commander = section.cards.findIndex(card => card.isCommander)
+            if (commander !== -1) {
+                const cardInfo = <ScryfallResponse> await makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(section.cards[commander].name)}`)
+                this.image = cardInfo.data[0].image_uris.large
+                return true
             }
         }
         return false

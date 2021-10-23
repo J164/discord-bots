@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -12,4 +11,4 @@ function stop(interaction: CommandInteraction, info: GuildInfo): InteractionRepl
     return { content: 'Success' }
 }
 
-module.exports = new BaseCommand(data, stop)
+module.exports = { data: data, execute: stop }

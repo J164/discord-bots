@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -11,4 +10,4 @@ function nowPlaying(interaction: CommandInteraction, info: GuildInfo): Interacti
     return info.queueManager.getNowPlaying()
 }
 
-module.exports = new BaseCommand(data, nowPlaying)
+module.exports = { data: data, execute: nowPlaying }

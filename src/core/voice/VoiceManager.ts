@@ -36,7 +36,6 @@ export class VoiceManager {
 
     public async playStream(stream: Readable): Promise<boolean> {
         const { type } = await demuxProbe(stream)
-        console.log(type)
         this.player.play(createAudioResource(stream, { inputType: type }))
         try {
             await entersState(this.player, AudioPlayerStatus.Playing, 30e3)

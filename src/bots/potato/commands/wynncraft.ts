@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { genericEmbed, makeGetRequest } from '../../../core/utils/commonFunctions'
 import { WynncraftData } from '../../../core/utils/interfaces'
 
@@ -47,4 +46,4 @@ async function wynncraft(interaction: CommandInteraction): Promise<InteractionRe
     return { embeds: [ embedVar ] }
 }
 
-module.exports = new BaseCommand(data, wynncraft)
+module.exports = { data: data, execute: wynncraft }

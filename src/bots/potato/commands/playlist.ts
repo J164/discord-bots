@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import ytpl from 'ytpl'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
@@ -49,4 +48,4 @@ async function playlist(interaction: CommandInteraction, info: GuildInfo): Promi
     return { content: 'Added to queue!' }
 }
 
-module.exports = new BaseCommand(data, playlist)
+module.exports = { data: data, execute: playlist }

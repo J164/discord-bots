@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 
 const data: ApplicationCommandData = {
     name: 'nick',
@@ -33,4 +32,4 @@ async function nick(interaction: CommandInteraction): Promise<InteractionReplyOp
     return { content: 'Success!' }
 }
 
-module.exports = new BaseCommand(data, nick)
+module.exports = { data: data, execute: nick }

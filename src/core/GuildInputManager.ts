@@ -1,17 +1,16 @@
-import { Collection, CommandInteraction, InteractionReplyOptions, Message } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions, Message } from 'discord.js'
 import { QueueManager } from './voice/QueueManager'
-import { BaseCommand } from './BaseCommand'
 import { DatabaseManager } from './DatabaseManager'
 import { VoiceManager } from './voice/VoiceManager'
-import { GuildInfo } from './utils/interfaces'
+import { Command, GuildInfo } from './utils/interfaces'
 
 export class GuildInputManager {
 
-    private readonly commands: Collection<string, BaseCommand>
+    private readonly commands: Map<string, Command>
     public readonly parseMessage: (message: Message) => void
     public readonly info: GuildInfo
 
-    public constructor(commands: Collection<string, BaseCommand>, options?: { parseMessage?: (message: Message) => void, database?: DatabaseManager, voiceManager?: VoiceManager, queueManager?: QueueManager }) {
+    public constructor(commands: Map<string, Command>, options?: { parseMessage?: (message: Message) => void, database?: DatabaseManager, voiceManager?: VoiceManager, queueManager?: QueueManager }) {
         this.commands = commands
         this.parseMessage = options?.parseMessage
         this.info = { database: options?.database, voiceManager: options?.voiceManager, queueManager: options?.queueManager }

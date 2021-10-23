@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -14,4 +13,4 @@ function shuffle(interaction: CommandInteraction, info: GuildInfo): InteractionR
     return { content: 'There is nothing to shuffle!' }
 }
 
-module.exports = new BaseCommand(data, shuffle)
+module.exports = { data: data, execute: shuffle }

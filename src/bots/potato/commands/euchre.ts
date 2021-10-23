@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { genericEmbed } from '../../../core/utils/commonFunctions'
 import { Euchre } from '../../../core/modules/games/Euchre'
 
@@ -54,4 +53,4 @@ async function setupEuchre(interaction: CommandInteraction): Promise<Interaction
     interaction.channel.send({embeds: [ await game.startGame() ] })
 }
 
-module.exports = new BaseCommand(data, setupEuchre)
+module.exports = { data: data, execute: setupEuchre }

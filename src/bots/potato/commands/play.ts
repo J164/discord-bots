@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { searchYoutube } from '../../../core/utils/commonFunctions'
 import ytdl from 'ytdl-core'
 import ytpl from 'ytpl'
@@ -65,4 +64,4 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     return { content: 'Added to queue!' }
 }
 
-module.exports = new BaseCommand(data, play)
+module.exports = { data: data, execute: play }

@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { config } from '../../../core/utils/constants'
 import { GuildInfo, SwearSongInfo } from '../../../core/utils/interfaces'
 import ytdl from 'ytdl-core'
@@ -29,11 +28,9 @@ async function newSong(interaction: CommandInteraction, info: GuildInfo, songs: 
         interaction.editReply({ content: 'You don\'t have permission to use this command!' })
         return
     }
-    for (const song of songs) {
-        if (song.name === interaction.options.getString('name')) {
-            interaction.editReply({ content: 'Please enter a unique name' })
-            return
-        }
+    if (songs.find(song => song.name === interaction.options.getString('name'))) {
+        interaction.editReply({ content: 'Please enter a unique name' })
+        return
     }
     interaction.editReply({ content: 'Getting information on new song...' })
     let output: ytdl.videoInfo
@@ -65,4 +62,4 @@ function getSongs(interaction: CommandInteraction, info: GuildInfo): void {
     })
 }
 
-module.exports = new BaseCommand(data, getSongs)
+module.exports = { data: data, execute: getSongs }

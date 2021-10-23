@@ -1,5 +1,4 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, InteractionUpdateOptions, MessageActionRow, MessageAttachment, MessageButton, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { genericEmbed, makeGetRequest, mergeImages } from '../../../core/utils/commonFunctions'
 import { ScryfallResponse, MagicCard, GuildInfo } from '../../../core/utils/interfaces'
 
@@ -123,4 +122,4 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results:
     collector.once('end', () => { interaction.editReply({ components: [] }) })
 }
 
-module.exports = new BaseCommand(data, search)
+module.exports = { data: data, execute: search }

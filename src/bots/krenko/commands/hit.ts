@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageEmbed, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { CommanderMagicGame } from '../../../core/modules/games/CommanderMagicGame'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
@@ -71,4 +70,4 @@ function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReply
     return { embeds: [ standings ] }
 }
 
-module.exports = new BaseCommand(data, hit)
+module.exports = { data: data, execute: hit }

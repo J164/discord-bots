@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -14,4 +13,4 @@ function resume(interaction: CommandInteraction, info: GuildInfo): InteractionRe
     return { content: 'Nothing is playing!' }
 }
 
-module.exports = new BaseCommand(data, resume)
+module.exports = { data: data, execute: resume }

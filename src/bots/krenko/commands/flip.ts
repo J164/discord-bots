@@ -1,5 +1,4 @@
 import { ApplicationCommandData, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { genericEmbed } from '../../../core/utils/commonFunctions'
 
 const data: ApplicationCommandData = {
@@ -18,4 +17,4 @@ function flip(): InteractionReplyOptions {
     return { embeds: [ flipResult ] }
 }
 
-module.exports = new BaseCommand(data, flip)
+module.exports = { data: data, execute: flip }

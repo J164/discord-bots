@@ -1,12 +1,12 @@
-import { Client, ClientOptions, Collection, Intents } from 'discord.js'
+import { Client, ClientOptions, Intents } from 'discord.js'
 import { writeFileSync } from 'fs'
-import { BaseCommand } from '../../core/BaseCommand'
 import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
 import { config, secrets } from '../../core/utils/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { GuildInputManager } from '../../core/GuildInputManager'
 import { swearMessageParse } from '../../core/utils/responseFunctions'
 import { VoiceManager } from '../../core/voice/VoiceManager'
+import { Command } from '../../core/utils/interfaces'
 
 process.on('SIGKILL', () => {
     process.exit()
@@ -25,7 +25,7 @@ process.on('unhandledRejection', (error: Error) => {
 
 const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES ] }
 let client: Client = new Client(clientOptions)
-let commands: Collection<string, BaseCommand>
+let commands: Map<string, Command>
 const database = new DatabaseManager()
 const guildStatus = new Map<string, GuildInputManager>()
 

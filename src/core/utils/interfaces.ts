@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 
-import { User } from 'discord.js'
+import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
 import { DatabaseManager } from '../DatabaseManager'
 import { BaseMagicGame } from '../modules/games/BaseMagicGame'
 import { QueueManager } from '../voice/QueueManager'
@@ -13,86 +13,91 @@ export interface GuildInfo {
     game?: BaseMagicGame
 }
 
+export interface Command {
+    readonly data: ApplicationCommandData
+    readonly execute: (interaction: CommandInteraction, info: GuildInfo) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void
+}
+
 export interface HolidayResponse {
-    data: {
-        name: string,
-        description: string
+    readonly data: readonly {
+        readonly name: string,
+        readonly description: string
     }[]
 }
 
 export interface WeatherResponse {
-    data: {
-        current: {
-            temp_f: number,
-            condition: {
-                text: string,
-                code: number
+    readonly data: {
+        readonly current: {
+            readonly temp_f: number,
+            readonly condition: {
+                readonly text: string,
+                readonly code: number
             },
-            wind_mph: number,
-            feelslike_f: number
+            readonly wind_mph: number,
+            readonly feelslike_f: number
         }
     }
 }
 
 export interface QuoteResponse {
-    data: {
-        contents: {
-            quotes: {
-                quote: string,
-                author: string
+    readonly data: {
+        readonly contents: {
+            readonly quotes: readonly {
+                readonly quote: string,
+                readonly author: string
             }[]
         }
     }
 }
 
 export interface SwearSongInfo {
-    index: number,
-    name: string
+    readonly index: number,
+    readonly name: string
 }
 
 export interface DeckInfo {
-    name: string,
-    image: string,
-    url: string,
-    api_url: string
+    readonly name: string,
+    readonly image: string,
+    readonly url: string,
+    readonly api_url: string
 }
 
 export interface MagicCard {
-    name: string,
-    uri: string,
-    image_uris?: {
-        large: string
+    readonly name: string,
+    readonly uri: string,
+    readonly image_uris?: {
+        readonly large: string
     }
-    card_faces?: {
-        image_uris: {
-            large: string
+    readonly card_faces?: readonly {
+        readonly image_uris: {
+            readonly large: string
         }
     }[]
-    prices: {
-        usd: string
+    readonly prices: {
+        readonly usd: string
     }
 }
 
 export interface ScryfallResponse {
-    status?: string
-    data: MagicCard[]
+    readonly status?: string
+    readonly data: MagicCard[]
 }
 
 export interface WynncraftData {
-    data: {
-        username: string,
-        meta: {
-            location: {
-                online: boolean
-                server: string
+    readonly data: readonly {
+        readonly username: string,
+        readonly meta: {
+            readonly location: {
+                readonly online: boolean
+                readonly server: string
             }
         }
-        classes: {
-            name: string
-            playtime: number
-            professions: {
-                combat: {
-                    level: number
+        readonly classes: readonly {
+            readonly name: string
+            readonly playtime: number
+            readonly professions: {
+                readonly combat: {
+                    readonly level: number
                 }
             }
         }[]
@@ -100,34 +105,34 @@ export interface WynncraftData {
 }
 
 export interface TenorResponse {
-    results: {
-        itemurl: string
+    readonly results: readonly {
+        readonly itemurl: string
     }[]
 }
 
 export interface DeckJson {
-    image: string;
-    name: string;
-    url: string;
-    api_url: string;
+    readonly image: string;
+    readonly name: string;
+    readonly url: string;
+    readonly api_url: string;
 }
 
 export interface DeckstatsResponse {
-    name: string
-    sections: {
-        cards: {
-            name: string
-            isCommander: boolean
+    readonly name: string
+    readonly sections: readonly {
+        readonly cards: readonly {
+            readonly name: string
+            readonly isCommander: boolean
         }[]
     }[]
 }
 
 export interface DeckstatsListResponse {
-    list: string
+    readonly list: string
 }
 
 export interface MagicPlayer {
-    name: string,
+    readonly name: string,
     life: number,
     poison: number,
     isAlive: boolean,
@@ -140,14 +145,14 @@ export interface EuchreTeam {
 }
 
 export interface Card {
-    code: string;
-    suit: string;
-    value: string;
+    readonly code: string;
+    readonly suit: string;
+    readonly value: string;
 }
 
 export interface EuchrePlayer {
-    id: number;
-    user: User;
+    readonly id: number;
+    readonly user: User;
     hand: Card[];
-    team: EuchreTeam;
+    readonly team: EuchreTeam;
 }

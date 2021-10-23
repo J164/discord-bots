@@ -1,6 +1,5 @@
 import { ApplicationCommandData, InteractionReplyOptions } from 'discord.js'
 import { readFileSync } from 'fs'
-import { BaseCommand } from '../../../core/BaseCommand'
 
 const data: ApplicationCommandData = {
     name: 'quote',
@@ -12,4 +11,4 @@ function quote(): InteractionReplyOptions {
     return { content: quotes[Math.floor(Math.random() * quotes.length)], tts: true }
 }
 
-module.exports = new BaseCommand(data, quote)
+module.exports = { data: data, execute: quote }

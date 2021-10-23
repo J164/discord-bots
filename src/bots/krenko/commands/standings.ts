@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -14,4 +13,4 @@ function end(interaction: CommandInteraction, info: GuildInfo): InteractionReply
     return { embeds: [ info.game.printStandings() ] }
 }
 
-module.exports = new BaseCommand(data, end)
+module.exports = { data: data, execute: end }

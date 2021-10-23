@@ -1,8 +1,5 @@
 import { MessageEmbed, InteractionReplyOptions } from 'discord.js'
-import { createWriteStream, writeFileSync } from 'fs'
 import { genericEmbed } from '../utils/commonFunctions'
-import { config } from '../utils/constants'
-import ytdl from 'ytdl-core'
 
 export class QueueItem {
 
@@ -44,18 +41,5 @@ export class QueueItem {
         }
         this.looping = true
         return { content: 'Now Looping' }
-    }
-
-    //untested and unused
-    public async download(): Promise<void> {
-        try {
-            writeFileSync(`${config.data}/music_files/playback/${this.id}.webm`, '')
-            ytdl(this.url, {
-                filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus'
-            }).pipe(createWriteStream(`${config.data}/music_files/playback/${this.id}.webm`))
-        } catch (err) {
-            console.log('could not download song')
-            console.log(err)
-        }
     }
 }

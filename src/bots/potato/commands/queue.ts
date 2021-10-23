@@ -1,5 +1,4 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { genericEmbed } from '../../../core/utils/commonFunctions'
 import { QueueItem } from '../../../core/voice/QueueItem'
 import { GuildInfo } from '../../../core/utils/interfaces'
@@ -71,4 +70,4 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
     collector.once('end', () => { interaction.editReply({ components: [] }) })
 }
 
-module.exports = new BaseCommand(data, queue)
+module.exports = { data: data, execute: queue }

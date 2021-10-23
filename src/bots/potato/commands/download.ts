@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { config } from '../../../core/utils/constants'
 import ytdl from 'ytdl-core'
 import { createWriteStream, writeFileSync } from 'fs'
@@ -30,4 +29,4 @@ async function download(interaction: CommandInteraction): Promise<InteractionRep
     return { content: 'Download Successful!' }
 }
 
-module.exports = new BaseCommand(data, download)
+module.exports = { data: data, execute: download }

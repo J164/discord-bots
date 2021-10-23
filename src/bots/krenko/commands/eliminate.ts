@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -25,4 +24,4 @@ function eliminate(interaction: CommandInteraction, info: GuildInfo): Interactio
     return { embeds: [ info.game.eliminate(interaction.options.getUser('player').id) ] }
 }
 
-module.exports = new BaseCommand(data, eliminate)
+module.exports = { data: data, execute: eliminate }

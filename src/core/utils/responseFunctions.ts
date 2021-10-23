@@ -13,17 +13,13 @@ export function potatoMessageParse(message: Message): void {
     if (input.match(/(\W|^)potato(s|es)?(\W|$)/)) {
         mentionPotato = true
     }
-    for (const swear of config.blacklist.swears) {
-        if (input.match(new RegExp(`(\\W|^)${swear}(\\W|$)`))) {
-            mentionSwear = true
-            break
-        }
+    const swore = config.blacklist.swears.find(swear => input.match(new RegExp(`(\\W|^)${swear}(\\W|$)`)))
+    if (swore) {
+        mentionSwear = true
     }
-    for (const insult of config.blacklist.insults) {
-        if (input.match(new RegExp(`(\\W|^)${insult}(\\W|$)`))) {
-            mentionInsult = true
-            break
-        }
+    const insulted = config.blacklist.insults.find(insult => input.match(new RegExp(`(\\W|^)${insult}(\\W|$)`)))
+    if (insulted) {
+        mentionInsult = true
     }
     if (mentionPotato && (mentionSwear || mentionInsult)) {
         message.reply('FOOL! HOW DARE YOU BLASPHEMISE THE HOLY ORDER OF THE POTATOES! EAT POTATOES!')
@@ -50,11 +46,9 @@ export function swearMessageParse(message: Message): void {
         message.reply(config.blacklist.swears[Math.floor(Math.random() * config.blacklist.swears.length)])
         return
     }
-    for (const swear of config.blacklist.swears) {
-        if (input.match(new RegExp(`(\\W|^)${swear}(\\W|$)`))) {
-            message.reply('Good job swearing! Hell yeah!')
-            return
-        }
+    const swore = config.blacklist.swears.find(swear => input.match(new RegExp(`(\\W|^)${swear}(\\W|$)`)))
+    if (swore) {
+        message.reply('Good job swearing! Hell yeah!')
     }
 }
 

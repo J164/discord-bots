@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BaseCommand } from '../../../core/BaseCommand'
 import { genericEmbed } from '../../../core/utils/commonFunctions'
 
 const data: ApplicationCommandData = {
@@ -31,4 +30,4 @@ function roll(interaction: CommandInteraction): InteractionReplyOptions {
     return { embeds: [ diceResult ] }
 }
 
-module.exports = new BaseCommand(data, roll)
+module.exports = { data: data, execute: roll }
