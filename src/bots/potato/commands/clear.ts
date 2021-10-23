@@ -1,13 +1,13 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'clear',
     description: 'Clear the song queue'
 }
 
-function clear(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
+function clear(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (info.queueManager.clear()) {
         return { content: 'The queue has been cleared' }
     }

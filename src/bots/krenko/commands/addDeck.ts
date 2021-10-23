@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
 import { Deck } from '../../../core/modules/Deck'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'adddeck',
@@ -14,7 +14,7 @@ const data: ApplicationCommandData = {
     } ]
 }
 
-async function addDeck(interaction: CommandInteraction, info: GuildInputManager): Promise<InteractionReplyOptions> {
+async function addDeck(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
     const deck = new Deck()
     if (!await deck.getInfo(<string> interaction.options.getString('url'))) {
         return { content: 'Something went wrong... (Make sure you are using a valid deck url from deckstats.net)' }

@@ -75,7 +75,7 @@ function defineEvents() {
             client.user.setActivity(config.potatoStatus[Math.floor(Math.random() * config.potatoStatus.length)])
 
             for (const [ , guildManager ] of guildStatus) {
-                guildManager.queueManager.voiceManager.checkIsIdle()
+                guildManager.info.queueManager.voiceManager.checkIsIdle()
             }
 
             date = new Date()

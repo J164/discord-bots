@@ -1,13 +1,13 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'resume',
     description: 'Resume song playback'
 }
 
-function resume(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
+function resume(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (info.queueManager.voiceManager.resume()) {
         return { content: 'Resumed!' }
     }

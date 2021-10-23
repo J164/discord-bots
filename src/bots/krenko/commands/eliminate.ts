@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'eliminate',
@@ -15,9 +15,12 @@ const data: ApplicationCommandData = {
     ]
 }
 
-function eliminate(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
+function eliminate(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (!info.game?.isActive) {
         return { content: 'There is currently no active game' }
+    }
+    if (!info.game.userInGame(interaction.options.getUser('player').id)) {
+        return { content: 'That user is not part of this game!' }
     }
     return { embeds: [ info.game.eliminate(interaction.options.getUser('player').id) ] }
 }

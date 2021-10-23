@@ -1,13 +1,13 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'np',
     description: 'Get information on the song currently playing',
 }
 
-function nowPlaying(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
+function nowPlaying(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     return info.queueManager.getNowPlaying()
 }
 

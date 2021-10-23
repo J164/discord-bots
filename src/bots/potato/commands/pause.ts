@@ -1,13 +1,13 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'pause',
     description: 'Pause the song'
 }
 
-function pause(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
+function pause(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (info.queueManager.voiceManager.pause()) {
         return { content: 'Paused!' }
     }

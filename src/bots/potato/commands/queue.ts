@@ -1,15 +1,15 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { genericEmbed } from '../../../core/utils/commonFunctions'
-import { GuildInputManager } from '../../../core/GuildInputManager'
 import { QueueItem } from '../../../core/voice/QueueItem'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'queue',
     description: 'Get the song queue'
 }
 
-async function queue(interaction: CommandInteraction, info: GuildInputManager, queueArray: QueueItem[][] = null, button: ButtonInteraction = null, i = 0): Promise<void> {
+async function queue(interaction: CommandInteraction, info: GuildInfo, queueArray: QueueItem[][] = null, button: ButtonInteraction = null, i = 0): Promise<void> {
     if (!queueArray) {
         queueArray = info.queueManager.getQueue()
         if (!queueArray) {

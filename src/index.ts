@@ -85,9 +85,9 @@ function list(): void {
     for (const [ , bot ] of bots) {
         if (bot.getOnline()) {
             console.log(`${bot.name}: `, '\x1b[42m', 'Online', '\x1b[0m')
-        } else {
-            console.log(`${bot.name}: `, '\x1b[41m', 'Offline', '\x1b[0m')
+            continue
         }
+        console.log(`${bot.name}: `, '\x1b[41m', 'Offline', '\x1b[0m')
     }
 }
 

@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageEmbed, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
 import { CommanderMagicGame } from '../../../core/modules/games/CommanderMagicGame'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'hit',
@@ -34,9 +34,12 @@ const data: ApplicationCommandData = {
     ]
 }
 
-function hit(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
+function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (!info.game?.isActive) {
         return { content: 'There is currently no active game' }
+    }
+    if (!info.game.userInGame(interaction.options.getUser('player').id)) {
+        return { content: 'That user is not part of this game!' }
     }
     let standings: MessageEmbed
     standings = info.game.changeLife(interaction.options.getUser('player').id, interaction.options.getInteger('amount') * -1)

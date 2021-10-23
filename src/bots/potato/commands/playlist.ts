@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
 import ytpl from 'ytpl'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'playlist',
@@ -32,7 +32,7 @@ const data: ApplicationCommandData = {
     } ]
 }
 
-async function playlist(interaction: CommandInteraction, info: GuildInputManager): Promise<InteractionReplyOptions> {
+async function playlist(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
     const member = await interaction.guild.members.fetch(interaction.user)
     const voiceChannel = member.voice.channel
     if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {

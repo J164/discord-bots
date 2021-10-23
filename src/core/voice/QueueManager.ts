@@ -6,7 +6,7 @@ import { AudioPlayerStatus } from '@discordjs/voice'
 
 export class QueueManager {
 
-    public voiceManager: VoiceManager
+    public readonly voiceManager: VoiceManager
     private queue: QueueItem[]
     private boundChannel: TextChannel
     private nowPlaying: QueueItem
@@ -21,10 +21,7 @@ export class QueueManager {
     }
 
     public addToQueue(duration: number, url: string, title: string, id: string, thumbnail: string): void {
-        if (duration < 5400) {
-            const song = new QueueItem(url, title, id, thumbnail, duration)
-            this.queue.push(song)
-        }
+        this.queue.push(new QueueItem(url, title, id, thumbnail, duration))
     }
 
     public async connect(voiceChannel: VoiceChannel): Promise<boolean> {

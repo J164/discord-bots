@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'loop',
@@ -25,7 +25,7 @@ const data: ApplicationCommandData = {
     ]
 }
 
-function loop(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
+function loop(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (interaction.options.getInteger('name') === 0) {
         return info.queueManager.loopSong()
     }

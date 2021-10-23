@@ -1,9 +1,9 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { searchYoutube } from '../../../core/utils/commonFunctions'
-import { GuildInputManager } from '../../../core/GuildInputManager'
 import ytdl from 'ytdl-core'
 import ytpl from 'ytpl'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'play',
@@ -18,7 +18,7 @@ const data: ApplicationCommandData = {
     ]
 }
 
-async function play(interaction: CommandInteraction, info: GuildInputManager): Promise<InteractionReplyOptions> {
+async function play(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
     const member = await interaction.guild.members.fetch(interaction.user)
     const voiceChannel = member.voice.channel
     if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {

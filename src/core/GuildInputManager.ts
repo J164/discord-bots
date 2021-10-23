@@ -2,24 +2,19 @@ import { Collection, CommandInteraction, InteractionReplyOptions, Message } from
 import { QueueManager } from './voice/QueueManager'
 import { BaseCommand } from './BaseCommand'
 import { DatabaseManager } from './DatabaseManager'
-import { BaseMagicGame } from './modules/games/BaseMagicGame'
 import { VoiceManager } from './voice/VoiceManager'
+import { GuildInfo } from './utils/interfaces'
 
 export class GuildInputManager {
 
     private readonly commands: Collection<string, BaseCommand>
-    public readonly database: DatabaseManager
-    public readonly voiceManager: VoiceManager
-    public readonly queueManager: QueueManager
     public readonly parseMessage: (message: Message) => void
-    public game: BaseMagicGame
+    public readonly info: GuildInfo
 
     public constructor(commands: Collection<string, BaseCommand>, options?: { parseMessage?: (message: Message) => void, database?: DatabaseManager, voiceManager?: VoiceManager, queueManager?: QueueManager }) {
         this.commands = commands
         this.parseMessage = options?.parseMessage
-        this.database = options?.database
-        this.voiceManager = options?.voiceManager
-        this.queueManager = options?.queueManager
+        this.info = { database: options?.database, voiceManager: options?.voiceManager, queueManager: options?.queueManager }
     }
 
     public async parseCommand(interaction: CommandInteraction): Promise<InteractionReplyOptions | void> {
@@ -40,6 +35,6 @@ export class GuildInputManager {
             return { content: 'Please only use slash commands in servers!' }
         }
 
-        return command.execute(interaction, this)
+        return command.execute(interaction, this.info)
     }
 }

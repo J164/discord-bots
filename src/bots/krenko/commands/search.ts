@@ -1,8 +1,7 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, InteractionUpdateOptions, MessageActionRow, MessageAttachment, MessageButton, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { genericEmbed, makeGetRequest, mergeImages } from '../../../core/utils/commonFunctions'
-import { GuildInputManager } from '../../../core/GuildInputManager'
-import { ScryfallResponse, MagicCard } from '../../../core/utils/interfaces'
+import { ScryfallResponse, MagicCard, GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'search',
@@ -44,7 +43,7 @@ async function generateResponse(results: MagicCard[][], r: number, i: number): P
     return reply
 }
 
-async function search(interaction: CommandInteraction, info: GuildInputManager, results: MagicCard[][] = null, component: ButtonInteraction | SelectMenuInteraction = null, i = 0): Promise<InteractionReplyOptions> {
+async function search(interaction: CommandInteraction, info: GuildInfo, results: MagicCard[][] = null, component: ButtonInteraction | SelectMenuInteraction = null, i = 0): Promise<InteractionReplyOptions> {
     if (!results) {
         const searchTerm = interaction.options.getString('query')
         try {

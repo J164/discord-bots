@@ -1,7 +1,6 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
-import { DeckInfo } from '../../../core/utils/interfaces'
+import { DeckInfo, GuildInfo } from '../../../core/utils/interfaces'
 import { Deck } from '../../../core/modules/Deck'
 
 const data: ApplicationCommandData = {
@@ -9,7 +8,7 @@ const data: ApplicationCommandData = {
     description: 'Get a deck from Krenko\'s database'
 }
 
-async function parseDeck(interaction: CommandInteraction, info: GuildInputManager, decks: DeckInfo[], button: ButtonInteraction = null, i = 0): Promise<void> {
+async function parseDeck(interaction: CommandInteraction, info: GuildInfo, decks: DeckInfo[], button: ButtonInteraction = null, i = 0): Promise<void> {
     const deck = new Deck()
     deck.fill(decks[i])
     const components = [ new MessageButton({ customId: 'decks-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY' }),
@@ -63,7 +62,7 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInputManage
     collector.once('end', () => { interaction.editReply({ components: [] }) })
 }
 
-function getDeck(interaction: CommandInteraction, info: GuildInputManager): void {
+function getDeck(interaction: CommandInteraction, info: GuildInfo): void {
     info.database.select('decks', results => {
         parseDeck(interaction, info, <DeckInfo[]> results)
     })

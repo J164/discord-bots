@@ -1,13 +1,13 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'stop',
     description: 'Disconnects Potato Bot from voice'
 }
 
-function stop(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
+function stop(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     info.queueManager.reset()
     return { content: 'Success' }
 }

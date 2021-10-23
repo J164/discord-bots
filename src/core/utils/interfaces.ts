@@ -1,6 +1,17 @@
 /* eslint-disable camelcase */
 
 import { User } from 'discord.js'
+import { DatabaseManager } from '../DatabaseManager'
+import { BaseMagicGame } from '../modules/games/BaseMagicGame'
+import { QueueManager } from '../voice/QueueManager'
+import { VoiceManager } from '../voice/VoiceManager'
+
+export interface GuildInfo {
+    readonly database?: DatabaseManager
+    readonly voiceManager?: VoiceManager
+    readonly queueManager?: QueueManager
+    game?: BaseMagicGame
+}
 
 export interface HolidayResponse {
     data: {

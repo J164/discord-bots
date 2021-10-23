@@ -2,8 +2,7 @@ import { ApplicationCommandData, CommandInteraction } from 'discord.js'
 import { createReadStream, existsSync } from 'fs'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { config } from '../../../core/utils/constants'
-import { GuildInputManager } from '../../../core/GuildInputManager'
-import { SwearSongInfo } from '../../../core/utils/interfaces'
+import { GuildInfo, SwearSongInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'play',
@@ -24,7 +23,7 @@ const data: ApplicationCommandData = {
     ]
 }
 
-async function play(interaction: CommandInteraction, info: GuildInputManager, songs: SwearSongInfo[]): Promise<void> {
+async function play(interaction: CommandInteraction, info: GuildInfo, songs: SwearSongInfo[]): Promise<void> {
     const member = await interaction.guild.members.fetch(interaction.user)
     const voiceChannel = member.voice.channel
     if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
@@ -53,7 +52,7 @@ async function play(interaction: CommandInteraction, info: GuildInputManager, so
     interaction.editReply({ content: 'Now Playing!' })
 }
 
-function getSongs(interaction: CommandInteraction, info: GuildInputManager): void {
+function getSongs(interaction: CommandInteraction, info: GuildInfo): void {
     info.database.customSelect('swear_songs', 'index', results => {
         play(interaction, info, <SwearSongInfo[]> results)
     })

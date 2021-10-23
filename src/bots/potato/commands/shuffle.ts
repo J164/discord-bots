@@ -1,13 +1,13 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'shuffle',
     description: 'Shuffles the song queue'
 }
 
-function shuffle(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
+function shuffle(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (info.queueManager.shuffleQueue()) {
         return { content: 'The queue has been shuffled' }
     }

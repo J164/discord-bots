@@ -1,13 +1,13 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'skip',
     description: 'Skip the current song'
 }
 
-function skip(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
+function skip(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (info.queueManager.skip()) {
         return { content: 'Skipped' }
     }

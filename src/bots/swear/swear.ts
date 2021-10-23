@@ -41,7 +41,7 @@ function defineEvents() {
             client.user.setActivity(config.swearStatus[Math.floor(Math.random() * config.swearStatus.length)])
 
             for (const [ , guildManager ] of guildStatus) {
-                guildManager.voiceManager.checkIsIdle()
+                guildManager.info.voiceManager.checkIsIdle()
             }
         }, 60000)
 

@@ -1,8 +1,7 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
 import { config } from '../../../core/utils/constants'
-import { GuildInputManager } from '../../../core/GuildInputManager'
-import { SwearSongInfo } from '../../../core/utils/interfaces'
+import { GuildInfo, SwearSongInfo } from '../../../core/utils/interfaces'
 import ytdl from 'ytdl-core'
 import { createWriteStream, writeFileSync } from 'fs'
 
@@ -25,7 +24,7 @@ const data: ApplicationCommandData = {
     ]
 }
 
-async function newSong(interaction: CommandInteraction, info: GuildInputManager, songs: SwearSongInfo[]): Promise<void> {
+async function newSong(interaction: CommandInteraction, info: GuildInfo, songs: SwearSongInfo[]): Promise<void> {
     if (interaction.member.user.id !== config.admin && interaction.member.user.id !== config.swear) {
         interaction.editReply({ content: 'You don\'t have permission to use this command!' })
         return
@@ -60,7 +59,7 @@ async function newSong(interaction: CommandInteraction, info: GuildInputManager,
     interaction.editReply({ content: 'Success!' })
 }
 
-function getSongs(interaction: CommandInteraction, info: GuildInputManager): void {
+function getSongs(interaction: CommandInteraction, info: GuildInfo): void {
     info.database.select('swear_songs', results => {
         newSong(interaction, info, <SwearSongInfo[]> results)
     })

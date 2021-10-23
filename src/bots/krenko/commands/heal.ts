@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseCommand } from '../../../core/BaseCommand'
-import { GuildInputManager } from '../../../core/GuildInputManager'
+import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'heal',
@@ -21,9 +21,12 @@ const data: ApplicationCommandData = {
     ]
 }
 
-function heal(interaction: CommandInteraction, info: GuildInputManager): InteractionReplyOptions {
+function heal(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (!info.game?.isActive) {
         return { content: 'There is currently no active game' }
+    }
+    if (!info.game.userInGame(interaction.options.getUser('player').id)) {
+        return { content: 'That user is not part of this game!' }
     }
     return { embeds: [ info.game.changeLife(interaction.options.getUser('player').id, interaction.options.getInteger('amount')) ] }
 }
