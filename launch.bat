@@ -1,2 +1,1 @@
-cd dist
-start node index.js
+start node .

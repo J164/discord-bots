@@ -4,7 +4,6 @@ import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
 import { config, secrets } from '../../core/utils/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { GuildInputManager } from '../../core/GuildInputManager'
-import { swearMessageParse } from '../../core/utils/responseFunctions'
 import { VoiceManager } from '../../core/voice/VoiceManager'
 import { Command } from '../../core/utils/interfaces'
 
@@ -36,12 +35,10 @@ function defineEvents() {
         client.user.setActivity(config.swearStatus[Math.floor(Math.random() * config.swearStatus.length)])
 
         setInterval(async () => {
-            commands = await getCommands(client, 'swear')
-
             client.user.setActivity(config.swearStatus[Math.floor(Math.random() * config.swearStatus.length)])
 
             for (const [ , guildManager ] of guildStatus) {
-                guildManager.info.voiceManager.checkIsIdle()
+                guildManager.statusCheck()
             }
         }, 60000)
 
@@ -50,28 +47,34 @@ function defineEvents() {
     })
 
     client.on('messageCreate', message => {
-        if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new GuildInputManager(commands, { parseMessage: swearMessageParse, database: database, voiceManager: new VoiceManager() }))
+        if (!message.guild || message.author.bot) {
+            return
         }
 
-        guildStatus.get(message.guild.id).parseMessage(message)
+        const input = message.content.toLowerCase()
+        if (input.match(/(\W|^)swear(\W|$)/)) {
+            message.reply(config.blacklist.swears[Math.floor(Math.random() * config.blacklist.swears.length)])
+            return
+        }
+        const swore = config.blacklist.swears.find(swear => input.match(new RegExp(`(\\W|^)${swear}(\\W|$)`)))
+        if (swore) {
+            message.reply('Good job swearing! Hell yeah!')
+        }
     })
 
-    client.on('interactionCreate', interaction => {
+    client.on('interactionCreate', async interaction => {
         if (!interaction.isCommand()) {
             return
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new GuildInputManager(commands, { parseMessage: swearMessageParse, database: database, voiceManager: new VoiceManager() }))
+            guildStatus.set(interaction.guild.id, new GuildInputManager(commands, { database: database, voiceManager: new VoiceManager() }))
         }
 
-        guildStatus.get(interaction.guild.id).parseCommand(interaction)
-            .then(response => {
-                if (response) {
-                    interaction.editReply(response)
-                }
-            })
+        const response = await guildStatus.get(interaction.guild.id).parseCommand(interaction)
+        if (response) {
+            interaction.editReply(response)
+        }
     })
 }
 
@@ -79,6 +82,9 @@ process.on('message', arg => {
     switch (arg) {
         case 'stop':
             client.destroy()
+            for (const [ , guild ] of guildStatus) {
+                guild.reset()
+            }
             guildStatus.clear()
             console.log('\x1b[41m', 'Swear Bot has been logged out', '\x1b[0m')
             process.send('stop')

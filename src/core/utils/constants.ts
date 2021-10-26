@@ -27,5 +27,5 @@ interface Secrets {
     readonly sqlPass: string
 }
 
-export const config = <BotConfig> JSON.parse(readFileSync('./../assets/data/config.json', { encoding: 'utf8' }))
-export const secrets = <Secrets> JSON.parse(readFileSync('./../assets/data/secrets.json', { encoding: 'utf-8' }))
+export const config = <BotConfig> JSON.parse(readFileSync('./assets/data/config.json', { encoding: 'utf8' }))
+export const secrets = <Secrets> JSON.parse(readFileSync('./assets/data/secrets.json', { encoding: 'utf-8' }))

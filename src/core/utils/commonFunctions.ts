@@ -16,7 +16,7 @@ export async function getCommands(client: Client, botName: string): Promise<Map<
 }
 
 export function deployCommands(client: Client, botName: string): void {
-    const commandFiles = readdirSync(`./bots/${botName}/commands`).filter(file => file.endsWith('.js'))
+    const commandFiles = readdirSync(`./dist/bots/${botName}/commands`).filter(file => file.endsWith('.js'))
     const commandData: ApplicationCommandData[] = []
     for (const file of commandFiles) {
         // eslint-disable-next-line @typescript-eslint/no-var-requires

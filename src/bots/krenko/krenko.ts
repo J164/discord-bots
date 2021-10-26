@@ -34,8 +34,6 @@ function defineEvents() {
         client.user.setActivity(config.krenkoStatus[Math.floor(Math.random() * config.krenkoStatus.length)])
 
         setInterval(async () => {
-            commands = await getCommands(client, 'krenko')
-
             client.user.setActivity(config.krenkoStatus[Math.floor(Math.random() * config.krenkoStatus.length)])
         }, 60000)
 
@@ -43,7 +41,7 @@ function defineEvents() {
         process.send('start')
     })
 
-    client.on('interactionCreate', interaction => {
+    client.on('interactionCreate', async interaction => {
         if (!interaction.isCommand()) {
             return
         }
@@ -52,12 +50,10 @@ function defineEvents() {
             guildStatus.set(interaction.guild.id, new GuildInputManager(commands, { database: database }))
         }
 
-        guildStatus.get(interaction.guild.id).parseCommand(interaction)
-            .then(response => {
-                if (response) {
-                    interaction.editReply(response)
-                }
-            })
+        const response = await guildStatus.get(interaction.guild.id).parseCommand(interaction)
+        if (response) {
+            interaction.editReply(response)
+        }
     })
 }
 
@@ -65,6 +61,9 @@ process.on('message', function (arg) {
     switch (arg) {
         case 'stop':
             client.destroy()
+            for (const [ , guild ] of guildStatus) {
+                guild.reset()
+            }
             guildStatus.clear()
             console.log('\x1b[41m', 'Krenko Bot has been logged out', '\x1b[0m')
             process.send('stop')

@@ -3,7 +3,6 @@ import { writeFileSync } from 'fs'
 import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
 import { config, secrets } from '../../core/utils/constants'
 import { GuildInputManager } from '../../core/GuildInputManager'
-import { yeetMessageParse } from '../../core/utils/responseFunctions'
 import { Command } from '../../core/utils/interfaces'
 
 process.on('SIGKILL', () => {
@@ -43,28 +42,33 @@ function defineEvents() {
     })
 
     client.on('messageCreate', message => {
-        if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new GuildInputManager(commands, { parseMessage: yeetMessageParse }))
+        if (!message.guild || message.author.bot) {
+            return
         }
 
-        guildStatus.get(message.guild.id).parseMessage(message)
+        const input = message.content.toLowerCase()
+        if (input.match(/(\W|^)yee+t(\W|$)/)) {
+            if (input.substr(input.indexOf('yee') + 1, 10) === 'eeeeeeeeee') {
+                message.reply('Wow! Much Yeet!')
+                return
+            }
+            message.reply('YEEEEEEEEEET!')
+        }
     })
 
-    client.on('interactionCreate', interaction => {
+    client.on('interactionCreate', async interaction => {
         if (!interaction.isCommand()) {
             return
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new GuildInputManager(commands, { parseMessage: yeetMessageParse }))
+            guildStatus.set(interaction.guild.id, new GuildInputManager(commands))
         }
 
-        guildStatus.get(interaction.guild.id).parseCommand(interaction)
-            .then(response => {
-                if (response) {
-                    interaction.editReply(response)
-                }
-            })
+        const response = await guildStatus.get(interaction.guild.id).parseCommand(interaction)
+        if (response) {
+            interaction.editReply(response)
+        }
     })
 }
 
@@ -72,6 +76,9 @@ process.on('message', arg => {
     switch (arg) {
         case 'stop':
             client.destroy()
+            for (const [ , guild ] of guildStatus) {
+                guild.reset()
+            }
             guildStatus.clear()
             console.log('\x1b[41m', 'Yeet Bot has been logged out', '\x1b[0m')
             process.send('stop')

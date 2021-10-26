@@ -1,4 +1,4 @@
-import { CommandInteraction, InteractionReplyOptions, Message } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { QueueManager } from './voice/QueueManager'
 import { DatabaseManager } from './DatabaseManager'
 import { VoiceManager } from './voice/VoiceManager'
@@ -7,12 +7,10 @@ import { Command, GuildInfo } from './utils/interfaces'
 export class GuildInputManager {
 
     private readonly commands: Map<string, Command>
-    public readonly parseMessage: (message: Message) => void
-    public readonly info: GuildInfo
+    private readonly info: GuildInfo
 
-    public constructor(commands: Map<string, Command>, options?: { parseMessage?: (message: Message) => void, database?: DatabaseManager, voiceManager?: VoiceManager, queueManager?: QueueManager }) {
+    public constructor(commands: Map<string, Command>, options?: { database?: DatabaseManager, voiceManager?: VoiceManager, queueManager?: QueueManager }) {
         this.commands = commands
-        this.parseMessage = options?.parseMessage
         this.info = { database: options?.database, voiceManager: options?.voiceManager, queueManager: options?.queueManager }
     }
 
@@ -26,14 +24,21 @@ export class GuildInputManager {
         }
 
         const channel = await interaction.client.channels.fetch(interaction.channelId)
-        if (!channel.isText()) {
-            return
-        }
 
         if (channel.type !== 'GUILD_TEXT') {
             return { content: 'Please only use slash commands in servers!' }
         }
 
         return command.execute(interaction, this.info)
+    }
+
+    public statusCheck(): void {
+        this.info.voiceManager?.checkIsIdle()
+        this.info.queueManager?.voiceManager.checkIsIdle()
+    }
+
+    public reset(): void {
+        this.info.voiceManager?.reset()
+        this.info.queueManager?.reset()
     }
 }

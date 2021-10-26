@@ -11,10 +11,10 @@ process.on('uncaughtException', err => {
 })
 
 const bots = new Collection<string, BotSubprocess>([
-    [ 'potato', new BotSubprocess('./bots/potato/potato.js', 'Potato Bot') ],
-    [ 'krenko', new BotSubprocess('./bots/krenko/krenko.js', 'Krenko Bot') ],
-    [ 'swear', new BotSubprocess('./bots/swear/swear.js', 'Swear Bot') ],
-    [ 'yeet', new BotSubprocess('./bots/yeet/yeet.js', 'Yeet Bot') ]
+    [ 'potato', new BotSubprocess('./dist/bots/potato/potato.js', 'Potato Bot') ],
+    [ 'krenko', new BotSubprocess('./dist/bots/krenko/krenko.js', 'Krenko Bot') ],
+    [ 'swear', new BotSubprocess('./dist/bots/swear/swear.js', 'Swear Bot') ],
+    [ 'yeet', new BotSubprocess('./dist/bots/yeet/yeet.js', 'Yeet Bot') ]
 ])
 
 const consoleInterface = createInterface({
@@ -32,7 +32,14 @@ async function stopAll(): Promise<void> {
     for (const [ , bot ] of bots) {
         bot.stop()
     }
-    process.exit()
+    setInterval(() => {
+        for (const [ , bot ] of bots) {
+            if (bot.getOnline()) {
+                return
+            }
+        }
+        process.exit()
+    }, 2000)
 }
 
 async function deploy(): Promise<void> {

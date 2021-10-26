@@ -7,7 +7,7 @@ const data: ApplicationCommandData = {
 }
 
 function quote(): InteractionReplyOptions {
-    const quotes = readFileSync('../../../../assets/data/quotes.txt', 'utf8').split('}')
+    const quotes = readFileSync('./assets/data/quotes.txt', 'utf8').split('}')
     return { content: quotes[Math.floor(Math.random() * quotes.length)], tts: true }
 }
 

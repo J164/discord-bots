@@ -6,7 +6,6 @@ import { config, secrets } from '../../core/utils/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { GuildInputManager } from '../../core/GuildInputManager'
 import { Command, HolidayResponse, QuoteResponse, WeatherResponse } from '../../core/utils/interfaces'
-import { potatoMessageParse } from '../../core/utils/responseFunctions'
 import { QueueManager } from '../../core/voice/QueueManager'
 
 process.on('SIGKILL', () => {
@@ -69,12 +68,10 @@ function defineEvents() {
         let date = new Date()
 
         setInterval(async () => {
-            commands = await getCommands(client, 'potato')
-
             client.user.setActivity(config.potatoStatus[Math.floor(Math.random() * config.potatoStatus.length)])
 
             for (const [ , guildManager ] of guildStatus) {
-                guildManager.info.queueManager.voiceManager.checkIsIdle()
+                guildManager.statusCheck()
             }
 
             date = new Date()
@@ -96,28 +93,53 @@ function defineEvents() {
     })
 
     client.on('messageCreate', message => {
-        if (!guildStatus.has(message.guild.id)) {
-            guildStatus.set(message.guild.id, new GuildInputManager(commands, { parseMessage: potatoMessageParse, database: database, queueManager: new QueueManager() }))
+        if (!message.guild || message.author.bot) {
+            return
         }
 
-        guildStatus.get(message.guild.id).parseMessage(message)
+        let mentionPotato = false
+        let mentionSwear = false
+        let mentionInsult = false
+        const input = message.content.toLowerCase()
+        if (input.match(/(\W|^)potato(s|es)?(\W|$)/)) {
+            mentionPotato = true
+        }
+        const swore = config.blacklist.swears.find(swear => input.match(new RegExp(`(\\W|^)${swear}(\\W|$)`)))
+        if (swore) {
+            mentionSwear = true
+        }
+        const insulted = config.blacklist.insults.find(insult => input.match(new RegExp(`(\\W|^)${insult}(\\W|$)`)))
+        if (insulted) {
+            mentionInsult = true
+        }
+        if (mentionPotato && (mentionSwear || mentionInsult)) {
+            message.reply('FOOL! HOW DARE YOU BLASPHEMISE THE HOLY ORDER OF THE POTATOES! EAT POTATOES!')
+            message.client.user.setActivity(`Teaching ${message.author.tag} the value of potatoes`, {
+                type: 'STREAMING',
+                url: 'https://www.youtube.com/watch?v=fLNWeEen35Y'
+            })
+            return
+        }
+        if (mentionSwear) {
+            for (let i = 0; i < 3; i++) {
+                message.channel.send('a')
+            }
+        }
     })
 
-    client.on('interactionCreate', interaction => {
+    client.on('interactionCreate', async interaction => {
         if (!interaction.isCommand()) {
             return
         }
 
         if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new GuildInputManager(commands, { parseMessage: potatoMessageParse, database: database, queueManager: new QueueManager() }))
+            guildStatus.set(interaction.guild.id, new GuildInputManager(commands, { database: database, queueManager: new QueueManager() }))
         }
 
-        guildStatus.get(interaction.guild.id).parseCommand(interaction)
-            .then(response => {
-                if (response) {
-                    interaction.editReply(response)
-                }
-            })
+        const response = await guildStatus.get(interaction.guild.id).parseCommand(interaction)
+        if (response) {
+            interaction.editReply(response)
+        }
     })
 }
 
@@ -125,6 +147,9 @@ process.on('message', arg => {
     switch (arg) {
         case 'stop':
             client.destroy()
+            for (const [ , guild ] of guildStatus) {
+                guild.reset()
+            }
             guildStatus.clear()
             console.log('\x1b[41m', 'Potato Bot has been logged out', '\x1b[0m')
             process.send('stop')
