@@ -54,7 +54,6 @@ export class BotSubprocess {
             this.process.removeAllListeners('message')
             this.process.removeAllListeners('close')
             this.online = false
-            this.process.kill('SIGKILL')
         })
         return true
     }

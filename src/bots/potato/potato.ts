@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { Client, ClientOptions, Intents, MessageOptions, TextChannel } from 'discord.js'
+import { Client, Intents, MessageOptions, TextChannel } from 'discord.js'
 import { writeFileSync } from 'fs'
 import { deployCommands, genericEmbed, getChannel, getCommands, getStringDate, getWeatherEmoji } from '../../core/utils/commonFunctions'
 import { config, secrets } from '../../core/utils/constants'
@@ -7,10 +7,6 @@ import { DatabaseManager } from '../../core/DatabaseManager'
 import { GuildInputManager } from '../../core/GuildInputManager'
 import { Command, HolidayResponse, QuoteResponse, WeatherResponse } from '../../core/utils/interfaces'
 import { QueueManager } from '../../core/voice/QueueManager'
-
-process.on('SIGKILL', () => {
-    process.exit()
-})
 
 process.on('unhandledRejection', (error: Error) => {
     if (error.name === 'FetchError') {
@@ -23,8 +19,7 @@ process.on('unhandledRejection', (error: Error) => {
     }
 })
 
-const clientOptions: ClientOptions = { intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_VOICE_STATES ] }
-let client = new Client(clientOptions)
+const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ] })
 let commands: Map<string, Command>
 const database = new DatabaseManager()
 const guildStatus = new Map<string, GuildInputManager>()
@@ -57,106 +52,64 @@ async function dailyReport(date: Date): Promise<MessageOptions> {
     return response
 }
 
-function defineEvents() {
-    client.on('ready', async () => {
-        commands = await getCommands(client, 'potato')
+client.on('ready', async () => {
+    commands = await getCommands(client, 'potato')
 
+    client.user.setActivity(config.potatoStatus[Math.floor(Math.random() * config.potatoStatus.length)])
+
+    let broadcasted = false
+    const broadcastChannel = <TextChannel>await getChannel(client, '619975185029922817', '775752263808974858')
+    let date = new Date()
+
+    setInterval(async () => {
         client.user.setActivity(config.potatoStatus[Math.floor(Math.random() * config.potatoStatus.length)])
 
-        let broadcasted = false
-        const broadcastChannel = <TextChannel> await getChannel(client, '619975185029922817', '775752263808974858')
-        let date = new Date()
+        for (const [ , guildManager ] of guildStatus) {
+            guildManager.statusCheck()
+        }
 
-        setInterval(async () => {
-            client.user.setActivity(config.potatoStatus[Math.floor(Math.random() * config.potatoStatus.length)])
+        date = new Date()
 
-            for (const [ , guildManager ] of guildStatus) {
-                guildManager.statusCheck()
-            }
-
-            date = new Date()
-
-            if (date.getHours() === 7 && !broadcasted) {
-                broadcasted = true
-                broadcastChannel.send(await dailyReport(date))
-            } else if (date.getHours() === 8) {
-                broadcasted = false
-            }
-        }, 60000)
-
-        console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
-        process.send('start')
-
-        if (date.getHours() === 7) {
+        if (date.getHours() === 7 && !broadcasted) {
+            broadcasted = true
             broadcastChannel.send(await dailyReport(date))
+        } else if (date.getHours() === 8) {
+            broadcasted = false
         }
-    })
+    }, 60000)
 
-    client.on('messageCreate', message => {
-        if (!message.guild || message.author.bot) {
-            return
-        }
+    console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
+    process.send('start')
 
-        let mentionPotato = false
-        let mentionSwear = false
-        let mentionInsult = false
-        const input = message.content.toLowerCase()
-        if (input.match(/(\W|^)potato(s|es)?(\W|$)/)) {
-            mentionPotato = true
-        }
-        const swore = config.blacklist.swears.find(swear => input.match(new RegExp(`(\\W|^)${swear}(\\W|$)`)))
-        if (swore) {
-            mentionSwear = true
-        }
-        const insulted = config.blacklist.insults.find(insult => input.match(new RegExp(`(\\W|^)${insult}(\\W|$)`)))
-        if (insulted) {
-            mentionInsult = true
-        }
-        if (mentionPotato && (mentionSwear || mentionInsult)) {
-            message.reply('FOOL! HOW DARE YOU BLASPHEMISE THE HOLY ORDER OF THE POTATOES! EAT POTATOES!')
-            message.client.user.setActivity(`Teaching ${message.author.tag} the value of potatoes`, {
-                type: 'STREAMING',
-                url: 'https://www.youtube.com/watch?v=fLNWeEen35Y'
-            })
-            return
-        }
-        if (mentionSwear) {
-            for (let i = 0; i < 3; i++) {
-                message.channel.send('a')
-            }
-        }
-    })
+    if (date.getHours() === 7) {
+        broadcastChannel.send(await dailyReport(date))
+    }
+})
 
-    client.on('interactionCreate', async interaction => {
-        if (!interaction.isCommand()) {
-            return
-        }
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isCommand()) {
+        return
+    }
 
-        if (!guildStatus.has(interaction.guild.id)) {
-            guildStatus.set(interaction.guild.id, new GuildInputManager(commands, { database: database, queueManager: new QueueManager() }))
-        }
+    if (!guildStatus.has(interaction.guild.id)) {
+        guildStatus.set(interaction.guild.id, new GuildInputManager(commands, { database: database, queueManager: new QueueManager() }))
+    }
 
-        const response = await guildStatus.get(interaction.guild.id).parseCommand(interaction)
-        if (response) {
-            interaction.editReply(response)
-        }
-    })
-}
+    const response = await guildStatus.get(interaction.guild.id).parseCommand(interaction)
+    if (response) {
+        interaction.editReply(response)
+    }
+})
 
 process.on('message', arg => {
     switch (arg) {
         case 'stop':
             client.destroy()
-            for (const [ , guild ] of guildStatus) {
-                guild.reset()
-            }
-            guildStatus.clear()
             console.log('\x1b[41m', 'Potato Bot has been logged out', '\x1b[0m')
             process.send('stop')
+            process.exit()
             break
         case 'start':
-            client = new Client(clientOptions)
-            defineEvents()
             client.login(secrets.potatoKey)
             break
         case 'deploy':

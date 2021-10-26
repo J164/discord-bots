@@ -36,9 +36,4 @@ export class GuildInputManager {
         this.info.voiceManager?.checkIsIdle()
         this.info.queueManager?.voiceManager.checkIsIdle()
     }
-
-    public reset(): void {
-        this.info.voiceManager?.reset()
-        this.info.queueManager?.reset()
-    }
 }
