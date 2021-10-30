@@ -1,4 +1,4 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
+import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
 import { searchYoutube } from '../../../core/utils/commonFunctions'
 import ytdl from 'ytdl-core'
 import ytpl from 'ytpl'
@@ -12,7 +12,8 @@ const data: ApplicationCommandData = {
             name: 'name',
             description: 'The URL or title of the song',
             type: 'STRING',
-            required: true
+            required: true,
+            autocomplete: true
         }
     ]
 }
@@ -29,10 +30,10 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     let url: string
     if (!arg.match(/(\.|^)youtube\.com\//)) {
         const term = await searchYoutube(arg)
-        if (!term) {
+        if (term.length < 1) {
             return { content: `No results found for "${arg}"` }
         }
-        url = `https://www.youtube.com/watch?v=${term}`
+        url = `https://www.youtube.com/watch?v=${term[0].id.videoId}`
     } else {
         url = arg
     }
@@ -64,4 +65,19 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     return { content: 'Added to queue!' }
 }
 
-module.exports = { data: data, execute: play }
+async function search(name: string, value: string): Promise<ApplicationCommandOptionChoice[]> {
+    if (value.length < 3) {
+        return null
+    }
+    const results = await searchYoutube(value)
+    const options: ApplicationCommandOptionChoice[] = []
+    for (const result of results) {
+        if (options.length > 3) {
+            break
+        }
+        options.push({ name: result.snippet.title, value: `https://www.youtube.com/watch?v=${result.id.videoId}` })
+    }
+    return options
+}
+
+module.exports = { data: data, execute: play, autocomplete: search }

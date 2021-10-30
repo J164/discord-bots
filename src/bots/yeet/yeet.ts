@@ -23,6 +23,7 @@ process.on('unhandledRejection', (error: Error) => {
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ] })
 let commands: Map<string, Command>
 const guildStatus = new Map<string, GuildInputManager>()
+//const yeetStreaks = new Map<Snowflake, { number: number, time: number }>()
 
 client.on('ready', async () => {
     commands = await getCommands(client, 'yeet')
@@ -30,6 +31,13 @@ client.on('ready', async () => {
     client.user.setActivity(config.yeetStatus[Math.floor(Math.random() * config.yeetStatus.length)])
 
     setInterval(async () => {
+        /*const date = new Date()
+        for (const [ id, data ] of yeetStreaks) {
+            if (date.getTime() - data.time > 30000) {
+                yeetStreaks.delete(id)
+            }
+        }*/
+
         commands = await getCommands(client, 'yeet')
 
         client.user.setActivity(config.yeetStatus[Math.floor(Math.random() * config.yeetStatus.length)])
@@ -46,6 +54,15 @@ client.on('messageCreate', message => {
 
     const input = message.content.toLowerCase()
     if (input.match(/(\W|^)yee+t(\W|$)/)) {
+        /*const date = new Date()
+        let streak: number
+        if (!yeetStreaks.has(message.author.id)) {
+            streak = 1
+        } else {
+            streak = yeetStreaks.get(message.author.id).number + 1
+        }
+        yeetStreaks.set(message.author.id, { number: streak, time: date.getTime() })
+        if (streak > )*/
         if (input.substr(input.indexOf('yee') + 1, 10) === 'eeeeeeeeee') {
             message.reply('Wow! Much Yeet!')
             return

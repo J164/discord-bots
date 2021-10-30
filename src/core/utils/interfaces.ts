@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
+import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
 import { DatabaseManager } from '../DatabaseManager'
 import { BaseMagicGame } from '../modules/games/BaseMagicGame'
 import { QueueManager } from '../voice/QueueManager'
@@ -16,6 +16,7 @@ export interface GuildInfo {
 export interface Command {
     readonly data: ApplicationCommandData
     readonly execute: (interaction: CommandInteraction, info: GuildInfo) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void
+    readonly autocomplete?: (name: string, value: string | number) => Promise<ApplicationCommandOptionChoice[]> | ApplicationCommandOptionChoice[]
 }
 
 export interface HolidayResponse {

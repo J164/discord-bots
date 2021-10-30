@@ -26,12 +26,12 @@ export function deployCommands(client: Client, botName: string): void {
     client.application.commands.set(commandData)
 }
 
-export async function searchYoutube(parameter: string): Promise<string> {
-    const searchResult = <{ data: { pageInfo: { totalResults: number }, items: { id: { videoId: string } }[] } }> await axios.get(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&order=relevance&q=${encodeURIComponent(parameter)}&type=video&videoDefinition=high&key=${secrets.googleKey}`)
+export async function searchYoutube(parameter: string): Promise<{ id: { videoId: string }, snippet: { title: string } }[]> {
+    const searchResult = <{ data: { pageInfo: { totalResults: number }, items: { id: { videoId: string }, snippet: { title: string } }[] } }> await axios.get(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&order=relevance&q=${encodeURIComponent(parameter)}&type=video&videoDefinition=high&key=${secrets.googleKey}`)
     if (searchResult.data.pageInfo.totalResults < 1) {
         return null
     }
-    return searchResult.data.items[0].id.videoId
+    return searchResult.data.items
 }
 
 export async function mergeImages(filePaths: string[], options: { width: number; height: number }): Promise<Buffer> {

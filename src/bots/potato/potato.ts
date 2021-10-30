@@ -87,15 +87,23 @@ client.on('ready', async () => {
 })
 
 client.on('interactionCreate', async interaction => {
+    if (!guildStatus.has(interaction.guildId)) {
+        guildStatus.set(interaction.guildId, new GuildInputManager(commands, { database: database, queueManager: new QueueManager() }))
+    }
+
+    if (interaction.isAutocomplete()) {
+        const response = await guildStatus.get(interaction.guildId).autocomplete(interaction)
+        if (!interaction.responded) {
+            interaction.respond(response)
+        }
+        return
+    }
+
     if (!interaction.isCommand()) {
         return
     }
 
-    if (!guildStatus.has(interaction.guild.id)) {
-        guildStatus.set(interaction.guild.id, new GuildInputManager(commands, { database: database, queueManager: new QueueManager() }))
-    }
-
-    const response = await guildStatus.get(interaction.guild.id).parseCommand(interaction)
+    const response = await guildStatus.get(interaction.guildId).parseCommand(interaction)
     if (response) {
         interaction.editReply(response)
     }

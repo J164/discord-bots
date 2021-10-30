@@ -1,4 +1,4 @@
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { ApplicationCommandOptionChoice, AutocompleteInteraction, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { QueueManager } from './voice/QueueManager'
 import { DatabaseManager } from './DatabaseManager'
 import { VoiceManager } from './voice/VoiceManager'
@@ -30,6 +30,11 @@ export class GuildInputManager {
         }
 
         return command.execute(interaction, this.info)
+    }
+
+    public async autocomplete(interaction: AutocompleteInteraction): Promise<ApplicationCommandOptionChoice[]> {
+        const focused = interaction.options.getFocused(true)
+        return this.commands.get(interaction.commandName)?.autocomplete(focused.name, focused.value)
     }
 
     public statusCheck(): void {
