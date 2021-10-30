@@ -1,1 +1,1 @@
-call npm install
+call npm ci --only={prod}
