@@ -54,10 +54,11 @@ export class QueueManager {
 
         try {
             success = await this.voiceManager.playStream(ytdl(song.url, {
-                filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus'
+                filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus',
+                highWaterMark: 52428800
             }))
         } catch (err) {
-            console.log(err)
+            console.warn(err)
         }
 
         if (!success) {

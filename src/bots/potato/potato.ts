@@ -3,7 +3,6 @@ import { Client, Intents, MessageOptions, TextChannel } from 'discord.js'
 import { writeFileSync } from 'fs'
 import { deployCommands, genericEmbed, getChannel, getCommands, getStringDate, getWeatherEmoji } from '../../core/utils/commonFunctions'
 import { config, secrets } from '../../core/utils/constants'
-import { DatabaseManager } from '../../core/DatabaseManager'
 import { GuildInputManager } from '../../core/GuildInputManager'
 import { Command, HolidayResponse, QuoteResponse, WeatherResponse } from '../../core/utils/interfaces'
 import { QueueManager } from '../../core/voice/QueueManager'
@@ -21,7 +20,6 @@ process.on('unhandledRejection', (error: Error) => {
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ] })
 let commands: Map<string, Command>
-const database = new DatabaseManager()
 const guildStatus = new Map<string, GuildInputManager>()
 
 async function dailyReport(date: Date): Promise<MessageOptions> {
@@ -88,7 +86,7 @@ client.on('ready', async () => {
 
 client.on('interactionCreate', async interaction => {
     if (!guildStatus.has(interaction.guildId)) {
-        guildStatus.set(interaction.guildId, new GuildInputManager(commands, { database: database, queueManager: new QueueManager() }))
+        guildStatus.set(interaction.guildId, new GuildInputManager(commands, { queueManager: new QueueManager() }))
     }
 
     if (interaction.isAutocomplete()) {

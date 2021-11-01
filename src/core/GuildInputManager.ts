@@ -20,7 +20,7 @@ export class GuildInputManager {
         const command = this.commands.get(interaction.commandName)
 
         if (!command) {
-            return { content: 'Command not recognized (Please wait a few minutes and try again)' }
+            return { content: 'Command not recognized (Please contact the bot developer)' }
         }
 
         const channel = await interaction.client.channels.fetch(interaction.channelId)

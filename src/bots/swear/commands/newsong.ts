@@ -13,12 +13,6 @@ const data: ApplicationCommandData = {
             type: 'STRING',
             description: 'The URL for the new swear song',
             required: true
-        },
-        {
-            name: 'name',
-            type: 'STRING',
-            description: 'The name of the new song (must be unique)',
-            required: true
         }
     ]
 }
@@ -26,10 +20,6 @@ const data: ApplicationCommandData = {
 async function newSong(interaction: CommandInteraction, info: GuildInfo, songs: SwearSongInfo[]): Promise<void> {
     if (interaction.member.user.id !== config.admin && interaction.member.user.id !== config.swear) {
         interaction.editReply({ content: 'You don\'t have permission to use this command!' })
-        return
-    }
-    if (songs.find(song => song.name === interaction.options.getString('name'))) {
-        interaction.editReply({ content: 'Please enter a unique name' })
         return
     }
     interaction.editReply({ content: 'Getting information on new song...' })
@@ -45,12 +35,12 @@ async function newSong(interaction: CommandInteraction, info: GuildInfo, songs: 
         return
     }
     interaction.editReply({ content: 'Downloading...' })
-    writeFileSync(`${config.data}/music_files/swear_songs/${interaction.options.getString('name')}.webm`, '')
+    writeFileSync(`${config.data}/music_files/swear_songs/song${songs.length + 1}.webm`, '')
     ytdl.downloadFromInfo(output, {
         filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus'
-    }).pipe(createWriteStream(`${config.data}/music_files/swear_songs/${interaction.options.getString('name')}.webm`))
+    }).pipe(createWriteStream(`${config.data}/music_files/swear_songs/song${songs.length + 1}.webm`))
     const song = new Map<string, string>([
-        [ 'name', interaction.options.getString('name') ]
+        [ 'name', `song${songs.length + 1}` ]
     ])
     info.database.insert('swear_songs', song)
     interaction.editReply({ content: 'Success!' })

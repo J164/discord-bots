@@ -28,7 +28,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     interaction.editReply({ content: 'Boiling potatoes...' })
 
     let url: string
-    if (!arg.match(/(\.|^)youtube\.com\//)) {
+    if (!arg.match(/(\.|^|\W)(youtube\.com|youtu\.be)\//)) {
         const term = await searchYoutube(arg)
         if (term.length < 1) {
             return { content: `No results found for "${arg}"` }
@@ -45,7 +45,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
                 info.queueManager.addToQueue(song.durationSec, song.url, song.title, song.id, song.bestThumbnail.url)
             }
         } catch (err) {
-            console.log(err)
+            console.warn(err)
             return { content: 'Please enter a valid url (private playlists will not work)' }
         }
     } else {
@@ -53,7 +53,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
             const output = await ytdl.getInfo(url)
             info.queueManager.addToQueue(new Number(output.videoDetails.lengthSeconds).valueOf(), output.videoDetails.video_url, output.videoDetails.title, output.videoDetails.videoId, output.videoDetails.thumbnails[0].url)
         } catch (err) {
-            console.log(err)
+            console.warn(err)
             return { content: 'Please enter a valid url (private videos will not work)' }
         }
     }
@@ -66,7 +66,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
 }
 
 async function search(name: string, value: string): Promise<ApplicationCommandOptionChoice[]> {
-    if (value.length < 3) {
+    if (value.length < 3 || value.match(/(\.|^|\W)(youtube\.com|youtu\.be)\//)) {
         return null
     }
     const results = await searchYoutube(value)

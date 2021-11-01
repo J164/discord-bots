@@ -28,7 +28,7 @@ export class VoiceManager {
             })
             return true
         } catch (err) {
-            console.log(err)
+            console.warn(err)
             this.reset()
             return false
         }
@@ -40,7 +40,7 @@ export class VoiceManager {
         try {
             await entersState(this.player, AudioPlayerStatus.Playing, 30e3)
         } catch (err) {
-            console.log(err)
+            console.warn(err)
             return false
         }
         return true

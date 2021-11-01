@@ -12,12 +12,6 @@ const data: ApplicationCommandData = {
             description: 'The song number',
             type: 'INTEGER',
             required: false
-        },
-        {
-            name: 'name',
-            description: 'The name of the song',
-            type: 'STRING',
-            required: false
         }
     ]
 }
@@ -32,13 +26,6 @@ async function play(interaction: CommandInteraction, info: GuildInfo, songs: Swe
     let songNum
     if (interaction.options.getInteger('number') <= songs.length && interaction.options.getInteger('number') > 0) {
         songNum = interaction.options.getInteger('number') - 1
-    } else if (interaction.options.getString('name')) {
-        for (const [ i, song ] of songs.entries()) {
-            if (song.name.toLowerCase() === interaction.options.getString('name')) {
-                songNum = i
-                break
-            }
-        }
     } else {
         songNum = Math.floor(Math.random() * songs.length)
     }

@@ -9,8 +9,12 @@ export async function getCommands(client: Client, botName: string): Promise<Map<
     const currentCommands = await client.application.commands.fetch()
     const commands = new Map<string, Command>()
     for (const [ , command ] of currentCommands) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        commands.set(command.name, <Command> require(`../../bots/${botName}/commands/${command.name}.js`))
+        try {
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
+            commands.set(command.name, <Command> require(`../../bots/${botName}/commands/${command.name}.js`))
+        } catch {
+            console.warn(`Registered command missing from command files (${command.name})`)
+        }
     }
     return commands
 }

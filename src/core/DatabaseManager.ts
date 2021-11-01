@@ -56,7 +56,7 @@ export class DatabaseManager {
         }
         this.connection.query(`INSERT INTO ${table} (${columns}) VALUES (${values})`, (error) => {
             if (error) {
-                console.log(error)
+                console.warn(error)
             }
         })
     }
