@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "eslint ./ --ext .ts",
     "build": "tsc",
-    "installDev": "npm i"
+    "installDev": "npm ci"
   },
   "author": "",
   "license": "ISC",
