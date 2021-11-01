@@ -1,9 +1,9 @@
-import { ApplicationCommandData, Channel, Client, GuildMember, MessageEmbed, MessageEmbedOptions, Snowflake } from 'discord.js'
+import { ApplicationCommandData, Channel, Client, MessageEmbed, MessageEmbedOptions, Snowflake } from 'discord.js'
 import { createCanvas, loadImage } from 'canvas'
 import { readdirSync } from 'fs'
 import axios from 'axios'
 import { secrets } from './constants'
-import { Command } from './interfaces'
+import { Command, YoutubeResponse } from './interfaces'
 
 export async function getCommands(client: Client, botName: string): Promise<Map<string, Command>> {
     const currentCommands = await client.application.commands.fetch()
@@ -30,8 +30,8 @@ export function deployCommands(client: Client, botName: string): void {
     client.application.commands.set(commandData)
 }
 
-export async function searchYoutube(parameter: string): Promise<{ id: { videoId: string }, snippet: { title: string } }[]> {
-    const searchResult = <{ data: { pageInfo: { totalResults: number }, items: { id: { videoId: string }, snippet: { title: string } }[] } }> await axios.get(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&order=relevance&q=${encodeURIComponent(parameter)}&type=video&videoDefinition=high&key=${secrets.googleKey}`)
+export async function searchYoutube(parameter: string): Promise<YoutubeResponse['data']['items']> {
+    const searchResult = <YoutubeResponse> await axios.get(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&order=relevance&q=${encodeURIComponent(parameter)}&type=video&videoDefinition=high&key=${secrets.googleKey}`)
     if (searchResult.data.pageInfo.totalResults < 1) {
         return null
     }
@@ -58,11 +58,6 @@ export function genericEmbed(options: MessageEmbedOptions): MessageEmbed {
 export async function makeGetRequest(path: string): Promise<unknown> {
     const response = await axios.get(path)
     return response.data
-}
-
-export async function getUser(guildID: Snowflake, userID: Snowflake, client: Client): Promise<GuildMember> {
-    const guild = await client.guilds.fetch(guildID)
-    return guild.members.fetch({ user: userID })
 }
 
 export async function getChannel(client: Client, guildId: Snowflake, channelId: Snowflake): Promise<Channel> {

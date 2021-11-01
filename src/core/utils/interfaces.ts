@@ -19,6 +19,22 @@ export interface Command {
     readonly autocomplete?: (name: string, value: string | number) => Promise<ApplicationCommandOptionChoice[]> | ApplicationCommandOptionChoice[]
 }
 
+export interface YoutubeResponse {
+    data: {
+        pageInfo: {
+            totalResults: number
+        },
+        items: {
+            id: {
+                videoId: string
+            },
+            snippet: {
+                title: string
+            }
+        }[]
+    }
+}
+
 export interface HolidayResponse {
     readonly data: readonly {
         readonly name: string,
