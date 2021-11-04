@@ -49,9 +49,7 @@ export async function mergeImages(filePaths: string[], options: { width: number;
 }
 
 export function genericEmbed(options: MessageEmbedOptions): MessageEmbed {
-    if (!options.color) {
-        options.color = 0x0099ff
-    }
+    options.color ??= 0x0099ff
     return new MessageEmbed(options)
 }
 

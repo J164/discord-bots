@@ -25,7 +25,11 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
         footer: { text: `${i + 1}/${queueArray.length}` }
     })
     for (const [ index, entry ] of queueArray[i].entries()) {
-        queueMessage.addField(`${index + 1}.`, `${entry.title}\n${entry.url}`)
+        if (index === 0) {
+            queueMessage.addField('Currently Playing:', `${entry.title}\n${entry.url}`)
+            continue
+        }
+        queueMessage.addField(`${index}.`, `${entry.title}\n${entry.url}`)
     }
     const components = [ new MessageButton({ customId: 'queue-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY' }),
                          new MessageButton({ customId: 'queue-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY' }),

@@ -3,6 +3,7 @@ import { searchYoutube } from '../../../core/utils/commonFunctions'
 import ytdl from 'ytdl-core'
 import ytpl from 'ytpl'
 import { GuildInfo } from '../../../core/utils/interfaces'
+import { QueueItem } from '../../../core/voice/QueueItem'
 
 const data: ApplicationCommandData = {
     name: 'play',
@@ -14,6 +15,12 @@ const data: ApplicationCommandData = {
             type: 'STRING',
             required: true,
             autocomplete: true
+        },
+        {
+            name: 'position',
+            description: 'Where in the queue to put the song (defaults to the end)',
+            type: 'NUMBER',
+            required: false
         }
     ]
 }
@@ -41,9 +48,11 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     if (url.indexOf('list=') !== -1) {
         try {
             const playlist = await ytpl(`https://youtube.com/playlist?list=${url.substr(url.indexOf('list=') + 5)}`)
+            const items = []
             for (const song of playlist.items) {
-                info.queueManager.addToQueue(song.durationSec, song.url, song.title, song.id, song.bestThumbnail.url)
+                items.push(new QueueItem(song.url, song.title, song.id, song.bestThumbnail.url, song.durationSec))
             }
+            info.queueManager.addToQueue(items, interaction.options.getNumber('position') - 1)
         } catch (err) {
             console.warn(err)
             return { content: 'Please enter a valid url (private playlists will not work)' }
@@ -51,7 +60,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     } else {
         try {
             const output = await ytdl.getInfo(url)
-            info.queueManager.addToQueue(new Number(output.videoDetails.lengthSeconds).valueOf(), output.videoDetails.video_url, output.videoDetails.title, output.videoDetails.videoId, output.videoDetails.thumbnails[0].url)
+            info.queueManager.addToQueue([ new QueueItem(output.videoDetails.video_url, output.videoDetails.title, output.videoDetails.videoId, output.videoDetails.thumbnails[0].url, new Number(output.videoDetails.lengthSeconds).valueOf()) ], interaction.options.getNumber('position') - 1)
         } catch (err) {
             console.warn(err)
             return { content: 'Please enter a valid url (private videos will not work)' }

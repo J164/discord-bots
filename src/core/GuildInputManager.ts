@@ -34,7 +34,7 @@ export class GuildInputManager {
 
     public async autocomplete(interaction: AutocompleteInteraction): Promise<ApplicationCommandOptionChoice[]> {
         const focused = interaction.options.getFocused(true)
-        return this.commands.get(interaction.commandName)?.autocomplete(focused.name, focused.value)
+        return this.commands.get(interaction.commandName)?.autocomplete(focused.name, focused.value, this.info)
     }
 
     public statusCheck(): void {

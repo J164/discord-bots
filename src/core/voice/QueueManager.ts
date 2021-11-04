@@ -20,8 +20,24 @@ export class QueueManager {
         this.queueLock = false
     }
 
-    public addToQueue(duration: number, url: string, title: string, id: string, thumbnail: string): void {
-        this.queue.push(new QueueItem(url, title, id, thumbnail, duration))
+    public addToQueue(items: QueueItem[], position: number): void {
+        if (this.queueLock) {
+            setTimeout(() => { this.addToQueue(items, position) }, 10000)
+        }
+        this.queueLock = true
+        if (position >= this.queue.length || position < 0) {
+            this.queue = this.queue.concat(items)
+            this.queueLock = false
+            return
+        }
+        if (position === 0) {
+            this.queue = this.queue.reverse().concat(items.reverse()).reverse()
+            this.queueLock = false
+            return
+        }
+        const queueEnd = this.queue.splice(position)
+        this.queue = this.queue.concat(items, queueEnd)
+        this.queueLock = false
     }
 
     public async connect(voiceChannel: VoiceChannel): Promise<boolean> {
@@ -43,8 +59,12 @@ export class QueueManager {
     }
 
     private async playSong(): Promise<void> {
-        if (this.queue.length < 1 || this.queueLock) {
+        if (this.queue.length < 1) {
             return
+        }
+
+        if (this.queueLock) {
+            setTimeout(() => { this.playSong() }, 10000)
         }
 
         this.queueLock = true
@@ -84,6 +104,19 @@ export class QueueManager {
             this.playSong()
         })
         this.queueLock = false
+    }
+
+    public skipTo(index: number): void {
+        if (this.queueLock) {
+            setTimeout(() => { this.skipTo(index) }, 10000)
+        }
+
+        this.queueLock = true
+        const item = this.queue.splice(index - 1, 1)
+        this.queue.unshift(item[0])
+        this.queueLock = false
+
+        this.skip()
     }
 
     public loopSong(): InteractionReplyOptions {
@@ -160,6 +193,13 @@ export class QueueManager {
             }
         }
         return queueArray
+    }
+
+    public getFlatQueue(): QueueItem[] {
+        if (!this.voiceManager.isActive()) {
+            return null
+        }
+        return this.queue
     }
 
     public getQueueLoop(): boolean {

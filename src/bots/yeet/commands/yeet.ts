@@ -12,10 +12,10 @@ const data: ApplicationCommandData = {
 }
 
 function yeet(interaction: CommandInteraction): InteractionReplyOptions {
-    let e = ''
     if (!interaction.options.getInteger('power')) {
         return { content: 'YEET!' }
     }
+    let e = ''
     for (let i = 0; i < interaction.options.getInteger('power'); i++) {
         e += 'E'
         //temp

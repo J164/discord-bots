@@ -16,7 +16,7 @@ export interface GuildInfo {
 export interface Command {
     readonly data: ApplicationCommandData
     readonly execute: (interaction: CommandInteraction, info: GuildInfo) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void
-    readonly autocomplete?: (name: string, value: string | number) => Promise<ApplicationCommandOptionChoice[]> | ApplicationCommandOptionChoice[]
+    readonly autocomplete?: (name: string, value: string | number, info: GuildInfo) => Promise<ApplicationCommandOptionChoice[]> | ApplicationCommandOptionChoice[]
 }
 
 export interface YoutubeResponse {
