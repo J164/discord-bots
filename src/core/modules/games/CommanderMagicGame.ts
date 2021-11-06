@@ -1,12 +1,12 @@
-import { MessageEmbed, Snowflake, User } from 'discord.js'
+import { MessageEmbed, Snowflake, ThreadChannel, User } from 'discord.js'
 import { BaseMagicGame } from './BaseMagicGame'
 
 export class CommanderMagicGame extends BaseMagicGame {
 
     public readonly commanderList: string[]
 
-    public constructor(playerList: User[], commanderList: string[]) {
-        super(playerList)
+    public constructor(playerList: User[], commanderList: string[], gameChannel: ThreadChannel) {
+        super(playerList, gameChannel)
         this.commanderList = commanderList
         for (const [ , player ] of this.playerData) {
             for (const commander of commanderList) {

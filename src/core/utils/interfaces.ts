@@ -1,8 +1,8 @@
 /* eslint-disable camelcase */
 
-import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
+import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, Snowflake, User } from 'discord.js'
 import { DatabaseManager } from '../DatabaseManager'
-import { BaseMagicGame } from '../modules/games/BaseMagicGame'
+import { BaseGame } from '../modules/games/BaseGame'
 import { QueueManager } from '../voice/QueueManager'
 import { VoiceManager } from '../voice/VoiceManager'
 
@@ -10,13 +10,14 @@ export interface GuildInfo {
     readonly database?: DatabaseManager
     readonly voiceManager?: VoiceManager
     readonly queueManager?: QueueManager
-    game?: BaseMagicGame
+    readonly games: Map<Snowflake, BaseGame>
 }
 
 export interface Command {
     readonly data: ApplicationCommandData
     readonly execute: (interaction: CommandInteraction, info: GuildInfo) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void
     readonly autocomplete?: (name: string, value: string | number, info: GuildInfo) => Promise<ApplicationCommandOptionChoice[]> | ApplicationCommandOptionChoice[]
+    readonly gameCommand?: boolean
 }
 
 export interface YoutubeResponse {

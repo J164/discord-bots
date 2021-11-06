@@ -34,7 +34,7 @@ const data: ApplicationCommandData = {
         {
             name: 'position',
             description: 'Where in the queue to put the song (defaults to the end)',
-            type: 'NUMBER',
+            type: 'INTEGER',
             required: false
         }
     ]

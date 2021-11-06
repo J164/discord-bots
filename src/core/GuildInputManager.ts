@@ -1,8 +1,9 @@
-import { ApplicationCommandOptionChoice, AutocompleteInteraction, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { ApplicationCommandOptionChoice, AutocompleteInteraction, CommandInteraction, InteractionReplyOptions, Snowflake } from 'discord.js'
 import { QueueManager } from './voice/QueueManager'
 import { DatabaseManager } from './DatabaseManager'
 import { VoiceManager } from './voice/VoiceManager'
 import { Command, GuildInfo } from './utils/interfaces'
+import { BaseGame } from './modules/games/BaseGame'
 
 export class GuildInputManager {
 
@@ -11,7 +12,7 @@ export class GuildInputManager {
 
     public constructor(commands: Map<string, Command>, options?: { database?: DatabaseManager, voiceManager?: VoiceManager, queueManager?: QueueManager }) {
         this.commands = commands
-        this.info = { database: options?.database, voiceManager: options?.voiceManager, queueManager: options?.queueManager }
+        this.info = { database: options?.database, voiceManager: options?.voiceManager, queueManager: options?.queueManager, games: new Map<Snowflake, BaseGame>() }
     }
 
     public async parseCommand(interaction: CommandInteraction): Promise<InteractionReplyOptions | void> {
@@ -25,7 +26,11 @@ export class GuildInputManager {
 
         const channel = await interaction.client.channels.fetch(interaction.channelId)
 
-        if (channel.type !== 'GUILD_TEXT') {
+        if (command.gameCommand) {
+            if (channel.type !== 'GUILD_PUBLIC_THREAD') {
+                return { content: 'Please only use game commands in game threads!' }
+            }
+        } else if (channel.type !== 'GUILD_TEXT') {
             return { content: 'Please only use slash commands in servers!' }
         }
 
@@ -40,5 +45,10 @@ export class GuildInputManager {
     public statusCheck(): void {
         this.info.voiceManager?.checkIsIdle()
         this.info.queueManager?.voiceManager.checkIsIdle()
+        for (const [ id, game ] of this.info.games) {
+            if (game.isOver()) {
+                this.info.games.delete(id)
+            }
+        }
     }
 }

@@ -13,6 +13,12 @@ const data: ApplicationCommandData = {
             type: 'SUB_COMMAND',
             options: [
                 {
+                    name: 'name',
+                    description: 'Name of the game',
+                    type: 'STRING',
+                    required: true
+                },
+                {
                     name: 'player1',
                     description: 'Player 1',
                     type: 'USER',
@@ -43,6 +49,12 @@ const data: ApplicationCommandData = {
             description: 'Start a commander game',
             type: 'SUB_COMMAND',
             options: [
+                {
+                    name: 'name',
+                    description: 'Name of the game',
+                    type: 'STRING',
+                    required: true
+                },
                 {
                     name: 'player1',
                     description: 'Player 1',
@@ -96,7 +108,16 @@ const data: ApplicationCommandData = {
     ]
 }
 
-function play(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
+async function play(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+    const channel = await interaction.guild.channels.fetch(interaction.channelId)
+    for (const [ , game ] of info.games) {
+        if (game.getThreadName() === interaction.options.getString('name')) {
+            return { content: 'Please choose a unique game name!' }
+        }
+    }
+    if (!channel.isText()) {
+        return { content: 'Something went wrong!' }
+    }
     const playerlist: User[] = []
     for (let i = 1; i <= 4; i++) {
         if (interaction.options.getUser(`player${i}`)) {
@@ -106,20 +127,24 @@ function play(interaction: CommandInteraction, info: GuildInfo): InteractionRepl
         }
     }
     if (interaction.options.getSubcommand() === 'basic') {
-        info.game = new BaseMagicGame(playerlist)
-    } else {
-        const commanders: string[] = []
-        for (let i = 0; i < playerlist.length; i++) {
-            if (!interaction.options.getString(`commander${i + 1}`)) {
-                return { content: 'Please enter a commander for each player' }
-            }
-            for (const commander of interaction.options.getString(`commander${i + 1}`).split('.')) {
-                commanders.push(commander)
-            }
-        }
-        info.game = new CommanderMagicGame(playerlist, commanders)
+        const thread = await channel.threads.create({ name: interaction.options.getString('name'), autoArchiveDuration: 60 })
+        info.games.set(thread.id, new BaseMagicGame(playerlist, thread))
+        thread.send({ embeds: [ (<BaseMagicGame> info.games.get(thread.id)).printStandings() ] })
+        return { content: 'Success!' }
     }
-    return { embeds: [ info.game.printStandings() ] }
+    const commanders: string[] = []
+    for (let i = 0; i < playerlist.length; i++) {
+        if (!interaction.options.getString(`commander${i + 1}`)) {
+            return { content: 'Please enter a commander for each player' }
+        }
+        for (const commander of interaction.options.getString(`commander${i + 1}`).split('.')) {
+            commanders.push(commander)
+        }
+    }
+    const thread = await channel.threads.create({ name: interaction.options.getString('name'), autoArchiveDuration: 60 })
+    info.games.set(thread.id, new CommanderMagicGame(playerlist, commanders, thread))
+    thread.send({ embeds: [ (<CommanderMagicGame> info.games.get(thread.id)).printStandings() ] })
+    return { content: 'Success!' }
 }
 
 module.exports = { data: data, execute: play }

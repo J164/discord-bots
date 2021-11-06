@@ -1,4 +1,5 @@
 import { ApplicationCommandData, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageEmbed, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
+import { BaseMagicGame } from '../../../core/modules/games/BaseMagicGame'
 import { CommanderMagicGame } from '../../../core/modules/games/CommanderMagicGame'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
@@ -34,20 +35,21 @@ const data: ApplicationCommandData = {
 }
 
 function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
-    if (!info.game?.isActive) {
-        return { content: 'There is currently no active game' }
+    const game = info.games.get(interaction.channelId)
+    if (!game || !(game instanceof BaseMagicGame) || game.isOver()) {
+        return { content: 'There is currently no Magic game in this channel' }
     }
-    if (!info.game.userInGame(interaction.options.getUser('player').id)) {
+    if (!game.userInGame(interaction.options.getUser('player').id)) {
         return { content: 'That user is not part of this game!' }
     }
     let standings: MessageEmbed
-    standings = info.game.changeLife(interaction.options.getUser('player').id, interaction.options.getInteger('amount') * -1)
-    if (interaction.options.getBoolean('posion') && info.game.isActive) {
-        standings = info.game.changePoison(interaction.options.getUser('player').id, interaction.options.getInteger('amount'))
+    standings = game.changeLife(interaction.options.getUser('player').id, interaction.options.getInteger('amount') * -1)
+    if (interaction.options.getBoolean('posion') && !game.isOver()) {
+        standings = game.changePoison(interaction.options.getUser('player').id, interaction.options.getInteger('amount'))
     }
-    if (interaction.options.getBoolean('commander') && info.game instanceof CommanderMagicGame && info.game.isActive) {
+    if (interaction.options.getBoolean('commander') && game instanceof CommanderMagicGame && !game.isOver()) {
         const selectOptions: { label: string, description: string, value: string }[] = []
-        for (const [ i, commander ] of info.game.commanderList.entries()) {
+        for (const [ i, commander ] of game.commanderList.entries()) {
             selectOptions.push({
                 label: (i + 1).toString(),
                 description: commander,
@@ -61,8 +63,7 @@ function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReply
         const filter: CollectorFilter<[any]> = b => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
         const collector = <InteractionCollector<SelectMenuInteraction>> interaction.channel.createMessageComponentCollector({ filter: filter, time: 60000 })
         collector.once('collect', async c => {
-            // eslint-disable-next-line no-extra-parens
-            c.update({ embeds: [ (info.game as CommanderMagicGame).changeCommanderDamage(interaction.options.getUser('player').id, c.values[0], interaction.options.getInteger('amount')) ] })
+            c.update({ embeds: [ game.changeCommanderDamage(interaction.options.getUser('player').id, c.values[0], interaction.options.getInteger('amount')) ] })
         })
         collector.once('end', () => { interaction.editReply({ content: 'Commander selection failed (commander damage not applied)', components: [] }) })
         return
@@ -70,4 +71,4 @@ function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReply
     return { embeds: [ standings ] }
 }
 
-module.exports = { data: data, execute: hit }
+module.exports = { data: data, execute: hit, gameCommand: true }

@@ -1,4 +1,5 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { BaseMagicGame } from '../../../core/modules/games/BaseMagicGame'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -15,13 +16,14 @@ const data: ApplicationCommandData = {
 }
 
 function eliminate(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
-    if (!info.game?.isActive) {
-        return { content: 'There is currently no active game' }
+    const game = info.games.get(interaction.channelId)
+    if (!game || !(game instanceof BaseMagicGame) || game.isOver()) {
+        return { content: 'There is currently no Magic game in this channel' }
     }
-    if (!info.game.userInGame(interaction.options.getUser('player').id)) {
+    if (!game.userInGame(interaction.options.getUser('player').id)) {
         return { content: 'That user is not part of this game!' }
     }
-    return { embeds: [ info.game.eliminate(interaction.options.getUser('player').id) ] }
+    return { embeds: [ game.eliminate(interaction.options.getUser('player').id) ] }
 }
 
-module.exports = { data: data, execute: eliminate }
+module.exports = { data: data, execute: eliminate, gameCommand: true }

@@ -1,14 +1,14 @@
-import { Collection, MessageEmbed, Snowflake, User } from 'discord.js'
+import { Collection, MessageEmbed, Snowflake, ThreadChannel, User } from 'discord.js'
 import { genericEmbed } from '../../utils/commonFunctions'
 import { MagicPlayer } from '../../utils/interfaces'
+import { BaseGame } from './BaseGame'
 
-export class BaseMagicGame {
+export class BaseMagicGame extends BaseGame {
 
     protected readonly playerData: Collection<Snowflake, MagicPlayer>
-    public isActive: boolean
 
-    public constructor(playerList: User[]) {
-        this.isActive = true
+    public constructor(playerList: User[], gameChannel: ThreadChannel) {
+        super(gameChannel)
         this.playerData = new Collection<Snowflake, MagicPlayer>()
         for (const player of playerList) {
             this.playerData.set(player.id, {
@@ -54,7 +54,7 @@ export class BaseMagicGame {
     }
 
     public finishGame(): MessageEmbed {
-        this.isActive = false
+        this.end()
         const alive = this.playerData.filter(player => player.isAlive)
         if (alive.size > 1) {
             return this.printStandings()
