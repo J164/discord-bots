@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { config } from '../../../core/utils/constants'
 import ytdl from 'ytdl-core'
 import { createWriteStream, writeFileSync } from 'fs'
 
@@ -17,15 +16,15 @@ const data: ApplicationCommandData = {
 }
 
 async function download(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
-    if (interaction.member.user.id !== config.admin) {
+    if (interaction.member.user.id !== process.env.admin) {
         return { content: 'You don\'t have permission to use this command!' }
     }
     interaction.editReply({ content: 'Downloading...' })
     const video = await ytdl.getInfo(interaction.options.getString('url'))
-    writeFileSync(`${config.data}/New Downloads/${video.videoDetails.title}.mp4`, '')
+    writeFileSync(`${process.env.data}/New Downloads/${video.videoDetails.title}.mp4`, '')
     ytdl(interaction.options.getString('url'), {
         filter: filter => filter.container === 'mp4'
-    }).pipe(createWriteStream(`${config.data}/New Downloads/test.mp4`))
+    }).pipe(createWriteStream(`${process.env.data}/New Downloads/test.mp4`))
     return { content: 'Download Successful!' }
 }
 

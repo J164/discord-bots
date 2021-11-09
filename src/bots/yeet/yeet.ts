@@ -1,13 +1,8 @@
 import { Client, Intents } from 'discord.js'
 import { writeFileSync } from 'fs'
 import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
-import { config, secrets } from '../../core/utils/constants'
 import { GuildInputManager } from '../../core/GuildInputManager'
 import { Command } from '../../core/utils/interfaces'
-
-process.on('SIGKILL', () => {
-    process.exit()
-})
 
 process.on('unhandledRejection', (error: Error) => {
     if (error.name === 'FetchError') {
@@ -15,7 +10,7 @@ process.on('unhandledRejection', (error: Error) => {
     }
     if (error.message !== 'Unknown interaction') {
         const date = new Date()
-        writeFileSync(`${config.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-yeet.txt`, `${error.name}\n${error.message}\n${error.stack}`)
+        writeFileSync(`${process.env.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-yeet.txt`, `${error.name}\n${error.message}\n${error.stack}`)
         process.exit()
     }
 })
@@ -24,11 +19,12 @@ const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD
 let commands: Map<string, Command>
 const guildStatus = new Map<string, GuildInputManager>()
 //const yeetStreaks = new Map<Snowflake, { number: number, time: number }>()
+const yeetStatus = [ 'Yeeting the Child', 'YA YEEEEEEEEEET', 'Yeeting People off Cliffs', 'Yeeting Washing Machines' ]
 
 client.on('ready', async () => {
     commands = await getCommands(client, 'yeet')
 
-    client.user.setActivity(config.yeetStatus[Math.floor(Math.random() * config.yeetStatus.length)])
+    client.user.setActivity(yeetStatus[Math.floor(Math.random() * yeetStatus.length)])
 
     setInterval(async () => {
         /*const date = new Date()
@@ -40,7 +36,7 @@ client.on('ready', async () => {
 
         commands = await getCommands(client, 'yeet')
 
-        client.user.setActivity(config.yeetStatus[Math.floor(Math.random() * config.yeetStatus.length)])
+        client.user.setActivity(yeetStatus[Math.floor(Math.random() * yeetStatus.length)])
     }, 60000)
 
     console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
@@ -95,7 +91,7 @@ process.on('message', arg => {
             process.exit()
             break
         case 'start':
-            client.login(secrets.yeetKey)
+            client.login(process.env.yeetKey)
             break
         case 'deploy':
             deployCommands(client, 'yeet')

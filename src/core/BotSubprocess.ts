@@ -5,18 +5,22 @@ export class BotSubprocess {
     private online: boolean
     private fails: number
     private readonly path: string
+    private readonly config: NodeJS.ProcessEnv
     public readonly name: string
 
-    public constructor(path: string, name: string) {
+    public constructor(path: string, name: string, config: NodeJS.ProcessEnv) {
         this.online = false
         this.name = name
         this.path = path
         this.fails = 0
+        this.config = config
         this.startProcess()
     }
 
     public startProcess(): void {
-        this.process = fork(this.path)
+        this.process = fork(this.path, {
+            env: this.config
+        })
         this.process.on('close', () => {
             this.fails++
             setTimeout(() => this.fails--, 300000)

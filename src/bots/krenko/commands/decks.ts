@@ -1,10 +1,17 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
-import { DeckInfo, GuildInfo } from '../../../core/utils/interfaces'
+import { GuildInfo } from '../../../core/utils/interfaces'
 import { Deck } from '../../../core/modules/Deck'
 
 const data: ApplicationCommandData = {
     name: 'decks',
     description: 'Get a deck from Krenko\'s database'
+}
+
+interface DeckInfo {
+    readonly name: string,
+    readonly image: string,
+    readonly url: string,
+    readonly api_url: string
 }
 
 async function parseDeck(interaction: CommandInteraction, info: GuildInfo, decks: DeckInfo[], button: ButtonInteraction = null, i = 0): Promise<void> {

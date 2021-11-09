@@ -1,8 +1,9 @@
 import { BotSubprocess } from './core/BotSubprocess'
 import { createInterface } from 'readline'
-import { writeFileSync } from 'fs'
-import { config } from './core/utils/constants'
+import { readFileSync, writeFileSync } from 'fs'
 import Collection from '@discordjs/collection'
+
+const config = JSON.parse(readFileSync('./assets/data/config.json', { encoding: 'utf8' }))
 
 process.on('uncaughtException', err => {
     const date = new Date()
@@ -11,10 +12,10 @@ process.on('uncaughtException', err => {
 })
 
 const bots = new Collection<string, BotSubprocess>([
-    [ 'potato', new BotSubprocess('./dist/bots/potato/potato.js', 'Potato Bot') ],
-    [ 'krenko', new BotSubprocess('./dist/bots/krenko/krenko.js', 'Krenko Bot') ],
-    [ 'swear', new BotSubprocess('./dist/bots/swear/swear.js', 'Swear Bot') ],
-    [ 'yeet', new BotSubprocess('./dist/bots/yeet/yeet.js', 'Yeet Bot') ]
+    [ 'potato', new BotSubprocess('./dist/bots/potato/potato.js', 'Potato Bot', config) ],
+    [ 'krenko', new BotSubprocess('./dist/bots/krenko/krenko.js', 'Krenko Bot', config) ],
+    [ 'swear', new BotSubprocess('./dist/bots/swear/swear.js', 'Swear Bot', config) ],
+    [ 'yeet', new BotSubprocess('./dist/bots/yeet/yeet.js', 'Yeet Bot', config) ]
 ])
 
 const consoleInterface = createInterface({

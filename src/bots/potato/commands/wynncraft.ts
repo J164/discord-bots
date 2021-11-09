@@ -1,6 +1,27 @@
+import axios from 'axios'
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { genericEmbed, makeGetRequest } from '../../../core/utils/commonFunctions'
-import { WynncraftData } from '../../../core/utils/interfaces'
+import { genericEmbed } from '../../../core/utils/commonFunctions'
+
+interface WynncraftData {
+    readonly data: readonly {
+        readonly username: string,
+        readonly meta: {
+            readonly location: {
+                readonly online: boolean
+                readonly server: string
+            }
+        }
+        readonly classes: readonly {
+            readonly name: string
+            readonly playtime: number
+            readonly professions: {
+                readonly combat: {
+                    readonly level: number
+                }
+            }
+        }[]
+    }[]
+}
 
 const data: ApplicationCommandData = {
     name: 'wynncraft',
@@ -14,7 +35,7 @@ const data: ApplicationCommandData = {
 }
 
 async function wynncraft(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
-    const playerData = <WynncraftData> await makeGetRequest(`https://api.wynncraft.com/v2/player/${interaction.options.getString('player')}/stats`)
+    const playerData = <WynncraftData> (await axios.get(`https://api.wynncraft.com/v2/player/${interaction.options.getString('player')}/stats`)).data
     let status
     const embedVar = genericEmbed({ title: playerData.data[0].username })
     if (playerData.data[0].meta.location.online) {

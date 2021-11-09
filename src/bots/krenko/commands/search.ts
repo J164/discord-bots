@@ -1,5 +1,7 @@
+import axios from 'axios'
+import { createCanvas, loadImage } from 'canvas'
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, InteractionUpdateOptions, MessageActionRow, MessageAttachment, MessageButton, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
-import { genericEmbed, makeGetRequest, mergeImages } from '../../../core/utils/commonFunctions'
+import { genericEmbed } from '../../../core/utils/commonFunctions'
 import { ScryfallResponse, MagicCard, GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -11,6 +13,16 @@ const data: ApplicationCommandData = {
         type: 'STRING',
         required: true
     } ]
+}
+
+async function mergeImages(filePaths: string[], options: { width: number; height: number }): Promise<Buffer> {
+    const activeCanvas = createCanvas(options.width, options.height)
+    const ctx = activeCanvas.getContext('2d')
+    for (const [ i, path ] of filePaths.entries()) {
+        const image = await loadImage(path)
+        ctx.drawImage(image, i * (options.width / filePaths.length), 0)
+    }
+    return activeCanvas.toBuffer()
 }
 
 function formatResponse(response: ScryfallResponse): MagicCard[][] {
@@ -46,7 +58,7 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results:
     if (!results) {
         const searchTerm = interaction.options.getString('query')
         try {
-            const response = <ScryfallResponse> await makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)
+            const response = <ScryfallResponse> (await axios.get(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)).data
             results = formatResponse(response)
         } catch {
             return { embeds: [ genericEmbed({

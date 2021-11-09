@@ -1,11 +1,10 @@
-import axios from 'axios'
-import { Client, Intents, MessageOptions, TextChannel } from 'discord.js'
+import { Client, Intents, TextChannel } from 'discord.js'
 import { writeFileSync } from 'fs'
-import { deployCommands, genericEmbed, getChannel, getCommands, getStringDate, getWeatherEmoji } from '../../core/utils/commonFunctions'
-import { config, secrets } from '../../core/utils/constants'
+import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
 import { GuildInputManager } from '../../core/GuildInputManager'
-import { Command, HolidayResponse, QuoteResponse, WeatherResponse } from '../../core/utils/interfaces'
+import { Command } from '../../core/utils/interfaces'
 import { QueueManager } from '../../core/voice/QueueManager'
+import { getDailyReport } from '../../core/modules/DailyReport'
 
 process.on('unhandledRejection', (error: Error) => {
     if (error.name === 'FetchError') {
@@ -13,7 +12,7 @@ process.on('unhandledRejection', (error: Error) => {
     }
     if (error.message !== 'Unknown interaction') {
         const date = new Date()
-        writeFileSync(`${config.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-potato.txt`, `${error.name}\n${error.message}\n${error.stack}`)
+        writeFileSync(`${process.env.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-potato.txt`, `${error.name}\n${error.message}\n${error.stack}`)
         process.exit()
     }
 })
@@ -21,46 +20,20 @@ process.on('unhandledRejection', (error: Error) => {
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ] })
 let commands: Map<string, Command>
 const guildStatus = new Map<string, GuildInputManager>()
-
-async function dailyReport(date: Date): Promise<MessageOptions> {
-    //meme of day
-    const holiday: HolidayResponse = await axios.get(`https://holidays.abstractapi.com/v1/?api_key=${secrets.abstractKey}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)
-    const weather: WeatherResponse = await axios.get(`http://api.weatherapi.com/v1/current.json?key=${secrets.weatherKey}&q=60069`)
-    const quote: QuoteResponse = await axios.get(`http://quotes.rest/qod.json?category=inspire`)
-    const stringDate = getStringDate(date)
-    const weatherEmoji = getWeatherEmoji(weather.data.current.condition.code)
-    const response = { embeds: [ genericEmbed({
-        title: `Daily Report: ${stringDate} ${weatherEmoji}`,
-        fields: [
-            {
-                name: `Quote of the Day:`,
-                value: `"${quote.data.contents.quotes[0].quote}" -${quote.data.contents.quotes[0].author}`,
-                inline: false
-            },
-            {
-                name: `In Linconshire is is ${weather.data.current.condition.text} and ${weather.data.current.temp_f}°F`,
-                value: `It feels like ${weather.data.current.feelslike_f}°F and the wind speed is ${weather.data.current.wind_mph} mph`,
-                inline: false
-            }
-        ]
-    }) ] }
-    if (holiday.data.length > 0) {
-        response.embeds[0].addField(`Today is ${holiday.data[0].name}`, 'Have a great day!', false)
-    }
-    return response
-}
+const potatoStatus = [ 'Eating a baked potato', 'Farming potatoes', 'Decorating with potatoes', 'Looking up potato recipes', 'Potato Platformer 3000' ]
 
 client.on('ready', async () => {
     commands = await getCommands(client, 'potato')
 
-    client.user.setActivity(config.potatoStatus[Math.floor(Math.random() * config.potatoStatus.length)])
+    client.user.setActivity(potatoStatus[Math.floor(Math.random() * potatoStatus.length)])
 
     let broadcasted = false
-    const broadcastChannel = <TextChannel>await getChannel(client, '619975185029922817', '775752263808974858')
+    const guild = await client.guilds.fetch('619975185029922817')
+    const broadcastChannel = <TextChannel> await guild.channels.fetch('775752263808974858')
     let date = new Date()
 
     setInterval(async () => {
-        client.user.setActivity(config.potatoStatus[Math.floor(Math.random() * config.potatoStatus.length)])
+        client.user.setActivity(potatoStatus[Math.floor(Math.random() * potatoStatus.length)])
 
         for (const [ , guildManager ] of guildStatus) {
             guildManager.statusCheck()
@@ -70,7 +43,7 @@ client.on('ready', async () => {
 
         if (date.getHours() === 7 && !broadcasted) {
             broadcasted = true
-            broadcastChannel.send(await dailyReport(date))
+            broadcastChannel.send(await getDailyReport(date))
         } else if (date.getHours() === 8) {
             broadcasted = false
         }
@@ -80,7 +53,7 @@ client.on('ready', async () => {
     process.send('start')
 
     if (date.getHours() === 7) {
-        broadcastChannel.send(await dailyReport(date))
+        broadcastChannel.send(await getDailyReport(date))
     }
 })
 
@@ -116,7 +89,7 @@ process.on('message', arg => {
             process.exit()
             break
         case 'start':
-            client.login(secrets.potatoKey)
+            client.login(process.env.potatoKey)
             break
         case 'deploy':
             deployCommands(client, 'potato')

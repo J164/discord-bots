@@ -1,6 +1,29 @@
+import axios from 'axios'
 import { MessageEmbed } from 'discord.js'
-import { makeGetRequest, genericEmbed } from '../utils/commonFunctions'
-import { DeckJson, DeckstatsResponse, DeckstatsListResponse, ScryfallResponse } from '../utils/interfaces'
+import { genericEmbed } from '../utils/commonFunctions'
+import { ScryfallResponse } from '../utils/interfaces'
+
+interface DeckstatsListResponse {
+    readonly list: string
+}
+
+interface DeckJson {
+    readonly image: string;
+    readonly name: string;
+    readonly url: string;
+    readonly api_url: string;
+}
+
+interface DeckstatsResponse {
+    readonly name: string
+    readonly sections: readonly {
+        readonly cards: readonly {
+            readonly name: string
+            readonly isCommander: boolean
+        }[]
+    }[]
+}
+
 
 export class Deck {
 
@@ -46,7 +69,7 @@ export class Deck {
         this.apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`
         let deckJson
         try {
-            deckJson = <DeckstatsResponse> await makeGetRequest(this.apiUrl + 'json')
+            deckJson = <DeckstatsResponse> (await axios.get(this.apiUrl + 'json')).data
         } catch {
             return false
         }
@@ -54,7 +77,7 @@ export class Deck {
         for (const section of deckJson.sections) {
             const commander = section.cards.findIndex(card => card.isCommander)
             if (commander !== -1) {
-                const cardInfo = <ScryfallResponse> await makeGetRequest(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(section.cards[commander].name)}`)
+                const cardInfo = <ScryfallResponse> (await axios.get(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(section.cards[commander].name)}`)).data
                 this.image = cardInfo.data[0].image_uris.large
                 return true
             }
@@ -70,7 +93,7 @@ export class Deck {
     }
 
     public async getList(): Promise<string> {
-        const decklist = <DeckstatsListResponse> await makeGetRequest(this.apiUrl + 'list')
+        const decklist = <DeckstatsListResponse> (await axios.get(this.apiUrl + 'list')).data
         const decklistArray = decklist.list.split('\n')
         for (let i = 0; i < decklistArray.length; i++) {
             if (!decklistArray[i] || decklistArray[i].startsWith('//')) {

@@ -1,6 +1,6 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { genericEmbed } from '../../../core/utils/commonFunctions'
-import { Euchre } from '../../../core/modules/games/Euchre'
+import { ApplicationCommandData, /*CommandInteraction,*/ InteractionReplyOptions } from 'discord.js'
+//import { genericEmbed } from '../../../core/utils/commonFunctions'
+//import { Euchre } from '../../../core/modules/games/Euchre.ts.DISABLED'
 
 const data: ApplicationCommandData = {
     name: 'euchre',
@@ -33,9 +33,9 @@ const data: ApplicationCommandData = {
     ]
 }
 
-async function setupEuchre(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
+async function setupEuchre(/*interaction: CommandInteraction*/): Promise<InteractionReplyOptions> {
     return { content: 'This command is currently under construction!' }
-    const players = genericEmbed({
+    /*const players = genericEmbed({
         title: 'Teams',
         fields: [
             {
@@ -50,7 +50,7 @@ async function setupEuchre(interaction: CommandInteraction): Promise<Interaction
     })
     interaction.editReply({ embeds: [ players ] })
     const game = new Euchre([ interaction.options.getUser('player1'), interaction.options.getUser('player2'), interaction.options.getUser('player3'), interaction.options.getUser('player4') ])
-    interaction.channel.send({embeds: [ await game.startGame() ] })
+    interaction.channel.send({embeds: [ await game.startGame() ] })*/
 }
 
 module.exports = { data: data, execute: setupEuchre }

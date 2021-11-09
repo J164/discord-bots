@@ -1,7 +1,14 @@
 import { Collection, MessageEmbed, Snowflake, ThreadChannel, User } from 'discord.js'
 import { genericEmbed } from '../../utils/commonFunctions'
-import { MagicPlayer } from '../../utils/interfaces'
 import { BaseGame } from './BaseGame'
+
+interface MagicPlayer {
+    readonly name: string,
+    life: number,
+    poison: number,
+    isAlive: boolean,
+    commanderDamage?: Map<string, number>
+}
 
 export class BaseMagicGame extends BaseGame {
 

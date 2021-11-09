@@ -1,5 +1,4 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
-import { config } from '../../../core/utils/constants'
 import { GuildInfo, SwearSongInfo } from '../../../core/utils/interfaces'
 import ytdl from 'ytdl-core'
 import { createWriteStream, writeFileSync } from 'fs'
@@ -18,7 +17,7 @@ const data: ApplicationCommandData = {
 }
 
 async function newSong(interaction: CommandInteraction, info: GuildInfo, songs: SwearSongInfo[]): Promise<void> {
-    if (interaction.member.user.id !== config.admin && interaction.member.user.id !== config.swear) {
+    if (interaction.member.user.id !== process.env.admin && interaction.member.user.id !== process.env.swear) {
         interaction.editReply({ content: 'You don\'t have permission to use this command!' })
         return
     }
@@ -35,10 +34,10 @@ async function newSong(interaction: CommandInteraction, info: GuildInfo, songs: 
         return
     }
     interaction.editReply({ content: 'Downloading...' })
-    writeFileSync(`${config.data}/music_files/swear_songs/song${songs.length + 1}.webm`, '')
+    writeFileSync(`${process.env.data}/music_files/swear_songs/song${songs.length + 1}.webm`, '')
     ytdl.downloadFromInfo(output, {
         filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus'
-    }).pipe(createWriteStream(`${config.data}/music_files/swear_songs/song${songs.length + 1}.webm`))
+    }).pipe(createWriteStream(`${process.env.data}/music_files/swear_songs/song${songs.length + 1}.webm`))
     const song = new Map<string, string>([
         [ 'name', `song${songs.length + 1}` ]
     ])

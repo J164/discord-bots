@@ -2,7 +2,24 @@
 import { MessageAttachment, MessageEmbed, MessageReaction, User } from 'discord.js'
 import axios from 'axios'
 import { genericEmbed, mergeImages } from '../../utils/commonFunctions'
-import { Card, EuchrePlayer, EuchreTeam } from '../../utils/interfaces'
+
+interface EuchreTeam {
+    tricks: number;
+    score: number;
+}
+
+interface Card {
+    readonly code: string;
+    readonly suit: string;
+    readonly value: string;
+}
+
+interface EuchrePlayer {
+    readonly id: number;
+    readonly user: User;
+    hand: Card[];
+    readonly team: EuchreTeam;
+}
 
 export class Euchre {
 

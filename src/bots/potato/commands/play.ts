@@ -1,9 +1,9 @@
 import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
-import { searchYoutube } from '../../../core/utils/commonFunctions'
 import ytdl from 'ytdl-core'
 import ytpl from 'ytpl'
 import { GuildInfo } from '../../../core/utils/interfaces'
 import { QueueItem } from '../../../core/voice/QueueItem'
+import ytsr from 'ytsr'
 
 const data: ApplicationCommandData = {
     name: 'play',
@@ -36,11 +36,13 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
 
     let url: string
     if (!arg.match(/(\.|^|\W)(youtube\.com|youtu\.be)\//)) {
-        const term = await searchYoutube(arg)
-        if (term.length < 1) {
+        const term = await ytsr(arg, {
+            limit: 20
+        })
+        if (term.results < 1) {
             return { content: `No results found for "${arg}"` }
         }
-        url = `https://www.youtube.com/watch?v=${term[0].id.videoId}`
+        url = (<ytsr.Video> term.items.filter(result => result.type === 'video')[0]).url
     } else {
         url = arg
     }
@@ -78,13 +80,18 @@ async function search(name: string, value: string): Promise<ApplicationCommandOp
     if (value.length < 3 || value.match(/(\.|^|\W)(youtube\.com|youtu\.be)\//)) {
         return null
     }
-    const results = await searchYoutube(value)
+    const results = await ytsr(value, {
+        limit: 20
+    })
     const options: ApplicationCommandOptionChoice[] = []
-    for (const result of results) {
+    for (const result of results.items) {
         if (options.length > 3) {
             break
         }
-        options.push({ name: result.snippet.title, value: `https://www.youtube.com/watch?v=${result.id.videoId}` })
+        if (result.type !== 'video') {
+            continue
+        }
+        options.push({ name: result.title, value: result.url })
     }
     return options
 }

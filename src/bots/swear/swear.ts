@@ -1,7 +1,6 @@
 import { Client, Intents } from 'discord.js'
 import { writeFileSync } from 'fs'
 import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
-import { config, secrets } from '../../core/utils/constants'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { GuildInputManager } from '../../core/GuildInputManager'
 import { VoiceManager } from '../../core/voice/VoiceManager'
@@ -13,7 +12,7 @@ process.on('unhandledRejection', (error: Error) => {
     }
     if (error.message !== 'Unknown interaction') {
         const date = new Date()
-        writeFileSync(`${config.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-swear.txt`, `${error.name}\n${error.message}\n${error.stack}`)
+        writeFileSync(`${process.env.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-swear.txt`, `${error.name}\n${error.message}\n${error.stack}`)
         process.exit()
     }
 })
@@ -22,14 +21,15 @@ const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD
 let commands: Map<string, Command>
 const database = new DatabaseManager()
 const guildStatus = new Map<string, GuildInputManager>()
+const swearStatus = [ 'Reading the Swear Dictionary', 'Singing Swears', 'Arresting people who don\'t swear', 'Inventing new swears' ]
 
 client.on('ready', async () => {
     commands = await getCommands(client, 'swear')
 
-    client.user.setActivity(config.swearStatus[Math.floor(Math.random() * config.swearStatus.length)])
+    client.user.setActivity(swearStatus[Math.floor(Math.random() * swearStatus.length)])
 
     setInterval(async () => {
-        client.user.setActivity(config.swearStatus[Math.floor(Math.random() * config.swearStatus.length)])
+        client.user.setActivity(swearStatus[Math.floor(Math.random() * swearStatus.length)])
 
         for (const [ , guildManager ] of guildStatus) {
             guildManager.statusCheck()
@@ -64,7 +64,7 @@ process.on('message', arg => {
             process.exit()
             break
         case 'start':
-            client.login(secrets.swearKey)
+            client.login(process.env.swearKey)
             break
         case 'deploy':
             deployCommands(client, 'swear')

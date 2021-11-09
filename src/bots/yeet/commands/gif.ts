@@ -1,7 +1,11 @@
+import axios from 'axios'
 import { ApplicationCommandData, InteractionReplyOptions } from 'discord.js'
-import { makeGetRequest } from '../../../core/utils/commonFunctions'
-import { secrets } from '../../../core/utils/constants'
-import { TenorResponse } from '../../../core/utils/interfaces'
+
+interface TenorResponse {
+    readonly results: readonly {
+        readonly itemurl: string
+    }[]
+}
 
 const data: ApplicationCommandData = {
     name: 'gif',
@@ -9,7 +13,7 @@ const data: ApplicationCommandData = {
 }
 
 async function gif(): Promise<InteractionReplyOptions> {
-    const gifs = <TenorResponse> await makeGetRequest(`https://g.tenor.com/v1/search?q=yeet&key=${secrets.tenorKey}&limit=50&contentfilter=medium`)
+    const gifs = <TenorResponse> (await axios.get(`https://g.tenor.com/v1/search?q=yeet&key=${process.env.tenorKey}&limit=50&contentfilter=medium`)).data
     return { content: gifs.results[Math.floor(Math.random() * gifs.results.length)].itemurl }
 }
 

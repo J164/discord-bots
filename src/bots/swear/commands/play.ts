@@ -1,6 +1,5 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
 import { createReadStream, existsSync } from 'fs'
-import { config } from '../../../core/utils/constants'
 import { GuildInfo, SwearSongInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -30,10 +29,10 @@ async function play(interaction: CommandInteraction, info: GuildInfo, songs: Swe
         songNum = Math.floor(Math.random() * songs.length)
     }
     await info.voiceManager.connect(voiceChannel)
-    if (existsSync(`${config.data}/music_files/swear_songs/${songs[songNum].name}.webm`)) {
-        info.voiceManager.playStream(createReadStream(`${config.data}/music_files/swear_songs/${songs[songNum].name}.webm`))
+    if (existsSync(`${process.env.data}/music_files/swear_songs/${songs[songNum].name}.webm`)) {
+        info.voiceManager.playStream(createReadStream(`${process.env.data}/music_files/swear_songs/${songs[songNum].name}.webm`))
     } else {
-        info.voiceManager.playStream(createReadStream(`${config.data}/music_files/swear_songs/${songs[songNum].name}.mp3`))
+        info.voiceManager.playStream(createReadStream(`${process.env.data}/music_files/swear_songs/${songs[songNum].name}.mp3`))
     }
     interaction.editReply({ content: 'Now Playing!' })
 }

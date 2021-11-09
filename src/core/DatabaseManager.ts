@@ -1,5 +1,4 @@
 import { Connection, createConnection } from 'mysql'
-import { secrets } from './utils/constants'
 
 export class DatabaseManager {
 
@@ -17,7 +16,7 @@ export class DatabaseManager {
         this.connection = createConnection({
             host: 'localhost',
             user: 'DiscordBots',
-            password: secrets.sqlPass,
+            password: process.env.sqlPass,
             database: 'discord_data'
         })
 
