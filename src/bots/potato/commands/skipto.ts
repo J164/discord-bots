@@ -1,5 +1,6 @@
 import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import Fuse from 'fuse.js'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -34,10 +35,10 @@ const data: ApplicationCommandData = {
 
 function skipto(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (info.queueManager.getFlatQueue().length < 2) {
-        return { content: 'The queue is too small to skip to a specific song!' }
+        return { embeds: [ generateEmbed('error', { title: 'The queue is too small to skip to a specific song!' }) ] }
     }
     info.queueManager.skipTo(interaction.options.getInteger('index') ?? new Fuse(info.queueManager.getFlatQueue(), { keys: [ 'title' ] }).search(interaction.options.getString('title'))[0].refIndex + 1)
-    return { content: 'Success!' }
+    return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
 function suggestions(name: string, value: string, info: GuildInfo): ApplicationCommandOptionChoice[] {

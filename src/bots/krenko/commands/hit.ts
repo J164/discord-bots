@@ -1,6 +1,7 @@
 import { ApplicationCommandData, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageEmbed, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
 import { BaseMagicGame } from '../../../core/modules/games/BaseMagicGame'
 import { CommanderMagicGame } from '../../../core/modules/games/CommanderMagicGame'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -37,10 +38,10 @@ const data: ApplicationCommandData = {
 function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     const game = info.games.get(interaction.channelId)
     if (!game || !(game instanceof BaseMagicGame) || game.isOver()) {
-        return { content: 'There is currently no Magic game in this channel' }
+        return { embeds: [ generateEmbed('error', { title: 'There is currently no Magic game in this channel' }) ] }
     }
     if (!game.userInGame(interaction.options.getUser('player').id)) {
-        return { content: 'That user is not part of this game!' }
+        return { embeds: [ generateEmbed('error', { title: 'That user is not part of this game!' }) ] }
     }
     let standings: MessageEmbed
     standings = game.changeLife(interaction.options.getUser('player').id, interaction.options.getInteger('amount') * -1)
@@ -58,14 +59,14 @@ function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReply
         }
         const select = new MessageSelectMenu({ customId: 'hit-options', placeholder: 'Select the commander that delt damage', options: selectOptions })
         const row1 = new MessageActionRow().addComponents(select)
-        interaction.editReply({ content: 'Select the commander dealing damage', components: [ row1 ] })
+        interaction.editReply({ embeds: [ generateEmbed('prompt', { title: 'Select the commander dealing damage' }) ], components: [ row1 ] })
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const filter: CollectorFilter<[any]> = b => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
         const collector = <InteractionCollector<SelectMenuInteraction>> interaction.channel.createMessageComponentCollector({ filter: filter, time: 60000 })
         collector.once('collect', async c => {
             c.update({ embeds: [ game.changeCommanderDamage(interaction.options.getUser('player').id, c.values[0], interaction.options.getInteger('amount')) ] })
         })
-        collector.once('end', () => { interaction.editReply({ content: 'Commander selection failed (commander damage not applied)', components: [] }) })
+        collector.once('end', () => { interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Commander selection failed (commander damage not applied)' }) ], components: [] }) })
         return
     }
     return { embeds: [ standings ] }

@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { genericEmbed } from '../../../core/utils/commonFunctions'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 
 interface WynncraftData {
     readonly data: readonly {
@@ -37,7 +37,7 @@ const data: ApplicationCommandData = {
 async function wynncraft(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     const playerData = <WynncraftData> (await axios.get(`https://api.wynncraft.com/v2/player/${interaction.options.getString('player')}/stats`)).data
     let status
-    const embedVar = genericEmbed({ title: playerData.data[0].username })
+    const embedVar = generateEmbed('info', { title: playerData.data[0].username })
     if (playerData.data[0].meta.location.online) {
         status = `Online at: ${playerData.data[0].meta.location.server}`
         embedVar.setColor(0x33cc33)

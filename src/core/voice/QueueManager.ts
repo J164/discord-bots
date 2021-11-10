@@ -3,6 +3,7 @@ import { VoiceManager } from './VoiceManager'
 import { QueueItem } from './QueueItem'
 import ytdl from 'ytdl-core'
 import { AudioPlayerStatus } from '@discordjs/voice'
+import { generateEmbed } from '../utils/commonFunctions'
 
 export class QueueManager {
 
@@ -82,7 +83,7 @@ export class QueueManager {
         }
 
         if (!success) {
-            this.boundChannel.send('Something went wrong while preparing song')
+            this.boundChannel.send({ embeds: [ generateEmbed('error', { title: 'Something went wrong while preparing song'}) ] })
             this.queueLock = false
             return
         }
@@ -121,21 +122,21 @@ export class QueueManager {
 
     public loopSong(): InteractionReplyOptions {
         if (!this.voiceManager.isActive()) {
-            return { content: 'Nothing is playing!' }
+            return { embeds: [ generateEmbed('error', { title: 'Nothing is playing!' }) ] }
         }
         return this.nowPlaying.loop()
     }
 
     public loopQueue(): InteractionReplyOptions {
         if (!this.voiceManager.isActive() || this.queue.length < 1) {
-            return { content: 'Nothing is queued!' }
+            return { embeds: [ generateEmbed('error', { title: 'Nothing is queued!' }) ] }
         }
         if (this.queueLoop) {
             this.queueLoop = false
-            return { content: 'No longer looping queue' }
+            return { embeds: [ generateEmbed('success', { title: 'No longer looping queue' }) ] }
         }
         this.queueLoop = true
-        return { content: 'Now looping queue' }
+        return { embeds: [ generateEmbed('success', { title: 'Now looping queue' }) ] }
     }
 
     public clear(): boolean {
@@ -166,7 +167,7 @@ export class QueueManager {
 
     public getNowPlaying(): InteractionReplyOptions {
         if (!this.nowPlaying) {
-            return { content: 'Nothing has played yet!' }
+            return { embeds: [ generateEmbed('error', { title: 'Nothing has played yet!' }) ] }
         }
         return { embeds: [ this.nowPlaying.generateEmbed() ] }
     }
@@ -196,9 +197,6 @@ export class QueueManager {
     }
 
     public getFlatQueue(): QueueItem[] {
-        if (!this.voiceManager.isActive()) {
-            return null
-        }
         return this.queue
     }
 

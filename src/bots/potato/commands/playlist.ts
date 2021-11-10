@@ -1,5 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
 import ytpl from 'ytpl'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 import { GuildInfo } from '../../../core/utils/interfaces'
 import { QueueItem } from '../../../core/voice/QueueItem'
 
@@ -44,7 +45,7 @@ async function playlist(interaction: CommandInteraction, info: GuildInfo): Promi
     const member = await interaction.guild.members.fetch(interaction.user)
     const voiceChannel = member.voice.channel
     if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
-        return { content: 'This command can only be used while in a visable voice channel!' }
+        return { embeds: [ generateEmbed('error', { title: 'This command can only be used while in a visable voice channel!' }) ] }
     }
     const output = await ytpl(interaction.options.getString('name'))
     const items = []
@@ -54,9 +55,9 @@ async function playlist(interaction: CommandInteraction, info: GuildInfo): Promi
     info.queueManager.addToQueue(items, interaction.options.getNumber('position') - 1)
     info.queueManager.bindChannel(<TextChannel> interaction.channel)
     if (!info.queueManager.connect(voiceChannel)) {
-        return { content: 'Something went wrong when connecting to voice' }
+        return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
     }
-    return { content: 'Added to queue!' }
+    return { embeds: [ generateEmbed('success', { title: 'Added to queue!' }) ] }
 }
 
 module.exports = { data: data, execute: playlist }

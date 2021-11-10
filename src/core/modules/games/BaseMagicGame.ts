@@ -1,5 +1,5 @@
 import { Collection, MessageEmbed, Snowflake, ThreadChannel, User } from 'discord.js'
-import { genericEmbed } from '../../utils/commonFunctions'
+import { generateEmbed } from '../../utils/commonFunctions'
 import { BaseGame } from './BaseGame'
 
 interface MagicPlayer {
@@ -39,7 +39,7 @@ export class BaseMagicGame extends BaseGame {
 
     public eliminate(player: Snowflake): MessageEmbed {
         if (!this.playerData.get(player).isAlive) {
-            return genericEmbed({ title: `${this.playerData.get(player).name} is already eliminated` })
+            return generateEmbed('error', { title: `${this.playerData.get(player).name} is already eliminated` })
         }
         this.playerData.get(player).isAlive = false
         if (this.playerData.filter(user => user.isAlive).size < 2) {
@@ -49,7 +49,7 @@ export class BaseMagicGame extends BaseGame {
     }
 
     public printStandings(): MessageEmbed {
-        const embed = genericEmbed({ title: 'Current Standings' })
+        const embed = generateEmbed('info', { title: 'Current Standings' })
         const [ alive, dead ] = this.playerData.partition(player => player.isAlive)
         for (const [ , player ] of alive) {
             embed.addField(`${player.name}:`, `Life Total: ${player.life}\nPoison Counters: ${player.poison}`)
@@ -66,7 +66,7 @@ export class BaseMagicGame extends BaseGame {
         if (alive.size > 1) {
             return this.printStandings()
         }
-        return genericEmbed({ title: `${alive.first().name} Wins!`, fields: [ { name: `${alive.first().name}:`, value: `Life Total: ${alive.first().life}\nPoison Counters: ${alive.first().poison}` } ] })
+        return generateEmbed('info', { title: `${alive.first().name} Wins!`, fields: [ { name: `${alive.first().name}:`, value: `Life Total: ${alive.first().life}\nPoison Counters: ${alive.first().poison}` } ] })
     }
 
     public userInGame(player: Snowflake): boolean {

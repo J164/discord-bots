@@ -1,5 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BaseMagicGame } from '../../../core/modules/games/BaseMagicGame'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -24,10 +25,10 @@ const data: ApplicationCommandData = {
 function heal(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     const game = info.games.get(interaction.channelId)
     if (!game || !(game instanceof BaseMagicGame) || game.isOver()) {
-        return { content: 'There is currently no Magic game in this channel' }
+        return { embeds: [ generateEmbed('error', { title: 'There is currently no Magic game in this channel' }) ] }
     }
     if (!game.userInGame(interaction.options.getUser('player').id)) {
-        return { content: 'That user is not part of this game!' }
+        return { embeds: [ generateEmbed('error', { title: 'That user is not part of this game!' }) ] }
     }
     return { embeds: [ game.changeLife(interaction.options.getUser('player').id, interaction.options.getInteger('amount')) ] }
 }

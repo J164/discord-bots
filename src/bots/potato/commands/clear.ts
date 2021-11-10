@@ -1,4 +1,5 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -8,9 +9,9 @@ const data: ApplicationCommandData = {
 
 function clear(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (info.queueManager.clear()) {
-        return { content: 'The queue has been cleared' }
+        return { embeds: [ generateEmbed('success', { title: 'The queue has been cleared' }) ] }
     }
-    return { content: 'There is no queue!' }
+    return { embeds: [ generateEmbed('error', { title: 'There is no queue!' }) ] }
 }
 
 module.exports = { data: data, execute: clear }

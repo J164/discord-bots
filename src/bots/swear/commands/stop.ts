@@ -1,4 +1,5 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -8,7 +9,7 @@ const data: ApplicationCommandData = {
 
 function stop(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     info.voiceManager.reset()
-    return { content: 'Success' }
+    return { embeds: [ generateEmbed('success', { title: 'Success' }) ] }
 }
 
 module.exports = { data: data, execute: stop }

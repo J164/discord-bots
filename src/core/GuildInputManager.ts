@@ -4,6 +4,7 @@ import { DatabaseManager } from './DatabaseManager'
 import { VoiceManager } from './voice/VoiceManager'
 import { Command, GuildInfo } from './utils/interfaces'
 import { BaseGame } from './modules/games/BaseGame'
+import { generateEmbed } from './utils/commonFunctions'
 
 export class GuildInputManager {
 
@@ -21,17 +22,17 @@ export class GuildInputManager {
         const command = this.commands.get(interaction.commandName)
 
         if (!command) {
-            return { content: 'Command not recognized (Please contact the bot developer)' }
+            return { embeds: [ generateEmbed('error', { title: 'Command not recognized (Please contact the bot developer)' }) ] }
         }
 
         const channel = await interaction.client.channels.fetch(interaction.channelId)
 
         if (command.gameCommand) {
             if (channel.type !== 'GUILD_PUBLIC_THREAD') {
-                return { content: 'Please only use game commands in game threads!' }
+                return { embeds: [ generateEmbed('error', { title: 'Please only use game commands in game threads!' }) ] }
             }
         } else if (channel.type !== 'GUILD_TEXT') {
-            return { content: 'Please only use slash commands in servers!' }
+            return { embeds: [ generateEmbed('error', { title: 'Please only use slash commands in servers!' }) ] }
         }
 
         return command.execute(interaction, this.info)

@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { MessageOptions } from 'discord.js'
-import { genericEmbed } from '../utils/commonFunctions'
+import { generateEmbed } from '../utils/commonFunctions'
 
 interface QuoteResponse {
     readonly data: {
@@ -180,7 +180,7 @@ export async function getDailyReport(date: Date): Promise<MessageOptions> {
     const quote: QuoteResponse = await axios.get(`http://quotes.rest/qod.json?category=inspire`)
     const stringDate = getStringDate(date)
     const weatherEmoji = getWeatherEmoji(weather.data.current.condition.code)
-    const response = { embeds: [ genericEmbed({
+    const response = { embeds: [ generateEmbed('info', {
         title: `Daily Report: ${stringDate} ${weatherEmoji}`,
         fields: [
             {

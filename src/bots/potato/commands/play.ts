@@ -4,6 +4,7 @@ import ytpl from 'ytpl'
 import { GuildInfo } from '../../../core/utils/interfaces'
 import { QueueItem } from '../../../core/voice/QueueItem'
 import ytsr from 'ytsr'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 
 const data: ApplicationCommandData = {
     name: 'play',
@@ -32,7 +33,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         return { content: 'This command can only be used while in a visable voice channel!' }
     }
     const arg = interaction.options.getString('name')
-    interaction.editReply({ content: 'Boiling potatoes...' })
+    interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Boiling potatoes...' }) ] })
 
     let url: string
     if (!arg.match(/(\.|^|\W)(youtube\.com|youtu\.be)\//)) {
@@ -40,7 +41,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
             limit: 20
         })
         if (term.results < 1) {
-            return { content: `No results found for "${arg}"` }
+            return { embeds: [ generateEmbed('error', { title: `No results found for "${arg}"` }) ] }
         }
         url = (<ytsr.Video> term.items.filter(result => result.type === 'video')[0]).url
     } else {
@@ -57,7 +58,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
             info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
         } catch (err) {
             console.warn(err)
-            return { content: 'Please enter a valid url (private playlists will not work)' }
+            return { embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] }
         }
     } else {
         try {
@@ -65,15 +66,15 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
             info.queueManager.addToQueue([ new QueueItem(output.videoDetails.video_url, output.videoDetails.title, output.videoDetails.videoId, output.videoDetails.thumbnails[0].url, new Number(output.videoDetails.lengthSeconds).valueOf()) ], interaction.options.getInteger('position') - 1)
         } catch (err) {
             console.warn(err)
-            return { content: 'Please enter a valid url (private videos will not work)' }
+            return { embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] }
         }
     }
 
     info.queueManager.bindChannel(<TextChannel> interaction.channel)
     if (!info.queueManager.connect(voiceChannel)) {
-        return { content: 'Something went wrong when connecting to voice' }
+        return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
     }
-    return { content: 'Added to queue!' }
+    return { embeds: [ generateEmbed('success', { title: 'Added to queue!' }) ] }
 }
 
 async function search(name: string, value: string): Promise<ApplicationCommandOptionChoice[]> {

@@ -1,4 +1,5 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -8,9 +9,9 @@ const data: ApplicationCommandData = {
 
 function skip(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (info.queueManager.skip()) {
-        return { content: 'Skipped' }
+        return { embeds: [ generateEmbed('success', { title: 'Skipped' }) ] }
     }
-    return { content: 'There is nothing to skip!' }
+    return { embeds: [ generateEmbed('error', { title: 'There is nothing to skip!' }) ] }
 }
 
 module.exports = { data: data, execute: skip }

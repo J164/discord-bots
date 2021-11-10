@@ -1,4 +1,5 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 
 const data: ApplicationCommandData = {
     name: 'nick',
@@ -22,14 +23,14 @@ const data: ApplicationCommandData = {
 async function nick(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     const member = await interaction.guild.members.fetch(interaction.options.getUser('member'))
     if (interaction.options.getString('nickname')?.length > 32) {
-        return { content: 'Too many characters! (nicknames must be 32 characters or less)' }
+        return { embeds: [ generateEmbed('error', { title: 'Too many characters! (nicknames must be 32 characters or less)' }) ] }
     }
     try {
         await member.setNickname(interaction.options.getString('nickname'))
     } catch {
-        return { content: 'This user\'s permissions are too powerful to perform this action!' }
+        return { embeds: [ generateEmbed('error', { title: 'This user\'s permissions are too powerful to perform this action!' }) ] }
     }
-    return { content: 'Success!' }
+    return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
 module.exports = { data: data, execute: nick }

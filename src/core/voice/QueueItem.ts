@@ -1,5 +1,5 @@
 import { MessageEmbed, InteractionReplyOptions } from 'discord.js'
-import { genericEmbed } from '../utils/commonFunctions'
+import { generateEmbed } from '../utils/commonFunctions'
 
 export class QueueItem {
 
@@ -20,7 +20,7 @@ export class QueueItem {
     }
 
     public generateEmbed(): MessageEmbed {
-        const embed = genericEmbed({
+        const embed = generateEmbed('info', {
             title: `Now Playing: ${this.title}`,
             fields: [ {
                 name: 'URL:',

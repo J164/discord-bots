@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { createCanvas, loadImage } from 'canvas'
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, InteractionUpdateOptions, MessageActionRow, MessageAttachment, MessageButton, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
-import { genericEmbed } from '../../../core/utils/commonFunctions'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 import { ScryfallResponse, MagicCard, GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -41,7 +41,7 @@ function formatResponse(response: ScryfallResponse): MagicCard[][] {
 
 async function generateResponse(results: MagicCard[][], r: number, i: number): Promise<InteractionUpdateOptions> {
     const card = results[r][i]
-    const embed = genericEmbed({ title: card.name })
+    const embed = generateEmbed('info', { title: card.name })
     let reply: InteractionReplyOptions
     if (card.card_faces) {
         const attachment = new MessageAttachment(await mergeImages([ card.card_faces[0].image_uris.large, card.card_faces[1].image_uris.large ], { width: 1344, height: 936 }), 'card.jpg')
@@ -61,7 +61,7 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results:
             const response = <ScryfallResponse> (await axios.get(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)).data
             results = formatResponse(response)
         } catch {
-            return { embeds: [ genericEmbed({
+            return { embeds: [ generateEmbed('error', {
                 title: 'Card Not Found',
                 fields: [ {
                     name: `${searchTerm} not found`,
@@ -70,7 +70,7 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results:
             }) ]}
         }
     }
-    const embed = genericEmbed({
+    const embed = generateEmbed('info', {
         title: 'Results',
         footer: { text: `${i + 1}/${results.length}` }
     })

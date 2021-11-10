@@ -27,7 +27,22 @@ export function deployCommands(client: Client, botName: string): void {
     client.application.commands.set(commandData)
 }
 
-export function genericEmbed(options: MessageEmbedOptions): MessageEmbed {
-    options.color ??= 0x0099ff
+export function generateEmbed(type: 'info' | 'error' | 'success' | 'prompt', options: MessageEmbedOptions): MessageEmbed {
+    switch (type) {
+        case 'info':
+            options.color ??= 0x0099ff
+            break
+        case 'error':
+            options.color ??= 0xff0000
+            break
+        case 'success':
+            options.color ??= 0x00ff00
+            break
+        case 'prompt':
+            options.color ??= 0xffa500
+            break
+        default:
+            break
+    }
     return new MessageEmbed(options)
 }

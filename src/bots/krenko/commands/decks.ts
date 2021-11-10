@@ -1,6 +1,6 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
 import { GuildInfo, ScryfallResponse } from '../../../core/utils/interfaces'
-import { genericEmbed } from '../../../core/utils/commonFunctions'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 import axios from 'axios'
 
 const data: ApplicationCommandData = {
@@ -66,7 +66,7 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
             image = cardInfo.data[0].image_uris.large
         }
     }
-    const options: InteractionReplyOptions = { embeds: [ genericEmbed({ title: results.name, image: { url: image }, fields: [ { name: 'Deckstats URL:', value: url } ], footer: { text: `${i + 1}/${urls.length}` } }) ], components: [ row1 ] }
+    const options: InteractionReplyOptions = { embeds: [ generateEmbed('info', { title: results.name, image: { url: image }, fields: [ { name: 'Deckstats URL:', value: url } ], footer: { text: `${i + 1}/${urls.length}` } }) ], components: [ row1 ] }
     if (!button) {
         await interaction.editReply(options)
     } else {
@@ -87,7 +87,7 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
                 try {
                     b.update({ content: await getList(apiUrl), embeds: [], components: [] })
                 } catch {
-                    b.update({ content: 'There seems to be something wrong with the Deckstats API at the moment. Try again later', embeds: [], components: [] })
+                    b.update({ embeds: [ generateEmbed('error', { title: 'There seems to be something wrong with the Deckstats API at the moment. Try again later' }) ], components: [] })
                 }
                 break
             case 'decks-arrowright':

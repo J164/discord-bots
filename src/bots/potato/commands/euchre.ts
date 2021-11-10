@@ -1,4 +1,5 @@
 import { ApplicationCommandData, /*CommandInteraction,*/ InteractionReplyOptions } from 'discord.js'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 //import { genericEmbed } from '../../../core/utils/commonFunctions'
 //import { Euchre } from '../../../core/modules/games/Euchre.ts.DISABLED'
 
@@ -34,7 +35,7 @@ const data: ApplicationCommandData = {
 }
 
 async function setupEuchre(/*interaction: CommandInteraction*/): Promise<InteractionReplyOptions> {
-    return { content: 'This command is currently under construction!' }
+    return { embeds: [ generateEmbed('error', { title: 'This command is currently under construction!' }) ] }
     /*const players = genericEmbed({
         title: 'Teams',
         fields: [

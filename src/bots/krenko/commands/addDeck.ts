@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { generateEmbed } from '../../../core/utils/commonFunctions'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
@@ -23,16 +24,16 @@ async function addDeck(interaction: CommandInteraction, info: GuildInfo): Promis
         apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`
         name = (await axios.get(`${apiUrl}json`)).data.name
     } catch {
-        return { content: 'Something went wrong (Make sure you are using a deckstats url' }
+        return { embeds: [ generateEmbed('error', { title: 'Something went wrong (Make sure you are using a deckstats url' }) ] }
     }
     try {
         info.database.insert('mtg_decks', new Map<string, string>([
             [ 'url', interaction.options.getString('url') ]
         ]))
     } catch {
-        return { content: 'Failed! (Make sure the deck isn\'t a duplicate)' }
+        return { embeds: [ generateEmbed('error', { title: 'Failed! (Make sure the deck isn\'t a duplicate)' }) ] }
     }
-    return { content: `Success! Deck "${name}" has been added!` }
+    return { embeds: [ generateEmbed('success', { title: `Success! Deck "${name}" has been added!` }) ] }
 }
 
 module.exports = { data: data, execute: addDeck }
