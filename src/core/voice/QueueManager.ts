@@ -85,6 +85,7 @@ export class QueueManager {
         if (!success) {
             this.boundChannel.send({ embeds: [ generateEmbed('error', { title: 'Something went wrong while preparing song'}) ] })
             this.queueLock = false
+            this.playSong()
             return
         }
 

@@ -1,26 +1,16 @@
-import { Connection, createConnection } from 'mysql'
+import { createPool, Pool } from 'mysql'
 
 export class DatabaseManager {
 
-    private connection: Connection
+    private connection: Pool
 
     public constructor() {
-        this.connect()
-        this.connection.on('error', () => {
-            this.connection.end()
-            this.connect()
-        })
-    }
-
-    private connect() {
-        this.connection = createConnection({
+        this.connection = createPool({
             host: 'localhost',
             user: 'DiscordBots',
             password: process.env.sqlPass,
             database: 'discord_data'
         })
-
-        this.connection.connect()
     }
 
     public select(table: string, callback: (results: unknown[]) => void): void {

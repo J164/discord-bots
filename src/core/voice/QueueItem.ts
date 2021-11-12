@@ -20,8 +20,20 @@ export class QueueItem {
     }
 
     public generateEmbed(): MessageEmbed {
+        let hour = Math.floor(this.duration / 3600).toString()
+        let min = Math.floor((this.duration % 3600) / 60).toString()
+        let sec = (this.duration % 60).toString()
+        if (hour.length < 2) {
+            hour = `0${hour}`
+        }
+        if (min.length < 2) {
+            min = `0${min}`
+        }
+        if (sec.length < 2) {
+            sec = `0${sec}`
+        }
         const embed = generateEmbed('info', {
-            title: `Now Playing: ${this.title}`,
+            title: `Now Playing: ${this.title} (${hour}:${min}:${sec})`,
             fields: [ {
                 name: 'URL:',
                 value: this.url
