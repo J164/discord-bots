@@ -23,7 +23,7 @@ export class QueueManager {
 
     public addToQueue(items: QueueItem[], position: number): void {
         if (this.queueLock) {
-            setTimeout(() => { this.addToQueue(items, position) }, 10000)
+            setTimeout(() => { this.addToQueue(items, position) }, 200)
         }
         this.queueLock = true
         if (position >= this.queue.length || position < 0) {
@@ -65,11 +65,12 @@ export class QueueManager {
         }
 
         if (this.queueLock) {
-            setTimeout(() => { this.playSong() }, 10000)
+            setTimeout(() => { this.playSong() }, 200)
         }
 
         this.queueLock = true
         const song = this.queue.shift()
+        this.queueLock = false
 
         let success = false
 
@@ -84,7 +85,6 @@ export class QueueManager {
 
         if (!success) {
             this.boundChannel.send({ embeds: [ generateEmbed('error', { title: 'Something went wrong while preparing song'}) ] })
-            this.queueLock = false
             this.playSong()
             return
         }
@@ -98,14 +98,19 @@ export class QueueManager {
                 return
             }
             this.voiceManager.player.removeAllListeners('stateChange')
+
+            if (this.queueLock) {
+                setTimeout(() => { this.playSong() }, 200)
+            }
+            this.queueLock = true
             if (this.queueLoop) {
                 this.queue.push(song)
             } else if (song.looping) {
                 this.queue.unshift(song)
             }
+            this.queueLock = false
             this.playSong()
         })
-        this.queueLock = false
     }
 
     public skipTo(index: number): void {
@@ -157,12 +162,17 @@ export class QueueManager {
         if (this.queue.length < 1) {
             return false
         }
+        if (this.queueLock) {
+            setTimeout(() => { this.playSong() }, 200)
+        }
+        this.queueLock = true
         for (let i = this.queue.length - 1; i > 0; i--) {
             const randomIndex = Math.floor(Math.random() * (i + 1))
             const temp = this.queue[i]
             this.queue[i] = this.queue[randomIndex]
             this.queue[randomIndex] = temp
         }
+        this.queueLock = false
         return true
     }
 
@@ -181,6 +191,10 @@ export class QueueManager {
             return [ [ this.nowPlaying ] ]
         }
         const queueArray: QueueItem[][] = []
+        if (this.queueLock) {
+            setTimeout(() => { this.playSong() }, 200)
+        }
+        this.queueLock = true
         for (let r = 0; r < Math.ceil(this.queue.length / 25); r++) {
             queueArray.push([])
             for (let i = -1; i < 25; i++) {
@@ -194,6 +208,7 @@ export class QueueManager {
                 queueArray[r].push(this.queue[r * 25 + i])
             }
         }
+        this.queueLock = false
         return queueArray
     }
 

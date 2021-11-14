@@ -49,9 +49,9 @@ export class QueueItem {
     public loop(): InteractionReplyOptions {
         if (this.looping) {
             this.looping = false
-            return { content: 'No longer looping' }
+            return { embeds: [ generateEmbed('success', { title: 'No longer looping' }) ] }
         }
         this.looping = true
-        return { content: 'Now Looping' }
+        return { embeds: [ generateEmbed('success', { title: 'Now Looping' }) ] }
     }
 }
