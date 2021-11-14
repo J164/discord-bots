@@ -50,7 +50,7 @@ async function playlist(interaction: CommandInteraction, info: GuildInfo): Promi
     const output = await ytpl(interaction.options.getString('name'))
     const items = []
     for (const song of output.items) {
-        items.push(new QueueItem(song.url, song.title, song.id, song.bestThumbnail.url, song.durationSec))
+        items.push(new QueueItem(song.url, song.title, song.bestThumbnail.url, song.durationSec))
     }
     info.queueManager.addToQueue(items, interaction.options.getNumber('position') - 1)
     info.queueManager.bindChannel(<TextChannel> interaction.channel)

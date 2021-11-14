@@ -5,15 +5,13 @@ export class QueueItem {
 
     public readonly url: string
     public readonly title: string
-    public readonly id: string
     public readonly thumbnail: string
     public readonly duration: number
     public looping: boolean
 
-    public constructor(url: string, title: string, id: string, thumbnail: string, duration: number) {
+    public constructor(url: string, title: string, thumbnail: string, duration: number) {
         this.url = url
         this.title = title
-        this.id = id
         this.thumbnail = thumbnail
         this.duration = duration
         this.looping = false

@@ -53,7 +53,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
             const playlist = await ytpl(`https://youtube.com/playlist?list=${url.substr(url.indexOf('list=') + 5)}`)
             const items = []
             for (const song of playlist.items) {
-                items.push(new QueueItem(song.url, song.title, song.id, song.bestThumbnail.url, song.durationSec))
+                items.push(new QueueItem(song.url, song.title, song.bestThumbnail.url, song.durationSec))
             }
             info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
         } catch (err) {
@@ -63,7 +63,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     } else {
         try {
             const output = await ytdl.getInfo(url)
-            info.queueManager.addToQueue([ new QueueItem(output.videoDetails.video_url, output.videoDetails.title, output.videoDetails.videoId, output.videoDetails.thumbnails[0].url, new Number(output.videoDetails.lengthSeconds).valueOf()) ], interaction.options.getInteger('position') - 1)
+            info.queueManager.addToQueue([ new QueueItem(output.videoDetails.video_url, output.videoDetails.title, output.videoDetails.thumbnails[0].url, new Number(output.videoDetails.lengthSeconds).valueOf()) ], interaction.options.getInteger('position') - 1)
         } catch (err) {
             console.warn(err)
             return { embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] }

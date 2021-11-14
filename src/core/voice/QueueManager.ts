@@ -72,16 +72,10 @@ export class QueueManager {
         const song = this.queue.shift()
         this.queueLock = false
 
-        let success = false
-
-        try {
-            success = await this.voiceManager.playStream(ytdl(song.url, {
-                filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus',
-                highWaterMark: 52428800
-            }))
-        } catch (err) {
-            console.warn(err)
-        }
+        const success = await this.voiceManager.playStream(ytdl(song.url, {
+            filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus',
+            highWaterMark: 52428800
+        }))
 
         if (!success) {
             this.boundChannel.send({ embeds: [ generateEmbed('error', { title: 'Something went wrong while preparing song'}) ] })
