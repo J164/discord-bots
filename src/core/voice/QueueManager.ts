@@ -4,6 +4,7 @@ import { QueueItem } from './QueueItem'
 import ytdl from 'ytdl-core'
 import { AudioPlayerStatus } from '@discordjs/voice'
 import { generateEmbed } from '../utils/commonFunctions'
+import { setTimeout } from 'timers/promises'
 
 export class QueueManager {
 
@@ -21,9 +22,10 @@ export class QueueManager {
         this.queueLock = false
     }
 
-    public addToQueue(items: QueueItem[], position: number): void {
+    public async addToQueue(items: QueueItem[], position: number): Promise<void> {
         if (this.queueLock) {
-            setTimeout(() => { this.addToQueue(items, position) }, 200)
+            await setTimeout(200)
+            return this.addToQueue(items, position)
         }
         this.queueLock = true
         if (position >= this.queue.length || position < 0) {
@@ -65,7 +67,8 @@ export class QueueManager {
         }
 
         if (this.queueLock) {
-            setTimeout(() => { this.playSong() }, 200)
+            await setTimeout(200)
+            return this.playSong()
         }
 
         this.queueLock = true
@@ -79,37 +82,45 @@ export class QueueManager {
 
         if (!success) {
             this.boundChannel.send({ embeds: [ generateEmbed('error', { title: 'Something went wrong while preparing song'}) ] })
-            this.playSong()
-            return
+            return this.playSong()
         }
 
         this.nowPlaying = song
         if (!song.looping) {
             this.boundChannel.send({ embeds: [ this.nowPlaying.generateEmbed() ] })
         }
-        this.voiceManager.player.on('stateChange', (oldState, newState) => {
+        this.voiceManager.player.on('stateChange', async (oldState, newState) => {
             if (newState.status !== AudioPlayerStatus.Idle) {
                 return
             }
             this.voiceManager.player.removeAllListeners('stateChange')
 
-            if (this.queueLock) {
-                setTimeout(() => { this.playSong() }, 200)
+            const endSong = async (): Promise<void> => {
+                if (this.queueLock) {
+                    await setTimeout(200)
+                    return endSong()
+                }
+                this.queueLock = true
+                if (this.queueLoop) {
+                    this.queue.push(song)
+                } else if (song.looping) {
+                    this.queue.unshift(song)
+                }
+                this.queueLock = false
             }
-            this.queueLock = true
-            if (this.queueLoop) {
-                this.queue.push(song)
-            } else if (song.looping) {
-                this.queue.unshift(song)
+
+            if (this.queueLoop || song.looping) {
+                await endSong()
             }
-            this.queueLock = false
+
             this.playSong()
         })
     }
 
-    public skipTo(index: number): void {
+    public async skipTo(index: number): Promise<void> {
         if (this.queueLock) {
-            setTimeout(() => { this.skipTo(index) }, 10000)
+            await setTimeout(200)
+            return this.skipTo(index)
         }
 
         this.queueLock = true
@@ -152,12 +163,13 @@ export class QueueManager {
         return this.voiceManager.player?.stop(true)
     }
 
-    public shuffleQueue(): boolean {
+    public async shuffleQueue(): Promise<boolean> {
         if (this.queue.length < 1) {
             return false
         }
         if (this.queueLock) {
-            setTimeout(() => { this.playSong() }, 200)
+            await setTimeout(200)
+            return this.shuffleQueue()
         }
         this.queueLock = true
         for (let i = this.queue.length - 1; i > 0; i--) {
@@ -177,7 +189,7 @@ export class QueueManager {
         return { embeds: [ this.nowPlaying.generateEmbed() ] }
     }
 
-    public getQueue(): QueueItem[][] {
+    public async getQueue(): Promise<QueueItem[][]> {
         if (!this.voiceManager.isActive()) {
             return null
         }
@@ -186,7 +198,8 @@ export class QueueManager {
         }
         const queueArray: QueueItem[][] = []
         if (this.queueLock) {
-            setTimeout(() => { this.playSong() }, 200)
+            await setTimeout(200)
+            return this.getQueue()
         }
         this.queueLock = true
         for (let r = 0; r < Math.ceil(this.queue.length / 25); r++) {

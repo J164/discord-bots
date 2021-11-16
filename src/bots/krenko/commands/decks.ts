@@ -1,7 +1,7 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
 import { GuildInfo, ScryfallResponse } from '../../../core/utils/interfaces'
 import { generateEmbed } from '../../../core/utils/commonFunctions'
-import axios from 'axios'
+import { request } from 'undici'
 
 const data: ApplicationCommandData = {
     name: 'decks',
@@ -19,7 +19,7 @@ interface DeckstatsResponse {
 }
 
 async function getList(url: string): Promise<string> {
-    const decklist = <string> (await axios.get(`${url}list`)).data.list
+    const decklist = <string> (await (await request(`${url}list`)).body.json()).list
     const decklistArray = decklist.split('\n')
     for (let i = 0; i < decklistArray.length; i++) {
         if (!decklistArray[i] || decklistArray[i].startsWith('//')) {
@@ -43,7 +43,7 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
     const authorID = fields[4]
     const deckID = fields[5].split('-')[0]
     const apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`
-    const results = <DeckstatsResponse> (await axios.get(`${apiUrl}json`)).data
+    const results = <DeckstatsResponse> await (await request(`${apiUrl}json`)).body.json()
     const components = [ new MessageButton({ customId: 'decks-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY' }),
                          new MessageButton({ customId: 'decks-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY' }),
                          new MessageButton({ customId: 'decks-list', emoji: '\uD83D\uDCC4', label: 'Decklist', style: 'PRIMARY' }),
@@ -62,7 +62,7 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
     for (const section of results.sections) {
         const commander = section.cards.findIndex(card => card.isCommander)
         if (commander !== -1) {
-            const cardInfo = <ScryfallResponse> (await axios.get(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(section.cards[commander].name)}`)).data
+            const cardInfo = <ScryfallResponse> await (await request(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(section.cards[commander].name)}`)).body.json()
             image = cardInfo.data[0].image_uris.large
         }
     }

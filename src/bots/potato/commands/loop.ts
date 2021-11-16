@@ -6,28 +6,22 @@ const data: ApplicationCommandData = {
     description: 'Loop the current song or queue',
     options: [
         {
-            name: 'name',
-            description: 'What to loop',
-            type: 'INTEGER',
-            required: true,
-            choices: [
-                {
-                    name: 'current song',
-                    value: 0
-                },
-                {
-                    name: 'queue',
-                    value: 1
-                }
-            ]
+            name: 'current',
+            description: 'Loop just the current song',
+            type: 'SUB_COMMAND'
+        },
+        {
+            name: 'queue',
+            description: 'Loop the entire queue',
+            type: 'SUB_COMMAND'
         }
     ]
 }
 
 function loop(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
-    if (interaction.options.getInteger('name') === 0) {
+    if (interaction.options.getSubcommand() === 'current') {
         return info.queueManager.loopSong()
-    }
+    } //test
     return info.queueManager.loopQueue()
 }
 

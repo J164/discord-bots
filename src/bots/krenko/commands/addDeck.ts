@@ -1,5 +1,5 @@
-import axios from 'axios'
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { request } from 'undici'
 import { generateEmbed } from '../../../core/utils/commonFunctions'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
@@ -22,7 +22,7 @@ async function addDeck(interaction: CommandInteraction, info: GuildInfo): Promis
         const authorID = fields[4]
         const deckID = fields[5].split('-')[0]
         apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`
-        name = (await axios.get(`${apiUrl}json`)).data.name
+        name = (await (await request(`${apiUrl}json`)).body.json()).name
     } catch {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong (Make sure you are using a deckstats url' }) ] }
     }

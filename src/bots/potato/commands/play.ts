@@ -38,7 +38,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     let url: string
     if (!arg.match(/(\.|^|\W)(youtube\.com|youtu\.be)\//)) {
         const term = await ytsr(arg, {
-            limit: 20
+            limit: 5
         })
         if (term.results < 1) {
             return { embeds: [ generateEmbed('error', { title: `No results found for "${arg}"` }) ] }
@@ -55,7 +55,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
             for (const song of playlist.items) {
                 items.push(new QueueItem(song.url, song.title, song.bestThumbnail.url, song.durationSec))
             }
-            info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
+            await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
         } catch (err) {
             console.warn(err)
             return { embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] }
@@ -63,7 +63,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     } else {
         try {
             const output = await ytdl.getInfo(url)
-            info.queueManager.addToQueue([ new QueueItem(output.videoDetails.video_url, output.videoDetails.title, output.videoDetails.thumbnails[0].url, new Number(output.videoDetails.lengthSeconds).valueOf()) ], interaction.options.getInteger('position') - 1)
+            await info.queueManager.addToQueue([ new QueueItem(output.videoDetails.video_url, output.videoDetails.title, output.videoDetails.thumbnails[0].url, new Number(output.videoDetails.lengthSeconds).valueOf()) ], interaction.options.getInteger('position') - 1)
         } catch (err) {
             console.warn(err)
             return { embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] }
@@ -77,12 +77,12 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     return { embeds: [ generateEmbed('success', { title: 'Added to queue!' }) ] }
 }
 
-async function search(name: string, value: string): Promise<ApplicationCommandOptionChoice[]> {
-    if (value.length < 3 || value.match(/(\.|^|\W)(youtube\.com|youtu\.be)\//)) {
+async function search(option: ApplicationCommandOptionChoice): Promise<ApplicationCommandOptionChoice[]> {
+    if ((<string> option.value).length < 3 || (<string> option.value).match(/(\.|^|\W)(youtube\.com|youtu\.be)\//)) {
         return null
     }
-    const results = await ytsr(value, {
-        limit: 20
+    const results = await ytsr(<string> option.value, {
+        limit: 5
     })
     const options: ApplicationCommandOptionChoice[] = []
     for (const result of results.items) {

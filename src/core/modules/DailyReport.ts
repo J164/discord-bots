@@ -1,5 +1,5 @@
-import axios from 'axios'
 import { MessageOptions } from 'discord.js'
+import { request } from 'undici'
 import { generateEmbed } from '../utils/commonFunctions'
 
 interface QuoteResponse {
@@ -175,9 +175,9 @@ function getWeatherEmoji(weatherCode: number): string {
 
 export async function getDailyReport(date: Date): Promise<MessageOptions> {
     //meme of day
-    const holiday: HolidayResponse = await axios.get(`https://holidays.abstractapi.com/v1/?api_key=${process.env.abstractKey}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)
-    const weather: WeatherResponse = await axios.get(`http://api.weatherapi.com/v1/current.json?key=${process.env.weatherKey}&q=60069`)
-    const quote: QuoteResponse = await axios.get(`http://quotes.rest/qod.json?category=inspire`)
+    const holiday: HolidayResponse = await (await request(`https://holidays.abstractapi.com/v1/?api_key=${process.env.abstractKey}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)).body.json()
+    const weather: WeatherResponse = await (await request(`http://api.weatherapi.com/v1/current.json?key=${process.env.weatherKey}&q=60069`)).body.json()
+    const quote: QuoteResponse = await (await request(`http://quotes.rest/qod.json?category=inspire`)).body.json()
     const stringDate = getStringDate(date)
     const weatherEmoji = getWeatherEmoji(weather.data.current.condition.code)
     const response = { embeds: [ generateEmbed('info', {

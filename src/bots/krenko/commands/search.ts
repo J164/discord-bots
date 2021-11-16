@@ -1,6 +1,6 @@
-import axios from 'axios'
 import { createCanvas, loadImage } from 'canvas'
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, InteractionUpdateOptions, MessageActionRow, MessageAttachment, MessageButton, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
+import { request } from 'undici'
 import { generateEmbed } from '../../../core/utils/commonFunctions'
 import { ScryfallResponse, MagicCard, GuildInfo } from '../../../core/utils/interfaces'
 
@@ -58,7 +58,7 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results:
     if (!results) {
         const searchTerm = interaction.options.getString('query')
         try {
-            const response = <ScryfallResponse> (await axios.get(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)).data
+            const response = <ScryfallResponse> await (await request(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)).body.json()
             results = formatResponse(response)
         } catch {
             return { embeds: [ generateEmbed('error', {

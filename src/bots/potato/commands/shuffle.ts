@@ -7,8 +7,8 @@ const data: ApplicationCommandData = {
     description: 'Shuffles the song queue'
 }
 
-function shuffle(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
-    if (info.queueManager.shuffleQueue()) {
+async function shuffle(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+    if (await info.queueManager.shuffleQueue()) {
         return { embeds: [ generateEmbed('success', { title: 'The queue has been shuffled' }) ] }
     }
     return { embeds: [ generateEmbed('error', { title: 'There is nothing to shuffle!' }) ] }

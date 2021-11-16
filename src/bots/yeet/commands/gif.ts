@@ -1,5 +1,5 @@
-import axios from 'axios'
 import { ApplicationCommandData, InteractionReplyOptions } from 'discord.js'
+import { request } from 'undici'
 
 interface TenorResponse {
     readonly results: readonly {
@@ -13,7 +13,7 @@ const data: ApplicationCommandData = {
 }
 
 async function gif(): Promise<InteractionReplyOptions> {
-    const gifs = <TenorResponse> (await axios.get(`https://g.tenor.com/v1/search?q=yeet&key=${process.env.tenorKey}&limit=50&contentfilter=medium`)).data
+    const gifs = <TenorResponse> await (await request(`https://g.tenor.com/v1/search?q=yeet&key=${process.env.tenorKey}&limit=50&contentfilter=medium`)).body.json()
     return { content: gifs.results[Math.floor(Math.random() * gifs.results.length)].itemurl }
 }
 

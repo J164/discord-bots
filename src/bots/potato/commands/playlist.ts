@@ -52,7 +52,7 @@ async function playlist(interaction: CommandInteraction, info: GuildInfo): Promi
     for (const song of output.items) {
         items.push(new QueueItem(song.url, song.title, song.bestThumbnail.url, song.durationSec))
     }
-    info.queueManager.addToQueue(items, interaction.options.getNumber('position') - 1)
+    await info.queueManager.addToQueue(items, interaction.options.getNumber('position') - 1)
     info.queueManager.bindChannel(<TextChannel> interaction.channel)
     if (!info.queueManager.connect(voiceChannel)) {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }

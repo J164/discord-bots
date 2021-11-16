@@ -33,16 +33,16 @@ const data: ApplicationCommandData = {
     ]
 }
 
-function skipto(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
+async function skipto(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
     if (info.queueManager.getFlatQueue().length < 2) {
         return { embeds: [ generateEmbed('error', { title: 'The queue is too small to skip to a specific song!' }) ] }
     }
-    info.queueManager.skipTo(interaction.options.getInteger('index') ?? new Fuse(info.queueManager.getFlatQueue(), { keys: [ 'title' ] }).search(interaction.options.getString('title'))[0].refIndex + 1)
+    await info.queueManager.skipTo(interaction.options.getInteger('index') ?? new Fuse(info.queueManager.getFlatQueue(), { keys: [ 'title' ] }).search(interaction.options.getString('title'))[0].refIndex + 1)
     return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
-function suggestions(name: string, value: string, info: GuildInfo): ApplicationCommandOptionChoice[] {
-    const results = new Fuse(info.queueManager.getFlatQueue(), { keys: [ 'title' ] }).search(value)
+function suggestions(option: ApplicationCommandOptionChoice, info: GuildInfo): ApplicationCommandOptionChoice[] {
+    const results = new Fuse(info.queueManager.getFlatQueue(), { keys: [ 'title' ] }).search(<string> option.value)
     const options: ApplicationCommandOptionChoice[] = []
     for (const result of results) {
         if (options.length > 3) {

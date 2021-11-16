@@ -10,7 +10,7 @@ const data: ApplicationCommandData = {
 
 async function queue(interaction: CommandInteraction, info: GuildInfo, queueArray: QueueItem[][] = null, button: ButtonInteraction = null, i = 0): Promise<void> {
     if (!queueArray) {
-        queueArray = info.queueManager.getQueue()
+        queueArray = await info.queueManager.getQueue()
         if (!queueArray) {
             interaction.editReply({ content: 'There is no queue!' })
             return

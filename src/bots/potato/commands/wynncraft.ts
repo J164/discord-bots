@@ -1,5 +1,5 @@
-import axios from 'axios'
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { request } from 'undici'
 import { generateEmbed } from '../../../core/utils/commonFunctions'
 
 interface WynncraftData {
@@ -35,7 +35,7 @@ const data: ApplicationCommandData = {
 }
 
 async function wynncraft(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
-    const playerData = <WynncraftData> (await axios.get(`https://api.wynncraft.com/v2/player/${interaction.options.getString('player')}/stats`)).data
+    const playerData = <WynncraftData> await (await request(`https://api.wynncraft.com/v2/player/${interaction.options.getString('player')}/stats`)).body.json()
     let status
     const embedVar = generateEmbed('info', { title: playerData.data[0].username })
     if (playerData.data[0].meta.location.online) {
