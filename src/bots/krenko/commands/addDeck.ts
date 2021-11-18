@@ -15,6 +15,10 @@ const data: ApplicationCommandData = {
 }
 
 async function addDeck(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+    if (interaction.member.user.id !== process.env.admin || interaction.member.user.id !== process.env.swear || interaction.member.user.id !== process.env.magic) {
+        return { embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] }
+    }
+
     let apiUrl: string
     let name: string
     try {
