@@ -15,7 +15,8 @@ const bots = new Collection<string, BotSubprocess>([
     [ 'potato', new BotSubprocess('./dist/bots/potato/potato.js', 'Potato Bot', config) ],
     [ 'krenko', new BotSubprocess('./dist/bots/krenko/krenko.js', 'Krenko Bot', config) ],
     [ 'swear', new BotSubprocess('./dist/bots/swear/swear.js', 'Swear Bot', config) ],
-    [ 'yeet', new BotSubprocess('./dist/bots/yeet/yeet.js', 'Yeet Bot', config) ]
+    [ 'yeet', new BotSubprocess('./dist/bots/yeet/yeet.js', 'Yeet Bot', config) ],
+    [ 'crystal', new BotSubprocess('./dist/bots/crystal/crystal.js', 'Crystal Bot', config) ]
 ])
 
 const consoleInterface = createInterface({

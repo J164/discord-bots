@@ -44,9 +44,9 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
             return { embeds: [ generateEmbed('error', { title: `No results found for "${arg}"` }) ] }
         }
         url = (<ytsr.Video> term.items.filter(result => result.type === 'video')[0]).url
-    } else {
-        url = arg
     }
+
+    url ??= arg
 
     if (url.indexOf('list=') !== -1) {
         try {
@@ -79,7 +79,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
 
 async function search(option: ApplicationCommandOptionChoice): Promise<ApplicationCommandOptionChoice[]> {
     if ((<string> option.value).length < 3 || (<string> option.value).match(/(\.|^|\W)(youtube\.com|youtu\.be)\//)) {
-        return null
+        return
     }
     const results = await ytsr(<string> option.value, {
         limit: 5
