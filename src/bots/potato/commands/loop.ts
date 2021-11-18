@@ -21,7 +21,7 @@ const data: ApplicationCommandData = {
 function loop(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (interaction.options.getSubcommand() === 'current') {
         return info.queueManager.loopSong()
-    } //test
+    }
     return info.queueManager.loopQueue()
 }
 

@@ -68,15 +68,23 @@ client.on('messageCreate', message => {
 })
 
 client.on('interactionCreate', async interaction => {
+    if (!guildStatus.has(interaction.guildId)) {
+        guildStatus.set(interaction.guildId, new GuildInputManager(commands))
+    }
+
+    if (interaction.isAutocomplete()) {
+        const response = await guildStatus.get(interaction.guildId).autocomplete(interaction)
+        if (!interaction.responded) {
+            interaction.respond(response)
+        }
+        return
+    }
+
     if (!interaction.isCommand()) {
         return
     }
 
-    if (!guildStatus.has(interaction.guild.id)) {
-        guildStatus.set(interaction.guild.id, new GuildInputManager(commands))
-    }
-
-    const response = await guildStatus.get(interaction.guild.id).parseCommand(interaction)
+    const response = await guildStatus.get(interaction.guildId).parseCommand(interaction)
     if (response) {
         interaction.editReply(response)
     }
@@ -86,7 +94,7 @@ process.on('message', arg => {
     switch (arg) {
         case 'stop':
             client.destroy()
-            console.log('\x1b[41m', 'Yeet Bot has been logged out', '\x1b[0m')
+            console.log('\x1b[41m', `${client.user.tag} has been logged out`, '\x1b[0m')
             process.send('stop')
             process.exit()
             break

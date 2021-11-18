@@ -86,30 +86,28 @@ export class QueueManager {
         }
 
         this.nowPlaying = song
-        if (!song.looping) {
-            this.boundChannel.send({ embeds: [ this.nowPlaying.generateEmbed() ] })
-        }
+
         this.voiceManager.player.on('stateChange', async (oldState, newState) => {
             if (newState.status !== AudioPlayerStatus.Idle) {
                 return
             }
             this.voiceManager.player.removeAllListeners('stateChange')
 
-            const endSong = async (): Promise<void> => {
-                if (this.queueLock) {
-                    await setTimeout(200)
-                    return endSong()
-                }
-                this.queueLock = true
-                if (this.queueLoop) {
-                    this.queue.push(song)
-                } else if (song.looping) {
-                    this.queue.unshift(song)
-                }
-                this.queueLock = false
-            }
-
             if (this.queueLoop || song.looping) {
+                const endSong = async (): Promise<void> => {
+                    if (this.queueLock) {
+                        await setTimeout(200)
+                        return endSong()
+                    }
+                    this.queueLock = true
+                    if (this.queueLoop) {
+                        this.queue.push(song)
+                    } else if (song.looping) {
+                        this.queue.unshift(song)
+                    }
+                    this.queueLock = false
+                }
+
                 await endSong()
             }
 

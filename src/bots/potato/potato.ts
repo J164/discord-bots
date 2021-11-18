@@ -84,7 +84,7 @@ process.on('message', arg => {
     switch (arg) {
         case 'stop':
             client.destroy()
-            console.log('\x1b[41m', 'Potato Bot has been logged out', '\x1b[0m')
+            console.log('\x1b[41m', `${client.user.tag} has been logged out`, '\x1b[0m')
             process.send('stop')
             process.exit()
             break

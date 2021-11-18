@@ -5,7 +5,7 @@ import { GuildInfo } from '../../../core/utils/interfaces'
 import { QueueItem } from '../../../core/voice/QueueItem'
 
 const data: ApplicationCommandData = {
-    name: 'playlist',
+    name: 'featured',
     description: 'Play a song from the list of featured playlists',
     options: [
         {
@@ -41,7 +41,7 @@ const data: ApplicationCommandData = {
     ]
 }
 
-async function playlist(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+async function featured(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
     const member = await interaction.guild.members.fetch(interaction.user)
     const voiceChannel = member.voice.channel
     if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
@@ -60,4 +60,4 @@ async function playlist(interaction: CommandInteraction, info: GuildInfo): Promi
     return { embeds: [ generateEmbed('success', { title: 'Added to queue!' }) ] }
 }
 
-module.exports = { data: data, execute: playlist }
+module.exports = { data: data, execute: featured }
