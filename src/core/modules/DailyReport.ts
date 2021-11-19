@@ -3,34 +3,28 @@ import { request } from 'undici'
 import { generateEmbed } from '../utils/commonFunctions'
 
 interface QuoteResponse {
-    readonly data: {
-        readonly contents: {
-            readonly quotes: readonly {
-                readonly quote: string,
-                readonly author: string
-            }[]
-        }
+    readonly contents: {
+        readonly quotes: readonly {
+            readonly quote: string,
+            readonly author: string
+        }[]
     }
 }
 
-interface HolidayResponse {
-    readonly data: readonly {
-        readonly name: string,
-        readonly description: string
-    }[]
+interface Holidays {
+    readonly name: string,
+    readonly description: string
 }
 
 interface WeatherResponse {
-    readonly data: {
-        readonly current: {
-            readonly temp_f: number,
-            readonly condition: {
-                readonly text: string,
-                readonly code: number
-            },
-            readonly wind_mph: number,
-            readonly feelslike_f: number
-        }
+    readonly current: {
+        readonly temp_f: number,
+        readonly condition: {
+            readonly text: string,
+            readonly code: number
+        },
+        readonly wind_mph: number,
+        readonly feelslike_f: number
     }
 }
 
@@ -123,7 +117,7 @@ function getWeatherEmoji(weatherCode: number): string {
         case 1030:
         case 1135:
         case 1147:
-            return '\u1F32B'
+            return '\uD83C\uDF2B\uFE0F'
         case 1063:
         case 1072:
         case 1150:
@@ -141,7 +135,7 @@ function getWeatherEmoji(weatherCode: number): string {
         case 1240:
         case 1243:
         case 1246:
-            return '\u1F327'
+            return '\uD83C\uDF27\uFE0F'
         case 1066:
         case 1114:
         case 1117:
@@ -161,13 +155,13 @@ function getWeatherEmoji(weatherCode: number): string {
         case 1252:
         case 1261:
         case 1264:
-            return '\u1F328'
+            return '\uD83C\uDF28\uFE0F'
         case 1087:
         case 1273:
         case 1276:
         case 1279:
         case 1282:
-            return '\u1F329'
+            return '\uD83C\uDF29\uFE0F'
         default:
             return '\u2753'
     }
@@ -175,28 +169,28 @@ function getWeatherEmoji(weatherCode: number): string {
 
 export async function getDailyReport(date: Date): Promise<MessageOptions> {
     //meme of day
-    const holiday: HolidayResponse = await (await request(`https://holidays.abstractapi.com/v1/?api_key=${process.env.abstractKey}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)).body.json()
+    const holiday: Holidays[] = await (await request(`https://holidays.abstractapi.com/v1/?api_key=${process.env.abstractKey}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)).body.json()
     const weather: WeatherResponse = await (await request(`http://api.weatherapi.com/v1/current.json?key=${process.env.weatherKey}&q=60069`)).body.json()
     const quote: QuoteResponse = await (await request(`http://quotes.rest/qod.json?category=inspire`)).body.json()
     const stringDate = getStringDate(date)
-    const weatherEmoji = getWeatherEmoji(weather.data.current.condition.code)
+    const weatherEmoji = getWeatherEmoji(weather.current.condition.code)
     const response = { embeds: [ generateEmbed('info', {
-        title: `Daily Report: ${stringDate} ${weatherEmoji}`,
+        title: `Daily Report: ${stringDate}\t${weatherEmoji}`,
         fields: [
             {
                 name: `Quote of the Day:`,
-                value: `"${quote.data.contents.quotes[0].quote}" -${quote.data.contents.quotes[0].author}`,
+                value: `"${quote.contents.quotes[0].quote}" -${quote.contents.quotes[0].author}`,
                 inline: false
             },
             {
-                name: `In Linconshire is is ${weather.data.current.condition.text} and ${weather.data.current.temp_f}°F`,
-                value: `It feels like ${weather.data.current.feelslike_f}°F and the wind speed is ${weather.data.current.wind_mph} mph`,
+                name: `In Linconshire is is ${weather.current.condition.text} and ${weather.current.temp_f}°F`,
+                value: `It feels like ${weather.current.feelslike_f}°F and the wind speed is ${weather.current.wind_mph} mph`,
                 inline: false
             }
         ]
     }) ] }
-    if (holiday.data.length > 0) {
-        response.embeds[0].addField(`Today is ${holiday.data[0].name}`, 'Have a great day!', false)
+    if (holiday.length > 0) {
+        response.embeds[0].addField(`Today is ${holiday[0].name}`, 'Have a great day!', false)
     }
     return response
 }
