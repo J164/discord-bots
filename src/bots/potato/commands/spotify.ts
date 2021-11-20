@@ -3,8 +3,7 @@ import { request } from 'undici'
 import ytdl from 'ytdl-core'
 import ytsr from 'ytsr'
 import { generateEmbed } from '../../../core/utils/commonFunctions'
-import { QueueItem } from '../../../core/voice/QueueItem'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { GuildInfo, QueueItem } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'spotify',
@@ -85,7 +84,7 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo): Promis
 
     for (const url of urls) {
         const output = await ytdl.getInfo(url)
-        items.push(new QueueItem(output.videoDetails.video_url, output.videoDetails.title, output.videoDetails.thumbnails[0].url, new Number(output.videoDetails.lengthSeconds).valueOf()))
+        items.push({ url: output.videoDetails.video_url, title: output.videoDetails.title, thumbnail: output.videoDetails.thumbnails[0].url, duration: new Number(output.videoDetails.lengthSeconds).valueOf() })
     }
 
     await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)

@@ -13,6 +13,14 @@ export interface GuildInfo {
     readonly games: Map<Snowflake, BaseGame>
 }
 
+export interface QueueItem {
+    readonly url: string
+    readonly title: string
+    readonly thumbnail: string
+    readonly duration: number
+    looping?: boolean
+}
+
 export interface Command {
     readonly data: ApplicationCommandData
     readonly execute: (interaction: CommandInteraction, info: GuildInfo) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void

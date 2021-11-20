@@ -1,8 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
 import ytpl from 'ytpl'
 import { generateEmbed } from '../../../core/utils/commonFunctions'
-import { GuildInfo } from '../../../core/utils/interfaces'
-import { QueueItem } from '../../../core/voice/QueueItem'
+import { GuildInfo, QueueItem } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {
     name: 'featured',
@@ -48,9 +47,9 @@ async function featured(interaction: CommandInteraction, info: GuildInfo): Promi
         return { embeds: [ generateEmbed('error', { title: 'This command can only be used while in a visable voice channel!' }) ] }
     }
     const output = await ytpl(interaction.options.getString('name'))
-    const items = []
+    const items: QueueItem[] = []
     for (const song of output.items) {
-        items.push(new QueueItem(song.url, song.title, song.bestThumbnail.url, song.durationSec))
+        items.push({ url: song.url, title: song.title, thumbnail: song.bestThumbnail.url, duration: song.durationSec })
     }
     await info.queueManager.addToQueue(items, interaction.options.getNumber('position') - 1)
     info.queueManager.bindChannel(<TextChannel> interaction.channel)

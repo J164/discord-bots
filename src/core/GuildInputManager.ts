@@ -43,8 +43,12 @@ export class GuildInputManager {
     }
 
     public statusCheck(): void {
-        this.info.voiceManager?.checkIsIdle()
-        this.info.queueManager?.voiceManager.checkIsIdle()
+        if (this.info.voiceManager?.checkIsIdle()) {
+            this.info.voiceManager.reset()
+        }
+        if (this.info.queueManager?.checkIsIdle()) {
+            this.info.queueManager.reset()
+        }
         for (const [ id, game ] of this.info.games) {
             if (game.isOver()) {
                 this.info.games.delete(id)

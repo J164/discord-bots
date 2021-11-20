@@ -1,8 +1,7 @@
 import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, TextChannel, VoiceChannel } from 'discord.js'
 import ytdl from 'ytdl-core'
 import ytpl from 'ytpl'
-import { GuildInfo } from '../../../core/utils/interfaces'
-import { QueueItem } from '../../../core/voice/QueueItem'
+import { GuildInfo, QueueItem } from '../../../core/utils/interfaces'
 import ytsr from 'ytsr'
 import { generateEmbed } from '../../../core/utils/commonFunctions'
 import { request } from 'undici'
@@ -73,7 +72,7 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo, voiceCh
 
     for (const url of urls) {
         const output = await ytdl.getInfo(url)
-        items.push(new QueueItem(output.videoDetails.video_url, output.videoDetails.title, output.videoDetails.thumbnails[0].url, new Number(output.videoDetails.lengthSeconds).valueOf()))
+        items.push({ url: output.videoDetails.video_url, title: output.videoDetails.title, thumbnail: output.videoDetails.thumbnails[0].url, duration: new Number(output.videoDetails.lengthSeconds).valueOf() })
     }
 
     await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
@@ -107,7 +106,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         return spotify(interaction, info, voiceChannel)
     }
 
-    if (!arg.match(/^(https:\/\/www\.|www\.)?(youtube\.com|youtu\.be)\//)) {
+    if (!arg.match(/^(https:\/\/)?(www\.)?(youtube\.com|youtu.be)\//)) {
         const term = await ytsr(arg, {
             limit: 5
         })
@@ -124,7 +123,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
             const playlist = await ytpl(`https://youtube.com/playlist?list=${url.substr(url.indexOf('list=') + 5)}`)
             const items = []
             for (const song of playlist.items) {
-                items.push(new QueueItem(song.url, song.title, song.bestThumbnail.url, song.durationSec))
+                items.push({ url: song.url, title: song.title, thumbnail: song.bestThumbnail.url, duration: song.durationSec })
             }
             await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
         } catch (err) {
@@ -134,7 +133,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     } else {
         try {
             const output = await ytdl.getInfo(url)
-            await info.queueManager.addToQueue([ new QueueItem(output.videoDetails.video_url, output.videoDetails.title, output.videoDetails.thumbnails[0].url, new Number(output.videoDetails.lengthSeconds).valueOf()) ], interaction.options.getInteger('position') - 1)
+            await info.queueManager.addToQueue([ { url: output.videoDetails.video_url, title: output.videoDetails.title, thumbnail: output.videoDetails.thumbnails[0].url, duration: new Number(output.videoDetails.lengthSeconds).valueOf() } ], interaction.options.getInteger('position') - 1)
         } catch (err) {
             console.warn(err)
             return { embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] }
@@ -149,7 +148,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
 }
 
 async function search(option: ApplicationCommandOptionChoice): Promise<ApplicationCommandOptionChoice[]> {
-    if ((<string> option.value).length < 3 || (<string> option.value).match(/^(https:\/\/www\.|www\.)?(youtube\.com|youtu\.be)\//) || (<string> option.value).match(/^(https:\/\/)*open.spotify.com\/playlist\//)) {
+    if ((<string> option.value).length < 3 || (<string> option.value).match(/^(https:\/\/)?(www\.)?(youtube\.com|youtu.be)\//) || (<string> option.value).match(/^(https:\/\/)*open.spotify.com\/playlist\//)) {
         return
     }
     const results = await ytsr(<string> option.value, {

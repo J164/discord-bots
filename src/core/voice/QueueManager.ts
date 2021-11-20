@@ -1,10 +1,10 @@
 import { InteractionReplyOptions, TextChannel, VoiceChannel } from 'discord.js'
 import { VoiceManager } from './VoiceManager'
-import { QueueItem } from './QueueItem'
 import ytdl from 'ytdl-core'
 import { AudioPlayerStatus } from '@discordjs/voice'
 import { generateEmbed } from '../utils/commonFunctions'
 import { setTimeout } from 'timers/promises'
+import { QueueItem } from '../utils/interfaces'
 
 export class QueueManager {
 
@@ -14,12 +14,14 @@ export class QueueManager {
     private nowPlaying: QueueItem
     private queueLoop: boolean
     private queueLock: boolean
+    private transitioning: boolean
 
     public constructor() {
         this.voiceManager = new VoiceManager()
         this.queue = []
         this.queueLoop = false
         this.queueLock = false
+        this.transitioning = false
     }
 
     public async addToQueue(items: QueueItem[], position: number): Promise<void> {
@@ -44,6 +46,7 @@ export class QueueManager {
     }
 
     public async connect(voiceChannel: VoiceChannel): Promise<boolean> {
+        this.transitioning = true
         if (!await this.voiceManager.connect(voiceChannel)) {
             return false
         }
@@ -63,6 +66,7 @@ export class QueueManager {
 
     private async playSong(): Promise<void> {
         if (this.queue.length < 1) {
+            this.transitioning = false
             return
         }
 
@@ -85,6 +89,7 @@ export class QueueManager {
             return this.playSong()
         }
 
+        this.transitioning = false
         this.nowPlaying = song
 
         this.voiceManager.player.on('stateChange', async (oldState, newState) => {
@@ -92,6 +97,8 @@ export class QueueManager {
                 return
             }
             this.voiceManager.player.removeAllListeners('stateChange')
+
+            this.transitioning = true
 
             if (this.queueLoop || song.looping) {
                 const endSong = async (): Promise<void> => {
@@ -133,7 +140,12 @@ export class QueueManager {
         if (!this.voiceManager.isActive()) {
             return { embeds: [ generateEmbed('error', { title: 'Nothing is playing!' }) ] }
         }
-        return this.nowPlaying.loop()
+        if (this.nowPlaying.looping) {
+            this.nowPlaying.looping = false
+            return { embeds: [ generateEmbed('success', { title: 'No longer looping' }) ] }
+        }
+        this.nowPlaying.looping = true
+        return { embeds: [ generateEmbed('success', { title: 'Now Looping' }) ] }
     }
 
     public loopQueue(): InteractionReplyOptions {
@@ -184,7 +196,30 @@ export class QueueManager {
         if (!this.nowPlaying) {
             return { embeds: [ generateEmbed('error', { title: 'Nothing has played yet!' }) ] }
         }
-        return { embeds: [ this.nowPlaying.generateEmbed() ] }
+        let hour = Math.floor(this.nowPlaying.duration / 3600).toString()
+        let min = Math.floor((this.nowPlaying.duration % 3600) / 60).toString()
+        let sec = (this.nowPlaying.duration % 60).toString()
+        if (hour.length < 2) {
+            hour = `0${hour}`
+        }
+        if (min.length < 2) {
+            min = `0${min}`
+        }
+        if (sec.length < 2) {
+            sec = `0${sec}`
+        }
+        const embed = generateEmbed('info', {
+            title: `Now Playing: ${this.nowPlaying.title} (${hour}:${min}:${sec})`,
+            fields: [ {
+                name: 'URL:',
+                value: this.nowPlaying.url
+            } ],
+            image: { url: this.nowPlaying.thumbnail }
+        })
+        if (this.nowPlaying.looping) {
+            embed.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png')
+        }
+        return { embeds: [ embed ] }
     }
 
     public async getQueue(): Promise<QueueItem[][]> {
@@ -225,11 +260,16 @@ export class QueueManager {
         return this.queueLoop
     }
 
+    public checkIsIdle(): boolean {
+        return this.voiceManager.checkIsIdle() && !this.transitioning
+    }
+
     public reset(): void {
         this.voiceManager.reset()
         this.queue = []
         this.boundChannel = null
         this.nowPlaying = null
         this.queueLoop = false
+        this.transitioning = false
     }
 }

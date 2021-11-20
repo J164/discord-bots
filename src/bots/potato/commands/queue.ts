@@ -1,6 +1,5 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
-import { QueueItem } from '../../../core/voice/QueueItem'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { GuildInfo, QueueItem } from '../../../core/utils/interfaces'
 import { generateEmbed } from '../../../core/utils/commonFunctions'
 
 const data: ApplicationCommandData = {

@@ -58,10 +58,8 @@ export class VoiceManager {
         return this.player?.state.status === AudioPlayerStatus.Playing || this.player?.state.status === AudioPlayerStatus.Paused
     }
 
-    public checkIsIdle(): void {
-        if (this.player?.state.status === AudioPlayerStatus.Idle || this.voiceChannel?.members.size <= 1) {
-            this.reset()
-        }
+    public checkIsIdle(): boolean {
+        return this.player?.state.status === AudioPlayerStatus.Idle || this.voiceChannel?.members.size <= 1
     }
 
     public reset(): void {
