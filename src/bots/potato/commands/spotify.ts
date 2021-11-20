@@ -40,6 +40,8 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo): Promis
         return { embeds: [ generateEmbed('error', { title: 'Please enter a Spotify playlist url!' }) ] }
     }
 
+    interaction.channel.send({ embeds: [ generateEmbed('info', { title: 'This command is deprecated! (Please use \'play\' instead)' }) ] })
+
     const member = await interaction.guild.members.fetch(interaction.user)
     const voiceChannel = member.voice.channel
     if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
