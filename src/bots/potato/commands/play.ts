@@ -102,11 +102,11 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
 
     let url: string
 
-    if (arg.match(/^(https:\/\/)*open.spotify.com\/playlist\//)) {
+    if (arg.match(/^(https:\/\/)?open\.spotify\.com\/playlist\//)) {
         return spotify(interaction, info, voiceChannel)
     }
 
-    if (!arg.match(/^(https:\/\/)?(www\.)?(youtube\.com|youtu.be)\//)) {
+    if (!arg.match(/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//)) {
         const term = await ytsr(arg, {
             limit: 5
         })
@@ -148,7 +148,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
 }
 
 async function search(option: ApplicationCommandOptionChoice): Promise<ApplicationCommandOptionChoice[]> {
-    if ((<string> option.value).length < 3 || (<string> option.value).match(/^(https:\/\/)?(www\.)?(youtube\.com|youtu.be)\//) || (<string> option.value).match(/^(https:\/\/)*open.spotify.com\/playlist\//)) {
+    if ((<string> option.value).length < 3 || (<string> option.value).match(/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//) || (<string> option.value).match(/^(https:\/\/)?open\.spotify\.com\/playlist\//)) {
         return
     }
     const results = await ytsr(<string> option.value, {
