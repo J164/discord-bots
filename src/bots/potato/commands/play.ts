@@ -151,9 +151,7 @@ async function search(option: ApplicationCommandOptionChoice): Promise<Applicati
     if ((<string> option.value).length < 3 || (<string> option.value).match(/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//) || (<string> option.value).match(/^(https:\/\/)?open\.spotify\.com\/playlist\//)) {
         return
     }
-    const results = await ytsr(<string> option.value, {
-        limit: 5
-    })
+    const results = await ytsr(<string> option.value, { limit: 5 }).catch((): { items: [] } => { return { items: [] } })
     const options: ApplicationCommandOptionChoice[] = []
     for (const result of results.items) {
         if (options.length > 3) {

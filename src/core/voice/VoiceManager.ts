@@ -58,7 +58,7 @@ export class VoiceManager {
         return this.player?.state.status === AudioPlayerStatus.Playing || this.player?.state.status === AudioPlayerStatus.Paused
     }
 
-    public checkIsIdle(): boolean {
+    public isIdle(): boolean {
         return this.player?.state.status === AudioPlayerStatus.Idle || this.voiceChannel?.members.size <= 1
     }
 

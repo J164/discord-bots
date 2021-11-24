@@ -22,6 +22,15 @@ export class QueueManager {
         this.queueLoop = false
         this.queueLock = false
         this.transitioning = false
+        process.on('unhandledRejection', (error: Error) => {
+            if (error.message === 'Status code: 403') {
+                this.transitioning = true
+                this.boundChannel?.send({ embeds: [ generateEmbed('error', { title: 'Something went wrong! Trying again...' }) ] })
+                this.voiceManager.player.removeAllListeners('stateChange')
+                this.queue.unshift(this.nowPlaying)
+                this.playSong()
+            }
+        })
     }
 
     public async addToQueue(items: QueueItem[], position: number): Promise<void> {
@@ -76,21 +85,15 @@ export class QueueManager {
         }
 
         this.queueLock = true
-        const song = this.queue.shift()
+        this.nowPlaying = this.queue.shift()
         this.queueLock = false
 
-        const success = await this.voiceManager.playStream(ytdl(song.url, {
-            filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus',
-            highWaterMark: 52428800
-        }))
-
-        if (!success) {
+        if (!await this.voiceManager.playStream(ytdl(this.nowPlaying.url, { filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus', highWaterMark: 52428800 }))) {
             this.boundChannel.send({ embeds: [ generateEmbed('error', { title: 'Something went wrong while preparing song'}) ] })
             return this.playSong()
         }
 
         this.transitioning = false
-        this.nowPlaying = song
 
         this.voiceManager.player.on('stateChange', async (oldState, newState) => {
             if (newState.status !== AudioPlayerStatus.Idle) {
@@ -100,7 +103,7 @@ export class QueueManager {
 
             this.transitioning = true
 
-            if (this.queueLoop || song.looping) {
+            if (this.queueLoop || this.nowPlaying.looping) {
                 const endSong = async (): Promise<void> => {
                     if (this.queueLock) {
                         await setTimeout(200)
@@ -108,9 +111,9 @@ export class QueueManager {
                     }
                     this.queueLock = true
                     if (this.queueLoop) {
-                        this.queue.push(song)
-                    } else if (song.looping) {
-                        this.queue.unshift(song)
+                        this.queue.push(this.nowPlaying)
+                    } else if (this.nowPlaying.looping) {
+                        this.queue.unshift(this.nowPlaying)
                     }
                     this.queueLock = false
                 }
@@ -260,8 +263,8 @@ export class QueueManager {
         return this.queueLoop
     }
 
-    public checkIsIdle(): boolean {
-        return this.voiceManager.checkIsIdle() && !this.transitioning
+    public isIdle(): boolean {
+        return this.voiceManager.isIdle() && !this.transitioning
     }
 
     public reset(): void {

@@ -43,10 +43,10 @@ export class GuildInputManager {
     }
 
     public statusCheck(): void {
-        if (this.info.voiceManager?.checkIsIdle()) {
+        if (this.info.voiceManager?.isIdle()) {
             this.info.voiceManager.reset()
         }
-        if (this.info.queueManager?.checkIsIdle()) {
+        if (this.info.queueManager?.isIdle()) {
             this.info.queueManager.reset()
         }
         for (const [ id, game ] of this.info.games) {
