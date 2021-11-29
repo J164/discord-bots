@@ -10,7 +10,7 @@ interface MagicPlayer {
     commanderDamage?: Map<string, number>
 }
 
-export class BaseMagicGame extends BaseGame {
+export class MagicGame extends BaseGame {
 
     protected readonly playerData: Collection<Snowflake, MagicPlayer>
 

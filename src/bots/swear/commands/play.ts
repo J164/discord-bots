@@ -12,6 +12,7 @@ const data: ApplicationCommandData = {
             description: 'The song number',
             type: 'INTEGER',
             required: false
+            // todo min/max
         }
     ]
 }

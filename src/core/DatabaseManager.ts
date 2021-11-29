@@ -2,6 +2,8 @@ import { createPool, Pool } from 'mysql'
 
 export class DatabaseManager {
 
+    // todo sanitize inputs
+
     private connection: Pool
 
     public constructor() {

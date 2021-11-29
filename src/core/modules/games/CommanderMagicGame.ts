@@ -1,7 +1,7 @@
 import { MessageEmbed, Snowflake, ThreadChannel, User } from 'discord.js'
-import { BaseMagicGame } from './BaseMagicGame'
+import { MagicGame } from './MagicGame'
 
-export class CommanderMagicGame extends BaseMagicGame {
+export class CommanderMagicGame extends MagicGame {
 
     public readonly commanderList: string[]
 

@@ -73,7 +73,7 @@ export class Euchre extends BaseCardGame {
             const channel = await this.players[index].user.createDM()
             await channel.send({ embeds: [ generateEmbed('prompt', { title: 'Would you like to go alone?' }) ], components: [ options ] })
             const filter: CollectorFilter<[ButtonInteraction]> = b => b.customId.startsWith('three-')
-            const collector = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'BUTTON', max: 1 })
+            const collector = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'BUTTON', max: 1 }) // fixme timeouts
             collector.once('collect', interaction => {
                 interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [] })
                 if (interaction.customId === 'three-yes') {
@@ -96,8 +96,8 @@ export class Euchre extends BaseCardGame {
                 await channel.send({ embeds: embeds, files: files, components: [ options1, options2 ] })
             }
             const filter: CollectorFilter<[ButtonInteraction | SelectMenuInteraction]> = b => b.customId.startsWith('two-')
-            const collector1 = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'SELECT_MENU', max: 1 })
-            const collector2 = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'BUTTON', max: 1 })
+            const collector1 = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'SELECT_MENU', max: 1 }) // fixme timeouts
+            const collector2 = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'BUTTON', max: 1 }) // fixme timeouts
             collector1.once('collect', interaction => {
                 collector2.stop()
                 collector2.removeAllListeners()
@@ -123,7 +123,7 @@ export class Euchre extends BaseCardGame {
             const { embeds, files } = await this.multicardMessage(this.players[3].hand, 'prompt', { title: 'Select a card to replace' })
             await channel.send({ embeds: embeds, files: files, components: [ options ] })
             const filter: CollectorFilter<[SelectMenuInteraction]> = b => b.customId === 'replace'
-            const collector = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'SELECT_MENU', max: 1 })
+            const collector = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'SELECT_MENU', max: 1 }) // fixme timeouts
             collector.once('collect', interaction => {
                 interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
                 this.players[3].hand.splice(new Number(interaction.values[0]).valueOf(), 1, top)
@@ -141,7 +141,7 @@ export class Euchre extends BaseCardGame {
                 await channel.send({ embeds: [ generateEmbed('prompt', { title: `Would you like to pass or have ${this.players[3].user.username} pick it up?`, image: { url: top.image } }) ], components: [ options ] })
             }
             const filter: CollectorFilter<[ButtonInteraction]> = b => b.customId.startsWith('one-')
-            const collector = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'BUTTON', max: 1 })
+            const collector = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'BUTTON', max: 1 }) // fixme timeouts
             collector.once('collect', interaction => {
                 interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [] })
                 if (interaction.customId === 'one-pass') {
@@ -180,7 +180,7 @@ export class Euchre extends BaseCardGame {
         const { embeds, files } = await this.multicardMessage(this.players[index].hand, 'prompt', { title: 'Select a card to play' })
         await channel.send({ embeds: embeds, files: files, components: [ options ] })
         const filter: CollectorFilter<[SelectMenuInteraction]> = b => b.customId.startsWith('play')
-        const collector = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'SELECT_MENU', max: 1 })
+        const collector = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'SELECT_MENU', max: 1 }) // fixme timeouts
         collector.once('collect', interaction => {
             interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
             table.push(interaction.values[0])

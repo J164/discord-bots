@@ -20,6 +20,7 @@
             "error",
             "never"
         ],
+	"no-warning-comments": "warn",
 	"no-case-declarations": "warn",
     "@typescript-eslint/no-var-requires": "warn",
 	"no-unsafe-optional-chaining": "error",

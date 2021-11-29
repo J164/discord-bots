@@ -50,6 +50,7 @@ client.on('messageCreate', message => {
 
     const input = message.content.toLowerCase()
     if (input.match(/(\W|^)yee+t(\W|$)/)) {
+        // todo yeetstreaks
         /*const date = new Date()
         let streak: number
         if (!yeetStreaks.has(message.author.id)) {

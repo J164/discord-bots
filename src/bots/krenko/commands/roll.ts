@@ -9,6 +9,7 @@ const data: ApplicationCommandData = {
         description: 'How many sides on the die (defaults to 6)',
         type: 'INTEGER',
         required: false
+        // todo min/max
     } ]
 }
 

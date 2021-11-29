@@ -23,6 +23,7 @@ export class QueueManager {
         this.queueLock = false
         this.transitioning = false
         process.on('unhandledRejection', (error: Error) => {
+            // fixme 403
             if (error.message === 'Status code: 403') {
                 this.transitioning = true
                 this.boundChannel?.send({ embeds: [ generateEmbed('error', { title: 'Something went wrong! Trying again...' }) ] })

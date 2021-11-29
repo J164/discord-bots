@@ -1,5 +1,5 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
-import { BaseMagicGame } from '../../../core/modules/games/BaseMagicGame'
+import { MagicGame } from '../../../core/modules/games/MagicGame'
 import { CommanderMagicGame } from '../../../core/modules/games/CommanderMagicGame'
 import { generateEmbed } from '../../../core/utils/commonFunctions'
 import { GuildInfo } from '../../../core/utils/interfaces'
@@ -129,8 +129,8 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     }
     if (interaction.options.getSubcommand() === 'basic') {
         const thread = await channel.threads.create({ name: interaction.options.getString('name'), autoArchiveDuration: 60 })
-        info.games.set(thread.id, new BaseMagicGame(playerlist, thread))
-        thread.send({ embeds: [ (<BaseMagicGame> info.games.get(thread.id)).printStandings() ] })
+        info.games.set(thread.id, new MagicGame(playerlist, thread))
+        thread.send({ embeds: [ (<MagicGame> info.games.get(thread.id)).printStandings() ] })
         return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
     }
     const commanders: string[] = []

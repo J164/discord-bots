@@ -61,6 +61,7 @@ const data: ApplicationCommandData = {
 }
 
 async function euchre(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+    // todo test
     const channel = await interaction.guild.channels.fetch(interaction.channelId)
     for (const [ , game ] of info.games) {
         if (game.getThreadName() === interaction.options.getString('name')) {
