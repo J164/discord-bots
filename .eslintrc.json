@@ -24,7 +24,6 @@
     "@typescript-eslint/no-var-requires": "warn",
 	"no-unsafe-optional-chaining": "error",
 	"complexity": ["warn", 15],
-	"default-case": "error",
 	"default-case-last": "error",
 	"eqeqeq": "error",
 	"no-constructor-return": "error",

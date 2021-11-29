@@ -8,6 +8,5 @@
         "sourceMap": true,
         "esModuleInterop": true
     },
-    "include": ["src/**/*.ts"],
-    "exclude": ["src/core/modules/games/Euchre.ts"]
+    "include": ["src/**/*.ts"]
 }

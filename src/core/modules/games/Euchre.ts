@@ -1,470 +1,376 @@
-/* eslint-disable complexity */
-import { MessageAttachment, MessageEmbed, MessageReaction, User } from 'discord.js'
-import axios from 'axios'
-import { genericEmbed, mergeImages } from '../../utils/commonFunctions'
+import { ButtonInteraction, CollectorFilter, MessageActionRow, MessageButton, MessageSelectMenu, MessageSelectOptionData, SelectMenuInteraction, ThreadChannel, User } from 'discord.js'
+import { generateEmbed } from '../../utils/commonFunctions'
+import { BaseCardGame } from './Util/BaseCardGame'
+import { Card, Deck, Suit } from './Util/Deck'
 
 interface EuchreTeam {
     tricks: number;
     score: number;
-}
-
-interface Card {
-    readonly code: string;
-    readonly suit: string;
-    readonly value: string;
+    name: 'Team 1' | 'Team 2'
 }
 
 interface EuchrePlayer {
-    readonly id: number;
-    readonly user: User;
-    hand: Card[];
-    readonly team: EuchreTeam;
+    hand?: Card[]
+    readonly team: EuchreTeam
+    readonly user: User
+    out: boolean
 }
 
-export class Euchre {
+export class Euchre extends BaseCardGame {
 
-    private team1: EuchreTeam
-    private team2: EuchreTeam
-    private gameState: { top: Card; inPlay: Card[]; trump: string }
-    private players: EuchrePlayer[]
+    private readonly team1: EuchreTeam
+    private readonly team2: EuchreTeam
+    private trump: Suit
+    private readonly players: EuchrePlayer[]
 
-    public constructor(players: User[]) {
-        this.team1 = {
-            tricks: 0,
-            score: 0
-        }
-        this.team2 = {
-            tricks: 0,
-            score: 0
-        }
-        this.players = [ {
-            id: 0,
-            user: players[0],
-            hand: [],
-            team: this.team1
-        },
-        {
-            id: 1,
-            user: players[1],
-            hand: [],
-            team: this.team2
-        },
-        {
-            id: 2,
-            user: players[2],
-            hand: [],
-            team: this.team1
-        },
-        {
-            id: 3,
-            user: players[3],
-            hand: [],
-            team: this.team2
-        } ]
-        this.gameState = {
-            top: null,
-            inPlay: [],
-            trump: ''
-        }
+    public constructor(players: User[], gameChannel: ThreadChannel) {
+        super(gameChannel)
+        this.team1 = { tricks: 0, score: 0, name: 'Team 1' }
+        this.team2 = { tricks: 0, score: 0, name: 'Team 2' }
+        this.players = [ { team: this.team1, user: players[0], out: false }, { team: this.team2, user: players[1], out: false }, { team: this.team1, user: players[2], out: false }, { team: this.team2, user: players[3], out: false } ]
     }
 
-    public async startGame(): Promise<MessageEmbed> {
-        await this.startRound()
-        while (this.team1.score < 10 && this.team2.score < 10) {
-            const newOrder = [ this.players[3], this.players[0], this.players[1], this.players[2] ]
-            this.players = newOrder
-            await this.startRound()
+    public async startRound(): Promise<void> {
+        await this.gameChannel.send({ embeds: [ generateEmbed('info', {
+            title: 'Player Order',
+            fields: [
+                {
+                    name: `1. ${this.players[0].user.username}`,
+                    value: this.players[0].team.name
+                },
+                {
+                    name: `2. ${this.players[1].user.username}`,
+                    value: this.players[1].team.name
+                },
+                {
+                    name: `3. ${this.players[2].user.username}`,
+                    value: this.players[2].team.name
+                },
+                {
+                    name: `4. ${this.players[3].user.username}`,
+                    value: this.players[3].team.name
+                }
+            ]
+        }) ] })
+        const deck = new Deck([ '9S', '9D', '9C', '9H', '0S', '0D', '0C', '0H', 'JS', 'JD', 'JC', 'JH', 'QS', 'QD', 'QC', 'QH', 'KS', 'KD', 'KC', 'KH', 'AS', 'AD', 'AC', 'AH' ])
+        deck.shuffle()
+        const draws = deck.draw(21)
+        for (const [ index, player ] of this.players.entries()) {
+            player.hand = []
+            for (let i = index; i < 17 + index; i += 4) {
+                player.hand.push(draws[i])
+            }
         }
-        const results = genericEmbed({
-            title: 'Game Over!',
-            fields: [ {
-                name: 'Players',
-                value: `${this.players[0].id}, ${this.players[1].id}, ${this.players[2].id}, ${this.players[3].id}`
-            } ]
-        })
-        if (this.team1.score > 10) {
-            results.addField('Team 1 Wins!', `${this.team1.score} - ${this.team2.score}`)
-        } else {
-            results.addField('Team 2 Wins!', `${this.team2.score} - ${this.team1.score}`)
+        const top = draws[20]
+        for (const player of this.players) {
+            const channel = await player.user.createDM()
+            await channel.send(await this.multicardMessage(player.hand, 'info', { title: 'Your Hand:' }))
         }
-        return results
-    }
+        this.gameChannel.send(await this.multicardMessage([ top ], 'info', { title: 'Top of Stack:' }))
 
-    private async startRound(): Promise<void> {
-        let draws
-        let success = false
-        while (!success) {
-            try {
-                // eslint-disable-next-line camelcase
-                const deck = <{ data: { deck_id: string } }> await axios.post('https://deckofcardsapi.com/api/deck/new/shuffle?cards=9S,9D,9C,9H,0S,0D,0C,0H,JS,JD,JC,JH,QS,QD,QC,QH,KS,KD,KC,KH,AS,AD,AC,AH')
-                draws = await axios.post(`https://deckofcardsapi.com/api/deck/${deck.data.deck_id}/draw?count=21`)
-                success = true
-            } catch(err) { console.log(err) }
-        }
-        const output = <{ cards: Card[] }> draws.data
-        this.players[0].hand = [ output.cards[0], output.cards[4], output.cards[8], output.cards[12], output.cards[16] ]
-        this.players[1].hand = [ output.cards[1], output.cards[5], output.cards[9], output.cards[13], output.cards[17] ]
-        this.players[2].hand = [ output.cards[2], output.cards[6], output.cards[10], output.cards[14], output.cards[18] ]
-        this.players[3].hand = [ output.cards[3], output.cards[7], output.cards[11], output.cards[15], output.cards[19] ]
-        this.gameState.top = output.cards[20]
-        for (const player of this.players) {
-            await this.sendHand(player)
-        }
-        await this.sendCards( [ this.gameState.top ], 'Top of Stack:')
-        const playerUsers: EuchrePlayer[] = []
-        for (const player of this.players) {
-            playerUsers.push(player)
-        }
-        for (const player of this.players) {
-            const response = await this.askPlayer(player.user, `Would you like to pass or have ${this.players[3].user.username} pick it up?`, [ 'Pick it up', 'Pass' ])
-            if (response === 0) {
-                this.gameState.trump = this.gameState.top.suit
-                this.players[3].hand[await this.askPlayer(this.players[3].user, 'What card would you like to replace?', this.getCardNames(this.players[3].hand))] = this.gameState.top
-                this.sendHand(this.players[3])
-                if (await this.askPlayer(player.user, 'Would you like to go alone?', [ 'Yes', 'No' ]) === 0) {
-                    switch (player.id) {
-                        case 0:
-                            playerUsers.splice(2, 1)
-                            break
-                        case 1:
-                            playerUsers.splice(3, 1)
-                            break
-                        case 2:
-                            playerUsers.splice(0, 1)
-                            break
-                        case 3:
-                            playerUsers.splice(1, 1)
-                            break
-                        default:
-                            throw Error()
-                    }
-                    await this.tricks(playerUsers, player.team, true)
-                    return
+        const promptThree = async (index: number): Promise<void> => {
+            const options = new MessageActionRow({ components: [ new MessageButton({ customId: 'three-yes', label: 'Yes', style: 'PRIMARY' }), new MessageButton({ customId: 'three-no', label: 'No', style: 'SECONDARY' }) ] })
+            const channel = await this.players[index].user.createDM()
+            await channel.send({ embeds: [ generateEmbed('prompt', { title: 'Would you like to go alone?' }) ], components: [ options ] })
+            const filter: CollectorFilter<[ButtonInteraction]> = b => b.customId.startsWith('three-')
+            const collector = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'BUTTON', max: 1 })
+            collector.once('collect', interaction => {
+                interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [] })
+                if (interaction.customId === 'three-yes') {
+                    this.players.find(player => player.team === this.players[index].team && !player.user.equals(this.players[index].user)).out = true
+                    return this.round(index, true)
                 }
-                await this.tricks(playerUsers, player.team, false)
-                return
-            }
-        }
-        const availableSuits: string[] = [ 'Hearts', 'Diamonds', 'Clubs', 'Spades', 'Pass' ]
-        availableSuits.splice(availableSuits.indexOf(`${this.gameState.top.suit[0]}${this.gameState.top.suit.slice(1).toLowerCase()}`), 1)
-        for (const [ i, player ] of this.players.entries()) {
-            if (i === 3) {
-                availableSuits.splice(availableSuits.length - 1, 1)
-            }
-            const response = await this.askPlayer(player.user, 'What would you like to be trump?', availableSuits)
-            if (response !== 3) {
-                this.gameState.trump = availableSuits[response].toUpperCase()
-                if (await this.askPlayer(player.user, 'Would you like to go alone?', [ 'Yes', 'No' ]) === 0) {
-                    switch (player.id) {
-                        case 0:
-                            playerUsers.splice(2, 1)
-                            break
-                        case 1:
-                            playerUsers.splice(3, 1)
-                            break
-                        case 2:
-                            playerUsers.splice(0, 1)
-                            break
-                        case 3:
-                            playerUsers.splice(1, 1)
-                            break
-                        default:
-                            throw Error()
-                    }
-                    await this.tricks(playerUsers, player.team, true)
-                    return
-                }
-                await this.tricks(playerUsers, player.team, false)
-                return
-            }
-        }
-    }
-
-    private async tricks(activePlayers: EuchrePlayer[], leader: EuchreTeam, solo: boolean): Promise<void> {
-        for (let r = 0; r < 5; r++) {
-            const table: Card[] = []
-            let lead: string
-            for (const player of activePlayers) {
-                await this.sendHand(player)
-                if (!lead && table.length > 0) {
-                    lead = table[0].suit
-                }
-                let availableHand: Card[] = []
-                const handIndices: number[] = []
-                let hasLead = false
-                if (lead) {
-                    for (const [ i, card ] of player.hand.entries()) {
-                        if (this.realSuit(card) === lead) {
-                            availableHand.push(card)
-                            handIndices.push(i)
-                            hasLead = true
-                        }
-                    }
-                    if (!hasLead) {
-                        availableHand = player.hand
-                        for (let i = 0; i < availableHand.length; i++) {
-                            handIndices.push(i)
-                        }
-                    }
-                } else {
-                    availableHand = player.hand
-                    for (let i = 0; i < availableHand.length; i++) {
-                        handIndices.push(i)
-                    }
-                }
-                const response = await this.askPlayer(player.user, 'What would you like to play?', this.getCardNames(availableHand))
-                table.push(availableHand[response])
-                player.hand.splice(handIndices[response], 1)
-                await this.sendHand(player)
-                await this.sendCards(table, 'Table:')
-            }
-            let leadingPlayer: EuchrePlayer
-            let leadingScore = 0
-            for (const [ i, card ] of table.entries()) {
-                if (this.realSuit(card) === this.gameState.trump) {
-                    switch (card.code[0]) {
-                        case '9':
-                            if (leadingScore < 7) {
-                                leadingScore = 7
-                                leadingPlayer = activePlayers[i]
-                            }
-                            break
-                        case '10':
-                            if (leadingScore < 8) {
-                                leadingScore = 8
-                                leadingPlayer = activePlayers[i]
-                            }
-                            break
-                        case 'Q':
-                            if (leadingScore < 9) {
-                                leadingScore = 9
-                                leadingPlayer = activePlayers[i]
-                            }
-                            break
-                        case 'K':
-                            if (leadingScore < 10) {
-                                leadingScore = 10
-                                leadingPlayer = activePlayers[i]
-                            }
-                            break
-                        case 'A':
-                            if (leadingScore < 11) {
-                                leadingScore = 11
-                                leadingPlayer = activePlayers[i]
-                            }
-                            break
-                        case 'J':
-                            if (this.realSuit(card) === card.suit && leadingScore > 13) {
-                                leadingScore = 13
-                                leadingPlayer = activePlayers[i]
-                            } else if (leadingScore < 12) {
-                                leadingScore = 12
-                                leadingPlayer = activePlayers[i]
-                            }
-                            break
-                        default:
-                            throw Error()
-                    }
-                } else if (card.suit === lead) {
-                    switch (card.code[0]) {
-                        case '9':
-                            if (leadingScore < 1) {
-                                leadingScore = 1
-                                leadingPlayer = activePlayers[i]
-                            }
-                            break
-                        case '10':
-                            if (leadingScore < 2) {
-                                leadingScore = 2
-                                leadingPlayer = activePlayers[i]
-                            }
-                            break
-                        case 'J':
-                            if (leadingScore < 3) {
-                                leadingScore = 3
-                                leadingPlayer = activePlayers[i]
-                            }
-                            break
-                        case 'Q':
-                            if (leadingScore < 4) {
-                                leadingScore = 4
-                                leadingPlayer = activePlayers[i]
-                            }
-                            break
-                        case 'K':
-                            if (leadingScore < 5) {
-                                leadingScore = 5
-                                leadingPlayer = activePlayers[i]
-                            }
-                            break
-                        case 'A':
-                            if (leadingScore < 6) {
-                                leadingScore = 6
-                                leadingPlayer = activePlayers[i]
-                            }
-                            break
-                        default:
-                            throw Error()
-                    }
-                }
-            }
-            if (leadingPlayer.id % 2 === 0) {
-                this.team1.tricks++
-            } else {
-                this.team2.tricks++
-            }
-            const tricksWon = genericEmbed({
-                title: 'Tricks Won:',
-                fields: [
-                    {
-                        name: 'Team 1:',
-                        value: this.team1.tricks.toString()
-                    },
-                    {
-                        name: 'Team 2:',
-                        value: this.team2.tricks.toString()
-                    }
-                ]
+                this.round(index)
             })
-            for (const player of this.players) {
-                const channel = await player.user.createDM()
-                await channel.send({ embeds: [ tricksWon ] })
+        }
+
+        const promptTwo = async (index = 0): Promise<void> => {
+            const options1 = new MessageActionRow({ components: [ new MessageSelectMenu({ customId: 'two-select', placeholder: 'Select a Suit', options: [ { label: 'Spades', value: 'Spades', emoji: '\u2660\uFE0F' }, { label: 'Clubs', value: 'Clubs', emoji: '\u2663\uFE0F' }, { label: 'Hearts', value: 'Hearts', emoji: '\u2665\uFE0F' }, { label: 'Diamonds', value: 'Diamonds', emoji: '\u2666\uFE0F' } ] }) ] })
+            const options2 = new MessageActionRow({ components: [ new MessageButton({ customId: 'two-pass', label: 'Pass', style: 'SECONDARY' }) ] })
+            const channel = await this.players[index].user.createDM()
+            const { embeds, files } = await this.multicardMessage(this.players[index].hand, 'prompt', { title: 'Would you like to pass or select trump?' })
+            if (index === 3) {
+                embeds[0].title = 'Please select trump'
+                await channel.send({ embeds: embeds, files: files, components: [ options2 ] })
+            } else {
+                await channel.send({ embeds: embeds, files: files, components: [ options1, options2 ] })
+            }
+            const filter: CollectorFilter<[ButtonInteraction | SelectMenuInteraction]> = b => b.customId.startsWith('two-')
+            const collector1 = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'SELECT_MENU', max: 1 })
+            const collector2 = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'BUTTON', max: 1 })
+            collector1.once('collect', interaction => {
+                collector2.stop()
+                collector2.removeAllListeners()
+                interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
+                this.trump = top.suit
+                promptThree(index)
+            })
+            collector2.once('collect', interaction => {
+                collector1.stop()
+                collector1.removeAllListeners()
+                interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
+                return promptTwo(index + 1)
+            })
+        }
+
+        const promptReplace = async (index: number): Promise<void> => {
+            const opts: MessageSelectOptionData[] = []
+            for (const[ id, card ] of this.players[3].hand.entries()) {
+                opts.push({ label: `${card.value} of ${card.suit}`, value: id.toString() })
+            }
+            const options = new MessageActionRow({ components: [ new MessageSelectMenu({ customId: 'replace', placeholder: 'Select a Card', options: opts }) ] })
+            const channel = await this.players[3].user.createDM()
+            const { embeds, files } = await this.multicardMessage(this.players[3].hand, 'prompt', { title: 'Select a card to replace' })
+            await channel.send({ embeds: embeds, files: files, components: [ options ] })
+            const filter: CollectorFilter<[SelectMenuInteraction]> = b => b.customId === 'replace'
+            const collector = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'SELECT_MENU', max: 1 })
+            collector.once('collect', interaction => {
+                interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
+                this.players[3].hand.splice(new Number(interaction.values[0]).valueOf(), 1, top)
+                this.trump = top.suit
+                promptThree(index)
+            })
+        }
+
+        const promptOne = async (index = 0): Promise<void> => {
+            const options = new MessageActionRow({ components: [ new MessageButton({ customId: 'one-pickup', label: 'Pick It Up', style: 'PRIMARY' }), new MessageButton({ customId: 'one-pass', label: 'Pass', style: 'SECONDARY' }) ] })
+            const channel = await this.players[index].user.createDM()
+            if (index === 3) {
+                await channel.send({ embeds: [ generateEmbed('prompt', { title: `Would you like to pass or pick it up?`, image: { url: top.image } }) ], components: [ options ] })
+            } else {
+                await channel.send({ embeds: [ generateEmbed('prompt', { title: `Would you like to pass or have ${this.players[3].user.username} pick it up?`, image: { url: top.image } }) ], components: [ options ] })
+            }
+            const filter: CollectorFilter<[ButtonInteraction]> = b => b.customId.startsWith('one-')
+            const collector = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'BUTTON', max: 1 })
+            collector.once('collect', interaction => {
+                interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [] })
+                if (interaction.customId === 'one-pass') {
+                    if (index === 3) {
+                        return promptTwo()
+                    }
+                    return promptOne(index + 1)
+                }
+                promptReplace(index)
+            })
+        }
+
+       promptOne()
+    }
+
+    private async round(leader: number, solo = false, table: string[] = [], lead: 'H' | 'D' | 'S' | 'C' = null, index = 0): Promise<void> {
+        if (this.players[index].out) {
+            if (index === 3) {
+                return
+            }
+            return this.round(leader, solo, table, lead, index + 1)
+        }
+        const legalPlays: MessageSelectOptionData[] = []
+        for (const card of this.players[index].hand) {
+            if (!lead || lead === this.realSuit(card)[0]) {
+                legalPlays.push({ label: `${card.value} of ${card.suit}`, value: card.code })
             }
         }
+        if (legalPlays.length === 0) {
+            for (const card of this.players[index].hand) {
+                legalPlays.push({ label: `${card.value} of ${card.suit}`, value: card.code })
+            }
+        }
+        const options = new MessageActionRow({ components: [ new MessageSelectMenu({ customId: 'play', placeholder: 'Select a Card', options: legalPlays }) ] })
+        const channel = await this.players[index].user.createDM()
+        const { embeds, files } = await this.multicardMessage(this.players[index].hand, 'prompt', { title: 'Select a card to play' })
+        await channel.send({ embeds: embeds, files: files, components: [ options ] })
+        const filter: CollectorFilter<[SelectMenuInteraction]> = b => b.customId.startsWith('play')
+        const collector = channel.createMessageComponentCollector({ filter: filter, time: 60000, componentType: 'SELECT_MENU', max: 1 })
+        collector.once('collect', interaction => {
+            interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
+            table.push(interaction.values[0])
+            lead ??= <'H' | 'D' | 'S' | 'C'>interaction.values[0][1]
+            this.players[index].hand.splice(this.players[index].hand.findIndex(c => c.code === interaction.values[0]), 1)
+            if (index === 3) {
+                return this.determineTrick(table, lead, leader, solo)
+            }
+            return this.round(leader, solo, table, lead, index + 1)
+        })
+    }
+
+    private async score(leader: number, solo: boolean): Promise<void> {
         let winningTeam: EuchreTeam
         if (this.team1.tricks > this.team2.tricks) {
             winningTeam = this.team1
         } else {
             winningTeam = this.team2
         }
-        if (winningTeam === leader) {
-            if (winningTeam.tricks === 5) {
-                if (solo) {
-                    winningTeam.score += 4
-                } else {
-                    winningTeam.score += 2
-                }
+        if (winningTeam !== this.players[leader].team) {
+            winningTeam.score += 2
+        } else if (winningTeam.tricks === 5) {
+            if (solo) {
+                winningTeam.score += 4
             } else {
-                winningTeam.score++
+                winningTeam.score += 2
             }
         } else {
-            winningTeam.score += 2
+            winningTeam.score ++
         }
-        const standings = genericEmbed({
-            title: 'Tricks Won:',
+        if (winningTeam.score >= 10) {
+            return this.finish(winningTeam)
+        }
+        await this.gameChannel.send({ embeds: [ generateEmbed('info', {
+            title: 'Standings',
             fields: [
                 {
-                    name: 'Team 1:',
-                    value: this.team1.tricks.toString()
+                    name: 'Team 1',
+                    value: `${this.team1.score} points`
                 },
                 {
-                    name: 'Team 2:',
-                    value: this.team2.tricks.toString()
+                    name: 'Team 2',
+                    value: `${this.team2.score} points`
+                }
+            ]
+        }) ] })
+        this.players.unshift(this.players.pop())
+        for (const player of this.players) {
+            player.out = false
+        }
+        this.startRound()
+    }
+
+    private async finish(winningTeam: EuchreTeam): Promise<void> {
+        const embed = generateEmbed('info', {
+            title: `${winningTeam.name} Wins!`,
+            fields: [
+                {
+                    name: 'Team 1',
+                    value: `${this.team1.score} points`
+                },
+                {
+                    name: 'Team 2',
+                    value: `${this.team2.score} points`
                 }
             ]
         })
-        for (const player of this.players) {
-            const channel = await player.user.createDM()
-            await channel.send({ embeds: [ standings ] })
-        }
+        await this.gameChannel.send({ embeds: [ embed ] })
+        this.end()
     }
 
-    private realSuit(card: Card): string {
+    // eslint-disable-next-line complexity
+    private async determineTrick(table: string[], lead: 'H' | 'D' | 'S' | 'C', leader: number, solo: boolean): Promise<void> {
+        let leadingPlayer: number
+        let leadingScore = 0
+        for (const [ id, code ] of table.entries()) {
+            if (code[1] !== lead && code[1] !== this.trump[0]) {
+                continue
+            }
+            let score: number
+            let inverse: 'H' | 'D' | 'S' | 'C'
+            switch (this.trump[0]) {
+                case 'H':
+                    inverse = 'D'
+                    break
+                case 'D':
+                    inverse = 'H'
+                    break
+                case 'S':
+                    inverse = 'C'
+                    break
+                case 'C':
+                    inverse = 'S'
+                    break
+            }
+            if (code === `J${inverse}`) {
+                score = 12
+            } else if (code[1] === this.trump[0]) {
+                switch (code[0]) {
+                    case '9':
+                        score = 7
+                        break
+                    case '0':
+                        score = 8
+                        break
+                    case 'Q':
+                        score = 9
+                        break
+                    case 'K':
+                        score = 10
+                        break
+                    case 'A':
+                        score = 11
+                        break
+                    case 'J':
+                        score = 13
+                        break
+                }
+            } else {
+                switch (code[0]) {
+                    case '9':
+                        score = 1
+                        break
+                    case '0':
+                        score = 2
+                        break
+                    case 'J':
+                        score = 3
+                        break
+                    case 'Q':
+                        score = 4
+                        break
+                    case 'K':
+                        score = 5
+                        break
+                    case 'A':
+                        score = 6
+                        break
+                }
+            }
+            if (score > leadingScore) {
+                leadingScore = score
+                leadingPlayer = id
+            }
+        }
+        this.players[leadingPlayer].team.tricks ++
+        await this.gameChannel.send({ embeds: [ generateEmbed('info', {
+            title: 'Standings',
+            fields: [
+                {
+                    name: 'Team 1:',
+                    value: `${this.team1.tricks} tricks`
+                },
+                {
+                    name: 'Team 2',
+                    value: `${this.team2.tricks} tricks`
+                }
+            ]
+        }) ] })
+        if (this.team1.tricks + this.team2.tricks === 5) {
+            return this.score(leader, solo)
+        }
+        this.round(leader, solo)
+    }
+
+    private realSuit(card: Card): Suit {
         if (card.code[0] !== 'J') {
             return card.suit
         }
         switch (card.suit) {
-            case 'CLUBS':
-                if (this.gameState.trump === 'SPADES') {
-                    return 'SPADES'
+            case 'Clubs':
+                if (this.trump === 'Spades') {
+                    return 'Spades'
                 }
                 break
-            case 'SPADES':
-                if (this.gameState.trump === 'CLUBS') {
-                    return 'CLUBS'
+            case 'Spades':
+                if (this.trump === 'Clubs') {
+                    return 'Clubs'
                 }
                 break
-            case 'HEARTS':
-                if (this.gameState.trump === 'DIAMONDS') {
-                    return 'DIAMOND'
+            case 'Hearts':
+                if (this.trump === 'Diamonds') {
+                    return 'Diamonds'
                 }
                 break
-            case 'DIAMONDS':
-                if (this.gameState.trump === 'HEARTS') {
-                    return 'HEARTS'
+            case 'Diamonds':
+                if (this.trump === 'Hearts') {
+                    return 'Hearts'
                 }
                 break
-            default:
-                throw Error()
-        }
-        return card.suit
-    }
-
-    private getCardNames(hand: Card[]): string[] {
-        const names: string[] = []
-        for (const card of hand) {
-            names.push(`${card.value[0]}${card.value.slice(1).toLowerCase()} of ${card.suit[0]}${card.suit.slice(1).toLowerCase()}`)
-        }
-        return names
-    }
-
-    private async askPlayer(player: User, question: string, responses: string[]): Promise<number> {
-        const channel = await player.createDM()
-        const prompt = genericEmbed({ title: question })
-        for (let i = 0; i < responses.length; i++) {
-            prompt.addField(`${i + 1}. `, responses[i])
-        }
-        const message = await channel.send({ embeds: [ prompt ] })
-        const emojiList = [ '1\ufe0f\u20e3', '2\ufe0f\u20e3', '3\ufe0f\u20e3', '4\ufe0f\u20e3', '5\ufe0f\u20e3', '6\ufe0f\u20e3', '7\ufe0f\u20e3', '8\ufe0f\u20e3', '9\ufe0f\u20e3', '\ud83d\udd1f' ]
-        for (let i = 0; i < responses.length; i++) {
-            await message.react(emojiList[i])
-        }
-        function filter(reaction: MessageReaction): boolean { return reaction.client === message.client }
-        const reactionCollection = await message.awaitReactions({ filter: filter, max: 1 })
-        const reactionResult = reactionCollection.first()
-        for (let i = 0; i < emojiList.length; i++) {
-            if (reactionResult.emoji.name === emojiList[i]) {
-                return i
-            }
-        }
-    }
-
-    private async sendHand(player: EuchrePlayer): Promise<void> {
-        const filePaths: string[] = []
-        const hand = genericEmbed({ title: '^ Your Hand:' })
-        for (const card of player.hand) {
-            filePaths.push(`../../../../assets/img/cards/${card.code}.png`)
-        }
-        if (filePaths.length === 1) {
-            const card = new MessageAttachment(filePaths[0], 'hand.png')
-            hand.setImage('attachment://hand.png')
-            const channel = await player.user.createDM()
-            await channel.send({ embeds: [ hand ], files: [ card ] })
-            return
-        }
-        const image = new MessageAttachment(await mergeImages(filePaths, {
-            width: filePaths.length * 226,
-            height: 314
-        }), 'hand.jpg')
-        hand.setImage('attachment://hand.jpg')
-        const channel = await player.user.createDM()
-        await channel.send({ embeds: [ hand ], files: [ image ] })
-    }
-
-    private async sendCards(cards: Card[], message: string): Promise<void> {
-        const response = genericEmbed({ title: `^ ${message}` })
-        const filePaths: string[] = []
-        for (const card of cards) {
-            filePaths.push(`../../../../assets/img/cards/${card.code}.png`)
-        }
-        const image = new MessageAttachment(await mergeImages(filePaths, {
-            width: filePaths.length * 226,
-            height: 314
-        }), 'cards.jpg')
-        response.setImage('attachment://cards.jpg')
-        for (const player of this.players) {
-            const channel = await player.user.createDM()
-            await channel.send({ embeds: [ response ], files: [ image ] })
         }
     }
 }

@@ -1,6 +1,6 @@
 import { Collection, MessageEmbed, Snowflake, ThreadChannel, User } from 'discord.js'
 import { generateEmbed } from '../../utils/commonFunctions'
-import { BaseGame } from './BaseGame'
+import { BaseGame } from './Util/BaseGame'
 
 interface MagicPlayer {
     readonly name: string,

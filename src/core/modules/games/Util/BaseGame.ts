@@ -2,7 +2,7 @@ import { ThreadChannel } from 'discord.js'
 
 export abstract class BaseGame {
 
-    private gameChannel: ThreadChannel
+    protected readonly gameChannel: ThreadChannel
     protected over: boolean
 
     public constructor (gameChannel: ThreadChannel) {

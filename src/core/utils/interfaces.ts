@@ -2,7 +2,7 @@
 
 import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, Snowflake } from 'discord.js'
 import { DatabaseManager } from '../DatabaseManager'
-import { BaseGame } from '../modules/games/BaseGame'
+import { BaseGame } from '../modules/games/Util/BaseGame'
 import { QueueManager } from '../voice/QueueManager'
 import { VoiceManager } from '../voice/VoiceManager'
 
