@@ -71,9 +71,6 @@ function getStringDate(date: Date): string {
         case 11:
             month = 'December'
             break
-        default:
-            month = 'January'
-            break
     }
     switch (date.getDay()) {
         case 0:
@@ -96,9 +93,6 @@ function getStringDate(date: Date): string {
             break
         case 6:
             weekDay = 'Saturday'
-            break
-        default:
-            weekDay = 'Sunday'
             break
     }
     return `${weekDay}, ${month} ${day}, ${year}`
@@ -162,13 +156,11 @@ function getWeatherEmoji(weatherCode: number): string {
         case 1279:
         case 1282:
             return '\uD83C\uDF29\uFE0F'
-        default:
-            return '\u2753'
     }
 }
 
 export async function getDailyReport(date: Date): Promise<MessageOptions> {
-    //meme of day
+    // todo meme of day
     const holiday: Holidays[] = await (await request(`https://holidays.abstractapi.com/v1/?api_key=${process.env.abstractKey}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)).body.json()
     const weather: WeatherResponse = await (await request(`http://api.weatherapi.com/v1/current.json?key=${process.env.weatherKey}&q=60069`)).body.json()
     const quote: QuoteResponse = await (await request(`http://quotes.rest/qod.json?category=inspire`)).body.json()

@@ -94,8 +94,6 @@ process.on('message', arg => {
         case 'deploy':
             deployCommands(client, 'potato')
             break
-        default:
-            break
     }
 })
 

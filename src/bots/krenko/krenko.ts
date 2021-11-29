@@ -72,8 +72,6 @@ process.on('message', function (arg) {
         case 'deploy':
             deployCommands(client, 'krenko')
             break
-        default:
-            break
     }
 })
 

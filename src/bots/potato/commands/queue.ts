@@ -61,8 +61,7 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
     } else {
         await button.update(options)
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filter: CollectorFilter<[any]> = b => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
+    const filter: CollectorFilter<[ButtonInteraction]> = b => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
     const collector = <InteractionCollector<ButtonInteraction>> interaction.channel.createMessageComponentCollector({ filter: filter, time: 60000 })
     collector.once('collect', async b => {
         switch (b.customId) {
@@ -77,8 +76,6 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
                 break
             case 'queue-doublearrowright':
                 queue(interaction, info, queueArray, b, queueArray.length - 1)
-                break
-            default:
                 break
         }
     })

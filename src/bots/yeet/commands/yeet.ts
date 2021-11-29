@@ -18,7 +18,7 @@ function yeet(interaction: CommandInteraction): InteractionReplyOptions {
     let e = ''
     for (let i = 0; i < interaction.options.getInteger('power'); i++) {
         e += 'E'
-        //temp
+        // todo use message limit
         if (i > 1995) {
             break
         }

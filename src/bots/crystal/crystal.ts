@@ -75,8 +75,6 @@ process.on('message', arg => {
         case 'deploy':
             deployCommands(client, 'crystal')
             break
-        default:
-            break
     }
 })
 

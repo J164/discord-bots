@@ -106,8 +106,7 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results:
     } else {
         await interaction.editReply(options)
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filter: CollectorFilter<[any]> = b => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
+    const filter: CollectorFilter<[ButtonInteraction | SelectMenuInteraction]> = b => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
     const collector = <InteractionCollector<ButtonInteraction | SelectMenuInteraction>> interaction.channel.createMessageComponentCollector({ filter: filter, time: 60000 })
     collector.once('collect', async c => {
         if (c.isSelectMenu()) {
@@ -126,8 +125,6 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results:
                 break
             case 'search-doublearrowright':
                 search(interaction, info, results, c, results.length - 1)
-                break
-            default:
                 break
         }
     })

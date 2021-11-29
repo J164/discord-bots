@@ -72,8 +72,7 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
     } else {
         await button.update(options)
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filter: CollectorFilter<[any]> = b => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
+    const filter: CollectorFilter<[ButtonInteraction]> = b => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
     const collector = <InteractionCollector<ButtonInteraction>> interaction.channel.createMessageComponentCollector({ filter: filter, time: 60000 })
     collector.once('collect', async b => {
         switch (b.customId) {
@@ -84,19 +83,13 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
                 parseDeck(interaction, info, urls, b, i - 1)
                 break
             case 'decks-list':
-                try {
-                    b.update({ content: await getList(apiUrl), embeds: [], components: [] })
-                } catch {
-                    b.update({ embeds: [ generateEmbed('error', { title: 'There seems to be something wrong with the Deckstats API at the moment. Try again later' }) ], components: [] })
-                }
+                b.update({ content: await getList(apiUrl), embeds: [], components: [] }).catch(() => b.update({ embeds: [ generateEmbed('error', { title: 'There seems to be something wrong with the Deckstats API at the moment. Try again later' }) ], components: [] }))
                 break
             case 'decks-arrowright':
                 parseDeck(interaction, info, urls, b, i + 1)
                 break
             case 'decks-doublearrowright':
                 parseDeck(interaction, info, urls, b, urls.length - 1)
-                break
-            default:
                 break
         }
     })

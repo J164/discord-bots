@@ -77,8 +77,6 @@ process.on('message', arg => {
         case 'deploy':
             deployCommands(client, 'swear')
             break
-        default:
-            break
     }
 })
 

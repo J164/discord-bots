@@ -105,8 +105,6 @@ process.on('message', arg => {
         case 'deploy':
             deployCommands(client, 'yeet')
             break
-        default:
-            break
     }
 })
 

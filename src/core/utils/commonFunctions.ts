@@ -45,8 +45,6 @@ export function generateEmbed(type: 'info' | 'error' | 'success' | 'prompt', opt
             options.color ??= 0xffa500
             options.title = `\u2753\t${options.title}`
             break
-        default:
-            break
     }
     return new MessageEmbed(options)
 }

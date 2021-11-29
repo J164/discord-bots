@@ -3,6 +3,8 @@ import { MagicGame } from './MagicGame'
 
 export class CommanderMagicGame extends MagicGame {
 
+    // todo finish
+
     public readonly commanderList: string[]
 
     public constructor(playerList: User[], commanderList: string[], gameChannel: ThreadChannel) {

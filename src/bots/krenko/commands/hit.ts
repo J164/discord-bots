@@ -60,8 +60,7 @@ function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReply
         const select = new MessageSelectMenu({ customId: 'hit-options', placeholder: 'Select the commander that delt damage', options: selectOptions })
         const row1 = new MessageActionRow().addComponents(select)
         interaction.editReply({ embeds: [ generateEmbed('prompt', { title: 'Select the commander dealing damage' }) ], components: [ row1 ] })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const filter: CollectorFilter<[any]> = b => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
+        const filter: CollectorFilter<[SelectMenuInteraction]> = b => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
         const collector = <InteractionCollector<SelectMenuInteraction>> interaction.channel.createMessageComponentCollector({ filter: filter, time: 60000 })
         collector.once('collect', async c => {
             c.update({ embeds: [ game.changeCommanderDamage(interaction.options.getUser('player').id, c.values[0], interaction.options.getInteger('amount')) ] })
