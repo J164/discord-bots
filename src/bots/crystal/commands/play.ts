@@ -7,13 +7,21 @@ import { GuildInfo } from '../../../core/utils/interfaces'
 const data: ApplicationCommandData = {
     name: 'play',
     description: 'Play a song from the Naruto OST',
-    options: [ {
-        name: 'name',
-        description: 'The name of the song (defaults to a random song)',
-        type: 'STRING',
-        autocomplete: true,
-        required: false
-    } ]
+    options: [
+        {
+            name: 'name',
+            description: 'The name of the song (defaults to a random song)',
+            type: 'STRING',
+            autocomplete: true,
+            required: false
+        },
+        {
+            name: 'loop',
+            description: 'Whether to loop the song',
+            type: 'BOOLEAN',
+            required: false
+        }
+    ]
 }
 
 async function play(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
@@ -37,7 +45,10 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     song ??= songs.findIndex(a => a === interaction.options.getString('name')) + 1
 
     await info.voiceManager.connect(voiceChannel)
-    info.voiceManager.playStream(createReadStream(`${process.env.data}/music_files/naruto_ost/${song}.webm`))
+    await info.voiceManager.playStream(createReadStream(`${process.env.data}/music_files/naruto_ost/${song}.webm`), `${process.env.data}/music_files/naruto_ost/${song}.webm`)
+    if (interaction.options.getBoolean('loop')) {
+        info.voiceManager.loop()
+    }
     interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Now Playing!' }) ] })
 }
 

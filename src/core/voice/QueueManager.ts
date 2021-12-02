@@ -174,7 +174,7 @@ export class QueueManager {
     }
 
     public skip(): boolean {
-        return this.voiceManager.player?.stop(true)
+        return this.voiceManager.player?.stop()
     }
 
     public async shuffleQueue(): Promise<boolean> {
