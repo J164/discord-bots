@@ -96,10 +96,8 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
     collector.once('end', () => { interaction.editReply({ components: [] }) })
 }
 
-function getDeck(interaction: CommandInteraction, info: GuildInfo): void {
-    info.database.select('mtg_decks', results => {
-        parseDeck(interaction, info, <{ url: string }[]> results)
-    })
+async function getDeck(interaction: CommandInteraction, info: GuildInfo): Promise<void> {
+    parseDeck(interaction, info, <{ url: string }[]> <unknown> await info.database.select('mtg_decks'))
 }
 
 module.exports = { data: data, execute: getDeck }

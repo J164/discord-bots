@@ -17,7 +17,7 @@ const data: ApplicationCommandData = {
     ]
 }
 
-async function newSong(interaction: CommandInteraction, info: GuildInfo, songs: SwearSongInfo[]): Promise<void> {
+async function newSong(interaction: CommandInteraction, info: GuildInfo): Promise<void> {
     if (interaction.member.user.id !== process.env.admin && interaction.member.user.id !== process.env.swear) {
         interaction.editReply({ embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] })
         return
@@ -35,21 +35,13 @@ async function newSong(interaction: CommandInteraction, info: GuildInfo, songs: 
         return
     }
     interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
+    const songs = <SwearSongInfo[]> <unknown> await info.database.select('swear_songs')
     writeFileSync(`${process.env.data}/music_files/swear_songs/song${songs.length + 1}.webm`, '')
     ytdl.downloadFromInfo(output, {
         filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus'
     }).pipe(createWriteStream(`${process.env.data}/music_files/swear_songs/song${songs.length + 1}.webm`))
-    const song = new Map<string, string>([
-        [ 'name', `song${songs.length + 1}` ]
-    ])
-    info.database.insert('swear_songs', song)
+    await info.database.insert('swear_songs', { index: `${songs.length + 1}`, name: `song${songs.length + 1}` })
     interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Success!' }) ] })
 }
 
-function getSongs(interaction: CommandInteraction, info: GuildInfo): void {
-    info.database.select('swear_songs', results => {
-        newSong(interaction, info, <SwearSongInfo[]> results)
-    })
-}
-
-module.exports = { data: data, execute: getSongs }
+module.exports = { data: data, execute: newSong }

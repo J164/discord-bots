@@ -35,6 +35,10 @@ export class GuildInputManager {
             return { embeds: [ generateEmbed('error', { title: 'Please only use slash commands in servers!' }) ] }
         }
 
+        if (this.info.database?.offline) {
+            await this.info.database.connect()
+        }
+
         return command.execute(interaction, this.info)
     }
 

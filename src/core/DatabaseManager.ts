@@ -1,54 +1,29 @@
-import { createPool, Pool } from 'mysql'
+import { Db, Filter, MongoClient, WithId, Document } from 'mongodb'
 
 export class DatabaseManager {
 
     // todo sanitize inputs
 
-    private connection: Pool
+    private client: MongoClient
+    private database: Db
+    public offline: boolean
 
     public constructor() {
-        this.connection = createPool({
-            host: 'localhost',
-            user: 'DiscordBots',
-            password: process.env.sqlPass,
-            database: 'discord_data'
-        })
+        this.offline = true
+        this.client = new MongoClient(`mongodb+srv://DiscordBots:${process.env.databasePassword}@cluster0.3fm3u.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`)
     }
 
-    public select(table: string, callback: (results: unknown[]) => void): void {
-        this.connection.query(`SELECT * FROM ${table} AS solution`, (error, results) => {
-            if (error) {
-                return
-            }
-            return callback(results)
-        })
+    public async connect(): Promise<void> {
+        await this.client.connect()
+        this.database = this.client.db('botdata')
+        this.offline = false
     }
 
-    public customSelect(table: string, sort: string, callback: (results: unknown[]) => void): void {
-        this.connection.query(`SELECT * FROM ${table} AS solution ORDER BY \`${sort}\``, (error, results) => {
-            if (error) {
-                return
-            }
-            return callback(results)
-        })
+    public async select(collection: string, filter?: Filter<Document>): Promise<WithId<Document>[]> {
+        return this.database.collection(collection).find(filter ?? {}).toArray()
     }
 
-    public insert(table: string, data: Map<string, string>): void {
-        let columns
-        let values
-        for(const [ column, value ] of data) {
-            if (!columns) {
-                columns = `\`${column}\``
-                values = `'${value}'`
-                continue
-            }
-            columns += `, \`${column}\``
-            values += `, '${value}'`
-        }
-        this.connection.query(`INSERT INTO ${table} (${columns}) VALUES (${values})`, (error) => {
-            if (error) {
-                console.warn(error)
-            }
-        })
+    public async insert(collection: string, data: Document): Promise<void> {
+        await this.database.collection(collection).insertOne(data)
     }
 }

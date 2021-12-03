@@ -18,6 +18,10 @@ async function addDeck(interaction: CommandInteraction, info: GuildInfo): Promis
     if (interaction.member.user.id !== process.env.admin && interaction.member.user.id !== process.env.swear && interaction.member.user.id !== process.env.magic) {
         return { embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] }
     }
+    const decks = <{ url: string }[]> <unknown> await info.database.select('mtg_decks')
+    if (decks.find(a => a.url === interaction.options.getString('url'))) {
+        return { embeds: [ generateEmbed('error', { title: 'Failed! (Make sure the deck isn\'t a duplicate)' }) ] }
+    }
 
     let apiUrl: string
     let name: string
@@ -30,13 +34,7 @@ async function addDeck(interaction: CommandInteraction, info: GuildInfo): Promis
     } catch {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong (Make sure you are using a deckstats url' }) ] }
     }
-    try {
-        info.database.insert('mtg_decks', new Map<string, string>([
-            [ 'url', interaction.options.getString('url') ]
-        ]))
-    } catch {
-        return { embeds: [ generateEmbed('error', { title: 'Failed! (Make sure the deck isn\'t a duplicate)' }) ] }
-    }
+    await info.database.insert('mtg_decks', { url: interaction.options.getString('url') })
     return { embeds: [ generateEmbed('success', { title: `Success! Deck "${name}" has been added!` }) ] }
 }
 
