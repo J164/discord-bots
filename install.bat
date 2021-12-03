@@ -1,1 +1,0 @@
-call npm ci --only=prod

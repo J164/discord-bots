@@ -1,0 +1,1 @@
+npm ci --only=prod --build-from-source

@@ -14,7 +14,7 @@ export abstract class BaseGame {
         return this.gameChannel.name
     }
 
-    protected async end(): Promise<void> {
+    protected end(): void {
         setTimeout(() => { try { this.gameChannel.setArchived(true) } catch { /*thread deleted*/ } }, 10000)
         this.over = true
     }
