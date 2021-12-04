@@ -41,7 +41,7 @@ client.on('ready', async () => {
 
         date = new Date()
 
-        if (date.getHours() === 7 && !broadcasted) {
+        if (date.getHours() === 7 && date.getMinutes() >= 30 && date.getMinutes() <= 35 && !broadcasted) {
             broadcasted = true
             broadcastChannel.send(await getDailyReport(date))
         } else if (date.getHours() === 8) {
@@ -52,7 +52,8 @@ client.on('ready', async () => {
     console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
     process.send('start')
 
-    if (date.getHours() === 7) {
+    if (date.getHours() === 7 && date.getMinutes() >= 30 && date.getMinutes() <= 35) {
+        broadcasted = true
         broadcastChannel.send(await getDailyReport(date))
     }
 })
