@@ -27,9 +27,6 @@ export class VoiceManager {
             await entersState(this.voiceConnection, VoiceConnectionStatus.Ready, 30e3)
             this.player = createAudioPlayer()
             this.subscription = this.voiceConnection.subscribe(this.player)
-            this.voiceConnection.once('stateChange', () => {
-                this.reset()
-            })
             return true
         } catch (err) {
             console.warn(err)

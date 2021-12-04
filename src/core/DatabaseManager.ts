@@ -2,8 +2,6 @@ import { Db, Filter, MongoClient, WithId, Document } from 'mongodb'
 
 export class DatabaseManager {
 
-    // todo sanitize inputs
-
     private client: MongoClient
     private database: Db
     public offline: boolean
