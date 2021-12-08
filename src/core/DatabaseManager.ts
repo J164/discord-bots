@@ -2,7 +2,7 @@ import { Db, Filter, MongoClient, WithId, Document } from 'mongodb'
 
 export class DatabaseManager {
 
-    private client: MongoClient
+    private readonly client: MongoClient
     private database: Db
     public offline: boolean
 
