@@ -18,7 +18,7 @@ process.on('unhandledRejection', (error: Error) => {
 })
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ] })
-let commands: Map<string, Command>
+declare const commands: Map<string, Command>
 const guildStatus = new Map<string, GuildInputManager>()
 const potatoStatus = [ 'Eating a baked potato', 'Farming potatoes', 'Decorating with potatoes', 'Looking up potato recipes', 'Potato Platformer 3000' ]
 

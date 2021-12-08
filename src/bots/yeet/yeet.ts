@@ -16,7 +16,7 @@ process.on('unhandledRejection', (error: Error) => {
 })
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ] })
-let commands: Map<string, Command>
+declare const commands: Map<string, Command>
 const guildStatus = new Map<string, GuildInputManager>()
 //const yeetStreaks = new Map<Snowflake, { number: number, time: number }>()
 const yeetStatus = [ 'Yeeting the Child', 'YA YEEEEEEEEEET', 'Yeeting People off Cliffs', 'Yeeting Washing Machines' ]

@@ -17,7 +17,7 @@ process.on('unhandledRejection', (error: Error) => {
 })
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS ] })
-let commands: Map<string, Command>
+declare const commands: Map<string, Command>
 const database = new DatabaseManager()
 const guildStatus = new Map<string, GuildInputManager>()
 const krenkoStatus = [ 'Shuffling cards', 'Building decks', 'Magic: The Gathering', 'Searching for new deck ideas' ]

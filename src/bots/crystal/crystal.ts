@@ -17,7 +17,7 @@ process.on('unhandledRejection', (error: Error) => {
 })
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ] })
-let commands: Map<string, Command>
+declare const commands: Map<string, Command>
 const guildStatus = new Map<string, GuildInputManager>()
 const crystalStatus = [ 'Karl Needs a Bandage', 'The Agent Game', 'Gangster Town', 'The Running Game', 'The Games (Which one?)' ]
 

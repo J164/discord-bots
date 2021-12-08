@@ -18,7 +18,7 @@ process.on('unhandledRejection', (error: Error) => {
 })
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ] })
-let commands: Map<string, Command>
+declare const commands: Map<string, Command>
 const database = new DatabaseManager()
 const guildStatus = new Map<string, GuildInputManager>()
 const swearStatus = [ 'Reading the Swear Dictionary', 'Singing Swears', 'Arresting people who don\'t swear', 'Inventing new swears' ]
