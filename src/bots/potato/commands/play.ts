@@ -1,4 +1,4 @@
-import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, TextChannel, VoiceChannel } from 'discord.js'
+import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, VoiceChannel } from 'discord.js'
 import ytdl from 'ytdl-core'
 import ytpl from 'ytpl'
 import { GuildInfo } from '../../../core/utils/interfaces'

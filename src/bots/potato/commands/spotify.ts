@@ -1,4 +1,4 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
+import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { request } from 'undici'
 import ytdl from 'ytdl-core'
 import ytsr from 'ytsr'

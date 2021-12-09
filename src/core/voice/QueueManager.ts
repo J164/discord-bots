@@ -1,4 +1,4 @@
-import { InteractionReplyOptions, TextChannel, VoiceChannel } from 'discord.js'
+import { InteractionReplyOptions, VoiceChannel } from 'discord.js'
 import { VoiceManager } from './VoiceManager'
 import ytdl from 'ytdl-core'
 import { AudioPlayerStatus } from '@discordjs/voice'
