@@ -17,7 +17,6 @@ export class QueueManager {
 
     public readonly voiceManager: VoiceManager
     private queue: QueueItem[]
-    private boundChannel: TextChannel
     private nowPlaying: QueueItem
     private queueLoop: boolean
     private queueLock: boolean
@@ -32,7 +31,6 @@ export class QueueManager {
         process.on('unhandledRejection', (error: Error) => {
             if (error.message === 'Status code: 403') {
                 this.transitioning = true
-                this.boundChannel?.send({ embeds: [ generateEmbed('error', { title: 'Something went wrong! Trying again...' }) ] })
                 this.voiceManager.player.removeAllListeners('stateChange')
                 this.queue.unshift(this.nowPlaying)
                 this.playSong()
@@ -76,10 +74,6 @@ export class QueueManager {
         return true
     }
 
-    public bindChannel(channel: TextChannel): void {
-        this.boundChannel = channel
-    }
-
     private async playSong(): Promise<void> {
         if (this.queue.length < 1) {
             this.transitioning = false
@@ -95,10 +89,7 @@ export class QueueManager {
         this.nowPlaying = this.queue.shift()
         this.queueLock = false
 
-        if (!await this.voiceManager.playStream(ytdl(this.nowPlaying.url, { filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus', highWaterMark: 52428800 }))) {
-            this.boundChannel.send({ embeds: [ generateEmbed('error', { title: 'Something went wrong while preparing song'}) ] })
-            return this.playSong()
-        }
+        await this.voiceManager.playStream(ytdl(this.nowPlaying.url, { filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus', highWaterMark: 52428800 }))
 
         this.transitioning = false
 
@@ -268,7 +259,6 @@ export class QueueManager {
     public reset(): void {
         this.voiceManager.reset()
         this.queue = []
-        this.boundChannel = null
         this.nowPlaying = null
         this.queueLoop = false
         this.transitioning = false

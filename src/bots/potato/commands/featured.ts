@@ -53,7 +53,6 @@ async function featured(interaction: CommandInteraction, info: GuildInfo): Promi
         items.push({ url: song.url, title: song.title, thumbnail: song.bestThumbnail.url, duration: song.durationSec })
     }
     await info.queueManager.addToQueue(items, interaction.options.getNumber('position') - 1)
-    info.queueManager.bindChannel(<TextChannel> interaction.channel)
     if (!info.queueManager.connect(voiceChannel)) {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
     }

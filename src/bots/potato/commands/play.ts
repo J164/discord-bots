@@ -77,7 +77,6 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo, voiceCh
     }
 
     await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
-    info.queueManager.bindChannel(<TextChannel> interaction.channel)
     if (!info.queueManager.connect(voiceChannel)) {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
     }
@@ -141,7 +140,6 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         }
     }
 
-    info.queueManager.bindChannel(<TextChannel> interaction.channel)
     if (!info.queueManager.connect(voiceChannel)) {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
     }
