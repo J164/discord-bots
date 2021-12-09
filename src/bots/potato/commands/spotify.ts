@@ -3,7 +3,8 @@ import { request } from 'undici'
 import ytdl from 'ytdl-core'
 import ytsr from 'ytsr'
 import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo, QueueItem } from '../../../core/utils/interfaces'
+import { GuildInfo } from '../../../core/utils/interfaces'
+import { QueueItem } from '../../../core/voice/QueueManager'
 
 const data: ApplicationCommandData = {
     name: 'spotify',

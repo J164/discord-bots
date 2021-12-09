@@ -30,7 +30,7 @@ export class InteractionManager {
         for (const [ , command ] of currentCommands) {
             try {
                 // eslint-disable-next-line @typescript-eslint/no-var-requires
-                this.commands.set(command.name, <Command> require(`../../bots/${botName}/commands/${command.name}.js`))
+                this.commands.set(command.name, <Command> require(`../bots/${botName}/commands/${command.name}.js`))
             } catch {
                 console.warn(`Registered command missing from ${botName}'s command files (${command.name})`)
             }

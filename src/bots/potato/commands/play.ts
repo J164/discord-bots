@@ -1,10 +1,11 @@
 import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, TextChannel, VoiceChannel } from 'discord.js'
 import ytdl from 'ytdl-core'
 import ytpl from 'ytpl'
-import { GuildInfo, QueueItem } from '../../../core/utils/interfaces'
+import { GuildInfo } from '../../../core/utils/interfaces'
 import ytsr from 'ytsr'
 import { generateEmbed } from '../../../core/utils/generators'
 import { request } from 'undici'
+import { QueueItem } from '../../../core/voice/QueueManager'
 
 const data: ApplicationCommandData = {
     name: 'play',

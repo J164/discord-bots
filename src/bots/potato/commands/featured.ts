@@ -1,7 +1,8 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, TextChannel } from 'discord.js'
 import ytpl from 'ytpl'
 import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo, QueueItem } from '../../../core/utils/interfaces'
+import { GuildInfo } from '../../../core/utils/interfaces'
+import { QueueItem } from '../../../core/voice/QueueManager'
 
 const data: ApplicationCommandData = {
     name: 'featured',

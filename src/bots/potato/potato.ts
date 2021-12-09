@@ -90,7 +90,7 @@ process.on('message', arg => {
             const commandData: ApplicationCommandData[] = []
             for (const command of readdirSync('./dist/bots/potato/commands').filter(file => file.endsWith('.js'))) {
                 // eslint-disable-next-line @typescript-eslint/no-var-requires
-                commandData.push(require(`../../bots/potato/commands/${command}`).data)
+                commandData.push(require(`./commands/${command}`).data)
             }
             client.application.commands.set(commandData)
             break

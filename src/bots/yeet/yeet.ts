@@ -100,7 +100,7 @@ process.on('message', arg => {
             const commandData: ApplicationCommandData[] = []
             for (const command of readdirSync('./dist/bots/yeet/commands').filter(file => file.endsWith('.js'))) {
                 // eslint-disable-next-line @typescript-eslint/no-var-requires
-                commandData.push(require(`../../bots/yeet/commands/${command}`).data)
+                commandData.push(require(`./commands/${command}`).data)
             }
             client.application.commands.set(commandData)
             break
