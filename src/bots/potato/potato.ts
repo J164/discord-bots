@@ -1,8 +1,6 @@
-import { Client, Intents, TextChannel } from 'discord.js'
-import { writeFileSync } from 'fs'
-import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
-import { GuildInputManager } from '../../core/GuildInputManager'
-import { Command } from '../../core/utils/interfaces'
+import { ApplicationCommandData, Client, Intents, TextChannel } from 'discord.js'
+import { readdirSync, writeFileSync } from 'fs'
+import { InteractionManager } from '../../core/InteractionManager'
 import { QueueManager } from '../../core/voice/QueueManager'
 import { getDailyReport } from '../../core/modules/DailyReport'
 
@@ -18,13 +16,11 @@ process.on('unhandledRejection', (error: Error) => {
 })
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ] })
-declare const commands: Map<string, Command>
-const guildStatus = new Map<string, GuildInputManager>()
+const interactionManager = new InteractionManager()
 const potatoStatus = [ 'Eating a baked potato', 'Farming potatoes', 'Decorating with potatoes', 'Looking up potato recipes', 'Potato Platformer 3000' ]
 
-client.on('ready', async () => {
-    commands = await getCommands(client, 'potato')
-
+client.once('ready', async () => {
+    await interactionManager.getCommands(client, 'potato')
     client.user.setActivity(potatoStatus[Math.floor(Math.random() * potatoStatus.length)])
 
     let broadcasted = false
@@ -34,10 +30,7 @@ client.on('ready', async () => {
 
     setInterval(async () => {
         client.user.setActivity(potatoStatus[Math.floor(Math.random() * potatoStatus.length)])
-
-        for (const [ , guildManager ] of guildStatus) {
-            guildManager.statusCheck()
-        }
+        interactionManager.statusCheck()
 
         date = new Date()
 
@@ -59,15 +52,15 @@ client.on('ready', async () => {
 })
 
 client.on('interactionCreate', async interaction => {
-    if (!guildStatus.has(interaction.guildId)) {
-        guildStatus.set(interaction.guildId, new GuildInputManager(commands, { queueManager: new QueueManager() }))
+    if (!interaction.inGuild()) {
+        return
     }
 
+    interactionManager.addGuild(interaction.guildId, { queueManager: new QueueManager() })
+
     if (interaction.isAutocomplete()) {
-        const response = await guildStatus.get(interaction.guildId).autocomplete(interaction)
-        if (!interaction.responded) {
-            interaction.respond(response)
-        }
+        const response = await interactionManager.autocomplete(interaction)
+        interaction.respond(response)
         return
     }
 
@@ -75,7 +68,7 @@ client.on('interactionCreate', async interaction => {
         return
     }
 
-    const response = await guildStatus.get(interaction.guildId).parseCommand(interaction)
+    const response = await interactionManager.parseCommand(interaction)
     if (response) {
         interaction.editReply(response)
     }
@@ -93,7 +86,13 @@ process.on('message', arg => {
             client.login(process.env.potatoKey)
             break
         case 'deploy':
-            deployCommands(client, 'potato')
+            // eslint-disable-next-line no-case-declarations
+            const commandData: ApplicationCommandData[] = []
+            for (const command of readdirSync('./dist/bots/potato/commands').filter(file => file.endsWith('.js'))) {
+                // eslint-disable-next-line @typescript-eslint/no-var-requires
+                commandData.push(require(`../../bots/potato/commands/${command}`).data)
+            }
+            client.application.commands.set(commandData)
             break
     }
 })

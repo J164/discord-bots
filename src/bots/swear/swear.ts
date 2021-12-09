@@ -1,10 +1,8 @@
-import { Client, Intents } from 'discord.js'
-import { writeFileSync } from 'fs'
-import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
+import { ApplicationCommandData, Client, Intents } from 'discord.js'
+import { readdirSync, writeFileSync } from 'fs'
 import { DatabaseManager } from '../../core/DatabaseManager'
-import { GuildInputManager } from '../../core/GuildInputManager'
+import { InteractionManager } from '../../core/InteractionManager'
 import { VoiceManager } from '../../core/voice/VoiceManager'
-import { Command } from '../../core/utils/interfaces'
 
 process.on('unhandledRejection', (error: Error) => {
     if (error.name === 'FetchError') {
@@ -18,22 +16,16 @@ process.on('unhandledRejection', (error: Error) => {
 })
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ] })
-declare const commands: Map<string, Command>
-const database = new DatabaseManager()
-const guildStatus = new Map<string, GuildInputManager>()
+const interactionManager = new InteractionManager(new DatabaseManager())
 const swearStatus = [ 'Reading the Swear Dictionary', 'Singing Swears', 'Arresting people who don\'t swear', 'Inventing new swears' ]
 
-client.on('ready', async () => {
-    commands = await getCommands(client, 'swear')
-
+client.once('ready', async () => {
+    await interactionManager.getCommands(client, 'swear')
     client.user.setActivity(swearStatus[Math.floor(Math.random() * swearStatus.length)])
 
-    setInterval(async () => {
+    setInterval(() => {
         client.user.setActivity(swearStatus[Math.floor(Math.random() * swearStatus.length)])
-
-        for (const [ , guildManager ] of guildStatus) {
-            guildManager.statusCheck()
-        }
+        interactionManager.statusCheck()
     }, 60000)
 
     console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
@@ -41,15 +33,15 @@ client.on('ready', async () => {
 })
 
 client.on('interactionCreate', async interaction => {
-    if (!guildStatus.has(interaction.guildId)) {
-        guildStatus.set(interaction.guildId, new GuildInputManager(commands, { database: database, voiceManager: new VoiceManager() }))
+    if (!interaction.inGuild()) {
+        return
     }
 
+    interactionManager.addGuild(interaction.guildId, { voiceManager: new VoiceManager() })
+
     if (interaction.isAutocomplete()) {
-        const response = await guildStatus.get(interaction.guildId).autocomplete(interaction)
-        if (!interaction.responded) {
-            interaction.respond(response)
-        }
+        const response = await interactionManager.autocomplete(interaction)
+        interaction.respond(response)
         return
     }
 
@@ -57,7 +49,7 @@ client.on('interactionCreate', async interaction => {
         return
     }
 
-    const response = await guildStatus.get(interaction.guildId).parseCommand(interaction)
+    const response = await interactionManager.parseCommand(interaction)
     if (response) {
         interaction.editReply(response)
     }
@@ -75,7 +67,13 @@ process.on('message', arg => {
             client.login(process.env.swearKey)
             break
         case 'deploy':
-            deployCommands(client, 'swear')
+            // eslint-disable-next-line no-case-declarations
+            const commandData: ApplicationCommandData[] = []
+            for (const command of readdirSync('./dist/bots/swear/commands').filter(file => file.endsWith('.js'))) {
+                // eslint-disable-next-line @typescript-eslint/no-var-requires
+                commandData.push(require(`../../bots/swear/commands/${command}`).data)
+            }
+            client.application.commands.set(commandData)
             break
     }
 })

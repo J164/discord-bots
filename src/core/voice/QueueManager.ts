@@ -2,9 +2,16 @@ import { InteractionReplyOptions, TextChannel, VoiceChannel } from 'discord.js'
 import { VoiceManager } from './VoiceManager'
 import ytdl from 'ytdl-core'
 import { AudioPlayerStatus } from '@discordjs/voice'
-import { generateEmbed } from '../utils/commonFunctions'
+import { generateEmbed } from '../utils/generators'
 import { setTimeout } from 'timers/promises'
-import { QueueItem } from '../utils/interfaces'
+
+export interface QueueItem {
+    readonly url: string
+    readonly title: string
+    readonly thumbnail: string
+    readonly duration: number
+    looping?: boolean
+}
 
 export class QueueManager {
 
@@ -23,7 +30,6 @@ export class QueueManager {
         this.queueLock = false
         this.transitioning = false
         process.on('unhandledRejection', (error: Error) => {
-            // fixme 403
             if (error.message === 'Status code: 403') {
                 this.transitioning = true
                 this.boundChannel?.send({ embeds: [ generateEmbed('error', { title: 'Something went wrong! Trying again...' }) ] })
@@ -200,20 +206,11 @@ export class QueueManager {
         if (!this.nowPlaying) {
             return { embeds: [ generateEmbed('error', { title: 'Nothing has played yet!' }) ] }
         }
-        let hour = Math.floor(this.nowPlaying.duration / 3600).toString()
-        let min = Math.floor((this.nowPlaying.duration % 3600) / 60).toString()
-        let sec = (this.nowPlaying.duration % 60).toString()
-        if (hour.length < 2) {
-            hour = `0${hour}`
-        }
-        if (min.length < 2) {
-            min = `0${min}`
-        }
-        if (sec.length < 2) {
-            sec = `0${sec}`
-        }
+        const hour = Math.floor(this.nowPlaying.duration / 3600)
+        const min = Math.floor((this.nowPlaying.duration % 3600) / 60)
+        const sec = (this.nowPlaying.duration % 60)
         const embed = generateEmbed('info', {
-            title: `Now Playing: ${this.nowPlaying.title} (${hour}:${min}:${sec})`,
+            title: `Now Playing: ${this.nowPlaying.title} (${hour < 10 ? `0${hour}` : hour}:${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec})`,
             fields: [ {
                 name: 'URL:',
                 value: this.nowPlaying.url

@@ -1,6 +1,6 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, MessageActionRow, MessageButton, MessageEmbed } from 'discord.js'
 import { readFileSync } from 'fs'
-import { generateEmbed } from '../../../core/utils/commonFunctions'
+import { generateEmbed } from '../../../core/utils/generators'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {

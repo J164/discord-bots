@@ -1,8 +1,6 @@
-import { Client, Intents } from 'discord.js'
-import { writeFileSync } from 'fs'
-import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
-import { GuildInputManager } from '../../core/GuildInputManager'
-import { Command } from '../../core/utils/interfaces'
+import { ApplicationCommandData, Client, Intents } from 'discord.js'
+import { readdirSync, writeFileSync } from 'fs'
+import { InteractionManager } from '../../core/InteractionManager'
 
 process.on('unhandledRejection', (error: Error) => {
     if (error.name === 'FetchError') {
@@ -16,26 +14,21 @@ process.on('unhandledRejection', (error: Error) => {
 })
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ] })
-declare const commands: Map<string, Command>
-const guildStatus = new Map<string, GuildInputManager>()
+const interactionManager = new InteractionManager()
 //const yeetStreaks = new Map<Snowflake, { number: number, time: number }>()
 const yeetStatus = [ 'Yeeting the Child', 'YA YEEEEEEEEEET', 'Yeeting People off Cliffs', 'Yeeting Washing Machines' ]
 
-client.on('ready', async () => {
-    commands = await getCommands(client, 'yeet')
-
+client.once('ready', async () => {
+    await interactionManager.getCommands(client, 'yeet')
     client.user.setActivity(yeetStatus[Math.floor(Math.random() * yeetStatus.length)])
 
-    setInterval(async () => {
+    setInterval(() => {
         /*const date = new Date()
         for (const [ id, data ] of yeetStreaks) {
             if (date.getTime() - data.time > 30000) {
                 yeetStreaks.delete(id)
             }
         }*/
-
-        commands = await getCommands(client, 'yeet')
-
         client.user.setActivity(yeetStatus[Math.floor(Math.random() * yeetStatus.length)])
     }, 60000)
 
@@ -69,15 +62,15 @@ client.on('messageCreate', message => {
 })
 
 client.on('interactionCreate', async interaction => {
-    if (!guildStatus.has(interaction.guildId)) {
-        guildStatus.set(interaction.guildId, new GuildInputManager(commands))
+    if (!interaction.inGuild()) {
+        return
     }
 
+    interactionManager.addGuild(interaction.guildId)
+
     if (interaction.isAutocomplete()) {
-        const response = await guildStatus.get(interaction.guildId).autocomplete(interaction)
-        if (!interaction.responded) {
-            interaction.respond(response)
-        }
+        const response = await interactionManager.autocomplete(interaction)
+        interaction.respond(response)
         return
     }
 
@@ -85,7 +78,7 @@ client.on('interactionCreate', async interaction => {
         return
     }
 
-    const response = await guildStatus.get(interaction.guildId).parseCommand(interaction)
+    const response = await interactionManager.parseCommand(interaction)
     if (response) {
         interaction.editReply(response)
     }
@@ -103,7 +96,13 @@ process.on('message', arg => {
             client.login(process.env.yeetKey)
             break
         case 'deploy':
-            deployCommands(client, 'yeet')
+            // eslint-disable-next-line no-case-declarations
+            const commandData: ApplicationCommandData[] = []
+            for (const command of readdirSync('./dist/bots/yeet/commands').filter(file => file.endsWith('.js'))) {
+                // eslint-disable-next-line @typescript-eslint/no-var-requires
+                commandData.push(require(`../../bots/yeet/commands/${command}`).data)
+            }
+            client.application.commands.set(commandData)
             break
     }
 })

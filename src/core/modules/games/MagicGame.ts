@@ -1,5 +1,5 @@
-import { Collection, MessageEmbed, Snowflake, ThreadChannel, User } from 'discord.js'
-import { generateEmbed } from '../../utils/commonFunctions'
+import { Collection, MessageEmbed, ThreadChannel, User } from 'discord.js'
+import { generateEmbed } from '../../utils/generators'
 import { BaseGame } from './Util/BaseGame'
 
 interface MagicPlayer {
@@ -12,11 +12,11 @@ interface MagicPlayer {
 
 export class MagicGame extends BaseGame {
 
-    protected readonly playerData: Collection<Snowflake, MagicPlayer>
+    protected readonly playerData: Collection<string, MagicPlayer>
 
     public constructor(playerList: User[], gameChannel: ThreadChannel) {
         super(gameChannel)
-        this.playerData = new Collection<Snowflake, MagicPlayer>()
+        this.playerData = new Collection<string, MagicPlayer>()
         for (const player of playerList) {
             this.playerData.set(player.id, {
                 name: player.username,
@@ -27,17 +27,17 @@ export class MagicGame extends BaseGame {
         }
     }
 
-    public changeLife(player: Snowflake, amount: number): MessageEmbed {
+    public changeLife(player: string, amount: number): MessageEmbed {
         this.playerData.get(player).life += amount
         return this.checkStatus(player)
     }
 
-    public changePoison(player: Snowflake, amount: number): MessageEmbed {
+    public changePoison(player: string, amount: number): MessageEmbed {
         this.playerData.get(player).poison += amount
         return this.checkStatus(player)
     }
 
-    public eliminate(player: Snowflake): MessageEmbed {
+    public eliminate(player: string): MessageEmbed {
         if (!this.playerData.get(player).isAlive) {
             return generateEmbed('error', { title: `${this.playerData.get(player).name} is already eliminated` })
         }
@@ -69,11 +69,11 @@ export class MagicGame extends BaseGame {
         return generateEmbed('info', { title: `${alive.first().name} Wins!`, fields: [ { name: `${alive.first().name}:`, value: `Life Total: ${alive.first().life}\nPoison Counters: ${alive.first().poison}` } ] })
     }
 
-    public userInGame(player: Snowflake): boolean {
+    public userInGame(player: string): boolean {
         return this.playerData.has(player)
     }
 
-    protected checkStatus(player: Snowflake): MessageEmbed {
+    protected checkStatus(player: string): MessageEmbed {
         if (this.playerData.get(player).life < 1 || this.playerData.get(player).poison >= 10) {
             return this.eliminate(player)
         }

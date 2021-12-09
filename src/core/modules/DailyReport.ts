@@ -1,6 +1,6 @@
 import { MessageOptions } from 'discord.js'
 import { request } from 'undici'
-import { generateEmbed } from '../utils/commonFunctions'
+import { generateEmbed } from '../utils/generators'
 
 interface QuoteResponse {
     readonly contents: {

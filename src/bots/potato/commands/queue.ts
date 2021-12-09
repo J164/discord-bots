@@ -1,6 +1,7 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
-import { GuildInfo, QueueItem } from '../../../core/utils/interfaces'
-import { generateEmbed } from '../../../core/utils/commonFunctions'
+import { GuildInfo } from '../../../core/utils/interfaces'
+import { generateEmbed } from '../../../core/utils/generators'
+import { QueueItem } from '../../../core/voice/QueueManager'
 
 const data: ApplicationCommandData = {
     name: 'queue',
@@ -24,23 +25,10 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
         footer: { text: `${i + 1}/${queueArray.length}` }
     })
     for (const [ index, entry ] of queueArray[i].entries()) {
-        let hour = Math.floor(entry.duration / 3600).toString()
-        let min = Math.floor((entry.duration % 3600) / 60).toString()
-        let sec = (entry.duration % 60).toString()
-        if (hour.length < 2) {
-            hour = `0${hour}`
-        }
-        if (min.length < 2) {
-            min = `0${min}`
-        }
-        if (sec.length < 2) {
-            sec = `0${sec}`
-        }
-        if (index === 0) {
-            queueMessage.addField('Currently Playing:', `${entry.title} (${hour}:${min}:${sec})\n${entry.url}`)
-            continue
-        }
-        queueMessage.addField(`${index}.`, `${entry.title} (${hour}:${min}:${sec})\n${entry.url}`)
+        const hour = Math.floor(entry.duration / 3600)
+        const min = Math.floor((entry.duration % 3600) / 60)
+        const sec = (entry.duration % 60)
+        queueMessage.addField(index === 0 ? 'Currently Playing:' : `${index}.`, `${entry.title} (${hour < 10 ? `0${hour}` : hour}:${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec})\n${entry.url}`)
     }
     const components = [ new MessageButton({ customId: 'queue-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY' }),
                          new MessageButton({ customId: 'queue-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY' }),

@@ -1,5 +1,5 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { generateEmbed } from '../../../core/utils/commonFunctions'
+import { generateEmbed } from '../../../core/utils/generators'
 
 const data: ApplicationCommandData = {
     name: 'nick',

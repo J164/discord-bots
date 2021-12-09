@@ -3,7 +3,7 @@ import ytdl from 'ytdl-core'
 import ytpl from 'ytpl'
 import { GuildInfo, QueueItem } from '../../../core/utils/interfaces'
 import ytsr from 'ytsr'
-import { generateEmbed } from '../../../core/utils/commonFunctions'
+import { generateEmbed } from '../../../core/utils/generators'
 import { request } from 'undici'
 
 const data: ApplicationCommandData = {

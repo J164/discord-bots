@@ -1,8 +1,29 @@
 import { createCanvas, loadImage } from 'canvas'
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, InteractionUpdateOptions, MessageActionRow, MessageAttachment, MessageButton, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
 import { request } from 'undici'
-import { generateEmbed } from '../../../core/utils/commonFunctions'
-import { ScryfallResponse, MagicCard, GuildInfo } from '../../../core/utils/interfaces'
+import { generateEmbed } from '../../../core/utils/generators'
+import { GuildInfo } from '../../../core/utils/interfaces'
+
+interface MagicCard {
+    readonly name: string,
+    readonly uri: string,
+    readonly image_uris?: {
+        readonly large: string
+    }
+    readonly card_faces?: readonly {
+        readonly image_uris: {
+            readonly large: string
+        }
+    }[]
+    readonly prices: {
+        readonly usd: string
+    }
+}
+
+interface ScryfallResponse {
+    readonly status?: string
+    readonly data: MagicCard[]
+}
 
 const data: ApplicationCommandData = {
     name: 'search',

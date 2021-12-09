@@ -1,7 +1,28 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
-import { GuildInfo, ScryfallResponse } from '../../../core/utils/interfaces'
-import { generateEmbed } from '../../../core/utils/commonFunctions'
+import { GuildInfo } from '../../../core/utils/interfaces'
+import { generateEmbed } from '../../../core/utils/generators'
 import { request } from 'undici'
+
+interface MagicCard {
+    readonly name: string,
+    readonly uri: string,
+    readonly image_uris?: {
+        readonly large: string
+    }
+    readonly card_faces?: readonly {
+        readonly image_uris: {
+            readonly large: string
+        }
+    }[]
+    readonly prices: {
+        readonly usd: string
+    }
+}
+
+interface ScryfallResponse {
+    readonly status?: string
+    readonly data: MagicCard[]
+}
 
 const data: ApplicationCommandData = {
     name: 'decks',

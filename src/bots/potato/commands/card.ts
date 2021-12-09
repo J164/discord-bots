@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
 import { Euchre } from '../../../core/modules/games/Euchre'
-import { generateEmbed } from '../../../core/utils/commonFunctions'
+import { generateEmbed } from '../../../core/utils/generators'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {

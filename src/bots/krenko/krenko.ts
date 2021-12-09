@@ -1,9 +1,7 @@
-import { Client, Intents } from 'discord.js'
-import { writeFileSync } from 'fs'
-import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
+import { ApplicationCommandData, Client, Intents } from 'discord.js'
+import { readdirSync, writeFileSync } from 'fs'
 import { DatabaseManager } from '../../core/DatabaseManager'
-import { GuildInputManager } from '../../core/GuildInputManager'
-import { Command } from '../../core/utils/interfaces'
+import { InteractionManager } from '../../core/InteractionManager'
 
 process.on('unhandledRejection', (error: Error) => {
     if (error.name === 'FetchError') {
@@ -17,17 +15,14 @@ process.on('unhandledRejection', (error: Error) => {
 })
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS ] })
-declare const commands: Map<string, Command>
-const database = new DatabaseManager()
-const guildStatus = new Map<string, GuildInputManager>()
+const interactionManager = new InteractionManager(new DatabaseManager())
 const krenkoStatus = [ 'Shuffling cards', 'Building decks', 'Magic: The Gathering', 'Searching for new deck ideas' ]
 
-client.on('ready', async () => {
-    commands = await getCommands(client, 'krenko')
-
+client.once('ready', async () => {
+    await interactionManager.getCommands(client, 'krenko')
     client.user.setActivity(krenkoStatus[Math.floor(Math.random() * krenkoStatus.length)])
 
-    setInterval(async () => {
+    setInterval(() => {
         client.user.setActivity(krenkoStatus[Math.floor(Math.random() * krenkoStatus.length)])
     }, 60000)
 
@@ -36,15 +31,15 @@ client.on('ready', async () => {
 })
 
 client.on('interactionCreate', async interaction => {
-    if (!guildStatus.has(interaction.guildId)) {
-        guildStatus.set(interaction.guildId, new GuildInputManager(commands, { database: database }))
+    if (!interaction.inGuild()) {
+        return
     }
 
+    interactionManager.addGuild(interaction.guildId)
+
     if (interaction.isAutocomplete()) {
-        const response = await guildStatus.get(interaction.guildId).autocomplete(interaction)
-        if (!interaction.responded) {
-            interaction.respond(response)
-        }
+        const response = await interactionManager.autocomplete(interaction)
+        interaction.respond(response)
         return
     }
 
@@ -52,7 +47,7 @@ client.on('interactionCreate', async interaction => {
         return
     }
 
-    const response = await guildStatus.get(interaction.guildId).parseCommand(interaction)
+    const response = await interactionManager.parseCommand(interaction)
     if (response) {
         interaction.editReply(response)
     }
@@ -70,8 +65,14 @@ process.on('message', function (arg) {
             client.login(process.env.krenkoKey)
             break
         case 'deploy':
-            deployCommands(client, 'krenko')
-            break
+           // eslint-disable-next-line no-case-declarations
+           const commandData: ApplicationCommandData[] = []
+           for (const command of readdirSync('./dist/bots/krenko/commands').filter(file => file.endsWith('.js'))) {
+               // eslint-disable-next-line @typescript-eslint/no-var-requires
+               commandData.push(require(`../../bots/krenko/commands/${command}`).data)
+           }
+           client.application.commands.set(commandData)
+           break
     }
 })
 

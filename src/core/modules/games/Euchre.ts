@@ -1,5 +1,5 @@
 import { ButtonInteraction, CollectorFilter, MessageActionRow, MessageButton, MessageSelectMenu, MessageSelectOptionData, SelectMenuInteraction, ThreadChannel, User } from 'discord.js'
-import { generateEmbed } from '../../utils/commonFunctions'
+import { generateEmbed } from '../../utils/generators'
 import { BaseCardGame } from './Util/BaseCardGame'
 import { Card, Deck, Suit } from './Util/Deck'
 

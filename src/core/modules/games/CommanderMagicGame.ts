@@ -1,4 +1,4 @@
-import { MessageEmbed, Snowflake, ThreadChannel, User } from 'discord.js'
+import { MessageEmbed, ThreadChannel, User } from 'discord.js'
 import { MagicGame } from './MagicGame'
 
 export class CommanderMagicGame extends MagicGame {
@@ -17,7 +17,7 @@ export class CommanderMagicGame extends MagicGame {
         }
     }
 
-    public changeCommanderDamage(player: Snowflake, commander: string, amount: number): MessageEmbed {
+    public changeCommanderDamage(player: string, commander: string, amount: number): MessageEmbed {
         //use select menu to determine commander in command file
         const commanderDamage = this.playerData.get(player).commanderDamage
         commanderDamage.set(commander, commanderDamage.get(commander) + amount)
@@ -30,7 +30,7 @@ export class CommanderMagicGame extends MagicGame {
         return embed
     }
 
-    protected checkStatus(player: Snowflake): MessageEmbed {
+    protected checkStatus(player: string): MessageEmbed {
         if (this.playerData.get(player).life < 1 || this.playerData.get(player).poison >= 10) {
             return this.eliminate(player)
         }

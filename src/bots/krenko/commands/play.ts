@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
 import { MagicGame } from '../../../core/modules/games/MagicGame'
 import { CommanderMagicGame } from '../../../core/modules/games/CommanderMagicGame'
-import { generateEmbed } from '../../../core/utils/commonFunctions'
+import { generateEmbed } from '../../../core/utils/generators'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {

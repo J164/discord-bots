@@ -2,7 +2,7 @@ import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, Te
 import { request } from 'undici'
 import ytdl from 'ytdl-core'
 import ytsr from 'ytsr'
-import { generateEmbed } from '../../../core/utils/commonFunctions'
+import { generateEmbed } from '../../../core/utils/generators'
 import { GuildInfo, QueueItem } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {

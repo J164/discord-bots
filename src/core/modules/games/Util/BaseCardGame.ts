@@ -1,6 +1,6 @@
 import { createCanvas, loadImage } from 'canvas'
 import { MessageAttachment, MessageEmbedOptions, MessageOptions, ThreadChannel } from 'discord.js'
-import { generateEmbed } from '../../../utils/commonFunctions'
+import { generateEmbed } from '../../../utils/generators'
 import { BaseGame } from './BaseGame'
 import { Card } from './Deck'
 

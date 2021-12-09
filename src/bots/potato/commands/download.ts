@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import ytdl from 'ytdl-core'
 import { createWriteStream, writeFileSync } from 'fs'
-import { generateEmbed } from '../../../core/utils/commonFunctions'
+import { generateEmbed } from '../../../core/utils/generators'
 
 const data: ApplicationCommandData = {
     name: 'download',

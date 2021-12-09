@@ -1,7 +1,7 @@
 import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { createReadStream, readFileSync } from 'fs'
 import Fuse from 'fuse.js'
-import { generateEmbed } from '../../../core/utils/commonFunctions'
+import { generateEmbed } from '../../../core/utils/generators'
 import { GuildInfo } from '../../../core/utils/interfaces'
 
 const data: ApplicationCommandData = {

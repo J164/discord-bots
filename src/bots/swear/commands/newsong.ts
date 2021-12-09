@@ -1,8 +1,8 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
-import { GuildInfo, SwearSongInfo } from '../../../core/utils/interfaces'
+import { GuildInfo } from '../../../core/utils/interfaces'
 import ytdl from 'ytdl-core'
 import { createWriteStream, writeFileSync } from 'fs'
-import { generateEmbed } from '../../../core/utils/commonFunctions'
+import { generateEmbed } from '../../../core/utils/generators'
 
 const data: ApplicationCommandData = {
     name: 'newsong',
@@ -35,7 +35,7 @@ async function newSong(interaction: CommandInteraction, info: GuildInfo): Promis
         return
     }
     interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
-    const songs = <SwearSongInfo[]> <unknown> await info.database.select('swear_songs')
+    const songs = <{ index: number, name: string }[]> <unknown> await info.database.select('swear_songs')
     writeFileSync(`${process.env.data}/music_files/swear_songs/song${songs.length + 1}.webm`, '')
     ytdl.downloadFromInfo(output, {
         filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus'

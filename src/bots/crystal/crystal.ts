@@ -1,8 +1,6 @@
-import { Client, Intents } from 'discord.js'
-import { writeFileSync } from 'fs'
-import { GuildInputManager } from '../../core/GuildInputManager'
-import { deployCommands, getCommands } from '../../core/utils/commonFunctions'
-import { Command } from '../../core/utils/interfaces'
+import { ApplicationCommandData, Client, Intents } from 'discord.js'
+import { readdirSync, writeFileSync } from 'fs'
+import { InteractionManager } from '../../core/InteractionManager'
 import { VoiceManager } from '../../core/voice/VoiceManager'
 
 process.on('unhandledRejection', (error: Error) => {
@@ -17,21 +15,16 @@ process.on('unhandledRejection', (error: Error) => {
 })
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ] })
-declare const commands: Map<string, Command>
-const guildStatus = new Map<string, GuildInputManager>()
+const interactionManager = new InteractionManager()
 const crystalStatus = [ 'Karl Needs a Bandage', 'The Agent Game', 'Gangster Town', 'The Running Game', 'The Games (Which one?)' ]
 
-client.on('ready', async () => {
-    commands = await getCommands(client, 'crystal')
-
+client.once('ready', async () => {
+    await interactionManager.getCommands(client, 'crystal')
     client.user.setActivity(crystalStatus[Math.floor(Math.random() * crystalStatus.length)])
 
-    setInterval(async () => {
+    setInterval(() => {
         client.user.setActivity(crystalStatus[Math.floor(Math.random() * crystalStatus.length)])
-
-        for (const [ , guildManager ] of guildStatus) {
-            guildManager.statusCheck()
-        }
+        interactionManager.statusCheck()
     }, 60000)
 
     console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
@@ -39,15 +32,15 @@ client.on('ready', async () => {
 })
 
 client.on('interactionCreate', async interaction => {
-    if (!guildStatus.has(interaction.guildId)) {
-        guildStatus.set(interaction.guildId, new GuildInputManager(commands, { voiceManager: new VoiceManager() }))
+    if (!interaction.inGuild()) {
+        return
     }
 
+    interactionManager.addGuild(interaction.guildId, { voiceManager: new VoiceManager() })
+
     if (interaction.isAutocomplete()) {
-        const response = await guildStatus.get(interaction.guildId).autocomplete(interaction)
-        if (!interaction.responded) {
-            interaction.respond(response)
-        }
+        const response = await interactionManager.autocomplete(interaction)
+        interaction.respond(response)
         return
     }
 
@@ -55,7 +48,7 @@ client.on('interactionCreate', async interaction => {
         return
     }
 
-    const response = await guildStatus.get(interaction.guildId).parseCommand(interaction)
+    const response = await interactionManager.parseCommand(interaction)
     if (response) {
         interaction.editReply(response)
     }
@@ -73,7 +66,13 @@ process.on('message', arg => {
             client.login(process.env.crystalKey)
             break
         case 'deploy':
-            deployCommands(client, 'crystal')
+            // eslint-disable-next-line no-case-declarations
+            const commandData: ApplicationCommandData[] = []
+            for (const command of readdirSync('./dist/bots/crystal/commands').filter(file => file.endsWith('.js'))) {
+                // eslint-disable-next-line @typescript-eslint/no-var-requires
+                commandData.push(require(`../../bots/crystal/commands/${command}`).data)
+            }
+            client.application.commands.set(commandData)
             break
     }
 })

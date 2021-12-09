@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { request } from 'undici'
-import { generateEmbed } from '../../../core/utils/commonFunctions'
+import { generateEmbed } from '../../../core/utils/generators'
 
 interface WynncraftData {
     readonly data: readonly {
@@ -36,33 +36,19 @@ const data: ApplicationCommandData = {
 
 async function wynncraft(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     const playerData = <WynncraftData> await (await request(`https://api.wynncraft.com/v2/player/${interaction.options.getString('player')}/stats`)).body.json()
-    let status
-    const embedVar = generateEmbed('info', { title: playerData.data[0].username })
-    if (playerData.data[0].meta.location.online) {
-        status = `Online at: ${playerData.data[0].meta.location.server}`
-        embedVar.setColor(0x33cc33)
-    } else {
-        status = 'Offline'
-        embedVar.setColor(0xff0000)
-    }
-    embedVar.addField('Current Status', status)
+    const embedVar = generateEmbed('info', {
+        title: playerData.data[0].username,
+        fields: [ {
+            name: 'Current Status',
+            value: playerData.data[0].meta.location.online ? `Online at: ${playerData.data[0].meta.location.server}` : 'Offline'
+        } ],
+        color: playerData.data[0].meta.location.online ? 0x33cc33 : 0xff0000
+    })
     for (let i = 0; i < playerData.data[0].classes.length; i++) {
-        let playtime = playerData.data[0].classes[i].playtime
+        const playtime = playerData.data[0].classes[i].playtime
         const playHours = Math.floor(playtime / 60)
-        playtime = playtime % 60
-        let playtimeString
-        let playHoursString
-        if (playtime < 10) {
-            playtimeString = `0${playtime}`
-        } else {
-            playtimeString = playtime.toString()
-        }
-        if (playHours < 10) {
-            playHoursString = `0${playHours}`
-        } else {
-            playHoursString = playHours.toString()
-        }
-        embedVar.addField(`Profile ${i + 1}`, `Class: ${playerData.data[0].classes[i].name}\nPlaytime: ${playHoursString}:${playtimeString}\nCombat Level: ${playerData.data[0].classes[i].professions.combat.level}`)
+        const playSecs = playtime % 60
+        embedVar.addField(`Profile ${i + 1}`, `Class: ${playerData.data[0].classes[i].name}\nPlaytime: ${playHours < 10 ? `0${playHours}` : playHours}:${playSecs < 10 ? `0${playSecs}` : playSecs}\nCombat Level: ${playerData.data[0].classes[i].professions.combat.level}`)
     }
     return { embeds: [ embedVar ] }
 }

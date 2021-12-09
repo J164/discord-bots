@@ -1,13 +1,12 @@
-import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, joinVoiceChannel, PlayerSubscription, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice'
+import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice'
 import { InteractionReplyOptions, VoiceChannel } from 'discord.js'
 import { createReadStream } from 'fs'
 import { Readable } from 'stream'
-import { generateEmbed } from '../utils/commonFunctions'
+import { generateEmbed } from '../utils/generators'
 
 export class VoiceManager {
 
     private voiceConnection: VoiceConnection
-    private subscription: PlayerSubscription
     private voiceChannel: VoiceChannel
     private looping: boolean
     private currentPath: string
@@ -26,7 +25,7 @@ export class VoiceManager {
         try {
             await entersState(this.voiceConnection, VoiceConnectionStatus.Ready, 30e3)
             this.player = createAudioPlayer()
-            this.subscription = this.voiceConnection.subscribe(this.player)
+            this.voiceConnection.subscribe(this.player)
             return true
         } catch (err) {
             console.warn(err)
@@ -91,7 +90,5 @@ export class VoiceManager {
         this.player?.removeAllListeners()
         this.player?.stop()
         this.player = null
-        this.subscription?.unsubscribe()
-        this.subscription = null
     }
 }
