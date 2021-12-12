@@ -40,7 +40,7 @@ async function newSong(interaction: CommandInteraction, info: GuildInfo): Promis
     ytdl.downloadFromInfo(output, {
         filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus'
     }).pipe(createWriteStream(`${process.env.data}/music_files/swear_songs/song${songs.length + 1}.webm`))
-    await info.database.insert('swear_songs', { index: `${songs.length + 1}`, name: `song${songs.length + 1}` })
+    await info.database.insert('swear_songs', { index: songs.length + 1, name: `song${songs.length + 1}` })
     interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Success!' }) ] })
 }
 
