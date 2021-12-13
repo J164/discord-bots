@@ -22,7 +22,7 @@ function roll(interaction: CommandInteraction): InteractionReplyOptions {
         }
     }
     interaction.editReply({ embeds: [ generateEmbed('info', { title: `Rolling a ${dice}-sided die...` }) ] })
-    const diceResult = generateEmbed('info', { title: `${dice}-sided die result` })
+    const diceResult = generateEmbed('info', { title: `${dice}-sided die result`, fields: [] })
     let chanceMod = 10000
     while (100 / dice * chanceMod < 1) {
         chanceMod *= 10

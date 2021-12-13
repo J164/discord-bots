@@ -86,7 +86,8 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results:
     }
     const embed = generateEmbed('info', {
         title: 'Results',
-        footer: { text: `${i + 1}/${results.length}` }
+        footer: { text: `${i + 1}/${results.length}` },
+        fields: []
     })
     for (const [ index, entry ] of results[i].entries()) {
         embed.fields.push({ name: `${index + 1}.`, value: `${entry.name}` })

@@ -11,7 +11,8 @@ const data: ApplicationCommandData = {
 function songEmbed(songs: string[], i: number): MessageEmbedOptions {
     const embed = generateEmbed('info', {
         title: 'Naruto Songs',
-        footer: { text: `${i + 1}/${Math.ceil(songs.length / 25)}` }
+        footer: { text: `${i + 1}/${Math.ceil(songs.length / 25)}` },
+        fields: []
     })
     for (let r = 0 + (i * 25); r < 25 + (i * 25); r++) {
         if (r >= songs.length) {

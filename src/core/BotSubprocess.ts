@@ -1,5 +1,4 @@
 import { ChildProcess, fork } from 'child_process'
-import { writeFileSync } from 'fs'
 
 export class BotSubprocess {
     private process: ChildProcess
@@ -39,16 +38,6 @@ export class BotSubprocess {
             }
             this.process.removeAllListeners('message')
             this.start()
-        })
-        this.process.on('unhandledRejection', (error: Error) => {
-            if (error.name === 'FetchError') {
-                process.exit()
-            }
-            if (error.message !== 'Unknown interaction' && error.message !== 'Status code: 403') {
-                const date = new Date()
-                writeFileSync(`${process.env.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-${this.name}.txt`, `${error.name}\n${error.message}\n${error.stack}`)
-                process.exit()
-            }
         })
     }
 

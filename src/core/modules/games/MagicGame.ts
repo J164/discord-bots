@@ -49,7 +49,7 @@ export class MagicGame extends BaseGame {
     }
 
     public printStandings(): MessageEmbedOptions {
-        const embed = generateEmbed('info', { title: 'Current Standings' })
+        const embed = generateEmbed('info', { title: 'Current Standings', fields: [] })
         for (const [ , player ] of this.playerData) {
             embed.fields.push({ name: `${player.name}`, value: player.isAlive ? `Life Total: ${player.life}\nPoison Counters: ${player.poison}` : 'ELIMINATED' })
         }

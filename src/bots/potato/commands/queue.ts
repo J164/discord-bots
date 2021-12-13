@@ -22,7 +22,8 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
     }
     const queueMessage = generateEmbed('info', {
         title: title,
-        footer: { text: `${i + 1}/${queueArray.length}` }
+        footer: { text: `${i + 1}/${queueArray.length}` },
+        fields: []
     })
     for (const [ index, entry ] of queueArray[i].entries()) {
         const hour = Math.floor(entry.duration / 3600)

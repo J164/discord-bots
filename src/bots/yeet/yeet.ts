@@ -1,6 +1,17 @@
 import { ApplicationCommandData, Client, Intents } from 'discord.js'
-import { readdirSync } from 'fs'
+import { readdirSync, writeFileSync } from 'fs'
 import { InteractionManager } from '../../core/InteractionManager'
+
+process.on('unhandledRejection', (error: Error) => {
+    if (error.name === 'FetchError') {
+        process.exit()
+    }
+    if (error.message !== 'Unknown interaction' && error.message !== 'Status code: 403') {
+        const date = new Date()
+        writeFileSync(`${process.env.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-yeet.txt`, `${error.name}\n${error.message}\n${error.stack}`)
+        process.exit()
+    }
+})
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ] })
 const interactionManager = new InteractionManager()
