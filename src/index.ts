@@ -1,7 +1,6 @@
 import { BotSubprocess } from './core/BotSubprocess'
 import { createInterface } from 'readline'
 import { readFileSync, writeFileSync } from 'fs'
-import Collection from '@discordjs/collection'
 
 const config = JSON.parse(readFileSync('./assets/data/config.json', { encoding: 'utf8' }))
 
@@ -11,7 +10,7 @@ process.on('uncaughtException', err => {
     process.exit()
 })
 
-const bots = new Collection<string, BotSubprocess>([
+const bots = new Map<string, BotSubprocess>([
     [ 'potato', new BotSubprocess('./dist/bots/potato/potato.js', 'Potato Bot', config) ],
     [ 'krenko', new BotSubprocess('./dist/bots/krenko/krenko.js', 'Krenko Bot', config) ],
     [ 'swear', new BotSubprocess('./dist/bots/swear/swear.js', 'Swear Bot', config) ],
@@ -53,7 +52,7 @@ async function deploy(): Promise<void> {
 
 function stop(input: string[]): void {
     if (input.length < 2) {
-        console.log('This command takes 1 parameter (Bot Name)')
+        console.warn('This command takes 1 parameter (Bot Name)')
         return
     }
     if (input[1] === 'all') {
@@ -62,17 +61,17 @@ function stop(input: string[]): void {
     }
     const bot = bots.get(input[1])
     if (!bot) {
-        console.log('Name not recognized')
+        console.warn('Name not recognized')
         return
     }
     if (!bot.stop()) {
-        console.log(`${bot.name} is already offline`)
+        console.warn(`${bot.name} is already offline`)
     }
 }
 
 function start(input: string[]): void {
     if (input.length < 2) {
-        console.log('This command takes 1 parameter (Bot Name)')
+        console.warn('This command takes 1 parameter (Bot Name)')
         return
     }
     if (input[1] === 'all') {
@@ -81,21 +80,17 @@ function start(input: string[]): void {
     }
     const bot = bots.get(input[1])
     if (!bot) {
-        console.log('Name not recognized')
+        console.warn('Name not recognized')
         return
     }
     if (!bot.start()) {
-        console.log(`${bot.name} is already online`)
+        console.warn(`${bot.name} is already online`)
     }
 }
 
 function list(): void {
-    const [ online, offline ] = bots.partition(bot => bot.getOnline())
-    for (const [ , bot ] of online) {
-        console.log(`${bot.name}: `, '\x1b[42m', 'Online', '\x1b[0m')
-    }
-    for (const [ , bot ] of offline) {
-        console.log(`${bot.name}: `, '\x1b[41m', 'Offline', '\x1b[0m')
+    for (const [ , bot ] of bots) {
+        console.log(bot.getOnline() ? `${bot.name}: \x1b[42m Online \x1b[0m` : '\x1b[41m Offline \x1b[0m')
     }
 }
 

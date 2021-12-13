@@ -1,15 +1,11 @@
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice'
-import { InteractionReplyOptions, VoiceChannel } from 'discord.js'
-import { createReadStream } from 'fs'
+import { VoiceChannel } from 'discord.js'
 import { Readable } from 'stream'
-import { generateEmbed } from '../utils/generators'
 
 export class VoiceManager {
 
     private voiceConnection: VoiceConnection
     private voiceChannel: VoiceChannel
-    private looping: boolean
-    private currentPath: string
     public player: AudioPlayer
 
     public async connect(voiceChannel: VoiceChannel): Promise<boolean> {
@@ -34,9 +30,7 @@ export class VoiceManager {
         }
     }
 
-    public async playStream(stream: Readable, path?: string): Promise<boolean> {
-        this.looping = false
-        this.currentPath = path
+    public async playStream(stream: Readable): Promise<boolean> {
         const { type } = await demuxProbe(stream)
         this.player.play(createAudioResource(stream, { inputType: type }))
         try {
@@ -46,25 +40,6 @@ export class VoiceManager {
             return false
         }
         return true
-    }
-
-    public loop(): InteractionReplyOptions {
-        if (!this.isActive()) {
-            return { embeds: [ generateEmbed('error', { title: 'Nothing is playing!' }) ] }
-        }
-        if (!this.looping) {
-            this.player.on('stateChange', (oldState, newState) => {
-                if (newState.status !== AudioPlayerStatus.Idle) {
-                    return
-                }
-                this.playStream(createReadStream(this.currentPath), this.currentPath)
-            })
-            this.looping = true
-            return { embeds: [ generateEmbed('success', { title: 'Now Looping!' }) ] }
-        }
-        this.player.removeAllListeners('stateChange')
-        this.looping = false
-        return { embeds: [ generateEmbed('success', { title: 'No longer looping!' }) ] }
     }
 
     public pause(): boolean {
@@ -90,5 +65,6 @@ export class VoiceManager {
         this.player?.removeAllListeners()
         this.player?.stop()
         this.player = null
+        this.voiceChannel = null
     }
 }

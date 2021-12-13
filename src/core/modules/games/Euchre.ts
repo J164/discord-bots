@@ -1,7 +1,8 @@
-import { ButtonInteraction, CollectorFilter, MessageActionRow, MessageButton, MessageSelectMenu, MessageSelectOptionData, SelectMenuInteraction, ThreadChannel, User } from 'discord.js'
+import { ButtonInteraction, CollectorFilter, MessageSelectOptionData, SelectMenuInteraction, ThreadChannel, User } from 'discord.js'
 import { generateEmbed } from '../../utils/generators'
-import { BaseCardGame } from './Util/BaseCardGame'
-import { Card, Deck, Suit } from './Util/Deck'
+import { BaseGame } from './util/BaseGame'
+import { multicardMessage } from './util/cardUtils'
+import { Card, Deck, Suit } from './util/Deck'
 
 interface EuchreTeam {
     tricks: number;
@@ -16,7 +17,7 @@ interface EuchrePlayer {
     out: boolean
 }
 
-export class Euchre extends BaseCardGame {
+export class Euchre extends BaseGame {
 
     private readonly team1: EuchreTeam
     private readonly team2: EuchreTeam
@@ -64,14 +65,13 @@ export class Euchre extends BaseCardGame {
         const top = draws[20]
         for (const player of this.players) {
             const channel = await player.user.createDM()
-            await channel.send(await this.multicardMessage(player.hand, 'info', { title: 'Your Hand:' }))
+            await channel.send(await multicardMessage(player.hand, 'info', { title: 'Your Hand:' }))
         }
-        this.gameChannel.send(await this.multicardMessage([ top ], 'info', { title: 'Top of Stack:' }))
+        this.gameChannel.send(await multicardMessage([ top ], 'info', { title: 'Top of Stack:' }))
 
         const promptThree = async (index: number): Promise<void> => {
-            const options = new MessageActionRow({ components: [ new MessageButton({ customId: 'three-yes', label: 'Yes', style: 'PRIMARY' }), new MessageButton({ customId: 'three-no', label: 'No', style: 'SECONDARY' }) ] })
             const channel = await this.players[index].user.createDM()
-            await channel.send({ embeds: [ generateEmbed('prompt', { title: 'Would you like to go alone?' }) ], components: [ options ] })
+            await channel.send({ embeds: [ generateEmbed('prompt', { title: 'Would you like to go alone?' }) ], components: [ { components: [ { type: 'BUTTON', customId: 'three-yes', label: 'Yes', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'three-no', label: 'No', style: 'SECONDARY' } ], type: 'ACTION_ROW' } ] })
             const filter: CollectorFilter<[ButtonInteraction]> = b => b.customId.startsWith('three-')
             const collector = channel.createMessageComponentCollector({ filter: filter, componentType: 'BUTTON', max: 1 })
             collector.once('collect', interaction => {
@@ -85,15 +85,13 @@ export class Euchre extends BaseCardGame {
         }
 
         const promptTwo = async (index = 0): Promise<void> => {
-            const options1 = new MessageActionRow({ components: [ new MessageSelectMenu({ customId: 'two-select', placeholder: 'Select a Suit', options: [ { label: 'Spades', value: 'Spades', emoji: '\u2660\uFE0F' }, { label: 'Clubs', value: 'Clubs', emoji: '\u2663\uFE0F' }, { label: 'Hearts', value: 'Hearts', emoji: '\u2665\uFE0F' }, { label: 'Diamonds', value: 'Diamonds', emoji: '\u2666\uFE0F' } ] }) ] })
-            const options2 = new MessageActionRow({ components: [ new MessageButton({ customId: 'two-pass', label: 'Pass', style: 'SECONDARY' }) ] })
             const channel = await this.players[index].user.createDM()
-            const { embeds, files } = await this.multicardMessage(this.players[index].hand, 'prompt', { title: 'Would you like to pass or select trump?' })
+            const { embeds, files } = await multicardMessage(this.players[index].hand, 'prompt', { title: 'Would you like to pass or select trump?' })
             if (index === 3) {
                 embeds[0].title = 'Please select trump'
-                await channel.send({ embeds: embeds, files: files, components: [ options2 ] })
+                await channel.send({ embeds: embeds, files: files, components: [ { components: [ { type: 'SELECT_MENU', customId: 'two-select', placeholder: 'Select a Suit', options: [ { label: 'Spades', value: 'Spades', emoji: '\u2660\uFE0F' }, { label: 'Clubs', value: 'Clubs', emoji: '\u2663\uFE0F' }, { label: 'Hearts', value: 'Hearts', emoji: '\u2665\uFE0F' }, { label: 'Diamonds', value: 'Diamonds', emoji: '\u2666\uFE0F' } ] } ], type: 'ACTION_ROW' } ] })
             } else {
-                await channel.send({ embeds: embeds, files: files, components: [ options1, options2 ] })
+                await channel.send({ embeds: embeds, files: files, components: [ { components: [ { type: 'SELECT_MENU', customId: 'two-select', placeholder: 'Select a Suit', options: [ { label: 'Spades', value: 'Spades', emoji: '\u2660\uFE0F' }, { label: 'Clubs', value: 'Clubs', emoji: '\u2663\uFE0F' }, { label: 'Hearts', value: 'Hearts', emoji: '\u2665\uFE0F' }, { label: 'Diamonds', value: 'Diamonds', emoji: '\u2666\uFE0F' } ] } ], type: 'ACTION_ROW' }, { components: [ { type: 'BUTTON', customId: 'two-pass', label: 'Pass', style: 'SECONDARY' } ], type: 'ACTION_ROW' } ] })
             }
             const filter: CollectorFilter<[ButtonInteraction | SelectMenuInteraction]> = b => b.customId.startsWith('two-')
             const collector1 = channel.createMessageComponentCollector({ filter: filter, componentType: 'SELECT_MENU', max: 1 })
@@ -118,27 +116,25 @@ export class Euchre extends BaseCardGame {
             for (const[ id, card ] of this.players[3].hand.entries()) {
                 opts.push({ label: `${card.value} of ${card.suit}`, value: id.toString() })
             }
-            const options = new MessageActionRow({ components: [ new MessageSelectMenu({ customId: 'replace', placeholder: 'Select a Card', options: opts }) ] })
             const channel = await this.players[3].user.createDM()
-            const { embeds, files } = await this.multicardMessage(this.players[3].hand, 'prompt', { title: 'Select a card to replace' })
-            await channel.send({ embeds: embeds, files: files, components: [ options ] })
+            const { embeds, files } = await multicardMessage(this.players[3].hand, 'prompt', { title: 'Select a card to replace' })
+            await channel.send({ embeds: embeds, files: files, components: [ { components: [ { type: 'SELECT_MENU', customId: 'replace', placeholder: 'Select a Card', options: opts } ], type: 'ACTION_ROW' } ] })
             const filter: CollectorFilter<[SelectMenuInteraction]> = b => b.customId === 'replace'
             const collector = channel.createMessageComponentCollector({ filter: filter, componentType: 'SELECT_MENU', max: 1 })
             collector.once('collect', interaction => {
                 interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
-                this.players[3].hand.splice(new Number(interaction.values[0]).valueOf(), 1, top)
+                this.players[3].hand.splice(parseInt(interaction.values[0]), 1, top)
                 this.trump = top.suit
                 promptThree(index)
             })
         }
 
         const promptOne = async (index = 0): Promise<void> => {
-            const options = new MessageActionRow({ components: [ new MessageButton({ customId: 'one-pickup', label: 'Pick It Up', style: 'PRIMARY' }), new MessageButton({ customId: 'one-pass', label: 'Pass', style: 'SECONDARY' }) ] })
             const channel = await this.players[index].user.createDM()
             if (index === 3) {
-                await channel.send({ embeds: [ generateEmbed('prompt', { title: `Would you like to pass or pick it up?`, image: { url: top.image } }) ], components: [ options ] })
+                await channel.send({ embeds: [ generateEmbed('prompt', { title: `Would you like to pass or pick it up?`, image: { url: top.image } }) ], components: [ { components: [ { type: 'BUTTON', customId: 'one-pickup', label: 'Pick It Up', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'one-pass', label: 'Pass', style: 'SECONDARY' } ], type: 'ACTION_ROW' } ] })
             } else {
-                await channel.send({ embeds: [ generateEmbed('prompt', { title: `Would you like to pass or have ${this.players[3].user.username} pick it up?`, image: { url: top.image } }) ], components: [ options ] })
+                await channel.send({ embeds: [ generateEmbed('prompt', { title: `Would you like to pass or have ${this.players[3].user.username} pick it up?`, image: { url: top.image } }) ], components: [ { components: [ { type: 'BUTTON', customId: 'one-pickup', label: 'Pick It Up', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'one-pass', label: 'Pass', style: 'SECONDARY' } ], type: 'ACTION_ROW' } ] })
             }
             const filter: CollectorFilter<[ButtonInteraction]> = b => b.customId.startsWith('one-')
             const collector = channel.createMessageComponentCollector({ filter: filter, componentType: 'BUTTON', max: 1 })
@@ -175,10 +171,9 @@ export class Euchre extends BaseCardGame {
                 legalPlays.push({ label: `${card.value} of ${card.suit}`, value: card.code })
             }
         }
-        const options = new MessageActionRow({ components: [ new MessageSelectMenu({ customId: 'play', placeholder: 'Select a Card', options: legalPlays }) ] })
         const channel = await this.players[index].user.createDM()
-        const { embeds, files } = await this.multicardMessage(this.players[index].hand, 'prompt', { title: 'Select a card to play' })
-        await channel.send({ embeds: embeds, files: files, components: [ options ] })
+        const { embeds, files } = await multicardMessage(this.players[index].hand, 'prompt', { title: 'Select a card to play' })
+        await channel.send({ embeds: embeds, files: files, components: [ { components: [ { type: 'SELECT_MENU', customId: 'play', placeholder: 'Select a Card', options: legalPlays } ], type: 'ACTION_ROW' } ] })
         const filter: CollectorFilter<[SelectMenuInteraction]> = b => b.customId.startsWith('play')
         const collector = channel.createMessageComponentCollector({ filter: filter, componentType: 'SELECT_MENU', max: 1 })
         collector.once('collect', interaction => {

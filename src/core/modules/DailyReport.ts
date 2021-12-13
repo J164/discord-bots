@@ -171,18 +171,16 @@ export async function getDailyReport(date: Date): Promise<MessageOptions> {
         fields: [
             {
                 name: `Quote of the Day:`,
-                value: `"${quote.contents.quotes[0].quote}" -${quote.contents.quotes[0].author}`,
-                inline: false
+                value: `"${quote.contents.quotes[0].quote}" -${quote.contents.quotes[0].author}`
             },
             {
                 name: `In Linconshire is is ${weather.current.condition.text} and ${weather.current.temp_f}°F`,
-                value: `It feels like ${weather.current.feelslike_f}°F and the wind speed is ${weather.current.wind_mph} mph`,
-                inline: false
+                value: `It feels like ${weather.current.feelslike_f}°F and the wind speed is ${weather.current.wind_mph} mph`
             }
         ]
     }) ] }
     if (holiday.length > 0) {
-        response.embeds[0].addField(`Today is ${holiday[0].name}`, 'Have a great day!', false)
+        response.embeds[0].fields.push({ name: `Today is ${holiday[0].name}`, value: 'Have a great day!' })
     }
     return response
 }

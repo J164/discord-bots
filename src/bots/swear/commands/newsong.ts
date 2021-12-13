@@ -30,7 +30,7 @@ async function newSong(interaction: CommandInteraction, info: GuildInfo): Promis
         interaction.editReply({ embeds: [ generateEmbed('error', { title: 'It seems like something went wrong. Make sure to enter the url of a single public YouTube video.' }) ] })
         return
     }
-    if (new Number(output.videoDetails.lengthSeconds).valueOf() > 1200) {
+    if (parseInt(output.videoDetails.lengthSeconds) > 1200) {
         interaction.editReply({ embeds: [ generateEmbed('error', { title: 'The video length limit is 20 minutes! Aborting...' }) ] })
         return
     }

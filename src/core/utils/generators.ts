@@ -1,6 +1,6 @@
-import { MessageEmbed, MessageEmbedOptions } from 'discord.js'
+import { MessageEmbedOptions } from 'discord.js'
 
-export function generateEmbed(type: 'info' | 'error' | 'success' | 'prompt', options: MessageEmbedOptions): MessageEmbed {
+export function generateEmbed(type: 'info' | 'error' | 'success' | 'prompt', options: MessageEmbedOptions): MessageEmbedOptions {
     switch (type) {
         case 'info':
             options.color ??= 0x0099ff
@@ -19,5 +19,5 @@ export function generateEmbed(type: 'info' | 'error' | 'success' | 'prompt', opt
             options.title = `\u2753\t${options.title}`
             break
     }
-    return new MessageEmbed(options)
+    return options
 }

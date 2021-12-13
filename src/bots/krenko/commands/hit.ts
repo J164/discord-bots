@@ -1,4 +1,4 @@
-import { ApplicationCommandData, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageEmbed, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
+import { ApplicationCommandData, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageEmbedOptions, SelectMenuInteraction } from 'discord.js'
 import { MagicGame } from '../../../core/modules/games/MagicGame'
 import { CommanderMagicGame } from '../../../core/modules/games/CommanderMagicGame'
 import { generateEmbed } from '../../../core/utils/generators'
@@ -43,7 +43,7 @@ function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReply
     if (!game.userInGame(interaction.options.getUser('player').id)) {
         return { embeds: [ generateEmbed('error', { title: 'That user is not part of this game!' }) ] }
     }
-    let standings: MessageEmbed
+    let standings: MessageEmbedOptions
     standings = game.changeLife(interaction.options.getUser('player').id, interaction.options.getInteger('amount') * -1)
     if (interaction.options.getBoolean('posion') && !game.isOver()) {
         standings = game.changePoison(interaction.options.getUser('player').id, interaction.options.getInteger('amount'))
@@ -57,9 +57,7 @@ function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReply
                 value: (i + 1).toString()
             })
         }
-        const select = new MessageSelectMenu({ customId: 'hit-options', placeholder: 'Select the commander that delt damage', options: selectOptions })
-        const row1 = new MessageActionRow().addComponents(select)
-        interaction.editReply({ embeds: [ generateEmbed('prompt', { title: 'Select the commander dealing damage' }) ], components: [ row1 ] })
+        interaction.editReply({ embeds: [ generateEmbed('prompt', { title: 'Select the commander dealing damage' }) ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'hit-options', placeholder: 'Select the commander that delt damage', options: selectOptions } ], type: 'ACTION_ROW' } ] })
         const filter: CollectorFilter<[SelectMenuInteraction]> = b => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
         const collector = <InteractionCollector<SelectMenuInteraction>> interaction.channel.createMessageComponentCollector({ filter: filter, time: 60000 })
         collector.once('collect', async c => {

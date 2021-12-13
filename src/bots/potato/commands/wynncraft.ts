@@ -48,7 +48,7 @@ async function wynncraft(interaction: CommandInteraction): Promise<InteractionRe
         const playtime = playerData.data[0].classes[i].playtime
         const playHours = Math.floor(playtime / 60)
         const playSecs = playtime % 60
-        embedVar.addField(`Profile ${i + 1}`, `Class: ${playerData.data[0].classes[i].name}\nPlaytime: ${playHours < 10 ? `0${playHours}` : playHours}:${playSecs < 10 ? `0${playSecs}` : playSecs}\nCombat Level: ${playerData.data[0].classes[i].professions.combat.level}`)
+        embedVar.fields.push({ name: `Profile ${i + 1}`, value: `Class: ${playerData.data[0].classes[i].name}\nPlaytime: ${playHours < 10 ? `0${playHours}` : playHours}:${playSecs < 10 ? `0${playSecs}` : playSecs}\nCombat Level: ${playerData.data[0].classes[i].professions.combat.level}` })
     }
     return { embeds: [ embedVar ] }
 }

@@ -1,7 +1,7 @@
 import { ThreadChannel } from 'discord.js'
-import { BaseCardGame } from './Util/BaseCardGame'
+import { BaseGame } from './util/BaseGame'
 
-export class Blackjack extends BaseCardGame {
+export class Blackjack extends BaseGame {
 
     public constructor(gameChannel: ThreadChannel) {
         super(gameChannel)

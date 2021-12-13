@@ -1,5 +1,5 @@
 import { createCanvas, loadImage } from 'canvas'
-import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, InteractionUpdateOptions, MessageActionRow, MessageAttachment, MessageButton, MessageSelectMenu, SelectMenuInteraction } from 'discord.js'
+import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, InteractionUpdateOptions, SelectMenuInteraction } from 'discord.js'
 import { request } from 'undici'
 import { generateEmbed } from '../../../core/utils/generators'
 import { GuildInfo } from '../../../core/utils/interfaces'
@@ -62,17 +62,10 @@ function formatResponse(response: ScryfallResponse): MagicCard[][] {
 
 async function generateResponse(results: MagicCard[][], r: number, i: number): Promise<InteractionUpdateOptions> {
     const card = results[r][i]
-    const embed = generateEmbed('info', { title: card.name })
-    let reply: InteractionReplyOptions
     if (card.card_faces) {
-        const attachment = new MessageAttachment(await mergeImages([ card.card_faces[0].image_uris.large, card.card_faces[1].image_uris.large ], { width: 1344, height: 936 }), 'card.jpg')
-        embed.setImage('attachment://card.jpg')
-        reply = { embeds: [ embed.setFooter(`Price ($): ${card.prices.usd ?? 'unknown (not for sale)'}`) ], files: [ attachment ], components: [] }
-    } else {
-        embed.setImage(card.image_uris.large)
-        reply = { embeds: [ embed.setFooter(`Price ($): ${card.prices.usd ?? 'unknown (not for sale)'}`) ], components: [] }
+        return { embeds: [ generateEmbed('info', { title: card.name, footer: { text: `Price ($): ${card.prices.usd}` ?? 'unknown (not for sale)' }, image: { url: 'attachment://card.jpg' } }) ], files: [ { attachment: await mergeImages([ card.card_faces[0].image_uris.large, card.card_faces[1].image_uris.large ], { width: 1344, height: 936 }), name: 'card.jpg' } ], components: [] }
     }
-    return reply
+    return { embeds: [ generateEmbed('info', { title: card.name, footer: { text: `Price ($): ${card.prices.usd}` ?? 'unknown (not for sale)' }, image: { url: card.image_uris.large } }) ], components: [] }
 }
 
 async function search(interaction: CommandInteraction, info: GuildInfo, results: MagicCard[][] = null, component: ButtonInteraction | SelectMenuInteraction = null, i = 0): Promise<InteractionReplyOptions> {
@@ -96,19 +89,7 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results:
         footer: { text: `${i + 1}/${results.length}` }
     })
     for (const [ index, entry ] of results[i].entries()) {
-        embed.addField(`${index + 1}.`, `${entry.name}`)
-    }
-    const buttons = [ new MessageButton({ customId: 'search-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY' }),
-                         new MessageButton({ customId: 'search-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY' }),
-                         new MessageButton({ customId: 'search-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY' }),
-                         new MessageButton({ customId: 'search-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY' }) ]
-    if (i === 0) {
-        buttons[0].setDisabled(true)
-        buttons[1].setDisabled(true)
-    }
-    if (i === results.length - 1) {
-        buttons[2].setDisabled(true)
-        buttons[3].setDisabled(true)
+        embed.fields.push({ name: `${index + 1}.`, value: `${entry.name}` })
     }
     const selectOptions: { label: string, description: string, value: string }[] = []
     for (let r = 0; r < results[i].length; r++) {
@@ -118,10 +99,12 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results:
             value: (r + 1).toString()
         })
     }
-    const select = new MessageSelectMenu({ customId: 'search-options', placeholder: 'Select a Card', options: selectOptions })
-    const row1 = new MessageActionRow().addComponents(select)
-    const row2 = new MessageActionRow().addComponents(buttons)
-    const options: InteractionReplyOptions = { embeds: [ embed ], components: [ row1, row2 ] }
+    const options: InteractionReplyOptions = { embeds: [ embed ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'search-options', placeholder: 'Select a Card', options: selectOptions } ], type: 'ACTION_ROW' }, { components: [
+        { type: 'BUTTON', customId: 'search-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY', disabled: i === 0 },
+        { type: 'BUTTON', customId: 'search-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY', disabled: i === 0 },
+        { type: 'BUTTON', customId: 'search-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY', disabled: i === results.length - 1 },
+        { type: 'BUTTON', customId: 'search-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: i === results.length - 1 }
+    ], type: 'ACTION_ROW' } ] }
     if (component) {
         await component.update(options)
     } else {

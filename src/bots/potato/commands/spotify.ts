@@ -85,7 +85,7 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo): Promis
 
     for (const url of urls) {
         const output = await ytdl.getInfo(url)
-        items.push({ url: output.videoDetails.video_url, title: output.videoDetails.title, thumbnail: output.videoDetails.thumbnails[0].url, duration: new Number(output.videoDetails.lengthSeconds).valueOf() })
+        items.push({ url: output.videoDetails.video_url, title: output.videoDetails.title, thumbnail: output.videoDetails.thumbnails[0].url, duration: parseInt(output.videoDetails.lengthSeconds) })
     }
 
     await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)

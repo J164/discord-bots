@@ -209,7 +209,7 @@ export class QueueManager {
             image: { url: this.nowPlaying.thumbnail }
         })
         if (this.nowPlaying.looping) {
-            embed.setFooter('Looping', 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png')
+            embed.footer = { text: 'Looping', iconURL: 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png' }
         }
         return { embeds: [ embed ] }
     }
@@ -261,6 +261,7 @@ export class QueueManager {
         this.queue = []
         this.nowPlaying = null
         this.queueLoop = false
+        this.queueLock = false
         this.transitioning = false
     }
 }

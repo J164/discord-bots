@@ -1,4 +1,4 @@
-import { MessageEmbed, ThreadChannel, User } from 'discord.js'
+import { MessageEmbedOptions, ThreadChannel, User } from 'discord.js'
 import { MagicGame } from './MagicGame'
 
 export class CommanderMagicGame extends MagicGame {
@@ -17,20 +17,20 @@ export class CommanderMagicGame extends MagicGame {
         }
     }
 
-    public changeCommanderDamage(player: string, commander: string, amount: number): MessageEmbed {
+    public changeCommanderDamage(player: string, commander: string, amount: number): MessageEmbedOptions {
         //use select menu to determine commander in command file
         const commanderDamage = this.playerData.get(player).commanderDamage
         commanderDamage.set(commander, commanderDamage.get(commander) + amount)
         return this.checkStatus(player)
     }
 
-    public printStandings(): MessageEmbed {
+    public printStandings(): MessageEmbedOptions {
         const embed = super.printStandings()
         //add commander damage to embed
         return embed
     }
 
-    protected checkStatus(player: string): MessageEmbed {
+    protected checkStatus(player: string): MessageEmbedOptions {
         if (this.playerData.get(player).life < 1 || this.playerData.get(player).poison >= 10) {
             return this.eliminate(player)
         }

@@ -1,18 +1,7 @@
 import { ApplicationCommandData, Client, Intents } from 'discord.js'
-import { readdirSync, writeFileSync } from 'fs'
+import { readdirSync } from 'fs'
 import { DatabaseManager } from '../../core/DatabaseManager'
 import { InteractionManager } from '../../core/InteractionManager'
-
-process.on('unhandledRejection', (error: Error) => {
-    if (error.name === 'FetchError') {
-        process.exit()
-    }
-    if (error.message !== 'Unknown interaction') {
-        const date = new Date()
-        writeFileSync(`${process.env.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-krenko.txt`, `${error.name}\n${error.message}\n${error.stack}`)
-        process.exit()
-    }
-})
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS ] })
 const interactionManager = new InteractionManager(new DatabaseManager())
@@ -26,7 +15,7 @@ client.once('ready', async () => {
         client.user.setActivity(krenkoStatus[Math.floor(Math.random() * krenkoStatus.length)])
     }, 60000)
 
-    console.log('\x1b[42m', `We have logged in as ${client.user.tag}`, '\x1b[0m')
+    console.log(`\x1b[42m We have logged in as ${client.user.tag} \x1b[0m`)
     process.send('start')
 })
 
@@ -57,7 +46,7 @@ process.on('message', function (arg) {
     switch (arg) {
         case 'stop':
             client.destroy()
-            console.log('\x1b[41m', `${client.user.tag} has been logged out`, '\x1b[0m')
+            console.log(`\x1b[41m ${client.user.tag} has been logged out \x1b[0m`)
             process.send('stop')
             process.exit()
             break

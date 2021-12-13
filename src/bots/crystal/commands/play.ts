@@ -1,3 +1,4 @@
+import { AudioPlayerStatus } from '@discordjs/voice'
 import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { createReadStream, readFileSync } from 'fs'
 import Fuse from 'fuse.js'
@@ -45,9 +46,14 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     song ??= songs.findIndex(a => a === interaction.options.getString('name')) + 1
 
     await info.voiceManager.connect(voiceChannel)
-    await info.voiceManager.playStream(createReadStream(`${process.env.data}/music_files/naruto_ost/${song}.webm`), `${process.env.data}/music_files/naruto_ost/${song}.webm`)
+    await info.voiceManager.playStream(createReadStream(`${process.env.data}/music_files/naruto_ost/${song}.webm`))
     if (interaction.options.getBoolean('loop')) {
-        info.voiceManager.loop()
+        info.voiceManager.player.on('stateChange', (oldState, newState) => {
+            if (newState.status !== AudioPlayerStatus.Idle) {
+                return
+            }
+            info.voiceManager.playStream(createReadStream(`${process.env.data}/music_files/naruto_ost/${song}.webm`))
+        })
     }
     interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Now Playing!' }) ] })
 }

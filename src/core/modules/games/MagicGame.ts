@@ -1,6 +1,6 @@
-import { Collection, MessageEmbed, ThreadChannel, User } from 'discord.js'
+import { Collection, MessageEmbedOptions, ThreadChannel, User } from 'discord.js'
 import { generateEmbed } from '../../utils/generators'
-import { BaseGame } from './Util/BaseGame'
+import { BaseGame } from './util/BaseGame'
 
 interface MagicPlayer {
     readonly name: string,
@@ -27,17 +27,17 @@ export class MagicGame extends BaseGame {
         }
     }
 
-    public changeLife(player: string, amount: number): MessageEmbed {
+    public changeLife(player: string, amount: number): MessageEmbedOptions {
         this.playerData.get(player).life += amount
         return this.checkStatus(player)
     }
 
-    public changePoison(player: string, amount: number): MessageEmbed {
+    public changePoison(player: string, amount: number): MessageEmbedOptions {
         this.playerData.get(player).poison += amount
         return this.checkStatus(player)
     }
 
-    public eliminate(player: string): MessageEmbed {
+    public eliminate(player: string): MessageEmbedOptions {
         if (!this.playerData.get(player).isAlive) {
             return generateEmbed('error', { title: `${this.playerData.get(player).name} is already eliminated` })
         }
@@ -48,19 +48,15 @@ export class MagicGame extends BaseGame {
         return this.printStandings()
     }
 
-    public printStandings(): MessageEmbed {
+    public printStandings(): MessageEmbedOptions {
         const embed = generateEmbed('info', { title: 'Current Standings' })
-        const [ alive, dead ] = this.playerData.partition(player => player.isAlive)
-        for (const [ , player ] of alive) {
-            embed.addField(`${player.name}:`, `Life Total: ${player.life}\nPoison Counters: ${player.poison}`)
-        }
-        for (const [ , player ] of dead) {
-            embed.addField(`${player.name}:`, 'ELIMINATED')
+        for (const [ , player ] of this.playerData) {
+            embed.fields.push({ name: `${player.name}`, value: player.isAlive ? `Life Total: ${player.life}\nPoison Counters: ${player.poison}` : 'ELIMINATED' })
         }
         return embed
     }
 
-    public finishGame(): MessageEmbed {
+    public finishGame(): MessageEmbedOptions {
         this.end()
         const alive = this.playerData.filter(player => player.isAlive)
         if (alive.size > 1) {
@@ -73,7 +69,7 @@ export class MagicGame extends BaseGame {
         return this.playerData.has(player)
     }
 
-    protected checkStatus(player: string): MessageEmbed {
+    protected checkStatus(player: string): MessageEmbedOptions {
         if (this.playerData.get(player).life < 1 || this.playerData.get(player).poison >= 10) {
             return this.eliminate(player)
         }

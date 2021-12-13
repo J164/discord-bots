@@ -73,7 +73,7 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo, voiceCh
 
     for (const url of urls) {
         const output = await ytdl.getInfo(url)
-        items.push({ url: output.videoDetails.video_url, title: output.videoDetails.title, thumbnail: output.videoDetails.thumbnails[0].url, duration: new Number(output.videoDetails.lengthSeconds).valueOf() })
+        items.push({ url: output.videoDetails.video_url, title: output.videoDetails.title, thumbnail: output.videoDetails.thumbnails[0].url, duration: parseInt(output.videoDetails.lengthSeconds) })
     }
 
     await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
@@ -133,7 +133,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     } else {
         try {
             const output = await ytdl.getInfo(url)
-            await info.queueManager.addToQueue([ { url: output.videoDetails.video_url, title: output.videoDetails.title, thumbnail: output.videoDetails.thumbnails[0].url, duration: new Number(output.videoDetails.lengthSeconds).valueOf() } ], interaction.options.getInteger('position') - 1)
+            await info.queueManager.addToQueue([ { url: output.videoDetails.video_url, title: output.videoDetails.title, thumbnail: output.videoDetails.thumbnails[0].url, duration: parseInt(output.videoDetails.lengthSeconds) } ], interaction.options.getInteger('position') - 1)
         } catch (err) {
             console.warn(err)
             return { embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] }

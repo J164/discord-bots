@@ -1,4 +1,4 @@
-import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
+import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions } from 'discord.js'
 import { GuildInfo } from '../../../core/utils/interfaces'
 import { generateEmbed } from '../../../core/utils/generators'
 import { request } from 'undici'
@@ -65,20 +65,6 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
     const deckID = fields[5].split('-')[0]
     const apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`
     const results = <DeckstatsResponse> await (await request(`${apiUrl}json`)).body.json()
-    const components = [ new MessageButton({ customId: 'decks-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY' }),
-                         new MessageButton({ customId: 'decks-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY' }),
-                         new MessageButton({ customId: 'decks-list', emoji: '\uD83D\uDCC4', label: 'Decklist', style: 'PRIMARY' }),
-                         new MessageButton({ customId: 'decks-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY' }),
-                         new MessageButton({ customId: 'decks-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY' }) ]
-    if (i === 0) {
-        components[0].setDisabled(true)
-        components[1].setDisabled(true)
-    }
-    if (i === urls.length - 1) {
-        components[3].setDisabled(true)
-        components[4].setDisabled(true)
-    }
-    const row1 = new MessageActionRow().addComponents(components)
     let image: string
     for (const section of results.sections) {
         const commander = section.cards.findIndex(card => card.isCommander)
@@ -87,7 +73,13 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
             image = cardInfo.data[0].image_uris.large
         }
     }
-    const options: InteractionReplyOptions = { embeds: [ generateEmbed('info', { title: results.name, image: { url: image }, fields: [ { name: 'Deckstats URL:', value: url } ], footer: { text: `${i + 1}/${urls.length}` } }) ], components: [ row1 ] }
+    const options: InteractionReplyOptions = { embeds: [ generateEmbed('info', { title: results.name, image: { url: image }, fields: [ { name: 'Deckstats URL:', value: url } ], footer: { text: `${i + 1}/${urls.length}` } }) ], components: [ { components: [
+        { type: 'BUTTON', customId: 'decks-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY', disabled: i === 0 },
+        { type: 'BUTTON', customId: 'decks-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY', disabled: i === 0 },
+        { type: 'BUTTON', customId: 'decks-list', emoji: '\uD83D\uDCC4', label: 'Decklist', style: 'PRIMARY' },
+        { type: 'BUTTON', customId: 'decks-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY', disabled: i === urls.length - 1 },
+        { type: 'BUTTON', customId: 'decks-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: i === urls.length - 1 }
+    ], type: 'ACTION_ROW' } ] }
     if (!button) {
         await interaction.editReply(options)
     } else {

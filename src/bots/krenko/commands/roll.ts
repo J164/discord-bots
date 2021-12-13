@@ -27,7 +27,7 @@ function roll(interaction: CommandInteraction): InteractionReplyOptions {
     while (100 / dice * chanceMod < 1) {
         chanceMod *= 10
     }
-    diceResult.addField(`${Math.floor(Math.random() * (dice - 1) + 1)}`, `The chance of getting this result is about ${Math.round(100 / dice * chanceMod) / chanceMod}%`)
+    diceResult.fields.push({ name: `${Math.floor(Math.random() * (dice - 1) + 1)}`, value: `The chance of getting this result is about ${Math.round(100 / dice * chanceMod) / chanceMod}%` })
     return { embeds: [ diceResult ] }
 }
 

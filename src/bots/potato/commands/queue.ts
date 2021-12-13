@@ -1,4 +1,4 @@
-import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageActionRow, MessageButton } from 'discord.js'
+import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions } from 'discord.js'
 import { GuildInfo } from '../../../core/utils/interfaces'
 import { generateEmbed } from '../../../core/utils/generators'
 import { QueueItem } from '../../../core/voice/QueueManager'
@@ -28,22 +28,14 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
         const hour = Math.floor(entry.duration / 3600)
         const min = Math.floor((entry.duration % 3600) / 60)
         const sec = (entry.duration % 60)
-        queueMessage.addField(index === 0 ? 'Currently Playing:' : `${index}.`, `${entry.title} (${hour < 10 ? `0${hour}` : hour}:${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec})\n${entry.url}`)
+        queueMessage.fields.push({ name: index === 0 ? 'Currently Playing:' : `${index}.`, value: `${entry.title} (${hour < 10 ? `0${hour}` : hour}:${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec})\n${entry.url}` })
     }
-    const components = [ new MessageButton({ customId: 'queue-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY' }),
-                         new MessageButton({ customId: 'queue-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY' }),
-                         new MessageButton({ customId: 'queue-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY' }),
-                         new MessageButton({ customId: 'queue-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY' }) ]
-    if (i === 0) {
-        components[0].setDisabled(true)
-        components[1].setDisabled(true)
-    }
-    if (i === queueArray.length - 1) {
-        components[2].setDisabled(true)
-        components[3].setDisabled(true)
-    }
-    const row1 = new MessageActionRow().addComponents(components)
-    const options: InteractionReplyOptions = { embeds: [ queueMessage ], components: [ row1 ] }
+    const options: InteractionReplyOptions = { embeds: [ queueMessage ], components: [ { components: [
+        { type: 'BUTTON', customId: 'queue-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY', disabled: i === 0 },
+        { type: 'BUTTON', customId: 'queue-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY', disabled: i === 0 },
+        { type: 'BUTTON', customId: 'queue-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY', disabled: i === queueArray.length - 1 },
+        { type: 'BUTTON', customId: 'queue-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: i === queueArray.length - 1 }
+    ], type: 'ACTION_ROW' } ] }
     if (!button) {
         await interaction.editReply(options)
     } else {
