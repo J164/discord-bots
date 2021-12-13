@@ -3,7 +3,7 @@ import { QueueManager } from './voice/QueueManager'
 import { DatabaseManager } from './DatabaseManager'
 import { VoiceManager } from './voice/VoiceManager'
 import { GuildInfo } from './utils/interfaces'
-import { BaseGame } from './modules/games/util/BaseGame'
+import { BaseGame } from './utils/BaseGame'
 import { generateEmbed } from './utils/generators'
 
 interface Command {

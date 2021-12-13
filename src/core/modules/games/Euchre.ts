@@ -1,8 +1,8 @@
 import { ButtonInteraction, CollectorFilter, MessageSelectOptionData, SelectMenuInteraction, ThreadChannel, User } from 'discord.js'
 import { generateEmbed } from '../../utils/generators'
-import { BaseGame } from './util/BaseGame'
-import { multicardMessage } from './util/cardUtils'
-import { Card, Deck, Suit } from './util/Deck'
+import { BaseGame } from '../../utils/BaseGame'
+import { multicardMessage } from '../../utils/cardUtils'
+import { Card, Deck, Suit } from '../../utils/Deck'
 
 interface EuchreTeam {
     tricks: number;
@@ -131,11 +131,7 @@ export class Euchre extends BaseGame {
 
         const promptOne = async (index = 0): Promise<void> => {
             const channel = await this.players[index].user.createDM()
-            if (index === 3) {
-                await channel.send({ embeds: [ generateEmbed('prompt', { title: `Would you like to pass or pick it up?`, image: { url: top.image } }) ], components: [ { components: [ { type: 'BUTTON', customId: 'one-pickup', label: 'Pick It Up', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'one-pass', label: 'Pass', style: 'SECONDARY' } ], type: 'ACTION_ROW' } ] })
-            } else {
-                await channel.send({ embeds: [ generateEmbed('prompt', { title: `Would you like to pass or have ${this.players[3].user.username} pick it up?`, image: { url: top.image } }) ], components: [ { components: [ { type: 'BUTTON', customId: 'one-pickup', label: 'Pick It Up', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'one-pass', label: 'Pass', style: 'SECONDARY' } ], type: 'ACTION_ROW' } ] })
-            }
+            await channel.send({ embeds: [ generateEmbed('prompt', { title: index === 3 ? `Would you like to pass or pick it up?` : `Would you like to pass or have ${this.players[3].user.username} pick it up?`, image: { url: top.image } }) ], components: [ { components: [ { type: 'BUTTON', customId: 'one-pickup', label: 'Pick It Up', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'one-pass', label: 'Pass', style: 'SECONDARY' } ], type: 'ACTION_ROW' } ] })
             const filter: CollectorFilter<[ButtonInteraction]> = b => b.customId.startsWith('one-')
             const collector = channel.createMessageComponentCollector({ filter: filter, componentType: 'BUTTON', max: 1 })
             collector.once('collect', interaction => {

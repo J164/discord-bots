@@ -1,6 +1,6 @@
 import { Collection, MessageEmbedOptions, ThreadChannel, User } from 'discord.js'
 import { generateEmbed } from '../../utils/generators'
-import { BaseGame } from './util/BaseGame'
+import { BaseGame } from '../../utils/BaseGame'
 
 interface MagicPlayer {
     readonly name: string,

@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 
 import { DatabaseManager } from '../DatabaseManager'
-import { BaseGame } from '../modules/games/util/BaseGame'
+import { BaseGame } from './BaseGame'
 import { QueueManager } from '../voice/QueueManager'
 import { VoiceManager } from '../voice/VoiceManager'
 

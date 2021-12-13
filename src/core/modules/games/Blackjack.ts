@@ -1,5 +1,5 @@
 import { ThreadChannel } from 'discord.js'
-import { BaseGame } from './util/BaseGame'
+import { BaseGame } from '../../utils/BaseGame'
 
 export class Blackjack extends BaseGame {
 
