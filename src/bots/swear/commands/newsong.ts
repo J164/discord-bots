@@ -1,8 +1,7 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
-import { GuildInfo } from '../../../core/utils/interfaces'
-import ytdl from 'ytdl-core'
-import { createWriteStream, writeFileSync } from 'fs'
-import { generateEmbed } from '../../../core/utils/generators'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { ytdl, YtResponse } from '../../../core/utils/ytdl.js'
 
 const data: ApplicationCommandData = {
     name: 'newsong',
@@ -23,25 +22,27 @@ async function newSong(interaction: CommandInteraction, info: GuildInfo): Promis
         return
     }
     interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Getting information on new song...' }) ] })
-    let output: ytdl.videoInfo
+    let output: YtResponse
     try {
-        output = await ytdl.getInfo(interaction.options.getString('url'))
+        output = await ytdl(interaction.options.getString('url'), { print: '{"duration":%(duration)s}' })
     } catch (err) {
         interaction.editReply({ embeds: [ generateEmbed('error', { title: 'It seems like something went wrong. Make sure to enter the url of a single public YouTube video.' }) ] })
         return
     }
-    if (parseInt(output.videoDetails.lengthSeconds) > 1200) {
+    if (output.duration > 1200) {
         interaction.editReply({ embeds: [ generateEmbed('error', { title: 'The video length limit is 20 minutes! Aborting...' }) ] })
         return
     }
     interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
     const songs = <{ index: number, name: string }[]> <unknown> await info.database.select('swear_songs')
-    writeFileSync(`${process.env.data}/music_files/swear_songs/song${songs.length + 1}.webm`, '')
-    ytdl.downloadFromInfo(output, {
-        filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus'
-    }).pipe(createWriteStream(`${process.env.data}/music_files/swear_songs/song${songs.length + 1}.webm`))
+    await ytdl(output.webpage_url, {
+        output: `${process.env.data}/music_files/swear_songs/song${songs.length + 1}.%(ext)s`,
+        quiet: true,
+        format: 'bestaudio[ext=webm][acodec=opus]/bestaudio',
+        limitRate: '100K'
+    })
     await info.database.insert('swear_songs', { index: songs.length + 1, name: `song${songs.length + 1}` })
     interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Success!' }) ] })
 }
 
-module.exports = { data: data, execute: newSong }
+export const command: Command = { data: data, execute: newSong }

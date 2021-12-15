@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'pause',
@@ -14,4 +14,4 @@ function pause(interaction: CommandInteraction, info: GuildInfo): InteractionRep
     return { embeds: [ generateEmbed('error', { title: 'Nothing is playing' }) ] }
 }
 
-module.exports = { data: data, execute: pause }
+export const command: Command = { data: data, execute: pause }

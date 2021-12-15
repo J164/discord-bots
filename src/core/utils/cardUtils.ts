@@ -1,13 +1,13 @@
-import { createCanvas, loadImage } from 'canvas'
+import * as canvas from 'canvas'
 import { MessageEmbedOptions, MessageOptions } from 'discord.js'
-import { generateEmbed } from './generators'
-import { Card } from './Deck'
+import { generateEmbed } from './generators.js'
+import { Card } from './Deck.js'
 
 async function mergeImages(filePaths: string[], options: { width: number; height: number }): Promise<Buffer> {
-    const activeCanvas = createCanvas(options.width, options.height)
+    const activeCanvas = canvas.createCanvas(options.width, options.height)
     const ctx = activeCanvas.getContext('2d')
     for (const [ i, path ] of filePaths.entries()) {
-        const image = await loadImage(path)
+        const image = await canvas.loadImage(path)
         ctx.drawImage(image, i * (options.width / filePaths.length), 0)
     }
     return activeCanvas.toBuffer()

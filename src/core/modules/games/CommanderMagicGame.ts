@@ -1,5 +1,5 @@
 import { MessageEmbedOptions, ThreadChannel, User } from 'discord.js'
-import { MagicGame } from './MagicGame'
+import { MagicGame } from './MagicGame.js'
 
 export class CommanderMagicGame extends MagicGame {
 

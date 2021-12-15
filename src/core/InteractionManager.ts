@@ -1,17 +1,10 @@
-import { ApplicationCommandData, ApplicationCommandOptionChoice, AutocompleteInteraction, Client, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { QueueManager } from './voice/QueueManager'
-import { DatabaseManager } from './DatabaseManager'
-import { VoiceManager } from './voice/VoiceManager'
-import { GuildInfo } from './utils/interfaces'
-import { BaseGame } from './utils/BaseGame'
-import { generateEmbed } from './utils/generators'
-
-interface Command {
-    readonly data: ApplicationCommandData
-    readonly execute: (interaction: CommandInteraction, info: GuildInfo) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void
-    readonly autocomplete?: (option: ApplicationCommandOptionChoice, info: GuildInfo) => Promise<ApplicationCommandOptionChoice[]> | ApplicationCommandOptionChoice[]
-    readonly gameCommand?: boolean
-}
+import { ApplicationCommandOptionChoice, AutocompleteInteraction, Client, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { QueueManager } from './voice/QueueManager.js'
+import { DatabaseManager } from './DatabaseManager.js'
+import { VoiceManager } from './voice/VoiceManager.js'
+import { Command, GuildInfo } from './utils/interfaces.js'
+import { BaseGame } from './utils/BaseGame.js'
+import { generateEmbed } from './utils/generators.js'
 
 export class InteractionManager {
 
@@ -27,12 +20,12 @@ export class InteractionManager {
 
     public async getCommands(client: Client, botName: string): Promise<void> {
         const currentCommands = await client.application.commands.fetch()
-        for (const [ , command ] of currentCommands) {
+        for (const [ , slash ] of currentCommands) {
             try {
-                // eslint-disable-next-line @typescript-eslint/no-var-requires
-                this.commands.set(command.name, <Command> require(`../bots/${botName}/commands/${command.name}.js`))
+                const { command } = await import(`../bots/${botName}/commands/${slash.name}.js`)
+                this.commands.set(slash.name, command)
             } catch {
-                console.warn(`Registered command missing from ${botName}'s command files (${command.name})`)
+                console.warn(`Registered command missing from ${botName}'s command files (${slash.name})`)
             }
         }
     }

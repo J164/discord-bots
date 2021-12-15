@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import ytdl from 'ytdl-core'
-import { createWriteStream, writeFileSync } from 'fs'
-import { generateEmbed } from '../../../core/utils/generators'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command } from '../../../core/utils/interfaces.js'
+import { ytdl } from '../../../core/utils/ytdl.js'
 
 const data: ApplicationCommandData = {
     name: 'download',
@@ -27,19 +27,22 @@ async function download(interaction: CommandInteraction): Promise<InteractionRep
         return { embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] }
     }
     interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
-    const video = await ytdl.getInfo(interaction.options.getString('url'))
     if (interaction.options.getBoolean('dev')) {
-        writeFileSync(`${process.env.data}/new_downloads/${video.videoDetails.title}.webm`, '')
-        ytdl(interaction.options.getString('url'), {
-            filter: filter => filter.container === 'webm' && filter.audioSampleRate === '48000' && filter.codecs === 'opus'
-        }).pipe(createWriteStream(`${process.env.data}/new_downloads/${video.videoDetails.title}.webm`))
+        await ytdl(interaction.options.getString('url'), {
+            output: `${process.env.data}/new_downloads/%(title)s.%(ext)s`,
+            quiet: true,
+            format: 'bestaudio[ext=webm][acodec=opus]/bestaudio',
+            limitRate: '100K'
+        })
         return { embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] }
     }
-    writeFileSync(`${process.env.data}/new_downloads/${video.videoDetails.title}.mp4`, '')
-    ytdl(interaction.options.getString('url'), {
-        filter: filter => filter.container === 'mp4'
-    }).pipe(createWriteStream(`${process.env.data}/new_downloads/${video.videoDetails.title}.mp4`))
+    await ytdl(interaction.options.getString('url'), {
+        output: `${process.env.data}/new_downloads/%(title)s.%(ext)s`,
+        quiet: true,
+        format: 'bestaudio',
+        limitRate: '100K'
+    })
     return { embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] }
 }
 
-module.exports = { data: data, execute: download }
+export const command: Command = { data: data, execute: download }

@@ -1,5 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { generateEmbed } from '../../../core/utils/generators'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'roll',
@@ -31,4 +32,4 @@ function roll(interaction: CommandInteraction): InteractionReplyOptions {
     return { embeds: [ diceResult ] }
 }
 
-module.exports = { data: data, execute: roll }
+export const command: Command = { data: data, execute: roll }

@@ -1,7 +1,7 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions } from 'discord.js'
-import { GuildInfo } from '../../../core/utils/interfaces'
-import { generateEmbed } from '../../../core/utils/generators'
-import { QueueItem } from '../../../core/voice/QueueManager'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { QueueItem } from '../../../core/voice/QueueManager.js'
 
 const data: ApplicationCommandData = {
     name: 'queue',
@@ -63,4 +63,4 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
     collector.once('end', () => { interaction.editReply({ components: [] }) })
 }
 
-module.exports = { data: data, execute: queue }
+export const command: Command = { data: data, execute: queue }

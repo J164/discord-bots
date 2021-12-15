@@ -1,5 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { generateEmbed } from '../../../core/utils/generators'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'nick',
@@ -33,4 +34,4 @@ async function nick(interaction: CommandInteraction): Promise<InteractionReplyOp
     return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
-module.exports = { data: data, execute: nick }
+export const command: Command = { data: data, execute: nick }

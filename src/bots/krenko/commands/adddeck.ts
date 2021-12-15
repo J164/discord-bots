@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { request } from 'undici'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'adddeck',
@@ -38,4 +38,4 @@ async function addDeck(interaction: CommandInteraction, info: GuildInfo): Promis
     return { embeds: [ generateEmbed('success', { title: `Success! Deck "${name}" has been added!` }) ] }
 }
 
-module.exports = { data: data, execute: addDeck }
+export const command: Command = { data: data, execute: addDeck }

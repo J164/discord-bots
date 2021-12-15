@@ -1,8 +1,8 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import ytpl from 'ytpl'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
-import { QueueItem } from '../../../core/voice/QueueManager'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
+import { QueueItem } from '../../../core/voice/QueueManager.js'
 
 const data: ApplicationCommandData = {
     name: 'featured',
@@ -59,4 +59,4 @@ async function featured(interaction: CommandInteraction, info: GuildInfo): Promi
     return { embeds: [ generateEmbed('success', { title: 'Added to queue!' }) ] }
 }
 
-module.exports = { data: data, execute: featured }
+export const command: Command = { data: data, execute: featured }

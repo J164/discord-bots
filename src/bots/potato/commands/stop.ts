@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'stop',
@@ -12,4 +12,4 @@ function stop(interaction: CommandInteraction, info: GuildInfo): InteractionRepl
     return { embeds: [ generateEmbed('success', { title: 'Success' }) ] }
 }
 
-module.exports = { data: data, execute: stop }
+export const command: Command = { data: data, execute: stop }

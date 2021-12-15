@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { MagicGame } from '../../../core/modules/games/MagicGame'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { MagicGame } from '../../../core/modules/games/MagicGame.js'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'standings',
@@ -16,4 +16,4 @@ function end(interaction: CommandInteraction, info: GuildInfo): InteractionReply
     return { embeds: [ game.printStandings() ] }
 }
 
-module.exports = { data: data, execute: end, gameCommand: true }
+export const command: Command = { data: data, execute: end, gameCommand: true }

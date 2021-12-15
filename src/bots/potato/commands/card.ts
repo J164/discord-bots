@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
-import { Euchre } from '../../../core/modules/games/Euchre'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { Euchre } from '../../../core/modules/games/Euchre.js'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'card',
@@ -107,4 +107,4 @@ async function card(interaction: CommandInteraction, info: GuildInfo): Promise<I
     }
 }
 
-module.exports = { data: data, execute: card }
+export const command: Command = { data: data, execute: card }

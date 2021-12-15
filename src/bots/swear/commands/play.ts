@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction } from 'discord.js'
 import { createReadStream, existsSync } from 'fs'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'play',
@@ -36,4 +36,4 @@ async function getSongs(interaction: CommandInteraction, info: GuildInfo): Promi
     interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Now Playing!' }) ] })
 }
 
-module.exports = { data: data, execute: getSongs }
+export const command: Command = { data: data, execute: getSongs }

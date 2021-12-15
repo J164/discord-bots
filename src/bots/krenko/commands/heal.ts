@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { MagicGame } from '../../../core/modules/games/MagicGame'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { MagicGame } from '../../../core/modules/games/MagicGame.js'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'heal',
@@ -33,4 +33,4 @@ function heal(interaction: CommandInteraction, info: GuildInfo): InteractionRepl
     return { embeds: [ game.changeLife(interaction.options.getUser('player').id, interaction.options.getInteger('amount')) ] }
 }
 
-module.exports = { data: data, execute: heal, gameCommand: true }
+export const command: Command = { data: data, execute: heal, gameCommand: true }

@@ -1,9 +1,10 @@
 import { InteractionReplyOptions, VoiceChannel } from 'discord.js'
-import { VoiceManager } from './VoiceManager'
-import ytdl from 'ytdl-core'
+import { VoiceManager } from './VoiceManager.js'
 import { AudioPlayerStatus } from '@discordjs/voice'
-import { generateEmbed } from '../utils/generators'
+import { generateEmbed } from '../utils/generators.js'
 import { setTimeout } from 'timers/promises'
+import { raw } from '../utils/ytdl.js'
+import internal from 'stream'
 
 export interface QueueItem {
     readonly url: string
@@ -28,14 +29,6 @@ export class QueueManager {
         this.queueLoop = false
         this.queueLock = false
         this.transitioning = false
-        process.on('unhandledRejection', (error: Error) => {
-            if (error.message === 'Status code: 403') {
-                this.transitioning = true
-                this.voiceManager.player.removeAllListeners('stateChange')
-                this.queue.unshift(this.nowPlaying)
-                this.playSong()
-            }
-        })
     }
 
     public async addToQueue(items: QueueItem[], position: number): Promise<void> {
@@ -74,6 +67,20 @@ export class QueueManager {
         return true
     }
 
+    private createStream(url: string): Promise<internal.Readable> {
+        return new Promise((resolve: (value: internal.Readable) => void) => {
+            const process = raw(url, {
+                output: '-',
+                quiet: true,
+                format: 'bestaudio[ext=webm][acodec=opus]/bestaudio',
+                limitRate: '100K'
+            }, { stdio: [ 'ignore', 'pipe', 'ignore' ] })
+            process.once('spawn', () => {
+                resolve(process.stdout)
+            })
+        })
+    }
+
     private async playSong(): Promise<void> {
         if (this.queue.length < 1) {
             this.transitioning = false
@@ -89,7 +96,7 @@ export class QueueManager {
         this.nowPlaying = this.queue.shift()
         this.queueLock = false
 
-        await this.voiceManager.playStream(ytdl(this.nowPlaying.url, { filter: format => format.container === 'webm' && format.audioSampleRate === '48000' && format.codecs === 'opus', highWaterMark: 52428800 }))
+        await this.voiceManager.playStream(await this.createStream(this.nowPlaying.url))
 
         this.transitioning = false
 

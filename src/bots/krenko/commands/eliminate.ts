@@ -1,7 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { MagicGame } from '../../../core/modules/games/MagicGame'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { MagicGame } from '../../../core/modules/games/MagicGame.js'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'eliminate',
@@ -27,4 +27,4 @@ function eliminate(interaction: CommandInteraction, info: GuildInfo): Interactio
     return { embeds: [ game.eliminate(interaction.options.getUser('player').id) ] }
 }
 
-module.exports = { data: data, execute: eliminate, gameCommand: true }
+export const command: Command = { data: data, execute: eliminate, gameCommand: true }

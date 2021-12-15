@@ -1,5 +1,6 @@
 import { ApplicationCommandData, InteractionReplyOptions } from 'discord.js'
 import { request } from 'undici'
+import { Command } from './../../../core/utils/interfaces.js'
 
 interface TenorResponse {
     readonly results: readonly {
@@ -17,4 +18,4 @@ async function gif(): Promise<InteractionReplyOptions> {
     return { content: gifs.results[Math.floor(Math.random() * gifs.results.length)].itemurl }
 }
 
-module.exports = { data: data, execute: gif }
+export const command: Command = { data: data, execute: gif }

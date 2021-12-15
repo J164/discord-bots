@@ -2,8 +2,8 @@ import { AudioPlayerStatus } from '@discordjs/voice'
 import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { createReadStream, readFileSync } from 'fs'
 import Fuse from 'fuse.js'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'play',
@@ -73,4 +73,4 @@ function search(option: ApplicationCommandOptionChoice): ApplicationCommandOptio
     return options
 }
 
-module.exports = { data: data, execute: play, autocomplete: search }
+export const command: Command = { data: data, execute: play, autocomplete: search }

@@ -1,4 +1,5 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { Command } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'yeet',
@@ -26,4 +27,4 @@ function yeet(interaction: CommandInteraction): InteractionReplyOptions {
     return { content: `Y${e}T!` }
 }
 
-module.exports = { data: data, execute: yeet }
+export const command: Command = { data: data, execute: yeet }

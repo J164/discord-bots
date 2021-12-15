@@ -1,6 +1,7 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { request } from 'undici'
-import { generateEmbed } from '../../../core/utils/generators'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command } from '../../../core/utils/interfaces.js'
 
 interface WynncraftData {
     readonly data: readonly {
@@ -53,4 +54,4 @@ async function wynncraft(interaction: CommandInteraction): Promise<InteractionRe
     return { embeds: [ embedVar ] }
 }
 
-module.exports = { data: data, execute: wynncraft }
+export const command: Command = { data: data, execute: wynncraft }

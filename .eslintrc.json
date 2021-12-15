@@ -5,7 +5,8 @@
     },
     "extends": [
         "eslint:recommended",
-        "plugin:@typescript-eslint/recommended"
+        "plugin:@typescript-eslint/recommended",
+		"plugin:import/typescript"
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
@@ -13,7 +14,8 @@
         "sourceType": "module"
     },
     "plugins": [
-        "@typescript-eslint"
+        "@typescript-eslint",
+		"import"
     ],
     "rules": {
         "semi": [
@@ -23,6 +25,8 @@
 	"no-warning-comments": "warn",
 	"no-case-declarations": "warn",
     "@typescript-eslint/no-var-requires": "warn",
+	"import/extensions": [ "error", "ignorePackages" ],
+	"import/no-commonjs": "error",
 	"no-unsafe-optional-chaining": "error",
 	"complexity": ["warn", 15],
 	"default-case-last": "error",

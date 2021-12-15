@@ -1,7 +1,7 @@
 import { ApplicationCommandData, Client, Intents } from 'discord.js'
 import { readdirSync, writeFileSync } from 'fs'
-import { InteractionManager } from '../../core/InteractionManager'
-import { VoiceManager } from '../../core/voice/VoiceManager'
+import { InteractionManager } from '../../core/InteractionManager.js'
+import { VoiceManager } from '../../core/voice/VoiceManager.js'
 
 process.on('unhandledRejection', (error: Error) => {
     if (error.name === 'FetchError') {

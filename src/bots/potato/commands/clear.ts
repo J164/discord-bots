@@ -1,6 +1,6 @@
 import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'clear',
@@ -14,4 +14,4 @@ function clear(interaction: CommandInteraction, info: GuildInfo): InteractionRep
     return { embeds: [ generateEmbed('error', { title: 'There is no queue!' }) ] }
 }
 
-module.exports = { data: data, execute: clear }
+export const command: Command = { data: data, execute: clear }

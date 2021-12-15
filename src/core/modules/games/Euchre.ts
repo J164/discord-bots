@@ -1,8 +1,8 @@
 import { ButtonInteraction, CollectorFilter, MessageSelectOptionData, SelectMenuInteraction, ThreadChannel, User } from 'discord.js'
-import { generateEmbed } from '../../utils/generators'
-import { BaseGame } from '../../utils/BaseGame'
-import { multicardMessage } from '../../utils/cardUtils'
-import { Card, Deck, Suit } from '../../utils/Deck'
+import { generateEmbed } from '../../utils/generators.js'
+import { BaseGame } from '../../utils/BaseGame.js'
+import { multicardMessage } from '../../utils/cardUtils.js'
+import { Card, Deck, Suit } from '../../utils/Deck.js'
 
 interface EuchreTeam {
     tricks: number;

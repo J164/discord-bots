@@ -1,14 +1,14 @@
 import { ApplicationCommandData, Client, Intents } from 'discord.js'
 import { readdirSync, writeFileSync } from 'fs'
-import { DatabaseManager } from '../../core/DatabaseManager'
-import { InteractionManager } from '../../core/InteractionManager'
-import { VoiceManager } from '../../core/voice/VoiceManager'
+import { DatabaseManager } from '../../core/DatabaseManager.js'
+import { InteractionManager } from '../../core/InteractionManager.js'
+import { VoiceManager } from '../../core/voice/VoiceManager.js'
 
 process.on('unhandledRejection', (error: Error) => {
     if (error.name === 'FetchError') {
         process.exit()
     }
-    if (error.message !== 'Unknown interaction' && error.message !== 'Status code: 403') {
+    if (error.message !== 'Unknown interaction') {
         const date = new Date()
         writeFileSync(`${process.env.data}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-swear.txt`, `${error.name}\n${error.message}\n${error.stack}`)
         process.exit()

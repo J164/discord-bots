@@ -1,4 +1,4 @@
-import { BotSubprocess } from './core/BotSubprocess'
+import { BotSubprocess } from './core/BotSubprocess.js'
 import { createInterface } from 'readline'
 import { readFileSync, writeFileSync } from 'fs'
 

@@ -1,6 +1,6 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions } from 'discord.js'
-import { GuildInfo } from '../../../core/utils/interfaces'
-import { generateEmbed } from '../../../core/utils/generators'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
+import { generateEmbed } from '../../../core/utils/generators.js'
 import { request } from 'undici'
 
 interface MagicCard {
@@ -113,4 +113,4 @@ async function getDeck(interaction: CommandInteraction, info: GuildInfo): Promis
     parseDeck(interaction, info, <{ url: string }[]> <unknown> await info.database.select('mtg_decks'))
 }
 
-module.exports = { data: data, execute: getDeck }
+export const command: Command = { data: data, execute: getDeck }

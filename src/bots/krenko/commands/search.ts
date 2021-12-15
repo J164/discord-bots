@@ -1,8 +1,8 @@
-import { createCanvas, loadImage } from 'canvas'
+import * as canvas from 'canvas'
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, InteractionUpdateOptions, SelectMenuInteraction } from 'discord.js'
 import { request } from 'undici'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 
 interface MagicCard {
     readonly name: string,
@@ -37,10 +37,10 @@ const data: ApplicationCommandData = {
 }
 
 async function mergeImages(filePaths: string[], options: { width: number; height: number }): Promise<Buffer> {
-    const activeCanvas = createCanvas(options.width, options.height)
+    const activeCanvas = canvas.createCanvas(options.width, options.height)
     const ctx = activeCanvas.getContext('2d')
     for (const [ i, path ] of filePaths.entries()) {
-        const image = await loadImage(path)
+        const image = await canvas.loadImage(path)
         ctx.drawImage(image, i * (options.width / filePaths.length), 0)
     }
     return activeCanvas.toBuffer()
@@ -136,4 +136,4 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results:
     collector.once('end', () => { interaction.editReply({ components: [] }) })
 }
 
-module.exports = { data: data, execute: search }
+export const command: Command = { data: data, execute: search }

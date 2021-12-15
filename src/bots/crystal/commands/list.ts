@@ -1,7 +1,7 @@
 import { ApplicationCommandData, ButtonInteraction, CollectorFilter, CommandInteraction, InteractionCollector, InteractionUpdateOptions, MessageEmbedOptions } from 'discord.js'
 import { readFileSync } from 'fs'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'list',
@@ -57,4 +57,4 @@ async function list(interaction: CommandInteraction, info: GuildInfo, i = 0, but
     collector.once('end', () => { interaction.editReply({ components: [] }) })
 }
 
-module.exports = { data: data, execute: list }
+export const command: Command = { data: data, execute: list }

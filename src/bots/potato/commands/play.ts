@@ -1,11 +1,11 @@
 import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, VoiceChannel } from 'discord.js'
-import ytdl from 'ytdl-core'
 import ytpl from 'ytpl'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 import ytsr from 'ytsr'
-import { generateEmbed } from '../../../core/utils/generators'
+import { generateEmbed } from '../../../core/utils/generators.js'
 import { request } from 'undici'
-import { QueueItem } from '../../../core/voice/QueueManager'
+import { QueueItem } from '../../../core/voice/QueueManager.js'
+import { ytdl } from '../../../core/utils/ytdl.js'
 
 const data: ApplicationCommandData = {
     name: 'play',
@@ -72,8 +72,8 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo, voiceCh
     const items: QueueItem[] = []
 
     for (const url of urls) {
-        const output = await ytdl.getInfo(url)
-        items.push({ url: output.videoDetails.video_url, title: output.videoDetails.title, thumbnail: output.videoDetails.thumbnails[0].url, duration: parseInt(output.videoDetails.lengthSeconds) })
+        const output = await ytdl(url, { print: '{"webpage_url":"%(webpage_url)s","title":"%(title)s","thumbnail":"%(thumbnail)s","duration":%(duration)s}' })
+        items.push({ url: output.webpage_url, title: output.title, thumbnail: output.thumbnail, duration: output.duration })
     }
 
     await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
@@ -132,8 +132,8 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         }
     } else {
         try {
-            const output = await ytdl.getInfo(url)
-            await info.queueManager.addToQueue([ { url: output.videoDetails.video_url, title: output.videoDetails.title, thumbnail: output.videoDetails.thumbnails[0].url, duration: parseInt(output.videoDetails.lengthSeconds) } ], interaction.options.getInteger('position') - 1)
+            const output = await ytdl(url, { print: '{"webpage_url":"%(webpage_url)s","title":"%(title)s","thumbnail":"%(thumbnail)s","duration":%(duration)s}' })
+            await info.queueManager.addToQueue([ { url: output.webpage_url, title: output.title, thumbnail: output.thumbnail, duration: output.duration } ], interaction.options.getInteger('position') - 1)
         } catch (err) {
             console.warn(err)
             return { embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] }
@@ -164,4 +164,4 @@ async function search(option: ApplicationCommandOptionChoice): Promise<Applicati
     return options
 }
 
-module.exports = { data: data, execute: play, autocomplete: search }
+export const command: Command = { data: data, execute: play, autocomplete: search }

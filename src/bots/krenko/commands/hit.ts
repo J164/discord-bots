@@ -1,8 +1,8 @@
 import { ApplicationCommandData, CollectorFilter, CommandInteraction, InteractionCollector, InteractionReplyOptions, MessageEmbedOptions, SelectMenuInteraction } from 'discord.js'
-import { MagicGame } from '../../../core/modules/games/MagicGame'
-import { CommanderMagicGame } from '../../../core/modules/games/CommanderMagicGame'
-import { generateEmbed } from '../../../core/utils/generators'
-import { GuildInfo } from '../../../core/utils/interfaces'
+import { MagicGame } from '../../../core/modules/games/MagicGame.js'
+import { CommanderMagicGame } from '../../../core/modules/games/CommanderMagicGame.js'
+import { generateEmbed } from '../../../core/utils/generators.js'
+import { Command, GuildInfo } from '../../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
     name: 'hit',
@@ -69,4 +69,4 @@ function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReply
     return { embeds: [ standings ] }
 }
 
-module.exports = { data: data, execute: hit, gameCommand: true }
+export const command: Command = { data: data, execute: hit, gameCommand: true }
