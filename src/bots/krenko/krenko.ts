@@ -53,7 +53,7 @@ client.on('interactionCreate', async interaction => {
     }
 })
 
-process.on('message', function (arg) {
+process.on('message', arg => {
     switch (arg) {
         case 'stop':
             client.destroy()
@@ -65,14 +65,15 @@ process.on('message', function (arg) {
             client.login(process.env.krenkoKey)
             break
         case 'deploy':
-           // eslint-disable-next-line no-case-declarations
-           const commandData: ApplicationCommandData[] = []
-           for (const command of readdirSync('./dist/bots/krenko/commands').filter(file => file.endsWith('.js'))) {
-               // eslint-disable-next-line @typescript-eslint/no-var-requires
-               commandData.push(require(`./commands/${command}`).data)
-           }
-           client.application.commands.set(commandData)
-           break
+            (async () => {
+                const commandData: ApplicationCommandData[] = []
+                for (const slash of readdirSync('./dist/bots/krenko/commands').filter(file => file.endsWith('.js'))) {
+                    const { command } = await import(`./commands/${slash}`)
+                    commandData.push(command.data)
+                }
+                client.application.commands.set(commandData)
+            })()
+            break
     }
 })
 

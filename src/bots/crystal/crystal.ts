@@ -66,13 +66,14 @@ process.on('message', arg => {
             client.login(process.env.crystalKey)
             break
         case 'deploy':
-            // eslint-disable-next-line no-case-declarations
-            const commandData: ApplicationCommandData[] = []
-            for (const command of readdirSync('./dist/bots/crystal/commands').filter(file => file.endsWith('.js'))) {
-                // eslint-disable-next-line @typescript-eslint/no-var-requires
-                commandData.push(require(`./commands/${command}`).data)
-            }
-            client.application.commands.set(commandData)
+            (async () => {
+                const commandData: ApplicationCommandData[] = []
+                for (const slash of readdirSync('./dist/bots/crystal/commands').filter(file => file.endsWith('.js'))) {
+                    const { command } = await import(`./commands/${slash}`)
+                    commandData.push(command.data)
+                }
+                client.application.commands.set(commandData)
+            })()
             break
     }
 })
