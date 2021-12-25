@@ -54,10 +54,7 @@ export class QueueManager {
 
     public async connect(voiceChannel: VoiceChannel): Promise<boolean> {
         this.transitioning = true
-        if (!await this.voiceManager.connect(voiceChannel)) {
-            return false
-        }
-        if (this.queue.length < 1) {
+        if (!await this.voiceManager.connect(voiceChannel) || this.queue.length < 1) {
             this.reset()
             return false
         }
