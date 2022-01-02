@@ -6,6 +6,7 @@ import { getDailyReport } from '../core/modules/daily-report.js'
 import process from 'node:process'
 import { setInterval } from 'node:timers'
 import { config } from 'dotenv'
+import { DatabaseManager } from '../core/database-manager.js'
 
 config()
 
@@ -21,7 +22,7 @@ process.on('unhandledRejection', (error: Error) => {
 })
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ] })
-const interactionManager = new InteractionManager()
+const interactionManager = new InteractionManager(new DatabaseManager())
 const potatoStatus = [ 'Eating a baked potato', 'Farming potatoes', 'Decorating with potatoes', 'Looking up potato recipes', 'Potato Platformer 3000' ]
 
 client.once('ready', async () => {

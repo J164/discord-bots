@@ -6,7 +6,7 @@ import process from 'node:process'
 
 const data: ApplicationCommandData = {
     name: 'adddeck',
-    description: 'Add a deck to Krenko\'s database',
+    description: 'Add a deck to Potato\'s database',
     options: [ {
         name: 'url',
         description: 'Deckstats URL for the new deck',

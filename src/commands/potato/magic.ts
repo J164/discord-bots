@@ -5,7 +5,7 @@ import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 
 const data: ApplicationCommandData = {
-    name: 'play',
+    name: 'magic',
     description: 'Start a game of Magic',
     options: [
         {
@@ -109,7 +109,7 @@ const data: ApplicationCommandData = {
     ]
 }
 
-async function play(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+async function magic(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
     const channel = await interaction.guild.channels.fetch(interaction.channelId)
     for (const [ , game ] of info.games) {
         if (game.getThreadName() === interaction.options.getString('name')) {
@@ -148,4 +148,4 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
-export const command: Command = { data: data, execute: play }
+export const command: Command = { data: data, execute: magic }

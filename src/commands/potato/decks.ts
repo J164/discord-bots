@@ -26,7 +26,7 @@ interface ScryfallResponse {
 
 const data: ApplicationCommandData = {
     name: 'decks',
-    description: 'Get a deck from Krenko\'s database'
+    description: 'Get a deck from Potato\'s database'
 }
 
 interface DeckstatsResponse {

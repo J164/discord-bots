@@ -66,7 +66,7 @@ export class QueueManager {
 
     private static createStream(url: string): Promise<Readable> {
         return new Promise((resolve: (value: Readable) => void) => {
-            const process = spawn('./assets/binaries/yt-dlp', [ url, '--output', '-', '--quiet', '--format', 'bestaudio[ext=webm][acodec=opus]/bestaudio', '--limit-rate', '1M' ], { stdio: [ 'ignore', 'pipe', 'ignore' ] })
+            const process = spawn('./assets/binaries/yt-dlp', [ url, '--output', '-', '--quiet', '--format', 'bestaudio[ext=webm][acodec=opus]/bestaudio', '--limit-rate', '500K' ], { stdio: [ 'ignore', 'pipe', 'ignore' ] })
             process.once('spawn', () => {
                 resolve(process.stdout)
             })
