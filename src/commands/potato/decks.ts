@@ -110,4 +110,4 @@ async function getDeck(interaction: CommandInteraction, info: GuildInfo): Promis
     parseDeck(interaction, info, <{ url: string }[]> <unknown> await info.database.select('mtg_decks'))
 }
 
-export const command: Command = { data: data, execute: getDeck }
+export const command: Command = { data: data, execute: getDeck, ephemeral: true }
