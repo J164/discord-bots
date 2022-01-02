@@ -48,7 +48,7 @@ async function featured(interaction: CommandInteraction, info: GuildInfo): Promi
         return { embeds: [ generateEmbed('error', { title: 'This command can only be used while in a visable voice channel!' }) ] }
     }
     const output = await new Promise((resolve: (value: string) => void, reject: (error: ExecException) => void) => {
-        exec(`"./assets/binaries/yt-dlp" ${interaction.options.getString('name')} --flat-playlist --print {\\"webpage_url\\":\\"%(webpage_url)s\\",\\"title\\":\\"%(title)s\\",\\"duration\\":%(duration)s}`, (error, stdout) => {
+        exec(`"./assets/binaries/yt-dlp" "${interaction.options.getString('name')}" --flat-playlist --print "{\\"webpage_url\\":\\"%(webpage_url)s\\",\\"title\\":\\"%(title)s\\",\\"duration\\":%(duration)s}"`, (error, stdout) => {
             if (error) {
                 reject(error)
                 return

@@ -57,7 +57,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     if (/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/playlist/.test(argument) /*|| !/^(https:\/\/)?open\.spotify\.com\/playlist\//.test(argument)*/) {
         try {
             const output = await new Promise((resolve: (value: string) => void, reject: (error: ExecException) => void) => {
-                exec(`"./assets/binaries/yt-dlp" ${url} --flat-playlist --print {\\"webpage_url\\":\\"%(webpage_url)s\\",\\"title\\":\\"%(title)s\\",\\"duration\\":%(duration)s}`, (error, stdout) => {
+                exec(`"./assets/binaries/yt-dlp" "${url}" --flat-playlist --print "{\\"webpage_url\\":\\"%(webpage_url)s\\",\\"title\\":\\"%(title)s\\",\\"duration\\":%(duration)s}"`, (error, stdout) => {
                     if (error) {
                         reject(error)
                         return
@@ -85,7 +85,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     } else {
         try {
             const output: { readonly webpage_url: string, readonly title: string, readonly thumbnail: string, readonly duration: number } = JSON.parse(await new Promise((resolve: (value: string) => void, reject: (error: ExecException) => void) => {
-                exec(`"./assets/binaries/yt-dlp" ${url} --print {\\"webpage_url\\":\\"%(webpage_url)s\\",\\"title\\":\\"%(title)s\\",\\"thumbnail\\":\\"%(thumbnail)s\\",\\"duration\\":%(duration)s}`, (error, stdout) => {
+                exec(`"./assets/binaries/yt-dlp" "${url}" --print "{\\"webpage_url\\":\\"%(webpage_url)s\\",\\"title\\":\\"%(title)s\\",\\"thumbnail\\":\\"%(thumbnail)s\\",\\"duration\\":%(duration)s}"`, (error, stdout) => {
                     if (error) {
                         reject(error)
                         return

@@ -28,7 +28,7 @@ async function download(interaction: CommandInteraction): Promise<InteractionRep
         return { embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] }
     }
     interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
-    exec(`"./assets/binaries/yt-dlp" ${interaction.options.getString('url')} --output ${process.env.DATA}/new_downloads/%(title)s.%(ext)s --quiet --format ${ interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best'} --limit-rate 1M`,
+    exec(`"./assets/binaries/yt-dlp" "${interaction.options.getString('url')}" --output "${process.env.DATA}/new_downloads/%(title)s.%(ext)s" --quiet --format "${ interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best'}" --limit-rate "1M"`,
         error => {
             if (error) {
                 interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] })

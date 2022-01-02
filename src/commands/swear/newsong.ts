@@ -26,7 +26,7 @@ async function newSong(interaction: CommandInteraction, info: GuildInfo): Promis
     let output: { readonly duration: number, readonly webpage_url: string }
     try {
         output = JSON.parse(await new Promise((resolve: (value: string) => void, reject: () => void) => {
-            exec(`"./assets/binaries/yt-dlp" ${interaction.options.getString('url')} --print {\\"duration\\":%(duration)s,\\"webpage_url\\":\\"%(webpage_url)s}\\"}`, (error, stdout) => {
+            exec(`"./assets/binaries/yt-dlp" "${interaction.options.getString('url')}" --print "{\\"duration\\":%(duration)s,\\"webpage_url\\":\\"%(webpage_url)s}\\"}"`, (error, stdout) => {
                 if (error) {
                     reject()
                     return
@@ -44,7 +44,7 @@ async function newSong(interaction: CommandInteraction, info: GuildInfo): Promis
     }
     interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
     const songs = <{ index: number, name: string }[]> <unknown> await info.database.select('swear_songs')
-    exec(`"./assets/binaries/yt-dlp" ${output.webpage_url} --output ${process.env.DATA}/music_files/swear_songs/song${songs.length + 1}.%(ext)s --quiet --format bestaudio[ext=webm][acodec=opus]/bestaudio --limit-rate 1M`, async () => {
+    exec(`"./assets/binaries/yt-dlp" "${output.webpage_url}" --output "${process.env.DATA}/music_files/swear_songs/song${songs.length + 1}.%(ext)s" --quiet --format "bestaudio[ext=webm][acodec=opus]/bestaudio" --limit-rate "1M"`, async () => {
         await info.database.insert('swear_songs', { index: songs.length + 1, name: `song${songs.length + 1}` })
         interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Success!' }) ] })
     })
