@@ -6,16 +6,18 @@
     "extends": [
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
-		"plugin:import/typescript"
+		"plugin:import/typescript",
+		"plugin:unicorn/recommended"
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
-        "ecmaVersion": 12,
+        "ecmaVersion": "latest",
         "sourceType": "module"
     },
     "plugins": [
         "@typescript-eslint",
-		"import"
+		"import",
+		"unicorn"
     ],
     "rules": {
         "semi": [
@@ -23,6 +25,7 @@
             "never"
         ],
 	"no-warning-comments": "warn",
+	"no-restricted-globals": [ "error", "process", "setTimeout", "setInterval" ],
 	"no-case-declarations": "warn",
     "@typescript-eslint/no-var-requires": "warn",
 	"import/extensions": [ "error", "ignorePackages" ],
@@ -50,6 +53,8 @@
 	"no-trailing-spaces": "error",
 	"quotes": ["error", "single", { "allowTemplateLiterals": true }],
 	"no-var": "error",
-	"prefer-const": "error"
+	"prefer-const": "error",
+	"unicorn/no-await-expression-member": "off",
+	"unicorn/consistent-function-scoping": "off"
     }
 }

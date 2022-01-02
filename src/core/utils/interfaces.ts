@@ -1,8 +1,8 @@
-import { DatabaseManager } from '../DatabaseManager.js'
-import { BaseGame } from './BaseGame.js'
-import { QueueManager } from '../voice/QueueManager.js'
-import { VoiceManager } from '../voice/VoiceManager.js'
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, ApplicationCommandOptionChoice } from 'discord.js'
+import { DatabaseManager } from '../database-manager.js'
+import { BaseGame } from './base-game.js'
+import { QueueManager } from '../voice/queue-manager.js'
+import { VoiceManager } from '../voice/voice-manager.js'
+import { CommandInteraction, InteractionReplyOptions, ApplicationCommandOptionChoice, ApplicationCommandDataResolvable } from 'discord.js'
 
 export interface GuildInfo {
     readonly database?: DatabaseManager
@@ -12,8 +12,9 @@ export interface GuildInfo {
 }
 
 export interface Command {
-    readonly data: ApplicationCommandData
+    readonly data: ApplicationCommandDataResolvable
     readonly execute: (interaction: CommandInteraction, info: GuildInfo) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void
     readonly autocomplete?: (option: ApplicationCommandOptionChoice, info: GuildInfo) => Promise<ApplicationCommandOptionChoice[]> | ApplicationCommandOptionChoice[]
     readonly gameCommand?: boolean
+    readonly ephemeral?: boolean
 }

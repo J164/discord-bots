@@ -1,0 +1,63 @@
+import { Client, Intents } from 'discord.js'
+import { writeFileSync } from 'node:fs'
+import { DatabaseManager } from '../core/database-manager.js'
+import { InteractionManager } from '../core/interaction-manager.js'
+import { VoiceManager } from '../core/voice/voice-manager.js'
+import process from 'node:process'
+import { setInterval } from 'node:timers'
+import { config } from 'dotenv'
+
+config()
+
+process.on('unhandledRejection', (error: Error) => {
+    if (error.name === 'FetchError') {
+        process.exit()
+    }
+    if (error.message !== 'Unknown interaction') {
+        const date = new Date()
+        writeFileSync(`${process.env.DATA}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-swear.txt`, `${error.name}\n${error.message}\n${error.stack}`)
+        process.exit()
+    }
+})
+
+const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ] })
+const interactionManager = new InteractionManager(new DatabaseManager())
+const swearStatus = [ 'Reading the Swear Dictionary', 'Singing Swears', 'Arresting people who don\'t swear', 'Inventing new swears' ]
+
+client.once('ready', async () => {
+    await InteractionManager.deployCommands(client, 'swear')
+    await interactionManager.getCommands(client, 'swear')
+    client.user.setActivity(swearStatus[Math.floor(Math.random() * swearStatus.length)])
+
+    setInterval(() => {
+        client.user.setActivity(swearStatus[Math.floor(Math.random() * swearStatus.length)])
+        interactionManager.statusCheck()
+    }, 60_000)
+
+    console.log(`\u001B[42m We have logged in as ${client.user.tag} \u001B[0m`)
+})
+
+client.on('interactionCreate', async interaction => {
+    if (!interaction.inGuild()) {
+        return
+    }
+
+    interactionManager.addGuild(interaction.guildId, { voiceManager: new VoiceManager() })
+
+    if (interaction.isAutocomplete()) {
+        const response = await interactionManager.autocomplete(interaction)
+        interaction.respond(response)
+        return
+    }
+
+    if (!interaction.isCommand()) {
+        return
+    }
+
+    const response = await interactionManager.parseCommand(interaction)
+    if (response) {
+        interaction.editReply(response)
+    }
+})
+
+client.login(process.env.SWEARTOKEN)
