@@ -4,13 +4,13 @@ import { AudioPlayerStatus } from '@discordjs/voice'
 import { generateEmbed } from '../utils/generators.js'
 import { setTimeout } from 'node:timers/promises'
 import { Readable } from 'node:stream'
-import { spawn } from 'node:child_process'
+import { ChildProcessByStdio, spawn } from 'node:child_process'
 
 export interface QueueItem {
     readonly url: string
     readonly title: string
-    readonly thumbnail?: string
-    readonly duration: number
+    readonly thumbnail: string
+    readonly duration: string
     looping?: boolean
 }
 
@@ -18,6 +18,7 @@ export class QueueManager {
 
     public readonly voiceManager: VoiceManager
     private queue: QueueItem[]
+    private stream: ChildProcessByStdio<null, Readable, null>
     private nowPlaying: QueueItem
     private queueLoop: boolean
     private queueLock: boolean
@@ -64,11 +65,11 @@ export class QueueManager {
         return true
     }
 
-    private static createStream(url: string): Promise<Readable> {
+    private createStream(url: string): Promise<Readable> {
         return new Promise((resolve: (value: Readable) => void) => {
-            const process = spawn('./assets/binaries/yt-dlp', [ url, '--output', '-', '--quiet', '--format', 'bestaudio[ext=webm][acodec=opus]/bestaudio', '--limit-rate', '160K' ], { stdio: [ 'ignore', 'pipe', 'ignore' ] })
-            process.once('spawn', () => {
-                resolve(process.stdout)
+            this.stream = spawn('./assets/binaries/yt-dlp', [ url, '--output', '-', '--quiet', '--format', 'bestaudio[ext=webm][acodec=opus]/bestaudio', '--limit-rate', '160K' ], { stdio: [ 'ignore', 'pipe', 'ignore' ] })
+            this.stream.once('spawn', () => {
+                resolve(this.stream.stdout)
             })
         })
     }
@@ -88,7 +89,7 @@ export class QueueManager {
         this.nowPlaying = this.queue.shift()
         this.queueLock = false
 
-        await this.voiceManager.playStream(await QueueManager.createStream(this.nowPlaying.url))
+        await this.voiceManager.playStream(await this.createStream(this.nowPlaying.url))
 
         this.transitioning = false
 
@@ -97,6 +98,8 @@ export class QueueManager {
                 return
             }
             this.voiceManager.player.removeAllListeners('stateChange')
+
+            this.stream.disconnect()
 
             this.transitioning = true
 
@@ -196,19 +199,14 @@ export class QueueManager {
         if (!this.nowPlaying) {
             return { embeds: [ generateEmbed('error', { title: 'Nothing has played yet!' }) ] }
         }
-        const hour = Math.floor(this.nowPlaying.duration / 3600)
-        const min = Math.floor((this.nowPlaying.duration % 3600) / 60)
-        const sec = (this.nowPlaying.duration % 60)
         const embed = generateEmbed('info', {
-            title: `Now Playing: ${this.nowPlaying.title} (${hour < 10 ? `0${hour}` : hour}:${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec})`,
+            title: `Now Playing: ${this.nowPlaying.title} (${this.nowPlaying.duration})`,
             fields: [ {
                 name: 'URL:',
                 value: this.nowPlaying.url
-            } ]
+            } ],
+            image: { url: this.nowPlaying.thumbnail }
         })
-        if (this.nowPlaying.thumbnail) {
-            embed.image = { url: this.nowPlaying.thumbnail }
-        }
         if (this.nowPlaying.looping) {
             embed.footer = { text: 'Looping', iconURL: 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png' }
         }
@@ -260,6 +258,8 @@ export class QueueManager {
     public reset(): void {
         this.voiceManager.reset()
         this.queue = []
+        this.stream?.disconnect()
+        this.stream = undefined
         this.nowPlaying = undefined
         this.queueLoop = false
         this.queueLock = false

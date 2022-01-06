@@ -1,10 +1,49 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
 import { MagicGame } from '../../core/modules/games/magic-game.js'
 import { CommanderMagicGame } from '../../core/modules/games/commander-magic-game.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 
-const data: ApplicationCommandData = {
+async function magic(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+    const channel = await interaction.guild.channels.fetch(interaction.channelId)
+    for (const [ , game ] of info.games) {
+        if (game.getThreadName() === interaction.options.getString('name')) {
+            return { embeds: [ generateEmbed('error', { title: 'Please choose a unique game name!' }) ] }
+        }
+    }
+    if (!channel.isText()) {
+        return { embeds: [ generateEmbed('error', { title: 'Something went wrong!' }) ] }
+    }
+    const playerlist: User[] = []
+    for (let index = 1; index <= 4; index++) {
+        if (interaction.options.getUser(`player${index}`)) {
+            playerlist.push(interaction.options.getUser(`player${index}`))
+        } else {
+            break
+        }
+    }
+    if (interaction.options.getSubcommand() === 'basic') {
+        const thread = await channel.threads.create({ name: interaction.options.getString('name'), autoArchiveDuration: 60 })
+        info.games.set(thread.id, new MagicGame(playerlist, thread))
+        thread.send({ embeds: [ (<MagicGame> info.games.get(thread.id)).printStandings() ] })
+        return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
+    }
+    const commanders: string[] = []
+    for (let index = 0; index < playerlist.length; index++) {
+        if (!interaction.options.getString(`commander${index + 1}`)) {
+            return { embeds: [ generateEmbed('error', { title: 'Please enter a commander for each player!' }) ] }
+        }
+        for (const commander of interaction.options.getString(`commander${index + 1}`).split('.')) {
+            commanders.push(commander)
+        }
+    }
+    const thread = await channel.threads.create({ name: interaction.options.getString('name'), autoArchiveDuration: 60 })
+    info.games.set(thread.id, new CommanderMagicGame(playerlist, commanders, thread))
+    thread.send({ embeds: [ (<CommanderMagicGame> info.games.get(thread.id)).printStandings() ] })
+    return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
+}
+
+export const command: Command = { data: {
     name: 'magic',
     description: 'Start a game of Magic',
     options: [
@@ -107,45 +146,4 @@ const data: ApplicationCommandData = {
             ]
         }
     ]
-}
-
-async function magic(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
-    const channel = await interaction.guild.channels.fetch(interaction.channelId)
-    for (const [ , game ] of info.games) {
-        if (game.getThreadName() === interaction.options.getString('name')) {
-            return { embeds: [ generateEmbed('error', { title: 'Please choose a unique game name!' }) ] }
-        }
-    }
-    if (!channel.isText()) {
-        return { embeds: [ generateEmbed('error', { title: 'Something went wrong!' }) ] }
-    }
-    const playerlist: User[] = []
-    for (let index = 1; index <= 4; index++) {
-        if (interaction.options.getUser(`player${index}`)) {
-            playerlist.push(interaction.options.getUser(`player${index}`))
-        } else {
-            break
-        }
-    }
-    if (interaction.options.getSubcommand() === 'basic') {
-        const thread = await channel.threads.create({ name: interaction.options.getString('name'), autoArchiveDuration: 60 })
-        info.games.set(thread.id, new MagicGame(playerlist, thread))
-        thread.send({ embeds: [ (<MagicGame> info.games.get(thread.id)).printStandings() ] })
-        return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
-    }
-    const commanders: string[] = []
-    for (let index = 0; index < playerlist.length; index++) {
-        if (!interaction.options.getString(`commander${index + 1}`)) {
-            return { embeds: [ generateEmbed('error', { title: 'Please enter a commander for each player!' }) ] }
-        }
-        for (const commander of interaction.options.getString(`commander${index + 1}`).split('.')) {
-            commanders.push(commander)
-        }
-    }
-    const thread = await channel.threads.create({ name: interaction.options.getString('name'), autoArchiveDuration: 60 })
-    info.games.set(thread.id, new CommanderMagicGame(playerlist, commanders, thread))
-    thread.send({ embeds: [ (<CommanderMagicGame> info.games.get(thread.id)).printStandings() ] })
-    return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
-}
-
-export const command: Command = { data: data, execute: magic }
+}, execute: magic }

@@ -1,11 +1,6 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
-
-const data: ApplicationCommandData = {
-    name: 'resume',
-    description: 'Resume the song'
-}
 
 function resume(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (info.voiceManager.resume()) {
@@ -14,4 +9,7 @@ function resume(interaction: CommandInteraction, info: GuildInfo): InteractionRe
     return { embeds: [ generateEmbed('error', { title: 'Nothing is playing!' }) ] }
 }
 
-export const command: Command = { data: data, execute: resume }
+export const command: Command = { data: {
+    name: 'resume',
+    description: 'Resume the song'
+}, execute: resume }

@@ -1,4 +1,4 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { request } from 'undici'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command } from '../../core/utils/interfaces.js'
@@ -24,17 +24,6 @@ interface WynncraftData {
     }[]
 }
 
-const data: ApplicationCommandData = {
-    name: 'wynncraft',
-    description: 'Get stats for a player on Wynncraft',
-    options: [ {
-        name: 'player',
-        description: 'The username of target player',
-        type: 'STRING',
-        required: true
-    } ]
-}
-
 async function wynncraft(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     const playerData = <WynncraftData> await (await request(`https://api.wynncraft.com/v2/player/${interaction.options.getString('player')}/stats`)).body.json()
     const embed = generateEmbed('info', {
@@ -54,4 +43,13 @@ async function wynncraft(interaction: CommandInteraction): Promise<InteractionRe
     return { embeds: [ embed ] }
 }
 
-export const command: Command = { data: data, execute: wynncraft }
+export const command: Command = { data: {
+    name: 'wynncraft',
+    description: 'Get stats for a player on Wynncraft',
+    options: [ {
+        name: 'player',
+        description: 'The username of target player',
+        type: 'STRING',
+        required: true
+    } ]
+}, execute: wynncraft }

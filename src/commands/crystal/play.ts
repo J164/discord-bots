@@ -1,30 +1,10 @@
 import { AudioPlayerStatus } from '@discordjs/voice'
-import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { createReadStream, readFileSync } from 'node:fs'
 import Fuse from 'fuse.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 import process from 'node:process'
-
-const data: ApplicationCommandData = {
-    name: 'play',
-    description: 'Play a song from the Naruto OST',
-    options: [
-        {
-            name: 'name',
-            description: 'The name of the song (defaults to a random song)',
-            type: 'STRING',
-            autocomplete: true,
-            required: false
-        },
-        {
-            name: 'loop',
-            description: 'Whether to loop the song',
-            type: 'BOOLEAN',
-            required: false
-        }
-    ]
-}
 
 async function play(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
     const member = await interaction.guild.members.fetch(interaction.user)
@@ -74,4 +54,22 @@ function search(option: ApplicationCommandOptionChoice): ApplicationCommandOptio
     return options
 }
 
-export const command: Command = { data: data, execute: play, autocomplete: search }
+export const command: Command = { data: {
+    name: 'play',
+    description: 'Play a song from the Naruto OST',
+    options: [
+        {
+            name: 'name',
+            description: 'The name of the song (defaults to a random song)',
+            type: 'STRING',
+            autocomplete: true,
+            required: false
+        },
+        {
+            name: 'loop',
+            description: 'Whether to loop the song',
+            type: 'BOOLEAN',
+            required: false
+        }
+    ]
+}, execute: play, autocomplete: search }

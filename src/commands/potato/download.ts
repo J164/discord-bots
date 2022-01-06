@@ -1,27 +1,8 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command } from '../../core/utils/interfaces.js'
 import process from 'node:process'
 import { exec } from 'node:child_process'
-
-const data: ApplicationCommandData = {
-    name: 'download',
-    description: 'Download a video off of Youtube',
-    options: [
-        {
-            name: 'url',
-            description: 'The url of the video you want to download',
-            type: 'STRING',
-            required: true
-        },
-        {
-            name: 'dev',
-            description: 'Download the opus encoded webm file for this song',
-            type: 'BOOLEAN',
-            required: false
-        }
-    ]
-}
 
 async function download(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     if (interaction.member.user.id !== process.env.ADMIN) {
@@ -38,4 +19,21 @@ async function download(interaction: CommandInteraction): Promise<InteractionRep
         })
 }
 
-export const command: Command = { data: data, execute: download }
+export const command: Command = { data: {
+    name: 'download',
+    description: 'Download a video off of Youtube',
+    options: [
+        {
+            name: 'url',
+            description: 'The url of the video you want to download',
+            type: 'STRING',
+            required: true
+        },
+        {
+            name: 'dev',
+            description: 'Download the opus encoded webm file for this song',
+            type: 'BOOLEAN',
+            required: false
+        }
+    ]
+}, execute: download }

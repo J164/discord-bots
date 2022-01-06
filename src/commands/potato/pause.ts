@@ -1,11 +1,6 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
-
-const data: ApplicationCommandData = {
-    name: 'pause',
-    description: 'Pause the song'
-}
 
 function pause(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     if (info.queueManager.voiceManager.pause()) {
@@ -14,4 +9,7 @@ function pause(interaction: CommandInteraction, info: GuildInfo): InteractionRep
     return { embeds: [ generateEmbed('error', { title: 'Nothing is playing' }) ] }
 }
 
-export const command: Command = { data: data, execute: pause }
+export const command: Command = { data: {
+    name: 'pause',
+    description: 'Pause the song'
+}, execute: pause }

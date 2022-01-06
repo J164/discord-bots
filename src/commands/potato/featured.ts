@@ -1,10 +1,32 @@
-import { exec, ExecException } from 'node:child_process'
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 import { QueueItem } from '../../core/voice/queue-manager.js'
+import ytpl from 'ytpl'
 
-const data: ApplicationCommandData = {
+async function featured(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+    const member = await interaction.guild.members.fetch(interaction.user)
+    const voiceChannel = member.voice.channel
+    if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
+        return { embeds: [ generateEmbed('error', { title: 'This command can only be used while in a visable voice channel!' }) ] }
+    }
+    const results = await ytpl(interaction.options.getString('name')).catch((): false => {
+        interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] })
+        return false
+    })
+    if (!results) return
+    const items: QueueItem[] = []
+    for (const item of results.items) {
+        items.push({ url: item.url, title: item.title, duration: item.duration, thumbnail: item.bestThumbnail.url })
+    }
+    await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
+    if (!info.queueManager.connect(voiceChannel)) {
+        return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
+    }
+    return { embeds: [ generateEmbed('success', { title: `Added playlist "${results.title}" to queue!`, image: { url: results.bestThumbnail.url } }) ] }
+}
+
+export const command: Command = { data: {
     name: 'featured',
     description: 'Play a song from the list of featured playlists',
     options: [
@@ -39,40 +61,4 @@ const data: ApplicationCommandData = {
             required: false
         }
     ]
-}
-
-async function featured(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
-    const member = await interaction.guild.members.fetch(interaction.user)
-    const voiceChannel = member.voice.channel
-    if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
-        return { embeds: [ generateEmbed('error', { title: 'This command can only be used while in a visable voice channel!' }) ] }
-    }
-    const output = await new Promise((resolve: (value: string) => void, reject: (error: ExecException) => void) => {
-        exec(`"./assets/binaries/yt-dlp" "${interaction.options.getString('name')}" --flat-playlist --print "{\\"webpage_url\\":\\"%(webpage_url)s\\",\\"title\\":\\"%(title)s\\",\\"duration\\":%(duration)s}"`, (error, stdout) => {
-            if (error) {
-                reject(error)
-                return
-            }
-            resolve(stdout)
-        })
-    })
-    const parsedOutput: { readonly webpage_url: string, readonly title: string, readonly duration: number }[] = []
-    for (const song of output.split('\n')) {
-        try {
-            parsedOutput.push(JSON.parse(song))
-        } catch {
-            break
-        }
-    }
-    const items: QueueItem[] = []
-    for (const song of parsedOutput) {
-        items.push({ url: song.webpage_url, title: song.title, duration: song.duration })
-    }
-    await info.queueManager.addToQueue(items, interaction.options.getNumber('position') - 1)
-    if (!info.queueManager.connect(voiceChannel)) {
-        return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
-    }
-    return { embeds: [ generateEmbed('success', { title: 'Added to queue!' }) ] }
-}
-
-export const command: Command = { data: data, execute: featured }
+}, execute: featured }

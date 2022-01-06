@@ -1,4 +1,4 @@
-import { ApplicationCommandData, ButtonInteraction, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { ButtonInteraction, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { request } from 'undici'
@@ -22,11 +22,6 @@ interface MagicCard {
 interface ScryfallResponse {
     readonly status?: string
     readonly data: MagicCard[]
-}
-
-const data: ApplicationCommandData = {
-    name: 'decks',
-    description: 'Get a deck from Potato\'s database'
 }
 
 interface DeckstatsResponse {
@@ -110,4 +105,7 @@ async function getDeck(interaction: CommandInteraction, info: GuildInfo): Promis
     parseDeck(interaction, info, <{ url: string }[]> <unknown> await info.database.select('mtg_decks'))
 }
 
-export const command: Command = { data: data, execute: getDeck, ephemeral: true }
+export const command: Command = { data: {
+    name: 'decks',
+    description: 'Get a deck from Potato\'s database'
+}, execute: getDeck, ephemeral: true }

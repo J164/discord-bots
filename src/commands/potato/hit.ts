@@ -1,39 +1,8 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions, MessageEmbedOptions, SelectMenuInteraction } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions, MessageEmbedOptions, SelectMenuInteraction } from 'discord.js'
 import { MagicGame } from '../../core/modules/games/magic-game.js'
 import { CommanderMagicGame } from '../../core/modules/games/commander-magic-game.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
-
-const data: ApplicationCommandData = {
-    name: 'hit',
-    description: 'Deal an amount of damage to a player',
-    options: [
-        {
-            name: 'player',
-            description: 'The player to damage',
-            type: 'USER',
-            required: true
-        },
-        {
-            name: 'amount',
-            description: 'The amount of damage to deal',
-            type: 'INTEGER',
-            required: true
-        },
-        {
-            name: 'poison',
-            description: 'If the damage should result in poison counters being added',
-            type: 'BOOLEAN',
-            required: false
-        },
-        {
-            name: 'commander',
-            description: 'If the damage is being delt by a commander',
-            type: 'BOOLEAN',
-            required: false
-        }
-    ]
-}
 
 function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     const game = info.games.get(interaction.channelId)
@@ -70,4 +39,33 @@ function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReply
     return { embeds: [ standings ] }
 }
 
-export const command: Command = { data: data, execute: hit, gameCommand: true }
+export const command: Command = { data: {
+    name: 'hit',
+    description: 'Deal an amount of damage to a player',
+    options: [
+        {
+            name: 'player',
+            description: 'The player to damage',
+            type: 'USER',
+            required: true
+        },
+        {
+            name: 'amount',
+            description: 'The amount of damage to deal',
+            type: 'INTEGER',
+            required: true
+        },
+        {
+            name: 'poison',
+            description: 'If the damage should result in poison counters being added',
+            type: 'BOOLEAN',
+            required: false
+        },
+        {
+            name: 'commander',
+            description: 'If the damage is being delt by a commander',
+            type: 'BOOLEAN',
+            required: false
+        }
+    ]
+}, execute: hit, gameCommand: true }

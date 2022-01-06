@@ -1,19 +1,8 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { request } from 'undici'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 import process from 'node:process'
-
-const data: ApplicationCommandData = {
-    name: 'adddeck',
-    description: 'Add a deck to Potato\'s database',
-    options: [ {
-        name: 'url',
-        description: 'Deckstats URL for the new deck',
-        type: 'STRING',
-        required: true
-    } ]
-}
 
 async function addDeck(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
     if (interaction.member.user.id !== process.env.ADMIN && interaction.member.user.id !== process.env.SWEAR && interaction.member.user.id !== process.env.MAGIC) {
@@ -39,4 +28,13 @@ async function addDeck(interaction: CommandInteraction, info: GuildInfo): Promis
     return { embeds: [ generateEmbed('success', { title: `Success! Deck "${name}" has been added!` }) ] }
 }
 
-export const command: Command = { data: data, execute: addDeck }
+export const command: Command = { data: {
+    name: 'adddeck',
+    description: 'Add a deck to Potato\'s database',
+    options: [ {
+        name: 'url',
+        description: 'Deckstats URL for the new deck',
+        type: 'STRING',
+        required: true
+    } ]
+}, execute: addDeck }

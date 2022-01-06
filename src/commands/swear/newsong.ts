@@ -1,21 +1,8 @@
-import { ApplicationCommandData, CommandInteraction } from 'discord.js'
+import { CommandInteraction } from 'discord.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import process from 'node:process'
 import { exec } from 'node:child_process'
-
-const data: ApplicationCommandData = {
-    name: 'newsong',
-    description: 'Add a new song to Swear Bot\'s library',
-    options: [
-        {
-            name: 'url',
-            type: 'STRING',
-            description: 'The URL for the new swear song',
-            required: true
-        }
-    ]
-}
 
 async function newSong(interaction: CommandInteraction, info: GuildInfo): Promise<void> {
     if (interaction.member.user.id !== process.env.ADMIN && interaction.member.user.id !== process.env.SWEAR) {
@@ -50,4 +37,15 @@ async function newSong(interaction: CommandInteraction, info: GuildInfo): Promis
     })
 }
 
-export const command: Command = { data: data, execute: newSong }
+export const command: Command = { data: {
+    name: 'newsong',
+    description: 'Add a new song to Swear Bot\'s library',
+    options: [
+        {
+            name: 'url',
+            type: 'STRING',
+            description: 'The URL for the new swear song',
+            required: true
+        }
+    ]
+}, execute: newSong }

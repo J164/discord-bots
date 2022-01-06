@@ -1,23 +1,8 @@
-import { ApplicationCommandDataResolvable, CommandInteraction } from 'discord.js'
+import { CommandInteraction } from 'discord.js'
 import { createReadStream, existsSync } from 'node:fs'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 import process from 'node:process'
-
-const data: ApplicationCommandDataResolvable = {
-    name: 'play',
-    description: 'Play a swear song from Swear Bot\'s database',
-    options: [
-        {
-            name: 'number',
-            description: 'The song number',
-            type: 4,
-            // eslint-disable-next-line camelcase
-            min_value: 0,
-            required: false
-        }
-    ]
-}
 
 async function getSongs(interaction: CommandInteraction, info: GuildInfo): Promise<void> {
     const member = await interaction.guild.members.fetch(interaction.user)
@@ -33,4 +18,17 @@ async function getSongs(interaction: CommandInteraction, info: GuildInfo): Promi
     interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Now Playing!' }) ] })
 }
 
-export const command: Command = { data: data, execute: getSongs }
+export const command: Command = { data: {
+    name: 'play',
+    description: 'Play a swear song from Swear Bot\'s database',
+    options: [
+        {
+            name: 'number',
+            description: 'The song number',
+            type: 'INTEGER',
+            // eslint-disable-next-line camelcase
+            min_value: 0,
+            required: false
+        }
+    ]
+}, execute: getSongs }

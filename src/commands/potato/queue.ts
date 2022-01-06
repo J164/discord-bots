@@ -1,12 +1,7 @@
-import { ApplicationCommandData, ButtonInteraction, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { ButtonInteraction, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { QueueItem } from '../../core/voice/queue-manager.js'
-
-const data: ApplicationCommandData = {
-    name: 'queue',
-    description: 'Get the song queue'
-}
 
 async function queue(interaction: CommandInteraction, info: GuildInfo, queueArray?: QueueItem[][], button?: ButtonInteraction, page = 0): Promise<void> {
     if (!queueArray) {
@@ -26,10 +21,7 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
         fields: []
     })
     for (const [ index, entry ] of queueArray[page].entries()) {
-        const hour = Math.floor(entry.duration / 3600)
-        const min = Math.floor((entry.duration % 3600) / 60)
-        const sec = (entry.duration % 60)
-        queueMessage.fields.push({ name: index === 0 && page === 0 ? 'Currently Playing:' : `${index + (page * 25)}.`, value: `${entry.title} (${hour < 10 ? `0${hour}` : hour}:${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec})\n${entry.url}` })
+        queueMessage.fields.push({ name: index === 0 && page === 0 ? 'Currently Playing:' : `${index + (page * 25)}.`, value: `${entry.title} (${entry.duration})\n${entry.url}` })
     }
     const options: InteractionReplyOptions = { embeds: [ queueMessage ], components: [ { components: [
         { type: 'BUTTON', customId: 'queue-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY', disabled: page === 0 },
@@ -60,4 +52,7 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
     collector.once('end', () => { interaction.editReply({ components: [] }) })
 }
 
-export const command: Command = { data: data, execute: queue, ephemeral: true }
+export const command: Command = { data: {
+    name: 'queue',
+    description: 'Get the song queue'
+}, execute: queue, ephemeral: true }

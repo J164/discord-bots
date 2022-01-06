@@ -1,12 +1,7 @@
-import { ApplicationCommandData, ButtonInteraction, CommandInteraction, InteractionUpdateOptions, MessageEmbedOptions } from 'discord.js'
+import { ButtonInteraction, CommandInteraction, InteractionUpdateOptions, MessageEmbedOptions } from 'discord.js'
 import { readFileSync } from 'node:fs'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
-
-const data: ApplicationCommandData = {
-    name: 'list',
-    description: 'List all of the Naruto songs'
-}
 
 function songEmbed(songs: string[], index: number): MessageEmbedOptions {
     const embed = generateEmbed('info', {
@@ -58,4 +53,7 @@ async function list(interaction: CommandInteraction, info: GuildInfo, index = 0,
     collector.once('end', () => { interaction.editReply({ components: [] }) })
 }
 
-export const command: Command = { data: data, execute: list, ephemeral: true }
+export const command: Command = { data: {
+    name: 'list',
+    description: 'List all of the Naruto songs'
+}, execute: list, ephemeral: true }

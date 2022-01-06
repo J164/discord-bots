@@ -1,5 +1,5 @@
 import canvas from 'canvas'
-import { ApplicationCommandData, ButtonInteraction, CommandInteraction, InteractionReplyOptions, InteractionUpdateOptions, SelectMenuInteraction } from 'discord.js'
+import { ButtonInteraction, CommandInteraction, InteractionReplyOptions, InteractionUpdateOptions, SelectMenuInteraction } from 'discord.js'
 import { request } from 'undici'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
@@ -23,17 +23,6 @@ interface MagicCard {
 interface ScryfallResponse {
     readonly status?: string
     readonly data: MagicCard[]
-}
-
-const data: ApplicationCommandData = {
-    name: 'search',
-    description: 'Search for Magic cards',
-    options: [ {
-        name: 'query',
-        description: 'What to search for',
-        type: 'STRING',
-        required: true
-    } ]
 }
 
 async function mergeImages(filePaths: string[], options: { width: number; height: number }): Promise<Buffer> {
@@ -133,4 +122,13 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results?
     collector.once('end', () => { interaction.editReply({ components: [] }) })
 }
 
-export const command: Command = { data: data, execute: search, ephemeral: true }
+export const command: Command = { data: {
+    name: 'search',
+    description: 'Search for Magic cards',
+    options: [ {
+        name: 'query',
+        description: 'What to search for',
+        type: 'STRING',
+        required: true
+    } ]
+}, execute: search, ephemeral: true }

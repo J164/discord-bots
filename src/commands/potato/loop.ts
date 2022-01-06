@@ -1,7 +1,14 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 
-const data: ApplicationCommandData = {
+function loop(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
+    if (interaction.options.getSubcommand() === 'current') {
+        return info.queueManager.loopSong()
+    }
+    return info.queueManager.loopQueue()
+}
+
+export const command: Command = { data: {
     name: 'loop',
     description: 'Loop the current song or queue',
     options: [
@@ -16,13 +23,4 @@ const data: ApplicationCommandData = {
             type: 'SUB_COMMAND'
         }
     ]
-}
-
-function loop(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
-    if (interaction.options.getSubcommand() === 'current') {
-        return info.queueManager.loopSong()
-    }
-    return info.queueManager.loopQueue()
-}
-
-export const command: Command = { data: data, execute: loop }
+}, execute: loop }

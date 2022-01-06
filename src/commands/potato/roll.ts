@@ -1,19 +1,6 @@
-import { ApplicationCommandDataResolvable, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command } from '../../core/utils/interfaces.js'
-
-const data: ApplicationCommandDataResolvable = {
-    name: 'roll',
-    description: 'Roll a die',
-    options: [ {
-        name: 'sides',
-        description: 'How many sides on the die (defaults to 6)',
-        type: 4,
-        // eslint-disable-next-line camelcase
-        min_value: 2,
-        required: false
-    } ]
-}
 
 function roll(interaction: CommandInteraction): InteractionReplyOptions {
     const dice = interaction.options.getInteger('sides') ? interaction.options.getInteger('sides') : 6
@@ -27,4 +14,15 @@ function roll(interaction: CommandInteraction): InteractionReplyOptions {
     return { embeds: [ diceResult ] }
 }
 
-export const command: Command = { data: data, execute: roll }
+export const command: Command = { data: {
+    name: 'roll',
+    description: 'Roll a die',
+    options: [ {
+        name: 'sides',
+        description: 'How many sides on the die (defaults to 6)',
+        type: 'INTEGER',
+        // eslint-disable-next-line camelcase
+        min_value: 2,
+        required: false
+    } ]
+}, execute: roll }

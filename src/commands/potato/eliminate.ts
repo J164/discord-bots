@@ -1,20 +1,7 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { MagicGame } from '../../core/modules/games/magic-game.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
-
-const data: ApplicationCommandData = {
-    name: 'eliminate',
-    description: 'Eliminate a player',
-    options: [
-        {
-            name: 'player',
-            description: 'The player to eliminate',
-            type: 'USER',
-            required: true
-        }
-    ]
-}
 
 function eliminate(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     const game = info.games.get(interaction.channelId)
@@ -27,4 +14,15 @@ function eliminate(interaction: CommandInteraction, info: GuildInfo): Interactio
     return { embeds: [ game.eliminate(interaction.options.getUser('player').id) ] }
 }
 
-export const command: Command = { data: data, execute: eliminate, gameCommand: true }
+export const command: Command = { data: {
+    name: 'eliminate',
+    description: 'Eliminate a player',
+    options: [
+        {
+            name: 'player',
+            description: 'The player to eliminate',
+            type: 'USER',
+            required: true
+        }
+    ]
+}, execute: eliminate, gameCommand: true }

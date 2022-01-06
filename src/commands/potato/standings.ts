@@ -1,12 +1,7 @@
-import { ApplicationCommandData, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { MagicGame } from '../../core/modules/games/magic-game.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
-
-const data: ApplicationCommandData = {
-    name: 'standings',
-    description: 'Display the standings for the current Magic game'
-}
 
 function end(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
     const game = info.games.get(interaction.channelId)
@@ -16,4 +11,7 @@ function end(interaction: CommandInteraction, info: GuildInfo): InteractionReply
     return { embeds: [ game.printStandings() ] }
 }
 
-export const command: Command = { data: data, execute: end, gameCommand: true }
+export const command: Command = { data: {
+    name: 'standings',
+    description: 'Display the standings for the current Magic game'
+}, execute: end, gameCommand: true }

@@ -1,12 +1,135 @@
-import { ApplicationCommandData, ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, VoiceChannel } from 'discord.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
-import ytsr from 'ytsr'
+import ytsr, { getFilters, Video } from 'ytsr'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { exec, ExecException } from 'node:child_process'
+import ytpl from 'ytpl'
+import { QueueItem } from '../../core/voice/queue-manager.js'
+import { request } from 'undici'
+import process from 'node:process'
 
-//fixme spotify
+interface SpotifyResponse {
+    readonly name: string
+    readonly external_urls: { readonly spotify: string }
+    readonly images: readonly { readonly url: string }[]
+    readonly tracks: { readonly items: readonly { readonly track: { readonly name: string, readonly artists: readonly { readonly name: string }[] } }[] }
+}
 
-const data: ApplicationCommandData = {
+async function spotify(interaction: CommandInteraction, info: GuildInfo, voiceChannel: VoiceChannel): Promise<InteractionReplyOptions> {
+    const parsedUrl = interaction.options.getString('name').split('?')[0].split('/')
+    const playlistId = parsedUrl[interaction.options.getString('name').split('/').indexOf('playlist') + 1]
+
+    const token = (await (await request('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: { 'Authorization': `Basic ${process.env.SPOTIFYAUTH}`, 'Content-Type' : 'application/x-www-form-urlencoded' },
+        body: 'grant_type=client_credentials' }))
+    .body.json()).access_token
+
+    let response: SpotifyResponse
+    try {
+        response = await (await request(`https://api.spotify.com/v1/playlists/${playlistId}`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}` } })).body.json()
+    } catch {
+        return { embeds: [ generateEmbed('error', { title: 'Playlist not found! (Make sure it is a public playlist)' }) ] }
+    }
+
+    interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Locating Songs...' }) ] })
+
+    const items: QueueItem[] = []
+
+    for (const song of response.tracks.items) {
+        const filter = (await getFilters(`${song.track.name} ${song.track.artists[0].name}`)).get('Type').get('Video')
+        const term = await ytsr(filter.url, { limit: 1 })
+        if (term.results < 1) {
+            interaction.channel.send({ embeds: [ generateEmbed('error', { title: `No results found for "${song.track.name}"` }) ] })
+            continue
+        }
+        const ytvideo = <ytsr.Video> term.items[0]
+        items.push({ url: ytvideo.url, title: ytvideo.title, duration: ytvideo.duration, thumbnail: ytvideo.bestThumbnail.url })
+    }
+
+    await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
+    if (!info.queueManager.connect(voiceChannel)) {
+        return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
+    }
+
+    return { embeds: [ generateEmbed('success', {
+        title: `Added "${response.name}" to queue!`,
+        fields: [ {
+            name: 'URL:',
+            value: response.external_urls.spotify
+         } ],
+        image: { url: response.images[0].url }
+    } ) ] }
+}
+
+async function play(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+    const member = await interaction.guild.members.fetch(interaction.user)
+    const voiceChannel = member.voice.channel
+    if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
+        return { content: 'This command can only be used while in a visable voice channel!' }
+    }
+    const url = interaction.options.getString('name')
+
+    interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Boiling potatoes...' }) ] })
+
+    if (/^(https:\/\/)?open\.spotify\.com\/playlist\//.test(url)) {
+        return spotify(interaction, info, voiceChannel)
+    }
+
+    if (!/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//.test(url)) {
+        const filter = (await getFilters(url)).get('Type').get('Video')
+        const term = await ytsr(filter.url, {
+            limit: 1
+        })
+        if (term.results < 1) {
+            return { embeds: [ generateEmbed('error', { title: `No results found for "${url}"` }) ] }
+        }
+        const result = (<Video> term.items[0])
+        await info.queueManager.addToQueue([ { url: result.url, title: result.title, duration: result.duration, thumbnail: result.bestThumbnail.url } ], interaction.options.getInteger('position') - 1)
+        if (!info.queueManager.connect(voiceChannel)) {
+            return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
+        }
+        return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, image: { url: result.bestThumbnail.url } }) ] }
+    }
+
+    if (/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/playlist\//.test(url)) {
+        const results = await ytpl(url).catch((): false => {
+            interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] })
+            return false
+        })
+        if (!results) return
+        const items: QueueItem[] = []
+        for (const item of results.items) {
+            items.push({ url: item.url, title: item.title, duration: item.duration, thumbnail: item.bestThumbnail.url })
+        }
+        await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
+        if (!info.queueManager.connect(voiceChannel)) {
+            return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
+        }
+        return { embeds: [ generateEmbed('success', { title: `Added playlist "${results.title}" to queue!`, image: { url: results.bestThumbnail.url } }) ] }
+    }
+
+    const result = (<Video> (await ytsr(url, { limit: 1 })).items[0])
+    await info.queueManager.addToQueue([ { url: result.url, title: result.title, thumbnail: result.bestThumbnail.url, duration: result.duration } ], interaction.options.getInteger('position') - 1)
+    if (!info.queueManager.connect(voiceChannel)) {
+        return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
+    }
+    return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, image: { url: result.bestThumbnail.url } }) ] }
+}
+
+async function search(option: ApplicationCommandOptionChoice): Promise<ApplicationCommandOptionChoice[]> {
+    if ((<string> option.value).length < 3 || (/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//).test(<string> option.value) || (/^(https:\/\/)?open\.spotify\.com\/playlist\//).test(<string> option.value)) {
+        return
+    }
+    const filter = (await getFilters(<string> option.value)).get('Type').get('Video')
+    const results = await ytsr(filter.url, { limit: 4 }).catch((): { items: [] } => { return { items: [] } })
+    const options: ApplicationCommandOptionChoice[] = []
+    for (const result of <Video[]> results.items) {
+        options.push({ name: result.title, value: result.url })
+    }
+    return options
+}
+
+export const command: Command = { data: {
     name: 'play',
     description: 'Play a song',
     options: [
@@ -24,104 +147,4 @@ const data: ApplicationCommandData = {
             required: false
         }
     ]
-}
-
-async function play(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
-    const member = await interaction.guild.members.fetch(interaction.user)
-    const voiceChannel = member.voice.channel
-    if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
-        return { content: 'This command can only be used while in a visable voice channel!' }
-    }
-    const argument = interaction.options.getString('name')
-
-    if (/^(https:\/\/)?open\.spotify\.com\//.test(argument)) {
-        return { embeds: [ generateEmbed('error', { title: 'Spotify functionality is currently under construction' }) ] }
-    }
-
-    interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Boiling potatoes...' }) ] })
-
-    let url: string
-
-    if (!/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//.test(argument) /*&& !/^(https:\/\/)?open\.spotify\.com\//.test(argument)*/) {
-        const term = await ytsr(argument, {
-            limit: 5
-        })
-        if (term.results < 1) {
-            return { embeds: [ generateEmbed('error', { title: `No results found for "${argument}"` }) ] }
-        }
-        url = (<ytsr.Video> term.items.find(result => result.type === 'video')).url
-    }
-
-    url ??= argument
-
-    if (/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/playlist/.test(argument) /*|| !/^(https:\/\/)?open\.spotify\.com\/playlist\//.test(argument)*/) {
-        try {
-            const output = await new Promise((resolve: (value: string) => void, reject: (error: ExecException) => void) => {
-                exec(`"./assets/binaries/yt-dlp" "${url}" --flat-playlist --print "{\\"webpage_url\\":\\"%(webpage_url)s\\",\\"title\\":\\"%(title)s\\",\\"duration\\":%(duration)s}"`, (error, stdout) => {
-                    if (error) {
-                        reject(error)
-                        return
-                    }
-                    resolve(stdout)
-                })
-            })
-            const parsedOutput: { readonly webpage_url: string, readonly title: string, readonly duration: number }[] = []
-            for (const song of output.split('\n')) {
-                try {
-                    parsedOutput.push(JSON.parse(song))
-                } catch {
-                    break
-                }
-            }
-            const items = []
-            for (const song of parsedOutput) {
-                items.push({ url: song.webpage_url, title: song.title, duration: song.duration })
-            }
-            await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
-        } catch (error) {
-            console.warn(error)
-            return { embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] }
-        }
-    } else {
-        try {
-            const output: { readonly webpage_url: string, readonly title: string, readonly thumbnail: string, readonly duration: number } = JSON.parse(await new Promise((resolve: (value: string) => void, reject: (error: ExecException) => void) => {
-                exec(`"./assets/binaries/yt-dlp" "${url}" --print "{\\"webpage_url\\":\\"%(webpage_url)s\\",\\"title\\":\\"%(title)s\\",\\"thumbnail\\":\\"%(thumbnail)s\\",\\"duration\\":%(duration)s}"`, (error, stdout) => {
-                    if (error) {
-                        reject(error)
-                        return
-                    }
-                    resolve(stdout)
-                })
-            }))
-            await info.queueManager.addToQueue([ { url: output.webpage_url, title: output.title, thumbnail: output.thumbnail, duration: output.duration } ], interaction.options.getInteger('position') - 1)
-        } catch (error) {
-            console.warn(error)
-            return { embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] }
-        }
-    }
-
-    if (!info.queueManager.connect(voiceChannel)) {
-        return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
-    }
-    return { embeds: [ generateEmbed('success', { title: 'Added to queue!' }) ] }
-}
-
-async function search(option: ApplicationCommandOptionChoice): Promise<ApplicationCommandOptionChoice[]> {
-    if ((<string> option.value).length < 3 || (/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//).test(<string> option.value) || (/^(https:\/\/)?open\.spotify\.com\/playlist\//).test(<string> option.value)) {
-        return
-    }
-    const results = await ytsr(<string> option.value, { limit: 5 }).catch((): { items: [] } => { return { items: [] } })
-    const options: ApplicationCommandOptionChoice[] = []
-    for (const result of results.items) {
-        if (options.length > 3) {
-            break
-        }
-        if (result.type !== 'video') {
-            continue
-        }
-        options.push({ name: result.title, value: result.url })
-    }
-    return options
-}
-
-export const command: Command = { data: data, execute: play, autocomplete: search }
+}, execute: play, autocomplete: search, ephemeral: true }
