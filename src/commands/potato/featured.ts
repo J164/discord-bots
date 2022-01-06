@@ -20,7 +20,7 @@ async function featured(interaction: CommandInteraction, info: GuildInfo): Promi
         items.push({ url: item.shortUrl, title: item.title, duration: item.duration, thumbnail: item.bestThumbnail.url })
     }
     await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
-    if (!info.queueManager.connect(voiceChannel)) {
+    if (!await info.queueManager.connect(voiceChannel)) {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
     }
     return { embeds: [ generateEmbed('success', { title: `Added playlist "${results.title}" to queue!`, image: { url: results.bestThumbnail.url } }) ] }

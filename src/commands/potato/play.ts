@@ -47,7 +47,7 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo, voiceCh
     }
 
     await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
-    if (!info.queueManager.connect(voiceChannel)) {
+    if (!await info.queueManager.connect(voiceChannel)) {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
     }
 
@@ -75,23 +75,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         return spotify(interaction, info, voiceChannel)
     }
 
-    if (!/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//.test(url)) {
-        const filter = (await ytsr.getFilters(url)).get('Type').get('Video')
-        const term = await ytsr(filter.url, {
-            limit: 1
-        })
-        if (term.results < 1) {
-            return { embeds: [ generateEmbed('error', { title: `No results found for "${url}"` }) ] }
-        }
-        const result = (<ytsr.Video> term.items[0])
-        await info.queueManager.addToQueue([ { url: result.url, title: result.title, duration: result.duration, thumbnail: result.bestThumbnail.url } ], interaction.options.getInteger('position') - 1)
-        if (!info.queueManager.connect(voiceChannel)) {
-            return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
-        }
-        return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, image: { url: result.bestThumbnail.url } }) ] }
-    }
-
-    if (/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/playlist\//.test(url)) {
+    if (/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/playlist/.test(url)) {
         const results = await ytpl(url).catch((): false => {
             interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] })
             return false
@@ -102,15 +86,31 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
             items.push({ url: item.shortUrl, title: item.title, duration: item.duration, thumbnail: item.bestThumbnail.url })
         }
         await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
-        if (!info.queueManager.connect(voiceChannel)) {
+        if (!await info.queueManager.connect(voiceChannel)) {
             return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
         }
         return { embeds: [ generateEmbed('success', { title: `Added playlist "${results.title}" to queue!`, image: { url: results.bestThumbnail.url } }) ] }
     }
 
+    if (!/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//.test(url)) {
+        const filter = (await ytsr.getFilters(url)).get('Type').get('Video')
+        const term = await ytsr(filter.url, {
+            limit: 1
+        })
+        if (term.results < 1) {
+            return { embeds: [ generateEmbed('error', { title: `No results found for "${url}"` }) ] }
+        }
+        const result = (<ytsr.Video> term.items[0])
+        await info.queueManager.addToQueue([ { url: result.url, title: result.title, duration: result.duration, thumbnail: result.bestThumbnail.url } ], interaction.options.getInteger('position') - 1)
+        if (!await info.queueManager.connect(voiceChannel)) {
+            return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
+        }
+        return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, image: { url: result.bestThumbnail.url } }) ] }
+    }
+
     const result = (<ytsr.Video> (await ytsr(url, { limit: 1 })).items[0])
     await info.queueManager.addToQueue([ { url: result.url, title: result.title, thumbnail: result.bestThumbnail.url, duration: result.duration } ], interaction.options.getInteger('position') - 1)
-    if (!info.queueManager.connect(voiceChannel)) {
+    if (!await info.queueManager.connect(voiceChannel)) {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
     }
     return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, image: { url: result.bestThumbnail.url } }) ] }
