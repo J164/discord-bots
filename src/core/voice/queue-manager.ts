@@ -99,8 +99,7 @@ export class QueueManager {
             }
             this.voiceManager.player.removeAllListeners('stateChange')
 
-            this.stream.disconnect()
-
+            this.stream.kill()
             this.transitioning = true
 
             if (this.queueLoop || this.nowPlaying.looping) {
@@ -258,7 +257,8 @@ export class QueueManager {
     public reset(): void {
         this.voiceManager.reset()
         this.queue = []
-        this.stream?.disconnect()
+        this.stream?.kill()
+        this.stream = undefined
         this.stream = undefined
         this.nowPlaying = undefined
         this.queueLoop = false

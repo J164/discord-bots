@@ -99,7 +99,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         if (!results) return
         const items: QueueItem[] = []
         for (const item of results.items) {
-            items.push({ url: item.url, title: item.title, duration: item.duration, thumbnail: item.bestThumbnail.url })
+            items.push({ url: item.shortUrl, title: item.title, duration: item.duration, thumbnail: item.bestThumbnail.url })
         }
         await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
         if (!info.queueManager.connect(voiceChannel)) {
