@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, VoiceChannel } from 'discord.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
-import ytsr, { getFilters, Video } from 'ytsr'
+import ytsr from 'ytsr'
 import { generateEmbed } from '../../core/utils/generators.js'
 import ytpl from 'ytpl'
 import { QueueItem } from '../../core/voice/queue-manager.js'
@@ -36,7 +36,7 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo, voiceCh
     const items: QueueItem[] = []
 
     for (const song of response.tracks.items) {
-        const filter = (await getFilters(`${song.track.name} ${song.track.artists[0].name}`)).get('Type').get('Video')
+        const filter = (await ytsr.getFilters(`${song.track.name} ${song.track.artists[0].name}`)).get('Type').get('Video')
         const term = await ytsr(filter.url, { limit: 1 })
         if (term.results < 1) {
             interaction.channel.send({ embeds: [ generateEmbed('error', { title: `No results found for "${song.track.name}"` }) ] })
@@ -76,14 +76,14 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     }
 
     if (!/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//.test(url)) {
-        const filter = (await getFilters(url)).get('Type').get('Video')
+        const filter = (await ytsr.getFilters(url)).get('Type').get('Video')
         const term = await ytsr(filter.url, {
             limit: 1
         })
         if (term.results < 1) {
             return { embeds: [ generateEmbed('error', { title: `No results found for "${url}"` }) ] }
         }
-        const result = (<Video> term.items[0])
+        const result = (<ytsr.Video> term.items[0])
         await info.queueManager.addToQueue([ { url: result.url, title: result.title, duration: result.duration, thumbnail: result.bestThumbnail.url } ], interaction.options.getInteger('position') - 1)
         if (!info.queueManager.connect(voiceChannel)) {
             return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
@@ -108,7 +108,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         return { embeds: [ generateEmbed('success', { title: `Added playlist "${results.title}" to queue!`, image: { url: results.bestThumbnail.url } }) ] }
     }
 
-    const result = (<Video> (await ytsr(url, { limit: 1 })).items[0])
+    const result = (<ytsr.Video> (await ytsr(url, { limit: 1 })).items[0])
     await info.queueManager.addToQueue([ { url: result.url, title: result.title, thumbnail: result.bestThumbnail.url, duration: result.duration } ], interaction.options.getInteger('position') - 1)
     if (!info.queueManager.connect(voiceChannel)) {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
@@ -120,10 +120,10 @@ async function search(option: ApplicationCommandOptionChoice): Promise<Applicati
     if ((<string> option.value).length < 3 || (/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//).test(<string> option.value) || (/^(https:\/\/)?open\.spotify\.com\/playlist\//).test(<string> option.value)) {
         return
     }
-    const filter = (await getFilters(<string> option.value)).get('Type').get('Video')
+    const filter = (await ytsr.getFilters(<string> option.value)).get('Type').get('Video')
     const results = await ytsr(filter.url, { limit: 4 }).catch((): { items: [] } => { return { items: [] } })
     const options: ApplicationCommandOptionChoice[] = []
-    for (const result of <Video[]> results.items) {
+    for (const result of <ytsr.Video[]> results.items) {
         options.push({ name: result.title, value: result.url })
     }
     return options
