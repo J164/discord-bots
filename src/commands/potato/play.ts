@@ -18,7 +18,7 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo, voiceCh
     const parsedUrl = interaction.options.getString('name').split('?')[0].split('/')
     const playlistId = parsedUrl[interaction.options.getString('name').split('/').indexOf('playlist') + 1]
 
-    const token = (await (await request('https://accounts.spotify.com/api/token', {
+    const token = (<{ access_token: string }> await (await request('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: { 'Authorization': `Basic ${process.env.SPOTIFYAUTH}`, 'Content-Type' : 'application/x-www-form-urlencoded' },
         body: 'grant_type=client_credentials' }))
@@ -31,7 +31,7 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo, voiceCh
         return { embeds: [ generateEmbed('error', { title: 'Playlist not found! (Make sure it is a public playlist)' }) ] }
     }
 
-    interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Locating Songs...' }) ] })
+    void interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Locating Songs...' }) ] })
 
     const items: QueueItem[] = []
 
@@ -39,7 +39,7 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo, voiceCh
         const filter = (await ytsr.getFilters(`${song.track.name} ${song.track.artists[0].name}`)).get('Type').get('Video')
         const term = await ytsr(filter.url, { limit: 1 })
         if (term.results < 1) {
-            interaction.channel.send({ embeds: [ generateEmbed('error', { title: `No results found for "${song.track.name}"` }) ] })
+            void interaction.channel.send({ embeds: [ generateEmbed('error', { title: `No results found for "${song.track.name}"` }) ] })
             continue
         }
         const ytvideo = <ytsr.Video> term.items[0]
@@ -47,9 +47,7 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo, voiceCh
     }
 
     await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
-    if (!await info.queueManager.connect(voiceChannel)) {
-        return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
-    }
+    await info.queueManager.connect(voiceChannel)
 
     return { embeds: [ generateEmbed('success', {
         title: `Added "${response.name}" to queue!`,
@@ -69,7 +67,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     }
     const url = interaction.options.getString('name')
 
-    interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Boiling potatoes...' }) ] })
+    void interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Boiling potatoes...' }) ] })
 
     if (/^(https:\/\/)?open\.spotify\.com\/playlist\//.test(url)) {
         return spotify(interaction, info, voiceChannel)
@@ -77,7 +75,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
 
     if (/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/playlist/.test(url)) {
         const results = await ytpl(url).catch((): false => {
-            interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] })
+            void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] })
             return false
         })
         if (!results) return
@@ -86,9 +84,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
             items.push({ url: item.shortUrl, title: item.title, duration: item.duration, thumbnail: item.bestThumbnail.url })
         }
         await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
-        if (!await info.queueManager.connect(voiceChannel)) {
-            return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
-        }
+        await info.queueManager.connect(voiceChannel)
         return { embeds: [ generateEmbed('success', { title: `Added playlist "${results.title}" to queue!`, image: { url: results.bestThumbnail.url } }) ] }
     }
 
@@ -102,17 +98,13 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         }
         const result = (<ytsr.Video> term.items[0])
         await info.queueManager.addToQueue([ { url: result.url, title: result.title, duration: result.duration, thumbnail: result.bestThumbnail.url } ], interaction.options.getInteger('position') - 1)
-        if (!await info.queueManager.connect(voiceChannel)) {
-            return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
-        }
+        await info.queueManager.connect(voiceChannel)
         return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, image: { url: result.bestThumbnail.url } }) ] }
     }
 
     const result = (<ytsr.Video> (await ytsr(url, { limit: 1 })).items[0])
     await info.queueManager.addToQueue([ { url: result.url, title: result.title, thumbnail: result.bestThumbnail.url, duration: result.duration } ], interaction.options.getInteger('position') - 1)
-    if (!await info.queueManager.connect(voiceChannel)) {
-        return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
-    }
+    await info.queueManager.connect(voiceChannel)
     return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, image: { url: result.bestThumbnail.url } }) ] }
 }
 
@@ -144,6 +136,7 @@ export const command: Command = { data: {
             name: 'position',
             description: 'Where in the queue to put the song (defaults to the end)',
             type: 'INTEGER',
+            minValue: 1,
             required: false
         }
     ]

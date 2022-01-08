@@ -20,7 +20,7 @@ async function addDeck(interaction: CommandInteraction, info: GuildInfo): Promis
         const authorID = fields[4]
         const deckID = fields[5].split('-')[0]
         apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`
-        name = (await (await request(`${apiUrl}json`)).body.json()).name
+        name = (<{ name: string }> await (await request(`${apiUrl}json`)).body.json()).name
     } catch {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong (Make sure you are using a deckstats url' }) ] }
     }

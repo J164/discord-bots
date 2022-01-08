@@ -5,16 +5,20 @@ export class CommanderMagicGame extends MagicGame {
 
     // todo finish
 
-    public readonly commanderList: string[]
+    private readonly _commanderList: string[]
 
     public constructor(playerList: User[], commanderList: string[], gameChannel: ThreadChannel) {
         super(playerList, gameChannel)
-        this.commanderList = commanderList
+        this._commanderList = commanderList
         for (const [ , player ] of this.playerData) {
             for (const commander of commanderList) {
                 player.commanderDamage.set(commander, 0)
             }
         }
+    }
+
+    public get commanderList(): string[] {
+        return this._commanderList
     }
 
     public changeCommanderDamage(player: string, commander: string, amount: number): MessageEmbedOptions {

@@ -5,14 +5,14 @@ import { QueueItem } from '../../core/voice/queue-manager.js'
 
 async function queue(interaction: CommandInteraction, info: GuildInfo, queueArray?: QueueItem[][], button?: ButtonInteraction, page = 0): Promise<void> {
     if (!queueArray) {
-        queueArray = await info.queueManager.getQueue()
+        queueArray = await info.queueManager.getPaginatedQueue()
         if (!queueArray) {
-            interaction.editReply({ embeds: [ generateEmbed('error', { title: 'There is no queue!' }) ] })
+            void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'There is no queue!' }) ] })
             return
         }
     }
     let title = 'Queue'
-    if (info.queueManager.getQueueLoop()) {
+    if (info.queueManager.queueLoop) {
         title += ' (Looping)'
     }
     const queueMessage = generateEmbed('info', {
@@ -32,24 +32,24 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
     await (!button ? interaction.editReply(options) : button.update(options))
     const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
     const collector = interaction.channel.createMessageComponentCollector({ filter: filter, time: 60_000 })
-    collector.once('collect', async b => {
+    collector.once('collect', b => {
         if (!b.isButton()) return
         switch (b.customId) {
             case 'queue-doublearrowleft':
-                queue(interaction, info, queueArray, b)
+                void queue(interaction, info, queueArray, b)
                 break
             case 'queue-arrowleft':
-                queue(interaction, info, queueArray, b, page - 1)
+                void queue(interaction, info, queueArray, b, page - 1)
                 break
             case 'queue-arrowright':
-                queue(interaction, info, queueArray, b, page + 1)
+                void queue(interaction, info, queueArray, b, page + 1)
                 break
             case 'queue-doublearrowright':
-                queue(interaction, info, queueArray, b, queueArray.length - 1)
+                void queue(interaction, info, queueArray, b, queueArray.length - 1)
                 break
         }
     })
-    collector.once('end', () => { interaction.editReply({ components: [] }) })
+    collector.once('end', () => { void interaction.editReply({ components: [] }) })
 }
 
 export const command: Command = { data: {

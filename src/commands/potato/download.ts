@@ -4,18 +4,18 @@ import { Command } from '../../core/utils/interfaces.js'
 import process from 'node:process'
 import { exec } from 'node:child_process'
 
-async function download(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
+function download(interaction: CommandInteraction): InteractionReplyOptions {
     if (interaction.member.user.id !== process.env.ADMIN) {
         return { embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] }
     }
-    interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
+    void interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
     exec(`"./assets/binaries/yt-dlp" "${interaction.options.getString('url')}" --output "${process.env.DATA}/new_downloads/%(title)s.%(ext)s" --quiet --format "${ interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best'}" --limit-rate "1M"`,
         error => {
             if (error) {
-                interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] })
+                void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] })
                 return
             }
-            interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] })
+            void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] })
         })
 }
 

@@ -2,7 +2,7 @@ import { DatabaseManager } from '../database-manager.js'
 import { BaseGame } from './base-game.js'
 import { QueueManager } from '../voice/queue-manager.js'
 import { VoiceManager } from '../voice/voice-manager.js'
-import { CommandInteraction, InteractionReplyOptions, ApplicationCommandOptionChoice, ApplicationCommandDataResolvable } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions, ApplicationCommandOptionChoice, ApplicationCommandData } from 'discord.js'
 
 export interface GuildInfo {
     readonly database?: DatabaseManager
@@ -12,7 +12,7 @@ export interface GuildInfo {
 }
 
 export interface Command {
-    readonly data: ApplicationCommandDataResolvable
+    readonly data: ApplicationCommandData
     readonly execute: (interaction: CommandInteraction, info: GuildInfo) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void
     readonly autocomplete?: (option: ApplicationCommandOptionChoice, info: GuildInfo) => Promise<ApplicationCommandOptionChoice[]> | ApplicationCommandOptionChoice[]
     readonly gameCommand?: boolean

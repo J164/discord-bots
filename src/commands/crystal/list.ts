@@ -19,38 +19,34 @@ function songEmbed(songs: string[], index: number): MessageEmbedOptions {
 }
 
 async function list(interaction: CommandInteraction, info: GuildInfo, index = 0, button?: ButtonInteraction): Promise<void> {
-    const songs = JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' }))
+    const songs: { songs: string[] } = JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' }))
     const replyOptions: InteractionUpdateOptions = { embeds: [ songEmbed(songs.songs, index) ], components: [ { components: [
         { type: 'BUTTON', customId: 'list-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY', disabled: index === 0 },
         { type: 'BUTTON', customId: 'list-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY', disabled: index === 0 },
         { type: 'BUTTON', customId: 'list-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY', disabled: index === (Math.ceil(songs.songs.length / 25) - 1) },
         { type: 'BUTTON', customId: 'list-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: index === (Math.ceil(songs.songs.length / 25) - 1) }
     ], type: 'ACTION_ROW' } ] }
-    if (button) {
-        button.update(replyOptions)
-    } else {
-        interaction.editReply(replyOptions)
-    }
+    await (button ? button.update(replyOptions) : interaction.editReply(replyOptions))
     const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
     const collector = interaction.channel.createMessageComponentCollector({ filter: filter, time: 60_000 })
-    collector.once('collect', async b => {
+    collector.once('collect', b => {
         if (!b.isButton()) return
         switch (b.customId) {
             case 'list-doublearrowleft':
-                list(interaction, info, 0, b)
+                void list(interaction, info, 0, b)
                 break
             case 'list-arrowleft':
-                list(interaction, info, index - 1, b)
+                void list(interaction, info, index - 1, b)
                 break
             case 'list-arrowright':
-                list(interaction, info, index + 1, b)
+                void list(interaction, info, index + 1, b)
                 break
             case 'list-doublearrowright':
-                list(interaction, info, songs.songs.length - 1, b)
+                void list(interaction, info, songs.songs.length - 1, b)
                 break
         }
     })
-    collector.once('end', () => { interaction.editReply({ components: [] }) })
+    collector.once('end', () => { void interaction.editReply({ components: [] }) })
 }
 
 export const command: Command = { data: {

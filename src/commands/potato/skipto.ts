@@ -4,15 +4,15 @@ import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 
 async function skipto(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
-    if (info.queueManager.getFlatQueue().length < 2) {
+    if (info.queueManager.queue.length < 2) {
         return { embeds: [ generateEmbed('error', { title: 'The queue is too small to skip to a specific song!' }) ] }
     }
-    await info.queueManager.skipTo(interaction.options.getInteger('index') ?? new Fuse(info.queueManager.getFlatQueue(), { keys: [ 'title' ] }).search(interaction.options.getString('title'))[0].refIndex + 1)
+    await info.queueManager.skipTo(interaction.options.getInteger('index') ?? new Fuse(info.queueManager.queue, { keys: [ 'title' ] }).search(interaction.options.getString('title'))[0].refIndex + 1)
     return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
 function suggestions(option: ApplicationCommandOptionChoice, info: GuildInfo): ApplicationCommandOptionChoice[] {
-    const results = new Fuse(info.queueManager.getFlatQueue(), { keys: [ 'title' ] }).search(<string> option.value)
+    const results = new Fuse(info.queueManager.queue, { keys: [ 'title' ] }).search(<string> option.value)
     const options: ApplicationCommandOptionChoice[] = []
     for (const result of results) {
         if (options.length > 3) {
@@ -35,6 +35,7 @@ export const command: Command = { data: {
             name: 'index',
             description: 'The position of the song to skip to',
             type: 'INTEGER',
+            minValue: 1,
             required: true
         } ]
         },

@@ -7,7 +7,7 @@ async function euchre(interaction: CommandInteraction, info: GuildInfo): Promise
     // todo test
     const channel = await interaction.guild.channels.fetch(interaction.channelId)
     for (const [ , game ] of info.games) {
-        if (game.getThreadName() === interaction.options.getString('name')) {
+        if (game.channelName === interaction.options.getString('name')) {
             return { embeds: [ generateEmbed('error', { title: 'Please choose a unique game name!' }) ] }
         }
     }
@@ -23,14 +23,14 @@ async function euchre(interaction: CommandInteraction, info: GuildInfo): Promise
     const thread = await channel.threads.create({ name: interaction.options.getString('name'), autoArchiveDuration: 60 })
     const game = new Euchre(playerlist, thread)
     info.games.set(thread.id, game)
-    game.startRound()
+    void game.startRound()
     return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
 async function blackjack(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
     const channel = await interaction.guild.channels.fetch(interaction.channelId)
     for (const [ , game ] of info.games) {
-        if (game.getThreadName() === interaction.options.getString('name')) {
+        if (game.channelName === interaction.options.getString('name')) {
             return { embeds: [ generateEmbed('error', { title: 'Please choose a unique game name!' }) ] }
         }
     }

@@ -35,7 +35,7 @@ interface DeckstatsResponse {
 }
 
 async function getList(url: string): Promise<string> {
-    const decklist = <string> (await (await request(`${url}list`)).body.json()).list
+    const decklist = (<{ list: string }> await (await request(`${url}list`)).body.json()).list
     const decklistArray = decklist.split('\n')
     for (let index = 0; index < decklistArray.length; index++) {
         if (!decklistArray[index] || decklistArray[index].startsWith('//')) {
@@ -82,27 +82,27 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
         if (!b.isButton()) return
         switch (b.customId) {
             case 'decks-doublearrowleft':
-                parseDeck(interaction, info, urls, b)
+                void parseDeck(interaction, info, urls, b)
                 break
             case 'decks-arrowleft':
-                parseDeck(interaction, info, urls, b, index - 1)
+                void parseDeck(interaction, info, urls, b, index - 1)
                 break
             case 'decks-list':
                 b.update({ content: await getList(apiUrl), embeds: [], components: [] }).catch(() => b.update({ embeds: [ generateEmbed('error', { title: 'There seems to be something wrong with the Deckstats API at the moment. Try again later' }) ], components: [] }))
                 break
             case 'decks-arrowright':
-                parseDeck(interaction, info, urls, b, index + 1)
+                void parseDeck(interaction, info, urls, b, index + 1)
                 break
             case 'decks-doublearrowright':
-                parseDeck(interaction, info, urls, b, urls.length - 1)
+                void parseDeck(interaction, info, urls, b, urls.length - 1)
                 break
         }
     })
-    collector.once('end', () => { interaction.editReply({ components: [] }) })
+    collector.once('end', () => { void interaction.editReply({ components: [] }) })
 }
 
 async function getDeck(interaction: CommandInteraction, info: GuildInfo): Promise<void> {
-    parseDeck(interaction, info, <{ url: string }[]> <unknown> await info.database.select('mtg_decks'))
+    void parseDeck(interaction, info, <{ url: string }[]> <unknown> await info.database.select('mtg_decks'))
 }
 
 export const command: Command = { data: {

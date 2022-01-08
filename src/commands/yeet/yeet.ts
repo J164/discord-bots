@@ -19,10 +19,8 @@ export const command: Command = { data: {
         name: 'power',
         description: 'How powerful the yeet should be',
         type: 'INTEGER',
-        // eslint-disable-next-line camelcase
-        min_value: 2,
-        // eslint-disable-next-line camelcase
-        max_value: 1995,
+        minValue: 2,
+        maxValue: 1995,
         required: false
     } ]
 }, execute: yeet }

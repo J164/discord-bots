@@ -13,14 +13,14 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         return { content: 'This command can only be used while in a visable voice channel!' }
     }
 
-    const songs = <string[]> JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf-8' })).songs
+    const songs = (<{ songs: string[] }> JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf-8' }))).songs
 
     let song: number
 
     if (!interaction.options.getString('name')) {
         song = Math.floor(Math.random() * (songs.length - 1))
     } else if (!songs.includes(interaction.options.getString('name'))) {
-        const results = new Fuse(<string[]> JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf-8' })).songs).search(interaction.options.getString('name'))
+        const results = new Fuse(songs).search(interaction.options.getString('name'))
         song = results[0].refIndex + 1
     }
 
@@ -33,17 +33,17 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
             if (newState.status !== AudioPlayerStatus.Idle) {
                 return
             }
-            info.voiceManager.playStream(createReadStream(`${process.env.DATA}/music_files/naruto_ost/${song}.webm`))
+            void info.voiceManager.playStream(createReadStream(`${process.env.DATA}/music_files/naruto_ost/${song}.webm`))
         })
     }
-    interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Now Playing!' }) ] })
+    void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Now Playing!' }) ] })
 }
 
 function search(option: ApplicationCommandOptionChoice): ApplicationCommandOptionChoice[] {
     if ((<string> option.value).length < 3) {
         return
     }
-    const results = new Fuse(<string[]> JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf-8' })).songs).search(<string> option.value)
+    const results = new Fuse((<{ songs: string[] }> JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf-8' }))).songs).search(<string> option.value)
     const options: ApplicationCommandOptionChoice[] = []
     for (const result of results) {
         if (options.length > 3) {

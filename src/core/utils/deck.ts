@@ -10,11 +10,11 @@ export interface Card {
 
 export class Deck {
 
-    private readonly stack: Card[]
+    private readonly _stack: Card[]
 
     public constructor(codes?: CardCode[]) {
         codes ??= [ '2S', '3S', '4S', '5S', '6S', '7S', '8S', '9S', '0S', 'JS', 'QS', 'KS', 'AS', '2C', '3C', '4C', '5C', '6C', '7C', '8C', '9C', '0C', 'JC', 'QC', 'KC', 'AC', '2H', '3H', '4H', '5H', '6H', '7H', '8H', '9H', '0H', 'JH', 'QH', 'KH', 'AH', '2D', '3D', '4D', '5D', '6D', '7D', '8D', '9D', '0D', 'JD', 'QD', 'KD', 'AD' ]
-        this.stack = []
+        this._stack = []
         for (const code of codes) {
             const number = Number.parseInt(code[0])
             let value: string
@@ -53,20 +53,20 @@ export class Deck {
                     break
             }
 
-            this.stack.push({ code: code, image: `https://deckofcardsapi.com/static/img/${code}.png`, suit: suit, value: value })
+            this._stack.push({ code: code, image: `https://deckofcardsapi.com/static/img/${code}.png`, suit: suit, value: value })
         }
     }
 
     public shuffle(): void {
-        for (let index = this.stack.length - 1; index > 0; index--) {
+        for (let index = this._stack.length - 1; index > 0; index--) {
             const randomIndex = Math.floor(Math.random() * (index + 1))
-            const temporary = this.stack[index]
-            this.stack[index] = this.stack[randomIndex]
-            this.stack[randomIndex] = temporary
+            const temporary = this._stack[index]
+            this._stack[index] = this._stack[randomIndex]
+            this._stack[randomIndex] = temporary
         }
     }
 
     public draw(number: number): Card[] {
-        return this.stack.splice(0, number)
+        return this._stack.splice(0, number)
     }
 }

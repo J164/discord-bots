@@ -9,14 +9,14 @@ import { readdirSync } from 'node:fs'
 
 export class InteractionManager {
 
-    private readonly commands: Map<string, Command>
-    private readonly database?: DatabaseManager
-    private readonly info: Map<string, GuildInfo>
+    private readonly _commands: Map<string, Command>
+    private readonly _database?: DatabaseManager
+    private readonly _info: Map<string, GuildInfo>
 
     public constructor(database?: DatabaseManager) {
-        this.commands = new Map<string, Command>()
-        this.database = database
-        this.info = new Map<string, GuildInfo>()
+        this._commands = new Map<string, Command>()
+        this._database = database
+        this._info = new Map<string, GuildInfo>()
     }
 
     public async getCommands(client: Client, botName: string): Promise<void> {
@@ -24,7 +24,7 @@ export class InteractionManager {
         for (const [ , slash ] of currentCommands) {
             try {
                 const { command } = await import(`../commands/${botName}/${slash.name}.js`)
-                this.commands.set(slash.name, command)
+                this._commands.set(slash.name, <Command> command)
             } catch {
                 console.warn(`Registered command missing from ${botName}'s command files (${slash.name})`)
             }
@@ -35,13 +35,13 @@ export class InteractionManager {
         const commandData: ApplicationCommandData[] = []
         for (const slash of readdirSync(`./dist/commands/${botName}`).filter(file => file.endsWith('.js'))) {
             const { command } = await import(`../commands/${botName}/${slash}`)
-            commandData.push(command.data)
+            commandData.push((<Command> command).data)
         }
-        client.application.commands.set(commandData)
+        await client.application.commands.set(commandData)
     }
 
     public async parseCommand(interaction: CommandInteraction): Promise<InteractionReplyOptions | void> {
-        const command = this.commands.get(interaction.commandName)
+        const command = this._commands.get(interaction.commandName)
 
         await interaction.deferReply({ ephemeral: command.ephemeral })
 
@@ -55,25 +55,25 @@ export class InteractionManager {
             return { embeds: [ generateEmbed('error', { title: 'Please only use slash commands in servers!' }) ] }
         }
 
-        if (this.database?.offline) {
-            await this.database.connect()
+        if (this._database?.offline) {
+            await this._database.connect()
         }
 
-        return command.execute(interaction, this.info.get(interaction.guildId))
+        return command.execute(interaction, this._info.get(interaction.guildId))
     }
 
     public addGuild(guildId: string, options?: { voiceManager?: VoiceManager, queueManager?: QueueManager }): void {
-        if (!this.info.has(guildId)) {
-            this.info.set(guildId, { database: this.database, voiceManager: options?.voiceManager, queueManager: options?.queueManager, games: new Map<string, BaseGame>() })
+        if (!this._info.has(guildId)) {
+            this._info.set(guildId, { database: this._database, voiceManager: options?.voiceManager, queueManager: options?.queueManager, games: new Map<string, BaseGame>() })
         }
     }
 
     public async autocomplete(interaction: AutocompleteInteraction): Promise<ApplicationCommandOptionChoice[]> {
-        return await this.commands.get(interaction.commandName)?.autocomplete(interaction.options.getFocused(true), this.info.get(interaction.guildId)) ?? []
+        return await this._commands.get(interaction.commandName)?.autocomplete(interaction.options.getFocused(true), this._info.get(interaction.guildId)) ?? []
     }
 
     public statusCheck(): void {
-        for (const [ , guild ] of this.info) {
+        for (const [ , guild ] of this._info) {
             if (guild.voiceManager?.isIdle()) {
                 guild.voiceManager.reset()
             }

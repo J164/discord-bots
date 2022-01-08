@@ -59,10 +59,10 @@ client.on('messageCreate', message => {
         yeetStreaks.set(message.author.id, { number: streak, time: date.getTime() })
         if (streak > )*/
         if (input.slice(input.indexOf('yee') + 1, input.indexOf('yee') + 11) === 'eeeeeeeeee') {
-            message.reply('Wow! Much Yeet!')
+            void message.reply('Wow! Much Yeet!')
             return
         }
-        message.reply('YEEEEEEEEEET!')
+        void message.reply('YEEEEEEEEEET!')
     }
 })
 
@@ -75,7 +75,7 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.isAutocomplete()) {
         const response = await interactionManager.autocomplete(interaction)
-        interaction.respond(response)
+        void interaction.respond(response)
         return
     }
 
@@ -85,8 +85,8 @@ client.on('interactionCreate', async interaction => {
 
     const response = await interactionManager.parseCommand(interaction)
     if (response) {
-        interaction.editReply(response)
+        void interaction.editReply(response)
     }
 })
 
-client.login(process.env.YEETTOKEN)
+void client.login(process.env.YEETTOKEN)

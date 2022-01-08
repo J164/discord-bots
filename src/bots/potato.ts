@@ -43,7 +43,7 @@ client.once('ready', async () => {
 
         if (date.getHours() === 7 && date.getMinutes() >= 30 && date.getMinutes() <= 35 && !broadcasted) {
             broadcasted = true
-            broadcastChannel.send(await getDailyReport(date))
+            void broadcastChannel.send(await getDailyReport(date))
         } else if (date.getHours() === 8) {
             broadcasted = false
         }
@@ -53,7 +53,7 @@ client.once('ready', async () => {
 
     if (date.getHours() === 7 && date.getMinutes() >= 30 && date.getMinutes() <= 35) {
         broadcasted = true
-        broadcastChannel.send(await getDailyReport(date))
+        void broadcastChannel.send(await getDailyReport(date))
     }
 })
 
@@ -66,7 +66,7 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.isAutocomplete()) {
         const response = await interactionManager.autocomplete(interaction)
-        interaction.respond(response)
+        void interaction.respond(response)
         return
     }
 
@@ -76,8 +76,8 @@ client.on('interactionCreate', async interaction => {
 
     const response = await interactionManager.parseCommand(interaction)
     if (response) {
-        interaction.editReply(response)
+        void interaction.editReply(response)
     }
 })
 
-client.login(process.env.POTATOTOKEN)
+void client.login(process.env.POTATOTOKEN)

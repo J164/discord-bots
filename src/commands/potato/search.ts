@@ -100,26 +100,26 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results?
     const collector = interaction.channel.createMessageComponentCollector({ filter: filter, time: 60_000 })
     collector.once('collect', async c => {
         if (c.isSelectMenu()) {
-            c.update(await generateResponse(results, page, Number.parseInt(c.values[0]) - 1))
+            void c.update(await generateResponse(results, page, Number.parseInt(c.values[0]) - 1))
             return
         }
         if (!c.isButton()) return
         switch (c.customId) {
             case 'search-doublearrowleft':
-                search(interaction, info, results, c)
+                void search(interaction, info, results, c)
                 break
             case 'search-arrowleft':
-                search(interaction, info, results, c, page - 1)
+                void search(interaction, info, results, c, page - 1)
                 break
             case 'search-arrowright':
-                search(interaction, info, results, c, page + 1)
+                void search(interaction, info, results, c, page + 1)
                 break
             case 'search-doublearrowright':
-                search(interaction, info, results, c, results.length - 1)
+                void search(interaction, info, results, c, results.length - 1)
                 break
         }
     })
-    collector.once('end', () => { interaction.editReply({ components: [] }) })
+    collector.once('end', () => { void interaction.editReply({ components: [] }) })
 }
 
 export const command: Command = { data: {

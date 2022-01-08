@@ -2,9 +2,9 @@ import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command } from '../../core/utils/interfaces.js'
 
-function roll(interaction: CommandInteraction): InteractionReplyOptions {
+async function roll(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     const dice = interaction.options.getInteger('sides') ? interaction.options.getInteger('sides') : 6
-    interaction.editReply({ embeds: [ generateEmbed('info', { title: `Rolling a ${dice}-sided die...` }) ] })
+    await interaction.editReply({ embeds: [ generateEmbed('info', { title: `Rolling a ${dice}-sided die...` }) ] })
     const diceResult = generateEmbed('info', { title: `${dice}-sided die result`, fields: [] })
     let chance = 10_000
     while (100 / dice * chance < 1) {
@@ -21,8 +21,7 @@ export const command: Command = { data: {
         name: 'sides',
         description: 'How many sides on the die (defaults to 6)',
         type: 'INTEGER',
-        // eslint-disable-next-line camelcase
-        min_value: 2,
+        minValue: 2,
         required: false
     } ]
 }, execute: roll }

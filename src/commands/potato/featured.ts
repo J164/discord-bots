@@ -11,7 +11,7 @@ async function featured(interaction: CommandInteraction, info: GuildInfo): Promi
         return { embeds: [ generateEmbed('error', { title: 'This command can only be used while in a visable voice channel!' }) ] }
     }
     const results = await ytpl(interaction.options.getString('name')).catch((): false => {
-        interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] })
+        void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] })
         return false
     })
     if (!results) return
@@ -20,9 +20,7 @@ async function featured(interaction: CommandInteraction, info: GuildInfo): Promi
         items.push({ url: item.shortUrl, title: item.title, duration: item.duration, thumbnail: item.bestThumbnail.url })
     }
     await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
-    if (!await info.queueManager.connect(voiceChannel)) {
-        return { embeds: [ generateEmbed('error', { title: 'Something went wrong when connecting to voice' }) ] }
-    }
+    await info.queueManager.connect(voiceChannel)
     return { embeds: [ generateEmbed('success', { title: `Added playlist "${results.title}" to queue!`, image: { url: results.bestThumbnail.url } }) ] }
 }
 
@@ -58,6 +56,7 @@ export const command: Command = { data: {
             name: 'position',
             description: 'Where in the queue to put the song (defaults to the end)',
             type: 'INTEGER',
+            minValue: 1,
             required: false
         }
     ]

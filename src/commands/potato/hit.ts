@@ -4,7 +4,7 @@ import { CommanderMagicGame } from '../../core/modules/games/commander-magic-gam
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 
-function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
+async function hit(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
     const game = info.games.get(interaction.channelId)
     if (!game || !(game instanceof MagicGame) || game.isOver()) {
         return { embeds: [ generateEmbed('error', { title: 'There is currently no Magic game in this channel' }) ] }
@@ -26,14 +26,14 @@ function hit(interaction: CommandInteraction, info: GuildInfo): InteractionReply
                 value: (index + 1).toString()
             })
         }
-        interaction.editReply({ embeds: [ generateEmbed('prompt', { title: 'Select the commander dealing damage' }) ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'hit-options', placeholder: 'Select the commander that delt damage', options: selectOptions } ], type: 'ACTION_ROW' } ] })
+        await interaction.editReply({ embeds: [ generateEmbed('prompt', { title: 'Select the commander dealing damage' }) ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'hit-options', placeholder: 'Select the commander that delt damage', options: selectOptions } ], type: 'ACTION_ROW' } ] })
         const filter = (b: SelectMenuInteraction<'cached'>) => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
         const collector = interaction.channel.createMessageComponentCollector({ filter: filter, time: 60_000 })
-        collector.once('collect', async c => {
+        collector.once('collect', c => {
             if (!c.isSelectMenu()) return
-            c.update({ embeds: [ game.changeCommanderDamage(interaction.options.getUser('player').id, c.values[0], interaction.options.getInteger('amount')) ] })
+            void c.update({ embeds: [ game.changeCommanderDamage(interaction.options.getUser('player').id, c.values[0], interaction.options.getInteger('amount')) ] })
         })
-        collector.once('end', () => { interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Commander selection failed (commander damage not applied)' }) ], components: [] }) })
+        collector.once('end', () => { void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Commander selection failed (commander damage not applied)' }) ], components: [] }) })
         return
     }
     return { embeds: [ standings ] }

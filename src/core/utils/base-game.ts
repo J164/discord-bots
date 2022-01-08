@@ -11,12 +11,12 @@ export abstract class BaseGame {
         this.over = false
     }
 
-    public getThreadName(): string {
+    public get channelName(): string {
         return this.gameChannel.name
     }
 
     protected end(): void {
-        setTimeout(() => { try { this.gameChannel.setArchived(true) } catch { /*thread deleted*/ } }, 10_000)
+        setTimeout(() => { try { void this.gameChannel.setArchived(true) } catch { /*thread deleted*/ } }, 10_000)
         this.over = true
     }
 

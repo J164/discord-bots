@@ -4,68 +4,59 @@ import { Readable } from 'node:stream'
 
 export class VoiceManager {
 
-    private voiceConnection: VoiceConnection
-    private voiceChannel: VoiceChannel
-    public player: AudioPlayer
+    private _voiceConnection: VoiceConnection
+    private _voiceChannel: VoiceChannel
+    private _player: AudioPlayer
 
-    public async connect(voiceChannel: VoiceChannel): Promise<boolean> {
-        if (this.voiceConnection?.state.status === VoiceConnectionStatus.Ready) {
-            return true
+    public get player(): AudioPlayer {
+        return this._player
+    }
+
+    public async connect(voiceChannel: VoiceChannel): Promise<void> {
+        if (this._voiceConnection?.state.status === VoiceConnectionStatus.Ready) {
+            return
         }
-        this.voiceConnection = joinVoiceChannel({
+        this._voiceConnection = joinVoiceChannel({
             channelId: voiceChannel.id,
             guildId: voiceChannel.guild.id,
             // @ts-expect-error recurring library types problem
             adapterCreator: voiceChannel.guild.voiceAdapterCreator
         })
-        this.voiceChannel = voiceChannel
-        try {
-            await entersState(this.voiceConnection, VoiceConnectionStatus.Ready, 30e3)
-            this.player = createAudioPlayer()
-            this.voiceConnection.subscribe(this.player)
-            return true
-        } catch (error) {
-            console.warn(error)
-            this.reset()
-            return false
-        }
+        this._voiceChannel = voiceChannel
+        await entersState(this._voiceConnection, VoiceConnectionStatus.Ready, 30e3)
+        this._player = createAudioPlayer()
+        this._voiceConnection.subscribe(this._player)
     }
 
-    public async playStream(originalStream: Readable): Promise<boolean> {
+    public async playStream(originalStream: Readable): Promise<void> {
         const { type, stream } = await demuxProbe(originalStream)
-        this.player.play(createAudioResource(stream, { inputType: type }))
-        try {
-            await entersState(this.player, AudioPlayerStatus.Playing, 30e3)
-        } catch (error) {
-            console.warn(error)
-            return false
-        }
-        return true
+        this._player.play(createAudioResource(stream, { inputType: type }))
+        await entersState(this._player, AudioPlayerStatus.Playing, 30e3)
     }
 
     public pause(): boolean {
-        return this.player?.pause(true)
+        return this._player?.pause(true)
     }
 
     public resume(): boolean {
-        return this.player?.unpause()
+        return this._player?.unpause()
     }
 
     public isActive(): boolean {
-        return this.player?.state.status === AudioPlayerStatus.Playing || this.player?.state.status === AudioPlayerStatus.Paused
+        return this._player?.state.status === AudioPlayerStatus.Playing || this._player?.state.status === AudioPlayerStatus.Paused
     }
 
     public isIdle(): boolean {
-        return this.player?.state.status === AudioPlayerStatus.Idle || this.voiceChannel?.members.size <= 1
+        return this._player?.state.status === AudioPlayerStatus.Idle || this._voiceChannel?.members.size <= 1
     }
 
     public reset(): void {
-        this.player?.removeAllListeners()
-        this.player?.stop()
-        this.player = undefined
-        this.voiceConnection?.removeAllListeners()
-        this.voiceConnection?.destroy()
-        this.voiceConnection = undefined
-        this.voiceChannel = undefined
+        this._player?.removeAllListeners()
+        this._player?.stop()
+        this._player = undefined
+        this._voiceConnection?.removeAllListeners()
+        this._voiceConnection?.destroy()
+        this._voiceConnection = undefined
+        this._voiceChannel = undefined
     }
 }

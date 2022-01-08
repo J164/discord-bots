@@ -46,7 +46,7 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.isAutocomplete()) {
         const response = await interactionManager.autocomplete(interaction)
-        interaction.respond(response)
+        void interaction.respond(response)
         return
     }
 
@@ -56,8 +56,8 @@ client.on('interactionCreate', async interaction => {
 
     const response = await interactionManager.parseCommand(interaction)
     if (response) {
-        interaction.editReply(response)
+        void interaction.editReply(response)
     }
 })
 
-client.login(process.env.SWEARTOKEN)
+void client.login(process.env.SWEARTOKEN)
