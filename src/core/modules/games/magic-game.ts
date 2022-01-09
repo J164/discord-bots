@@ -7,42 +7,54 @@ interface MagicPlayer {
     life: number,
     poison: number,
     isAlive: boolean,
-    commanderDamage?: Map<string, number>
+    readonly commanderDamage: Map<string, number>
 }
 
 export class MagicGame extends BaseGame {
 
-    protected readonly playerData: Collection<string, MagicPlayer>
+    public readonly type = 'MAGICGAME'
+    protected readonly _playerData: Collection<string, MagicPlayer>
 
-    public constructor(playerList: User[], gameChannel: ThreadChannel) {
+    public constructor(playerList: User[], gameChannel: ThreadChannel, life: number) {
         super(gameChannel)
-        this.playerData = new Collection<string, MagicPlayer>()
+        this._playerData = new Collection<string, MagicPlayer>()
         for (const player of playerList) {
-            this.playerData.set(player.id, {
+            this._playerData.set(player.id, {
                 name: player.username,
-                life: 20,
+                life: life,
                 poison: 0,
-                isAlive: true
+                isAlive: true,
+                commanderDamage: new Map<string, number>()
             })
         }
     }
 
+    public get playerData(): Collection<string, MagicPlayer> {
+        return this._playerData
+    }
+
     public changeLife(player: string, amount: number): MessageEmbedOptions {
-        this.playerData.get(player).life += amount
+        this._playerData.get(player).life += amount
         return this.checkStatus(player)
     }
 
+    public commanderDamage(target: string, amount: number, player: string): MessageEmbedOptions {
+        const playerObject = this._playerData.get(target)
+        playerObject.commanderDamage.set(player, (playerObject.commanderDamage.get(player) ?? 0) + amount)
+        return this.checkStatus(target)
+    }
+
     public changePoison(player: string, amount: number): MessageEmbedOptions {
-        this.playerData.get(player).poison += amount
+        this._playerData.get(player).poison += amount
         return this.checkStatus(player)
     }
 
     public eliminate(player: string): MessageEmbedOptions {
-        if (!this.playerData.get(player).isAlive) {
-            return generateEmbed('error', { title: `${this.playerData.get(player).name} is already eliminated` })
+        if (!this._playerData.get(player).isAlive) {
+            return generateEmbed('error', { title: `${this._playerData.get(player).name} is already eliminated` })
         }
-        this.playerData.get(player).isAlive = false
-        if (this.playerData.filter(user => user.isAlive).size < 2) {
+        this._playerData.get(player).isAlive = false
+        if (this._playerData.filter(user => user.isAlive).size < 2) {
             return this.finishGame()
         }
         return this.printStandings()
@@ -50,15 +62,19 @@ export class MagicGame extends BaseGame {
 
     public printStandings(): MessageEmbedOptions {
         const embed = generateEmbed('info', { title: 'Current Standings', fields: [] })
-        for (const [ , player ] of this.playerData) {
-            embed.fields.push({ name: `${player.name}`, value: player.isAlive ? `Life Total: ${player.life}\nPoison Counters: ${player.poison}` : 'ELIMINATED' })
+        for (const [ , player ] of this._playerData) {
+            let value = 'Commander Damage:\n'
+            for (const [ id, damage ] of player.commanderDamage) {
+                value += `${this._playerData.get(id).name}: ${damage}\n`
+            }
+            embed.fields.push({ name: `${player.name}: ${player.isAlive ? `Life Total: ${player.life}\nPoison Counters: ${player.poison}` : 'ELIMINATED'}`, value: value })
         }
         return embed
     }
 
     public finishGame(): MessageEmbedOptions {
         this.end()
-        const alive = this.playerData.filter(player => player.isAlive)
+        const alive = this._playerData.filter(player => player.isAlive)
         if (alive.size > 1) {
             return this.printStandings()
         }
@@ -66,12 +82,17 @@ export class MagicGame extends BaseGame {
     }
 
     public userInGame(player: string): boolean {
-        return this.playerData.has(player)
+        return this._playerData.has(player)
     }
 
     protected checkStatus(player: string): MessageEmbedOptions {
-        if (this.playerData.get(player).life < 1 || this.playerData.get(player).poison >= 10) {
+        if (this._playerData.get(player).life < 1 || this._playerData.get(player).poison >= 10) {
             return this.eliminate(player)
+        }
+        for (const [ , commander ] of this._playerData.get(player).commanderDamage) {
+            if (commander >= 21) {
+                return this.eliminate(player)
+            }
         }
         return this.printStandings()
     }

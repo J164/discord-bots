@@ -19,6 +19,7 @@ interface EuchrePlayer {
 
 export class Euchre extends BaseGame {
 
+    public readonly type = 'EUCHRE'
     private readonly _team1: EuchreTeam
     private readonly _team2: EuchreTeam
     private _trump: Suit
@@ -32,7 +33,7 @@ export class Euchre extends BaseGame {
     }
 
     public async startRound(): Promise<void> {
-        await this.gameChannel.send({ embeds: [ generateEmbed('info', {
+        await this._gameChannel.send({ embeds: [ generateEmbed('info', {
             title: 'Player Order',
             fields: [
                 {
@@ -67,7 +68,7 @@ export class Euchre extends BaseGame {
             const channel = await player.user.createDM()
             await channel.send(await multicardMessage(player.hand, 'info', { title: 'Your Hand:' }))
         }
-        await this.gameChannel.send(await multicardMessage([ top ], 'info', { title: 'Top of Stack:' }))
+        await this._gameChannel.send(await multicardMessage([ top ], 'info', { title: 'Top of Stack:' }))
 
         const promptThree = async (index: number): Promise<void> => {
             const channel = await this._players[index].user.createDM()
@@ -196,7 +197,7 @@ export class Euchre extends BaseGame {
         if (winningTeam.score >= 10) {
             return this._finish(winningTeam)
         }
-        await this.gameChannel.send({ embeds: [ generateEmbed('info', {
+        await this._gameChannel.send({ embeds: [ generateEmbed('info', {
             title: 'Standings',
             fields: [
                 {
@@ -230,7 +231,7 @@ export class Euchre extends BaseGame {
                 }
             ]
         })
-        await this.gameChannel.send({ embeds: [ embed ] })
+        await this._gameChannel.send({ embeds: [ embed ] })
         this.end()
     }
 
@@ -309,7 +310,7 @@ export class Euchre extends BaseGame {
             }
         }
         this._players[leadingPlayer].team.tricks ++
-        await this.gameChannel.send({ embeds: [ generateEmbed('info', {
+        await this._gameChannel.send({ embeds: [ generateEmbed('info', {
             title: 'Standings',
             fields: [
                 {

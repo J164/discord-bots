@@ -2,8 +2,7 @@ import { ApplicationCommandData, ApplicationCommandOptionChoice, AutocompleteInt
 import { QueueManager } from './voice/queue-manager.js'
 import { DatabaseManager } from './database-manager.js'
 import { VoiceManager } from './voice/voice-manager.js'
-import { Command, GuildInfo } from './utils/interfaces.js'
-import { BaseGame } from './utils/base-game.js'
+import { Command, Game, GuildInfo } from './utils/interfaces.js'
 import { generateEmbed } from './utils/generators.js'
 import { readdirSync } from 'node:fs'
 
@@ -45,14 +44,8 @@ export class InteractionManager {
 
         await interaction.deferReply({ ephemeral: command.ephemeral })
 
-        const channel = await interaction.client.channels.fetch(interaction.channelId)
-
-        if (command.gameCommand) {
-            if (channel.type !== 'GUILD_PUBLIC_THREAD') {
-                return { embeds: [ generateEmbed('error', { title: 'Please only use game commands in game threads!' }) ] }
-            }
-        } else if (channel.type !== 'GUILD_TEXT') {
-            return { embeds: [ generateEmbed('error', { title: 'Please only use slash commands in servers!' }) ] }
+        if (command.gameCommand && this._info.get(interaction.guildId).games.get(interaction.channelId)?.type !== command.gameCommand) {
+            return { embeds: [ generateEmbed('error', { title: `Please only use this command in ${command.gameCommand} threads!` }) ] }
         }
 
         if (this._database?.offline) {
@@ -64,7 +57,7 @@ export class InteractionManager {
 
     public addGuild(guildId: string, options?: { voiceManager?: VoiceManager, queueManager?: QueueManager }): void {
         if (!this._info.has(guildId)) {
-            this._info.set(guildId, { database: this._database, voiceManager: options?.voiceManager, queueManager: options?.queueManager, games: new Map<string, BaseGame>() })
+            this._info.set(guildId, { database: this._database, voiceManager: options?.voiceManager, queueManager: options?.queueManager, games: new Map<string, Game>() })
         }
     }
 
@@ -81,7 +74,7 @@ export class InteractionManager {
                 guild.queueManager.reset()
             }
             for (const [ id, game ] of guild.games) {
-                if (game.isOver()) {
+                if (game.over) {
                     guild.games.delete(id)
                 }
             }
