@@ -69,7 +69,7 @@ export class QueueManager {
         }
 
         this._queueLock = true
-        if (position >= this._queue.length) {
+        if (position === -1 || position >= this._queue.length) {
             this._queue.push(...items)
             this._queueLock = false
             return
