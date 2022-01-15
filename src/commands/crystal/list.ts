@@ -7,7 +7,7 @@ function songEmbed(songs: string[], index: number): MessageEmbedOptions {
     const embed = generateEmbed('info', {
         title: 'Naruto Songs',
         footer: { text: `${index + 1}/${Math.ceil(songs.length / 25)}` },
-        fields: []
+        fields: [],
     })
     for (let r = 0 + (index * 25); r < 25 + (index * 25); r++) {
         if (r >= songs.length) {
@@ -19,12 +19,12 @@ function songEmbed(songs: string[], index: number): MessageEmbedOptions {
 }
 
 async function list(interaction: CommandInteraction, info: GuildInfo, index = 0, button?: ButtonInteraction): Promise<void> {
-    const songs: { songs: string[] } = JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' }))
+    const songs = <{ songs: string[] }> JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' }))
     const replyOptions: InteractionUpdateOptions = { embeds: [ songEmbed(songs.songs, index) ], components: [ { components: [
         { type: 'BUTTON', customId: 'list-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY', disabled: index === 0 },
         { type: 'BUTTON', customId: 'list-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY', disabled: index === 0 },
         { type: 'BUTTON', customId: 'list-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY', disabled: index === (Math.ceil(songs.songs.length / 25) - 1) },
-        { type: 'BUTTON', customId: 'list-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: index === (Math.ceil(songs.songs.length / 25) - 1) }
+        { type: 'BUTTON', customId: 'list-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: index === (Math.ceil(songs.songs.length / 25) - 1) },
     ], type: 'ACTION_ROW' } ] }
     await (button ? button.update(replyOptions) : interaction.editReply(replyOptions))
     const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
@@ -46,10 +46,10 @@ async function list(interaction: CommandInteraction, info: GuildInfo, index = 0,
                 break
         }
     })
-    collector.once('end', () => { void interaction.editReply({ components: [] }) })
+    collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
 }
 
 export const command: Command = { data: {
     name: 'list',
-    description: 'List all of the Naruto songs'
+    description: 'List all of the Naruto songs',
 }, execute: list, ephemeral: true }

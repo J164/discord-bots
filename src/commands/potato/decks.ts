@@ -73,7 +73,7 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
         { type: 'BUTTON', customId: 'decks-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY', disabled: index === 0 },
         { type: 'BUTTON', customId: 'decks-list', emoji: '\uD83D\uDCC4', label: 'Decklist', style: 'PRIMARY' },
         { type: 'BUTTON', customId: 'decks-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY', disabled: index === urls.length - 1 },
-        { type: 'BUTTON', customId: 'decks-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: index === urls.length - 1 }
+        { type: 'BUTTON', customId: 'decks-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: index === urls.length - 1 },
     ], type: 'ACTION_ROW' } ] }
     await (!button ? interaction.editReply(options) : button.update(options))
     const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
@@ -98,7 +98,7 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
                 break
         }
     })
-    collector.once('end', () => { void interaction.editReply({ components: [] }) })
+    collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
 }
 
 async function getDeck(interaction: CommandInteraction, info: GuildInfo): Promise<void> {
@@ -107,5 +107,5 @@ async function getDeck(interaction: CommandInteraction, info: GuildInfo): Promis
 
 export const command: Command = { data: {
     name: 'decks',
-    description: 'Get a deck from Potato\'s database'
+    description: 'Get a deck from Potato\'s database',
 }, execute: getDeck, ephemeral: true }

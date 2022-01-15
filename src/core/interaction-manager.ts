@@ -2,9 +2,10 @@ import { ApplicationCommandData, ApplicationCommandOptionChoice, AutocompleteInt
 import { QueueManager } from './voice/queue-manager.js'
 import { DatabaseManager } from './database-manager.js'
 import { VoiceManager } from './voice/voice-manager.js'
-import { Command, Game, GuildInfo } from './utils/interfaces.js'
+import { Command, GuildInfo } from './utils/interfaces.js'
 import { generateEmbed } from './utils/generators.js'
 import { readdirSync } from 'node:fs'
+import { BaseGame } from './utils/base-game.js'
 
 export class InteractionManager {
 
@@ -22,8 +23,8 @@ export class InteractionManager {
         const currentCommands = await client.application.commands.fetch()
         for (const [ , slash ] of currentCommands) {
             try {
-                const { command } = await import(`../commands/${botName}/${slash.name}.js`)
-                this._commands.set(slash.name, <Command> command)
+                const { command } = <{ command: Command }> await import(`../commands/${botName}/${slash.name}.js`)
+                this._commands.set(slash.name, command)
             } catch {
                 console.warn(`Registered command missing from ${botName}'s command files (${slash.name})`)
             }
@@ -33,8 +34,8 @@ export class InteractionManager {
     public static async deployCommands(client: Client, botName: string): Promise<void> {
         const commandData: ApplicationCommandData[] = []
         for (const slash of readdirSync(`./dist/commands/${botName}`).filter(file => file.endsWith('.js'))) {
-            const { command } = await import(`../commands/${botName}/${slash}`)
-            commandData.push((<Command> command).data)
+            const { command } = <{ command: Command }> await import(`../commands/${botName}/${slash}`)
+            commandData.push(command.data)
         }
         await client.application.commands.set(commandData)
     }
@@ -44,7 +45,7 @@ export class InteractionManager {
 
         await interaction.deferReply({ ephemeral: command.ephemeral })
 
-        if (command.gameCommand && this._info.get(interaction.guildId).games.get(interaction.channelId)?.type !== command.gameCommand) {
+        if (command.gameCommand && (this._info.get(interaction.guildId).games.get(interaction.channelId)?.type !== command.gameCommand || this._info.get(interaction.guildId).games.get(interaction.channelId)?.over)) {
             return { embeds: [ generateEmbed('error', { title: `Please only use this command in ${command.gameCommand} threads!` }) ] }
         }
 
@@ -57,7 +58,7 @@ export class InteractionManager {
 
     public addGuild(guildId: string, options?: { voiceManager?: VoiceManager, queueManager?: QueueManager }): void {
         if (!this._info.has(guildId)) {
-            this._info.set(guildId, { database: this._database, voiceManager: options?.voiceManager, queueManager: options?.queueManager, games: new Map<string, Game>() })
+            this._info.set(guildId, { database: this._database, voiceManager: options?.voiceManager, queueManager: options?.queueManager, games: new Map<string, BaseGame>() })
         }
     }
 

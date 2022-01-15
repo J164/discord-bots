@@ -1,12 +1,10 @@
 import { CommandInteraction, InteractionReplyOptions, MessageEmbedOptions, SelectMenuInteraction } from 'discord.js'
+import { MagicGame } from '../../core/modules/games/magic-game.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 
 async function damage(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
-    const game = info.games.get(interaction.channelId)
-    if (!game || game.type !== 'MAGICGAME' || game.over) {
-        return { embeds: [ generateEmbed('error', { title: 'There is currently no Magic game in this channel' }) ] }
-    }
+    const game = <MagicGame> info.games.get(interaction.channelId)
     if (!game.userInGame(interaction.options.getUser('player').id)) {
         return { embeds: [ generateEmbed('error', { title: 'That user is not part of this game!' }) ] }
     }
@@ -21,7 +19,7 @@ async function damage(interaction: CommandInteraction, info: GuildInfo): Promise
             selectOptions.push({
                 label: player.name,
                 description: player.name,
-                value: id
+                value: id,
             })
         }
         await interaction.editReply({ embeds: [ generateEmbed('prompt', { title: 'Select the player dealing damage' }) ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'magic-options', placeholder: 'Select the player that delt damage', options: selectOptions } ], type: 'ACTION_ROW' } ] })
@@ -31,17 +29,14 @@ async function damage(interaction: CommandInteraction, info: GuildInfo): Promise
             if (!c.isSelectMenu()) return
             void c.update({ embeds: [ game.commanderDamage(interaction.options.getUser('player').id, interaction.options.getInteger('amount'), c.values[0]) ], components: [] })
         })
-        collector.once('end', () => { void interaction.editReply({ components: [] }) })
+        collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
         return
     }
     return { embeds: [ stats ] }
 }
 
 function eliminate(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
-    const game = info.games.get(interaction.channelId)
-    if (!game || game.type !== 'MAGICGAME' || game.over) {
-        return { embeds: [ generateEmbed('error', { title: 'There is currently no Magic game in this channel' }) ] }
-    }
+    const game = <MagicGame> info.games.get(interaction.channelId)
     if (!game.userInGame(interaction.options.getUser('player').id)) {
         return { embeds: [ generateEmbed('error', { title: 'That user is not part of this game!' }) ] }
     }
@@ -49,18 +44,11 @@ function eliminate(interaction: CommandInteraction, info: GuildInfo): Interactio
 }
 
 function end(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
-    const game = info.games.get(interaction.channelId)
-    if (!game || game.type !== 'MAGICGAME' || game.over) {
-        return { embeds: [ generateEmbed('error', { title: 'There is currently no Magic game in this channel' }) ] }
-    }
-    return { embeds: [ game.finishGame() ] }
+    return { embeds: [ (<MagicGame> info.games.get(interaction.channelId)).finishGame() ] }
 }
 
 function standings(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
-    const game = info.games.get(interaction.channelId)
-    if (!game || game.type !== 'MAGICGAME' || game.over) {
-        return { embeds: [ generateEmbed('error', { title: 'There is currently no Magic game in this channel' }) ] }
-    }
+    const game = <MagicGame> info.games.get(interaction.channelId)
     return { embeds: [ game.printStandings() ] }
 }
 
@@ -88,12 +76,12 @@ export const command: Command = { data: {
         {
             name: 'standings',
             description: 'Display the standings for the current Magic game',
-            type: 'SUB_COMMAND'
+            type: 'SUB_COMMAND',
         },
         {
             name: 'end',
             description: 'End the current Magic game',
-            type: 'SUB_COMMAND'
+            type: 'SUB_COMMAND',
         },
         {
             name: 'eliminate',
@@ -104,9 +92,9 @@ export const command: Command = { data: {
                     name: 'player',
                     description: 'The player to eliminate',
                     type: 'USER',
-                    required: true
-                }
-            ]
+                    required: true,
+                },
+            ],
         },
         {
             name: 'damage',
@@ -117,27 +105,27 @@ export const command: Command = { data: {
                     name: 'player',
                     description: 'The player to damage',
                     type: 'USER',
-                    required: true
+                    required: true,
                 },
                 {
                     name: 'amount',
                     description: 'The amount of damage to deal (negative numbers heal)',
                     type: 'INTEGER',
-                    required: true
+                    required: true,
                 },
                 {
                     name: 'poison',
                     description: 'If the damage should result in poison counters being added',
                     type: 'BOOLEAN',
-                    required: false
+                    required: false,
                 },
                 {
                     name: 'commander',
                     description: 'If the damage is being delt by a commander',
                     type: 'BOOLEAN',
-                    required: false
-                }
-            ]
-        }
-    ]
+                    required: false,
+                },
+            ],
+        },
+    ],
 }, execute: magic, gameCommand: 'MAGICGAME' }

@@ -35,6 +35,6 @@ export const command: Command = { data: {
         name: 'url',
         description: 'Deckstats URL for the new deck',
         type: 'STRING',
-        required: true
-    } ]
+        required: true,
+    } ],
 }, execute: addDeck }

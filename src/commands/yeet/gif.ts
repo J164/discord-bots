@@ -16,5 +16,5 @@ async function gif(): Promise<InteractionReplyOptions> {
 
 export const command: Command = { data: {
     name: 'gif',
-    description: 'Get a gif related to YEET'
+    description: 'Get a gif related to YEET',
 }, execute: gif }

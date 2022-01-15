@@ -36,8 +36,8 @@ export const command: Command = { data: {
             description: 'The position of the song to skip to',
             type: 'INTEGER',
             minValue: 1,
-            required: true
-        } ]
+            required: true,
+        } ],
         },
         {
             name: 'name',
@@ -48,8 +48,8 @@ export const command: Command = { data: {
                 description: 'The name of the song to skip to',
                 type: 'STRING',
                 required: true,
-                autocomplete: true
-            } ]
-        }
-    ]
+                autocomplete: true,
+            } ],
+        },
+    ],
 }, execute: skipto, autocomplete: suggestions }

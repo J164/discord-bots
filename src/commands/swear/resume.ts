@@ -11,5 +11,5 @@ function resume(interaction: CommandInteraction, info: GuildInfo): InteractionRe
 
 export const command: Command = { data: {
     name: 'resume',
-    description: 'Resume the song'
+    description: 'Resume the song',
 }, execute: resume }

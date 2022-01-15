@@ -11,5 +11,5 @@ function clear(interaction: CommandInteraction, info: GuildInfo): InteractionRep
 
 export const command: Command = { data: {
     name: 'clear',
-    description: 'Clear the song queue'
+    description: 'Clear the song queue',
 }, execute: clear }

@@ -20,7 +20,7 @@ export class VoiceManager {
             channelId: voiceChannel.id,
             guildId: voiceChannel.guild.id,
             // @ts-expect-error recurring library types problem
-            adapterCreator: voiceChannel.guild.voiceAdapterCreator
+            adapterCreator: voiceChannel.guild.voiceAdapterCreator,
         })
         this._voiceChannel = voiceChannel
         await entersState(this._voiceConnection, VoiceConnectionStatus.Ready, 30e3)

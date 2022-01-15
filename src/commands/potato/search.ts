@@ -68,15 +68,15 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results?
                 title: 'Card Not Found',
                 fields: [ {
                     name: `${searchTerm} not found`,
-                    value: 'Check your spelling and/or try using a more general search term'
-                } ]
+                    value: 'Check your spelling and/or try using a more general search term',
+                } ],
             }) ]}
         }
     }
     const embed = generateEmbed('info', {
         title: 'Results',
         footer: { text: `${page + 1}/${results.length}` },
-        fields: []
+        fields: [],
     })
     for (const [ index, entry ] of results[page].entries()) {
         embed.fields.push({ name: `${index + 1}.`, value: `${entry.name}` })
@@ -86,14 +86,14 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results?
         selectOptions.push({
             label: (r + 1).toString(),
             description: results[page][r].name,
-            value: (r + 1).toString()
+            value: (r + 1).toString(),
         })
     }
     const options: InteractionReplyOptions = { embeds: [ embed ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'search-options', placeholder: 'Select a Card', options: selectOptions } ], type: 'ACTION_ROW' }, { components: [
         { type: 'BUTTON', customId: 'search-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY', disabled: page === 0 },
         { type: 'BUTTON', customId: 'search-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY', disabled: page === 0 },
         { type: 'BUTTON', customId: 'search-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY', disabled: page === results.length - 1 },
-        { type: 'BUTTON', customId: 'search-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: page === results.length - 1 }
+        { type: 'BUTTON', customId: 'search-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: page === results.length - 1 },
     ], type: 'ACTION_ROW' } ] }
     await (component ? component.update(options) : interaction.editReply(options))
     const filter = (b: SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>) => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
@@ -119,7 +119,7 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results?
                 break
         }
     })
-    collector.once('end', () => { void interaction.editReply({ components: [] }) })
+    collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
 }
 
 export const command: Command = { data: {
@@ -129,6 +129,6 @@ export const command: Command = { data: {
         name: 'query',
         description: 'What to search for',
         type: 'STRING',
-        required: true
-    } ]
+        required: true,
+    } ],
 }, execute: search, ephemeral: true }

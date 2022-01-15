@@ -21,7 +21,7 @@ export abstract class BaseGame {
         return this._over
     }
 
-    protected end(): void {
+    public end(): void {
         setTimeout(() => { try { void this._gameChannel.setArchived(true) } catch { /*thread deleted*/ } }, 10_000)
         this._over = true
     }

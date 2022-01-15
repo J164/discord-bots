@@ -9,5 +9,5 @@ function flip(): InteractionReplyOptions {
 
 export const command: Command = { data: {
     name: 'flip',
-    description: 'Flip a coin'
+    description: 'Flip a coin',
 }, execute: flip }

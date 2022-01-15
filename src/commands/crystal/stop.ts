@@ -9,5 +9,5 @@ function stop(interaction: CommandInteraction, info: GuildInfo): InteractionRepl
 
 export const command: Command = { data: {
     name: 'stop',
-    description: 'Stop the song'
+    description: 'Stop the song',
 }, execute: stop }

@@ -18,7 +18,7 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
     const queueMessage = generateEmbed('info', {
         title: title,
         footer: { text: `${page + 1}/${queueArray.length}` },
-        fields: []
+        fields: [],
     })
     for (const [ index, entry ] of queueArray[page].entries()) {
         queueMessage.fields.push({ name: index === 0 && page === 0 ? 'Currently Playing:' : `${index + (page * 25)}.`, value: `${entry.title} (${entry.duration})\n${entry.url}` })
@@ -27,7 +27,7 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
         { type: 'BUTTON', customId: 'queue-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY', disabled: page === 0 },
         { type: 'BUTTON', customId: 'queue-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY', disabled: page === 0 },
         { type: 'BUTTON', customId: 'queue-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY', disabled: page === queueArray.length - 1 },
-        { type: 'BUTTON', customId: 'queue-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: page === queueArray.length - 1 }
+        { type: 'BUTTON', customId: 'queue-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: page === queueArray.length - 1 },
     ], type: 'ACTION_ROW' } ] }
     await (!button ? interaction.editReply(options) : button.update(options))
     const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
@@ -49,10 +49,10 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
                 break
         }
     })
-    collector.once('end', () => { void interaction.editReply({ components: [] }) })
+    collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
 }
 
 export const command: Command = { data: {
     name: 'queue',
-    description: 'Get the song queue'
+    description: 'Get the song queue',
 }, execute: queue, ephemeral: true }

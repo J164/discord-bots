@@ -1,28 +1,31 @@
-import { MessageEmbedOptions, MessageOptions } from 'discord.js'
+import { FileOptions, MessageEmbedOptions } from 'discord.js'
 import { generateEmbed } from './generators.js'
-import { Card } from './deck.js'
+import { CardCode } from './deck.js'
 import canvas from 'canvas'
+import { readFileSync } from 'node:fs'
 
-async function mergeImages(filePaths: string[], options: { width: number; height: number }): Promise<Buffer> {
-    const activeCanvas = canvas.createCanvas(options.width, options.height)
+type CardResolvable = { code: CardCode | 'back' }
+
+//todo image overlapping for large numbers of cards
+
+async function mergeImages(filePaths: string[]): Promise<Buffer> {
+    const activeCanvas = canvas.createCanvas(filePaths.length < 6 ? (filePaths.length % 6) * 226 : 1130, Math.ceil(filePaths.length / 5) * 314)
     const context = activeCanvas.getContext('2d')
     for (const [ index, path ] of filePaths.entries()) {
         const image = await canvas.loadImage(path)
-        context.drawImage(image, index * (options.width / filePaths.length), 0)
+        context.drawImage(image, (index % 5) * 226, Math.floor(index / 5) * 314)
     }
     return activeCanvas.toBuffer()
 }
 
-export async function multicardMessage(cards: Card[], embedType: 'info' | 'prompt', embedOptions: MessageEmbedOptions): Promise<MessageOptions> {
-    const hand = generateEmbed(embedType, embedOptions)
+export async function multicardMessage(cards: CardResolvable[], embedType: 'info' | 'prompt', embedOptions: MessageEmbedOptions, fileName: string): Promise<{ embed: MessageEmbedOptions, file: FileOptions }> {
+    const hand = generateEmbed(embedType, { ...embedOptions, image: { url: `attachment://${fileName}.jpg` } })
     if (cards.length === 1) {
-        hand.image = { url: cards[0].image }
-        return { embeds: [ hand ] }
+        return { embed: hand, file: { attachment: readFileSync(`./assets/img/cards/${cards[0].code}.png`), name: `${fileName}.jpg` } }
     }
     const filePaths: string[] = []
     for (const card of cards) {
         filePaths.push(`./assets/img/cards/${card.code}.png`)
     }
-    hand.image = { url: 'attachment://cards.jpg' }
-    return { embeds: [ hand ], files: [ { attachment: await mergeImages(filePaths, { width: filePaths.length * 226, height: 314 }), name: 'cards.jpg' } ] }
+    return { embed: hand, file: { attachment: await mergeImages(filePaths), name: `${fileName}.jpg` } }
 }

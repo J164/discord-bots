@@ -23,13 +23,13 @@ export const command: Command = { data: {
             name: 'member',
             description: 'The member whose nickname will change',
             type: 'USER',
-            required: true
+            required: true,
         },
         {
             name: 'nickname',
             description: 'The member\'s new nickname',
             type: 'STRING',
-            required: false
-        }
-    ]
+            required: false,
+        },
+    ],
 }, execute: nick }

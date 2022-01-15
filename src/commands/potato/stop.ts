@@ -9,5 +9,5 @@ function stop(interaction: CommandInteraction, info: GuildInfo): InteractionRepl
 
 export const command: Command = { data: {
     name: 'stop',
-    description: 'Disconnects Potato Bot from voice'
+    description: 'Disconnects Potato Bot from voice',
 }, execute: stop }

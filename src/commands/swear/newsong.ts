@@ -29,7 +29,7 @@ export const command: Command = { data: {
             name: 'url',
             type: 'STRING',
             description: 'The URL for the new swear song',
-            required: true
-        }
-    ]
+            required: true,
+        },
+    ],
 }, execute: newSong }

@@ -24,7 +24,7 @@ export class MagicGame extends BaseGame {
                 life: life,
                 poison: 0,
                 isAlive: true,
-                commanderDamage: new Map<string, number>()
+                commanderDamage: new Map<string, number>(),
             })
         }
     }

@@ -38,25 +38,23 @@ export class Euchre extends BaseGame {
             fields: [
                 {
                     name: `1. ${this._players[0].user.username}`,
-                    value: this._players[0].team.name
+                    value: this._players[0].team.name,
                 },
                 {
                     name: `2. ${this._players[1].user.username}`,
-                    value: this._players[1].team.name
+                    value: this._players[1].team.name,
                 },
                 {
                     name: `3. ${this._players[2].user.username}`,
-                    value: this._players[2].team.name
+                    value: this._players[2].team.name,
                 },
                 {
                     name: `4. ${this._players[3].user.username}`,
-                    value: this._players[3].team.name
-                }
-            ]
+                    value: this._players[3].team.name,
+                },
+            ],
         }) ] })
-        const deck = new Deck([ '9S', '9D', '9C', '9H', '0S', '0D', '0C', '0H', 'JS', 'JD', 'JC', 'JH', 'QS', 'QD', 'QC', 'QH', 'KS', 'KD', 'KC', 'KH', 'AS', 'AD', 'AC', 'AH' ])
-        deck.shuffle()
-        const draws = deck.draw(21)
+        const draws = Deck.randomCard({ number: 21, noRepeats: true, codes: [ '9S', '9D', '9C', '9H', '0S', '0D', '0C', '0H', 'JS', 'JD', 'JC', 'JH', 'QS', 'QD', 'QC', 'QH', 'KS', 'KD', 'KC', 'KH', 'AS', 'AD', 'AC', 'AH' ] })
         for (const [ index, player ] of this._players.entries()) {
             player.hand = []
             for (let r = index; r < 17 + index; r += 4) {
@@ -66,9 +64,11 @@ export class Euchre extends BaseGame {
         const top = draws[20]
         for (const player of this._players) {
             const channel = await player.user.createDM()
-            await channel.send(await multicardMessage(player.hand, 'info', { title: 'Your Hand:' }))
+            const { embed, file } = await multicardMessage(player.hand, 'info', { title: 'Your Hand:' }, 'hand')
+            await channel.send({ embeds: [ embed ], files: [ file ] })
         }
-        await this._gameChannel.send(await multicardMessage([ top ], 'info', { title: 'Top of Stack:' }))
+        const { embed, file } = await multicardMessage([ top ], 'info', { title: 'Top of Stack:' }, 'hand')
+        await this._gameChannel.send({ embeds: [ embed ], files: [ file ] })
 
         const promptThree = async (index: number): Promise<void> => {
             const channel = await this._players[index].user.createDM()
@@ -87,12 +87,12 @@ export class Euchre extends BaseGame {
 
         const promptTwo = async (index = 0): Promise<void> => {
             const channel = await this._players[index].user.createDM()
-            const { embeds, files } = await multicardMessage(this._players[index].hand, 'prompt', { title: 'Would you like to pass or select trump?' })
+            const { embed, file } = await multicardMessage(this._players[index].hand, 'prompt', { title: 'Would you like to pass or select trump?' }, 'hand')
             if (index === 3) {
-                embeds[0].title = 'Please select trump'
-                await channel.send({ embeds: embeds, files: files, components: [ { components: [ { type: 'SELECT_MENU', customId: 'two-select', placeholder: 'Select a Suit', options: [ { label: 'Spades', value: 'Spades', emoji: '\u2660\uFE0F' }, { label: 'Clubs', value: 'Clubs', emoji: '\u2663\uFE0F' }, { label: 'Hearts', value: 'Hearts', emoji: '\u2665\uFE0F' }, { label: 'Diamonds', value: 'Diamonds', emoji: '\u2666\uFE0F' } ] } ], type: 'ACTION_ROW' } ] })
+                embed.title = 'Please select trump'
+                await channel.send({ embeds: [ embed ], files: [ file ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'two-select', placeholder: 'Select a Suit', options: [ { label: 'Spades', value: 'Spades', emoji: '\u2660\uFE0F' }, { label: 'Clubs', value: 'Clubs', emoji: '\u2663\uFE0F' }, { label: 'Hearts', value: 'Hearts', emoji: '\u2665\uFE0F' }, { label: 'Diamonds', value: 'Diamonds', emoji: '\u2666\uFE0F' } ] } ], type: 'ACTION_ROW' } ] })
             } else {
-                await channel.send({ embeds: embeds, files: files, components: [ { components: [ { type: 'SELECT_MENU', customId: 'two-select', placeholder: 'Select a Suit', options: [ { label: 'Spades', value: 'Spades', emoji: '\u2660\uFE0F' }, { label: 'Clubs', value: 'Clubs', emoji: '\u2663\uFE0F' }, { label: 'Hearts', value: 'Hearts', emoji: '\u2665\uFE0F' }, { label: 'Diamonds', value: 'Diamonds', emoji: '\u2666\uFE0F' } ] } ], type: 'ACTION_ROW' }, { components: [ { type: 'BUTTON', customId: 'two-pass', label: 'Pass', style: 'SECONDARY' } ], type: 'ACTION_ROW' } ] })
+                await channel.send({ embeds: [ embed ], files: [ file ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'two-select', placeholder: 'Select a Suit', options: [ { label: 'Spades', value: 'Spades', emoji: '\u2660\uFE0F' }, { label: 'Clubs', value: 'Clubs', emoji: '\u2663\uFE0F' }, { label: 'Hearts', value: 'Hearts', emoji: '\u2665\uFE0F' }, { label: 'Diamonds', value: 'Diamonds', emoji: '\u2666\uFE0F' } ] } ], type: 'ACTION_ROW' }, { components: [ { type: 'BUTTON', customId: 'two-pass', label: 'Pass', style: 'SECONDARY' } ], type: 'ACTION_ROW' } ] })
             }
             const filter: CollectorFilter<[ButtonInteraction | SelectMenuInteraction]> = b => b.customId.startsWith('two-')
             const collector1 = channel.createMessageComponentCollector({ filter: filter, componentType: 'SELECT_MENU', max: 1 })
@@ -115,11 +115,11 @@ export class Euchre extends BaseGame {
         const promptReplace = async (index: number): Promise<void> => {
             const options: MessageSelectOptionData[] = []
             for (const[ id, card ] of this._players[3].hand.entries()) {
-                options.push({ label: `${card.value} of ${card.suit}`, value: id.toString() })
+                options.push({ label: `${card.name} of ${card.suit}`, value: id.toString() })
             }
             const channel = await this._players[3].user.createDM()
-            const { embeds, files } = await multicardMessage(this._players[3].hand, 'prompt', { title: 'Select a card to replace' })
-            await channel.send({ embeds: embeds, files: files, components: [ { components: [ { type: 'SELECT_MENU', customId: 'replace', placeholder: 'Select a Card', options: options } ], type: 'ACTION_ROW' } ] })
+            const { embed, file } = await multicardMessage(this._players[3].hand, 'prompt', { title: 'Select a card to replace' }, 'hand')
+            await channel.send({ embeds: [ embed ], files: [ file ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'replace', placeholder: 'Select a Card', options: options } ], type: 'ACTION_ROW' } ] })
             const filter: CollectorFilter<[SelectMenuInteraction]> = b => b.customId === 'replace'
             const collector = channel.createMessageComponentCollector({ filter: filter, componentType: 'SELECT_MENU', max: 1 })
             collector.once('collect', async interaction => {
@@ -160,17 +160,17 @@ export class Euchre extends BaseGame {
         const legalPlays: MessageSelectOptionData[] = []
         for (const card of this._players[index].hand) {
             if (!lead || lead === this._realSuit(card)[0]) {
-                legalPlays.push({ label: `${card.value} of ${card.suit}`, value: card.code })
+                legalPlays.push({ label: `${card.name} of ${card.suit}`, value: card.code })
             }
         }
         if (legalPlays.length === 0) {
             for (const card of this._players[index].hand) {
-                legalPlays.push({ label: `${card.value} of ${card.suit}`, value: card.code })
+                legalPlays.push({ label: `${card.name} of ${card.suit}`, value: card.code })
             }
         }
         const channel = await this._players[index].user.createDM()
-        const { embeds, files } = await multicardMessage(this._players[index].hand, 'prompt', { title: 'Select a card to play' })
-        await channel.send({ embeds: embeds, files: files, components: [ { components: [ { type: 'SELECT_MENU', customId: 'play', placeholder: 'Select a Card', options: legalPlays } ], type: 'ACTION_ROW' } ] })
+        const { embed, file } = await multicardMessage(this._players[index].hand, 'prompt', { title: 'Select a card to play' }, 'hand')
+        await channel.send({ embeds: [ embed ], files: [ file ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'play', placeholder: 'Select a Card', options: legalPlays } ], type: 'ACTION_ROW' } ] })
         const filter: CollectorFilter<[SelectMenuInteraction]> = b => b.customId.startsWith('play')
         const collector = channel.createMessageComponentCollector({ filter: filter, componentType: 'SELECT_MENU', max: 1 })
         collector.once('collect', async interaction => {
@@ -202,13 +202,13 @@ export class Euchre extends BaseGame {
             fields: [
                 {
                     name: 'Team 1',
-                    value: `${this._team1.score} points`
+                    value: `${this._team1.score} points`,
                 },
                 {
                     name: 'Team 2',
-                    value: `${this._team2.score} points`
-                }
-            ]
+                    value: `${this._team2.score} points`,
+                },
+            ],
         }) ] })
         this._players.unshift(this._players.pop())
         for (const player of this._players) {
@@ -223,13 +223,13 @@ export class Euchre extends BaseGame {
             fields: [
                 {
                     name: 'Team 1',
-                    value: `${this._team1.score} points`
+                    value: `${this._team1.score} points`,
                 },
                 {
                     name: 'Team 2',
-                    value: `${this._team2.score} points`
-                }
-            ]
+                    value: `${this._team2.score} points`,
+                },
+            ],
         })
         await this._gameChannel.send({ embeds: [ embed ] })
         this.end()
@@ -315,13 +315,13 @@ export class Euchre extends BaseGame {
             fields: [
                 {
                     name: 'Team 1:',
-                    value: `${this._team1.tricks} tricks`
+                    value: `${this._team1.tricks} tricks`,
                 },
                 {
                     name: 'Team 2',
-                    value: `${this._team2.tricks} tricks`
-                }
-            ]
+                    value: `${this._team2.tricks} tricks`,
+                },
+            ],
         }) ] })
         if (this._team1.tricks + this._team2.tricks === 5) {
             return this._score(leader, solo)

@@ -63,13 +63,13 @@ export const command: Command = { data: {
             description: 'The name of the song (defaults to a random song)',
             type: 'STRING',
             autocomplete: true,
-            required: false
+            required: false,
         },
         {
             name: 'loop',
             description: 'Whether to loop the song',
             type: 'BOOLEAN',
-            required: false
-        }
-    ]
+            required: false,
+        },
+    ],
 }, execute: play, autocomplete: search }

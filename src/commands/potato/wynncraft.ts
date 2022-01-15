@@ -30,9 +30,9 @@ async function wynncraft(interaction: CommandInteraction): Promise<InteractionRe
         title: playerData.data[0].username,
         fields: [ {
             name: 'Current Status',
-            value: playerData.data[0].meta.location.online ? `Online at: ${playerData.data[0].meta.location.server}` : 'Offline'
+            value: playerData.data[0].meta.location.online ? `Online at: ${playerData.data[0].meta.location.server}` : 'Offline',
         } ],
-        color: playerData.data[0].meta.location.online ? 0x33_CC_33 : 0xFF_00_00
+        color: playerData.data[0].meta.location.online ? 0x33_CC_33 : 0xFF_00_00,
     })
     for (let index = 0; index < playerData.data[0].classes.length; index++) {
         const playtime = playerData.data[0].classes[index].playtime
@@ -50,6 +50,6 @@ export const command: Command = { data: {
         name: 'player',
         description: 'The username of target player',
         type: 'STRING',
-        required: true
-    } ]
+        required: true,
+    } ],
 }, execute: wynncraft }

@@ -15,12 +15,12 @@ export const command: Command = { data: {
         {
             name: 'current',
             description: 'Loop just the current song',
-            type: 'SUB_COMMAND'
+            type: 'SUB_COMMAND',
         },
         {
             name: 'queue',
             description: 'Loop the entire queue',
-            type: 'SUB_COMMAND'
-        }
-    ]
+            type: 'SUB_COMMAND',
+        },
+    ],
 }, execute: loop }

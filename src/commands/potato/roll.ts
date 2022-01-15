@@ -22,6 +22,6 @@ export const command: Command = { data: {
         description: 'How many sides on the die (defaults to 6)',
         type: 'INTEGER',
         minValue: 2,
-        required: false
-    } ]
+        required: false,
+    } ],
 }, execute: roll }

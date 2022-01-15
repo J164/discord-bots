@@ -21,6 +21,6 @@ export const command: Command = { data: {
         type: 'INTEGER',
         minValue: 2,
         maxValue: 1995,
-        required: false
-    } ]
+        required: false,
+    } ],
 }, execute: yeet }

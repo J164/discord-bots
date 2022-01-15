@@ -44,9 +44,9 @@ export class QueueManager {
             title: `Now Playing: ${this._nowPlaying.title} (${this._nowPlaying.duration})`,
             fields: [ {
                 name: 'URL:',
-                value: this._nowPlaying.url
+                value: this._nowPlaying.url,
             } ],
-            image: { url: this._nowPlaying.thumbnail }
+            image: { url: this._nowPlaying.thumbnail },
         })
         if (this._nowPlaying.looping) {
             embed.footer = { text: 'Looping', iconURL: 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png' }

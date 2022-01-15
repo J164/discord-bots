@@ -27,7 +27,7 @@ export const command: Command = { data: {
             description: 'The song number',
             type: 'INTEGER',
             minValue: 0,
-            required: false
-        }
-    ]
+            required: false,
+        },
+    ],
 }, execute: getSongs }

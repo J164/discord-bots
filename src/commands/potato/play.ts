@@ -26,7 +26,7 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo, voiceCh
 
     let response: SpotifyResponse
     try {
-        response = await (await request(`https://api.spotify.com/v1/playlists/${playlistId}`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}` } })).body.json()
+        response = <SpotifyResponse> await (await request(`https://api.spotify.com/v1/playlists/${playlistId}`, { method: 'GET', headers: { 'Authorization': `Bearer ${token}` } })).body.json()
     } catch {
         return { embeds: [ generateEmbed('error', { title: 'Playlist not found! (Make sure it is a public playlist)' }) ] }
     }
@@ -53,9 +53,9 @@ async function spotify(interaction: CommandInteraction, info: GuildInfo, voiceCh
         title: `Added "${response.name}" to queue!`,
         fields: [ {
             name: 'URL:',
-            value: response.external_urls.spotify
+            value: response.external_urls.spotify,
          } ],
-        image: { url: response.images[0].url }
+        image: { url: response.images[0].url },
     } ) ] }
 }
 
@@ -91,7 +91,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     if (!/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//.test(url)) {
         const filter = (await ytsr.getFilters(url)).get('Type').get('Video')
         const term = await ytsr(filter.url, {
-            limit: 1
+            limit: 1,
         })
         if (term.results < 1) {
             return { embeds: [ generateEmbed('error', { title: `No results found for "${url}"` }) ] }
@@ -130,14 +130,14 @@ export const command: Command = { data: {
             description: 'The URL or title of the song',
             type: 'STRING',
             required: true,
-            autocomplete: true
+            autocomplete: true,
         },
         {
             name: 'position',
             description: 'Where in the queue to put the song (defaults to the end)',
             type: 'INTEGER',
             minValue: 1,
-            required: false
-        }
-    ]
+            required: false,
+        },
+    ],
 }, execute: play, autocomplete: search, ephemeral: true }

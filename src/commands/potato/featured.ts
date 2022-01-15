@@ -36,28 +36,28 @@ export const command: Command = { data: {
             choices: [
                 {
                     name: 'epic',
-                    value: 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY4lfQYkEb60nitxrJMpN5a2'
+                    value: 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY4lfQYkEb60nitxrJMpN5a2',
                 },
                 {
                     name: 'magic',
-                    value: 'https://www.youtube.com/playlist?list=PLt3HR7cu4NMNUoQx1q5ullRMW-ZwosuNl'
+                    value: 'https://www.youtube.com/playlist?list=PLt3HR7cu4NMNUoQx1q5ullRMW-ZwosuNl',
                 },
                 {
                     name: 'undertale',
-                    value: 'https://www.youtube.com/playlist?list=PLLSgIflCqVYMBjn63DEn0b6-sqKZ9xh_x'
+                    value: 'https://www.youtube.com/playlist?list=PLLSgIflCqVYMBjn63DEn0b6-sqKZ9xh_x',
                 },
                 {
                     name: 'fun',
-                    value: 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY77NZ6oE4PbkFarsOIyQcGD'
-                }
-            ]
+                    value: 'https://www.youtube.com/playlist?list=PLE7yRMVm1hY77NZ6oE4PbkFarsOIyQcGD',
+                },
+            ],
         },
         {
             name: 'position',
             description: 'Where in the queue to put the song (defaults to the end)',
             type: 'INTEGER',
             minValue: 1,
-            required: false
-        }
-    ]
+            required: false,
+        },
+    ],
 }, execute: featured, ephemeral: true }

@@ -30,13 +30,13 @@ export const command: Command = { data: {
             name: 'url',
             description: 'The url of the video you want to download',
             type: 'STRING',
-            required: true
+            required: true,
         },
         {
             name: 'dev',
             description: 'Download the opus encoded webm file for this song',
             type: 'BOOLEAN',
-            required: false
-        }
-    ]
+            required: false,
+        },
+    ],
 }, execute: download }
