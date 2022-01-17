@@ -30,7 +30,7 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
         { type: 'BUTTON', customId: 'queue-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: page === queueArray.length - 1 },
     ], type: 'ACTION_ROW' } ] }
     await (!button ? interaction.editReply(options) : button.update(options))
-    const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
+    const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName)
     const collector = interaction.channel.createMessageComponentCollector({ filter: filter, time: 60_000 })
     collector.once('collect', b => {
         if (!b.isButton()) return
@@ -55,4 +55,4 @@ async function queue(interaction: CommandInteraction, info: GuildInfo, queueArra
 export const command: Command = { data: {
     name: 'queue',
     description: 'Get the song queue',
-}, execute: queue, ephemeral: true }
+}, execute: queue, guildOnly: true, ephemeral: true }

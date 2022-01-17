@@ -72,4 +72,4 @@ export const command: Command = { data: {
             required: false,
         },
     ],
-}, execute: play, autocomplete: search }
+}, execute: play, autocomplete: search, guildOnly: true }

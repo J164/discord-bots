@@ -30,4 +30,4 @@ export const command: Command = { data: {
             required: false,
         },
     ],
-}, execute: getSongs }
+}, execute: getSongs, guildOnly: true }

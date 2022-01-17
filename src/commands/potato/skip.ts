@@ -12,4 +12,4 @@ function skip(interaction: CommandInteraction, info: GuildInfo): InteractionRepl
 export const command: Command = { data: {
     name: 'skip',
     description: 'Skip the current song',
-}, execute: skip }
+}, execute: skip, guildOnly: true }

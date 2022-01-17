@@ -12,4 +12,4 @@ function pause(interaction: CommandInteraction, info: GuildInfo): InteractionRep
 export const command: Command = { data: {
     name: 'pause',
     description: 'Pause the song',
-}, execute: pause }
+}, execute: pause, guildOnly: true }

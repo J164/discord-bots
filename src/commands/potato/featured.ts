@@ -60,4 +60,4 @@ export const command: Command = { data: {
             required: false,
         },
     ],
-}, execute: featured, ephemeral: true }
+}, execute: featured, guildOnly: true, ephemeral: true }

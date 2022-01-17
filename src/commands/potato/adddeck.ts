@@ -5,7 +5,7 @@ import { Command, GuildInfo } from '../../core/utils/interfaces.js'
 import process from 'node:process'
 
 async function addDeck(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
-    if (interaction.member.user.id !== process.env.ADMIN && interaction.member.user.id !== process.env.SWEAR && interaction.member.user.id !== process.env.MAGIC) {
+    if (interaction.user.id !== process.env.ADMIN && interaction.user.id !== process.env.SWEAR && interaction.user.id !== process.env.MAGIC) {
         return { embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] }
     }
     const decks = <{ url: string }[]> <unknown> await info.database.select('mtg_decks')

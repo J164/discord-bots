@@ -52,4 +52,4 @@ export const command: Command = { data: {
             } ],
         },
     ],
-}, execute: skipto, autocomplete: suggestions }
+}, execute: skipto, autocomplete: suggestions, guildOnly: true }

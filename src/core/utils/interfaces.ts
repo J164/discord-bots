@@ -4,19 +4,20 @@ import { VoiceManager } from '../voice/voice-manager.js'
 import { CommandInteraction, InteractionReplyOptions, ApplicationCommandOptionChoice, ApplicationCommandData } from 'discord.js'
 import { BaseGame } from './base-game.js'
 
-export type GameType = 'EUCHRE' | 'MAGICGAME' | 'BLACKJACK'
+export type GameType = 'MAGICGAME'
 
 export interface GuildInfo {
     readonly database?: DatabaseManager
     readonly voiceManager?: VoiceManager
     readonly queueManager?: QueueManager
-    readonly games: Map<string, BaseGame>
+    readonly games?: Map<string, BaseGame>
 }
 
 export interface Command {
     readonly data: ApplicationCommandData
     readonly execute: (interaction: CommandInteraction, info: GuildInfo) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void
     readonly autocomplete?: (option: ApplicationCommandOptionChoice, info: GuildInfo) => Promise<ApplicationCommandOptionChoice[]> | ApplicationCommandOptionChoice[]
-    readonly gameCommand?: GameType
+    readonly gameCommand?: GameType,
+    readonly guildOnly?: boolean,
     readonly ephemeral?: boolean
 }

@@ -12,4 +12,4 @@ function resume(interaction: CommandInteraction, info: GuildInfo): InteractionRe
 export const command: Command = { data: {
     name: 'resume',
     description: 'Resume song playback',
-}, execute: resume }
+}, execute: resume, guildOnly: true }

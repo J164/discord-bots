@@ -53,7 +53,7 @@ async function getList(url: string): Promise<string> {
     return '\n' + decklistArray.join('\n')
 }
 
-async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls: { url: string }[], button?: ButtonInteraction, index = 0): Promise<void> {
+async function parseDeck(interaction: CommandInteraction, urls: { url: string }[], button?: ButtonInteraction, index = 0): Promise<void> {
     const url = urls[index].url
     const fields = url.split('/')
     const authorID = fields[4]
@@ -76,25 +76,25 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
         { type: 'BUTTON', customId: 'decks-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: index === urls.length - 1 },
     ], type: 'ACTION_ROW' } ] }
     await (!button ? interaction.editReply(options) : button.update(options))
-    const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
+    const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName)
     const collector = interaction.channel.createMessageComponentCollector({ filter: filter, time: 60_000 })
     collector.once('collect', async b => {
         if (!b.isButton()) return
         switch (b.customId) {
             case 'decks-doublearrowleft':
-                void parseDeck(interaction, info, urls, b)
+                void parseDeck(interaction, urls, b)
                 break
             case 'decks-arrowleft':
-                void parseDeck(interaction, info, urls, b, index - 1)
+                void parseDeck(interaction, urls, b, index - 1)
                 break
             case 'decks-list':
                 b.update({ content: await getList(apiUrl), embeds: [], components: [] }).catch(() => b.update({ embeds: [ generateEmbed('error', { title: 'There seems to be something wrong with the Deckstats API at the moment. Try again later' }) ], components: [] }))
                 break
             case 'decks-arrowright':
-                void parseDeck(interaction, info, urls, b, index + 1)
+                void parseDeck(interaction, urls, b, index + 1)
                 break
             case 'decks-doublearrowright':
-                void parseDeck(interaction, info, urls, b, urls.length - 1)
+                void parseDeck(interaction, urls, b, urls.length - 1)
                 break
         }
     })
@@ -102,7 +102,7 @@ async function parseDeck(interaction: CommandInteraction, info: GuildInfo, urls:
 }
 
 async function getDeck(interaction: CommandInteraction, info: GuildInfo): Promise<void> {
-    void parseDeck(interaction, info, <{ url: string }[]> <unknown> await info.database.select('mtg_decks'))
+    void parseDeck(interaction, <{ url: string }[]> <unknown> await info.database.select('mtg_decks'))
 }
 
 export const command: Command = { data: {

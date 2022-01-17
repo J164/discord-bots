@@ -4,6 +4,7 @@ import { InteractionManager } from '../core/interaction-manager.js'
 import process from 'node:process'
 import { setInterval } from 'node:timers'
 import { config } from 'dotenv'
+import { VoiceManager } from '../core/voice/voice-manager.js'
 
 config()
 
@@ -18,7 +19,7 @@ process.on('unhandledRejection', (error: Error) => {
     }
 })
 
-const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ] })
+const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ], partials: [ 'CHANNEL' ] })
 const interactionManager = new InteractionManager()
 //const yeetStreaks = new Map<Snowflake, { number: number, time: number }>()
 const yeetStatus = [ 'Yeeting the Child', 'YA YEEEEEEEEEET', 'Yeeting People off Cliffs', 'Yeeting Washing Machines' ]
@@ -67,11 +68,9 @@ client.on('messageCreate', message => {
 })
 
 client.on('interactionCreate', async interaction => {
-    if (!interaction.inGuild()) {
-        return
+    if (interaction.inGuild()) {
+        interactionManager.addGuild(interaction.guildId, { voiceManager: new VoiceManager() })
     }
-
-    interactionManager.addGuild(interaction.guildId)
 
     if (interaction.isAutocomplete()) {
         const response = await interactionManager.autocomplete(interaction)

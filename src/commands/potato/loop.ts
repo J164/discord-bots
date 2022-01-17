@@ -23,4 +23,4 @@ export const command: Command = { data: {
             type: 'SUB_COMMAND',
         },
     ],
-}, execute: loop }
+}, execute: loop, guildOnly: true }

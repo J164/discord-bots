@@ -8,4 +8,4 @@ function nowPlaying(interaction: CommandInteraction, info: GuildInfo): Interacti
 export const command: Command = { data: {
     name: 'np',
     description: 'Get information on the song currently playing',
-}, execute: nowPlaying }
+}, execute: nowPlaying, guildOnly: true }

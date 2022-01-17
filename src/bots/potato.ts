@@ -21,7 +21,7 @@ process.on('unhandledRejection', (error: Error) => {
     }
 })
 
-const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ] })
+const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ], partials: [ 'CHANNEL' ] })
 const interactionManager = new InteractionManager(new DatabaseManager())
 const potatoStatus = [ 'Eating a baked potato', 'Farming potatoes', 'Decorating with potatoes', 'Looking up potato recipes', 'Potato Platformer 3000' ]
 
@@ -58,11 +58,9 @@ client.once('ready', async () => {
 })
 
 client.on('interactionCreate', async interaction => {
-    if (!interaction.inGuild()) {
-        return
+    if (interaction.inGuild()) {
+        interactionManager.addGuild(interaction.guildId, { queueManager: new QueueManager() })
     }
-
-    interactionManager.addGuild(interaction.guildId, { queueManager: new QueueManager() })
 
     if (interaction.isAutocomplete()) {
         const response = await interactionManager.autocomplete(interaction)

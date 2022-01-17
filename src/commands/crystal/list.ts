@@ -27,7 +27,7 @@ async function list(interaction: CommandInteraction, info: GuildInfo, index = 0,
         { type: 'BUTTON', customId: 'list-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: index === (Math.ceil(songs.songs.length / 25) - 1) },
     ], type: 'ACTION_ROW' } ] }
     await (button ? button.update(replyOptions) : interaction.editReply(replyOptions))
-    const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
+    const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName)
     const collector = interaction.channel.createMessageComponentCollector({ filter: filter, time: 60_000 })
     collector.once('collect', b => {
         if (!b.isButton()) return

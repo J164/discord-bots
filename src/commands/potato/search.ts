@@ -96,7 +96,7 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results?
         { type: 'BUTTON', customId: 'search-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: page === results.length - 1 },
     ], type: 'ACTION_ROW' } ] }
     await (component ? component.update(options) : interaction.editReply(options))
-    const filter = (b: SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>) => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
+    const filter = (b: SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>) => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName)
     const collector = interaction.channel.createMessageComponentCollector({ filter: filter, time: 60_000 })
     collector.once('collect', async c => {
         if (c.isSelectMenu()) {

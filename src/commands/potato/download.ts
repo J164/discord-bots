@@ -6,7 +6,7 @@ import { exec } from 'node:child_process'
 import ytsr from 'ytsr'
 
 async function download(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
-    if (interaction.member.user.id !== process.env.ADMIN) {
+    if (interaction.user.id !== process.env.ADMIN) {
         return { embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] }
     }
     const filter = (await ytsr.getFilters(interaction.options.getString('url'))).get('Type').get('Video')

@@ -1,7 +1,26 @@
-import { CommandInteraction, InteractionReplyOptions, MessageEmbedOptions, SelectMenuInteraction } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions, MessageEmbedOptions, SelectMenuInteraction, User } from 'discord.js'
 import { MagicGame } from '../../core/modules/games/magic-game.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Command, GuildInfo } from '../../core/utils/interfaces.js'
+
+async function play(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+    const channel = await interaction.guild.channels.fetch(interaction.channelId)
+    if (!channel.isText()) {
+        return { embeds: [ generateEmbed('error', { title: 'Something went wrong!' }) ] }
+    }
+    const playerlist: User[] = []
+    for (let index = 1; index <= 4; index++) {
+        if (interaction.options.getUser(`player${index}`)) {
+            playerlist.push(interaction.options.getUser(`player${index}`))
+        } else {
+            break
+        }
+    }
+    const thread = await channel.threads.create({ name: interaction.options.getString('name') ?? 'Magic', autoArchiveDuration: 60 })
+    info.games.set(thread.id, new MagicGame(playerlist, thread, interaction.options.getNumber('life') ?? 20))
+    await thread.send({ embeds: [ (<MagicGame> info.games.get(thread.id)).printStandings() ] })
+    return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
+}
 
 async function damage(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
     const game = <MagicGame> info.games.get(interaction.channelId)
@@ -23,7 +42,7 @@ async function damage(interaction: CommandInteraction, info: GuildInfo): Promise
             })
         }
         await interaction.editReply({ embeds: [ generateEmbed('prompt', { title: 'Select the player dealing damage' }) ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'magic-options', placeholder: 'Select the player that delt damage', options: selectOptions } ], type: 'ACTION_ROW' } ] })
-        const filter = (b: SelectMenuInteraction<'cached'>) => b.user.id === interaction.member.user.id && b.customId.startsWith(interaction.commandName)
+        const filter = (b: SelectMenuInteraction<'cached'>) => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName)
         const collector = interaction.channel.createMessageComponentCollector({ filter: filter, time: 60_000 })
         collector.once('collect', c => {
             if (!c.isSelectMenu()) return
@@ -54,6 +73,9 @@ function standings(interaction: CommandInteraction, info: GuildInfo): Interactio
 
 async function magic(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
     switch(interaction.options.getSubcommand()) {
+        case 'play':
+            return play(interaction, info)
+            break
         case 'damage':
             return damage(interaction, info)
             break
@@ -73,6 +95,50 @@ export const command: Command = { data: {
     name: 'magic',
     description: 'Commands to interact with a Magic game',
     options: [
+        {
+            name: 'magic',
+            description: 'Start a game of Magic: The Gathering',
+            type: 'SUB_COMMAND',
+            options: [
+                {
+                    name: 'player1',
+                    description: 'Player 1',
+                    type: 'USER',
+                    required: true,
+                },
+                {
+                    name: 'player2',
+                    description: 'Player 2',
+                    type: 'USER',
+                    required: true,
+                },
+                {
+                    name: 'player3',
+                    description: 'Player 3',
+                    type: 'USER',
+                    required: false,
+                },
+                {
+                    name: 'player4',
+                    description: 'Player 4',
+                    type: 'USER',
+                    required: false,
+                },
+                {
+                    name: 'life',
+                    description: 'Starting life total',
+                    type: 'NUMBER',
+                    minValue: 1,
+                    required: false,
+                },
+                {
+                    name: 'name',
+                    description: 'Name of the game',
+                    type: 'STRING',
+                    required: false,
+                },
+            ],
+        },
         {
             name: 'standings',
             description: 'Display the standings for the current Magic game',
@@ -128,4 +194,4 @@ export const command: Command = { data: {
             ],
         },
     ],
-}, execute: magic, gameCommand: 'MAGICGAME' }
+}, execute: magic, guildOnly: true, gameCommand: 'MAGICGAME' }

@@ -20,7 +20,7 @@ process.on('unhandledRejection', (error: Error) => {
     }
 })
 
-const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ] })
+const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ], partials: [ 'CHANNEL' ] })
 const interactionManager = new InteractionManager(new DatabaseManager())
 const swearStatus = [ 'Reading the Swear Dictionary', 'Singing Swears', 'Arresting people who don\'t swear', 'Inventing new swears' ]
 
@@ -38,11 +38,9 @@ client.once('ready', async () => {
 })
 
 client.on('interactionCreate', async interaction => {
-    if (!interaction.inGuild()) {
-        return
+    if (interaction.inGuild()) {
+        interactionManager.addGuild(interaction.guildId, { voiceManager: new VoiceManager() })
     }
-
-    interactionManager.addGuild(interaction.guildId, { voiceManager: new VoiceManager() })
 
     if (interaction.isAutocomplete()) {
         const response = await interactionManager.autocomplete(interaction)

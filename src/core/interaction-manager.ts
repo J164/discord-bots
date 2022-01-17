@@ -45,12 +45,19 @@ export class InteractionManager {
 
         await interaction.deferReply({ ephemeral: command.ephemeral })
 
-        if (command.gameCommand && (this._info.get(interaction.guildId).games.get(interaction.channelId)?.type !== command.gameCommand || this._info.get(interaction.guildId).games.get(interaction.channelId)?.over)) {
-            return { embeds: [ generateEmbed('error', { title: `Please only use this command in ${command.gameCommand} threads!` }) ] }
-        }
-
         if (this._database?.offline) {
             await this._database.connect()
+        }
+
+        if (!interaction.inGuild()) {
+            if (command.guildOnly) {
+                return { embeds: [ generateEmbed('error', { title: 'Please only use this command in servers!' }) ] }
+            }
+            return command.execute(interaction, { database: this._database })
+        }
+
+        if (command.gameCommand && (this._info.get(interaction.guildId).games.get(interaction.channelId)?.type !== command.gameCommand || this._info.get(interaction.guildId).games.get(interaction.channelId)?.over)) {
+            return { embeds: [ generateEmbed('error', { title: `Please only use this command in ${command.gameCommand} threads!` }) ] }
         }
 
         return command.execute(interaction, this._info.get(interaction.guildId))
@@ -63,7 +70,11 @@ export class InteractionManager {
     }
 
     public async autocomplete(interaction: AutocompleteInteraction): Promise<ApplicationCommandOptionChoice[]> {
-        return await this._commands.get(interaction.commandName)?.autocomplete(interaction.options.getFocused(true), this._info.get(interaction.guildId)) ?? []
+        const command = this._commands.get(interaction.commandName)
+        if (!interaction.inGuild() && command.guildOnly) {
+            return []
+        }
+        return (await command.autocomplete(interaction.options.getFocused(true), this._info.get(interaction.guildId))) ?? []
     }
 
     public statusCheck(): void {

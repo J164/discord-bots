@@ -32,4 +32,4 @@ export const command: Command = { data: {
             required: false,
         },
     ],
-}, execute: nick }
+}, execute: nick, guildOnly: true }

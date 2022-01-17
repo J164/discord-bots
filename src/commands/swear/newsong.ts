@@ -6,7 +6,7 @@ import { exec } from 'node:child_process'
 import ytsr from 'ytsr'
 
 async function newSong(interaction: CommandInteraction, info: GuildInfo): Promise<void> {
-    if (interaction.member.user.id !== process.env.ADMIN && interaction.member.user.id !== process.env.SWEAR) {
+    if (interaction.user.id !== process.env.ADMIN && interaction.user.id !== process.env.SWEAR) {
         void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] })
         return
     }

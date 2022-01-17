@@ -12,4 +12,4 @@ async function shuffle(interaction: CommandInteraction, info: GuildInfo): Promis
 export const command: Command = { data: {
     name: 'shuffle',
     description: 'Shuffles the song queue',
-}, execute: shuffle }
+}, execute: shuffle, guildOnly: true }
