@@ -2,17 +2,24 @@ import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import process from 'node:process'
 import { exec } from 'node:child_process'
-import ytsr from 'ytsr'
+import { request } from 'undici'
 import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 
 async function download(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     if (interaction.user.id !== process.env.ADMIN) {
         return { embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] }
     }
-    const filter = (await ytsr.getFilters(interaction.options.getString('url'))).get('Type').get('Video')
-    const result = <ytsr.Video> (await ytsr(filter.url, { limit: 1 })).items[0]
+    let check: number
+    try {
+        check = (await request(interaction.options.getString('url'))).statusCode
+    } catch {
+        check = 0
+    }
+    if (check !== 200) {
+        return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
+    }
     void interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
-    exec(`"./assets/binaries/yt-dlp" "${result.url}" --output "${process.env.DATA}/new_downloads/%(title)s.%(ext)s" --quiet --format "${ interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best'}" --limit-rate "1M"`,
+    exec(`"./assets/binaries/yt-dlp" "${interaction.options.getString('url')}" --output "${process.env.DATA}/new_downloads/%(title)s.%(ext)s" --quiet --format "${ interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best'}" --limit-rate "1M"`,
         error => {
             if (error) {
                 void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] })
