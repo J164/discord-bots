@@ -18,12 +18,16 @@ async function newSong(interaction: CommandInteraction, info: BotInfo): Promise<
         check = 0
     }
     if (check !== 200) {
-        return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
+        void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] })
+        return
     }
     void interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
     const songs = <{ index: number, name: string }[]> <unknown> await info.database.select('swear_songs')
     exec(`"./assets/binaries/yt-dlp" "${interaction.options.getString('url')}" --output "${process.env.DATA}/music_files/swear_songs/song${songs.length + 1}.%(ext)s" --quiet --format "bestaudio[ext=webm][acodec=opus]/bestaudio" --limit-rate "1M"`, async (error) => {
-        if (error) return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
+        if (error) {
+            void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] })
+            return
+        }
         await info.database.insert('swear_songs', { index: songs.length + 1, name: `song${songs.length + 1}` })
         void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Success!' }) ] })
     })

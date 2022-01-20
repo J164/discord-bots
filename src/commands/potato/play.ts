@@ -95,7 +95,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         try {
             check = (await request(url)).statusCode
         } catch {
-            code = 0
+            check = 0
         }
         if (check !== 200) {
             return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
