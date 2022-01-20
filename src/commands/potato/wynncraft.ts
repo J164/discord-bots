@@ -1,7 +1,7 @@
 import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { request } from 'undici'
+import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Command } from '../../core/utils/interfaces.js'
 
 interface WynncraftData {
     readonly data: readonly {
@@ -43,7 +43,7 @@ async function wynncraft(interaction: CommandInteraction): Promise<InteractionRe
     return { embeds: [ embed ] }
 }
 
-export const command: Command = { data: {
+export const command = new ChatCommand({
     name: 'wynncraft',
     description: 'Get stats for a player on Wynncraft',
     options: [ {
@@ -52,4 +52,4 @@ export const command: Command = { data: {
         type: 'STRING',
         required: true,
     } ],
-}, execute: wynncraft }
+}, { respond: wynncraft })

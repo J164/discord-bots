@@ -1,7 +1,8 @@
 import { ButtonInteraction, CommandInteraction, InteractionUpdateOptions, MessageEmbedOptions } from 'discord.js'
 import { readFileSync } from 'node:fs'
+import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Command, GuildInfo } from '../../core/utils/interfaces.js'
+import { BotInfo } from '../../core/utils/interfaces.js'
 
 function songEmbed(songs: string[], index: number): MessageEmbedOptions {
     const embed = generateEmbed('info', {
@@ -18,7 +19,7 @@ function songEmbed(songs: string[], index: number): MessageEmbedOptions {
     return embed
 }
 
-async function list(interaction: CommandInteraction, info: GuildInfo, index = 0, button?: ButtonInteraction): Promise<void> {
+async function list(interaction: CommandInteraction, info: BotInfo, index = 0, button?: ButtonInteraction): Promise<void> {
     const songs = <{ songs: string[] }> JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' }))
     const replyOptions: InteractionUpdateOptions = { embeds: [ songEmbed(songs.songs, index) ], components: [ { components: [
         { type: 'BUTTON', customId: 'list-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY', disabled: index === 0 },
@@ -49,7 +50,7 @@ async function list(interaction: CommandInteraction, info: GuildInfo, index = 0,
     collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
 }
 
-export const command: Command = { data: {
+export const command = new ChatCommand({
     name: 'list',
     description: 'List all of the Naruto songs',
-}, execute: list, ephemeral: true }
+}, { respond: list, ephemeral: true })

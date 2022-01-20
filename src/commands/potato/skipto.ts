@@ -1,9 +1,10 @@
 import { ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import Fuse from 'fuse.js'
+import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Command, GuildInfo } from '../../core/utils/interfaces.js'
+import { Info } from '../../core/utils/interfaces.js'
 
-async function skipto(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+async function skipto(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
     if (info.queueManager.queue.length < 2) {
         return { embeds: [ generateEmbed('error', { title: 'The queue is too small to skip to a specific song!' }) ] }
     }
@@ -11,7 +12,7 @@ async function skipto(interaction: CommandInteraction, info: GuildInfo): Promise
     return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
-function suggestions(option: ApplicationCommandOptionChoice, info: GuildInfo): ApplicationCommandOptionChoice[] {
+function suggestions(option: ApplicationCommandOptionChoice, info: Info): ApplicationCommandOptionChoice[] {
     const results = new Fuse(info.queueManager.queue, { keys: [ 'title' ] }).search(<string> option.value)
     const options: ApplicationCommandOptionChoice[] = []
     for (const result of results) {
@@ -23,7 +24,7 @@ function suggestions(option: ApplicationCommandOptionChoice, info: GuildInfo): A
     return options
 }
 
-export const command: Command = { data: {
+export const command = new GuildChatCommand({
     name: 'skipto',
     description: 'Pulls the selected song to the top of the queue and skips the current song',
     options: [
@@ -52,4 +53,4 @@ export const command: Command = { data: {
             } ],
         },
     ],
-}, execute: skipto, autocomplete: suggestions, guildOnly: true }
+}, { respond: skipto, autocomplete: suggestions })

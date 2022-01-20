@@ -4,8 +4,6 @@ import { CardCode } from './deck.js'
 import canvas from 'canvas'
 import { readFileSync } from 'node:fs'
 
-type CardResolvable = { code: CardCode | 'back' }
-
 //todo image overlapping for large numbers of cards
 
 async function mergeImages(filePaths: string[]): Promise<Buffer> {
@@ -18,7 +16,7 @@ async function mergeImages(filePaths: string[]): Promise<Buffer> {
     return activeCanvas.toBuffer()
 }
 
-export async function multicardMessage(cards: CardResolvable[], embedType: 'info' | 'prompt', embedOptions: MessageEmbedOptions, fileName: string): Promise<{ embed: MessageEmbedOptions, file: FileOptions }> {
+export async function multicardMessage(cards: { code: CardCode | 'back' }[], embedType: 'info' | 'prompt', embedOptions: MessageEmbedOptions, fileName: string): Promise<{ embed: MessageEmbedOptions, file: FileOptions }> {
     const hand = generateEmbed(embedType, { ...embedOptions, image: { url: `attachment://${fileName}.jpg` } })
     if (cards.length === 1) {
         return { embed: hand, file: { attachment: readFileSync(`./assets/img/cards/${cards[0].code}.png`), name: `${fileName}.jpg` } }

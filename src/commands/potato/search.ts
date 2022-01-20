@@ -1,8 +1,9 @@
 import canvas from 'canvas'
 import { ButtonInteraction, CommandInteraction, InteractionReplyOptions, InteractionUpdateOptions, SelectMenuInteraction } from 'discord.js'
 import { request } from 'undici'
+import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Command, GuildInfo } from '../../core/utils/interfaces.js'
+import { BotInfo } from '../../core/utils/interfaces.js'
 
 interface MagicCard {
     readonly name: string,
@@ -57,7 +58,7 @@ async function generateResponse(results: MagicCard[][], r: number, index: number
     return { embeds: [ generateEmbed('info', { title: card.name, footer: { text: `Price ($): ${card.prices.usd}` ?? 'unknown (not for sale)' }, image: { url: card.image_uris.large } }) ], components: [] }
 }
 
-async function search(interaction: CommandInteraction, info: GuildInfo, results?: MagicCard[][], component?: ButtonInteraction | SelectMenuInteraction, page = 0): Promise<InteractionReplyOptions> {
+async function search(interaction: CommandInteraction, info: BotInfo, results?: MagicCard[][], component?: ButtonInteraction | SelectMenuInteraction, page = 0): Promise<InteractionReplyOptions> {
     if (!results) {
         const searchTerm = interaction.options.getString('query')
         try {
@@ -122,7 +123,7 @@ async function search(interaction: CommandInteraction, info: GuildInfo, results?
     collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
 }
 
-export const command: Command = { data: {
+export const command = new ChatCommand({
     name: 'search',
     description: 'Search for Magic cards',
     options: [ {
@@ -131,4 +132,4 @@ export const command: Command = { data: {
         type: 'STRING',
         required: true,
     } ],
-}, execute: search, ephemeral: true }
+}, { respond: search, ephemeral: true })

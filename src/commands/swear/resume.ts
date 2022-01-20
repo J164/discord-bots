@@ -1,15 +1,16 @@
 import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Command, GuildInfo } from '../../core/utils/interfaces.js'
+import { Info } from '../../core/utils/interfaces.js'
 
-function resume(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
+function resume(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
     if (info.voiceManager.resume()) {
         return { embeds: [ generateEmbed('success', { title: 'Resumed!' }) ] }
     }
     return { embeds: [ generateEmbed('error', { title: 'Nothing is playing!' }) ] }
 }
 
-export const command: Command = { data: {
+export const command = new GuildChatCommand({
     name: 'resume',
     description: 'Resume the song',
-}, execute: resume, guildOnly: true }
+}, { respond: resume })

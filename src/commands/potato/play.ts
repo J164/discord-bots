@@ -1,11 +1,13 @@
 import { ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions, VoiceChannel } from 'discord.js'
-import { Command, GuildInfo } from '../../core/utils/interfaces.js'
+import { GuildInfo } from '../../core/utils/interfaces.js'
 import ytsr from 'ytsr'
 import { generateEmbed } from '../../core/utils/generators.js'
 import ytpl from 'ytpl'
 import { QueueItem } from '../../core/voice/queue-manager.js'
 import { request } from 'undici'
 import process from 'node:process'
+import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
+import { ExecException, exec } from 'node:child_process'
 
 interface SpotifyResponse {
     readonly name: string
@@ -88,22 +90,45 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         return { embeds: [ generateEmbed('success', { title: `Added playlist "${results.title}" to queue!`, image: { url: results.bestThumbnail.url } }) ] }
     }
 
-    if (!/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//.test(url)) {
-        const filter = (await ytsr.getFilters(url)).get('Type').get('Video')
-        const term = await ytsr(filter.url, {
-            limit: 1,
-        })
-        if (term.results < 1) {
-            return { embeds: [ generateEmbed('error', { title: `No results found for "${url}"` }) ] }
+    if (/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//.test(url)) {
+        let check: number
+        try {
+            check = (await request(url)).statusCode
+        } catch {
+            return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
         }
-        const result = (<ytsr.Video> term.items[0])
-        await info.queueManager.addToQueue([ { url: result.url, title: result.title, duration: result.duration, thumbnail: result.bestThumbnail.url } ], interaction.options.getInteger('position') - 1)
+        if (check !== 200) {
+            return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
+        }
+        const result = <{ readonly webpage_url: string, readonly title: string, readonly thumbnail: string, readonly duration: number }>JSON.parse(await new Promise((resolve: (value: string) => void, reject: (error: ExecException) => void) => {
+            exec(`"./assets/binaries/yt-dlp" "${url}" --print "{\\"webpage_url\\":\\"%(webpage_url)s\\",\\"title\\":\\"%(title)s\\",\\"thumbnail\\":\\"%(thumbnail)s\\",\\"duration\\":%(duration)s}"`, (error, stdout) => {
+                if (error) {
+                    reject(error)
+                    return
+                }
+                resolve(stdout)
+            })
+        }).catch(() => { return '{}' }))
+        if (!('webpage_url' in result)) {
+            return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
+        }
+        const hour = Math.floor(result.duration / 3600)
+        const min = Math.floor((result.duration % 3600) / 60)
+        const sec = (result.duration % 60)
+        await info.queueManager.addToQueue([ { url: result.webpage_url, title: result.title, duration: `${hour > 0 ? (hour < 10 ? `0${hour}:` : `${hour}:`) : ''}${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec}`, thumbnail: result.thumbnail } ], interaction.options.getInteger('position') - 1)
         await info.queueManager.connect(voiceChannel)
-        return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, image: { url: result.bestThumbnail.url } }) ] }
+        return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, image: { url: result.thumbnail } }) ] }
     }
 
-    const result = (<ytsr.Video> (await ytsr(url, { limit: 1 })).items[0])
-    await info.queueManager.addToQueue([ { url: result.url, title: result.title, thumbnail: result.bestThumbnail.url, duration: result.duration } ], interaction.options.getInteger('position') - 1)
+    const filter = (await ytsr.getFilters(url)).get('Type').get('Video')
+    const term = await ytsr(filter.url, {
+        limit: 1,
+    })
+    if (term.results < 1) {
+        return { embeds: [ generateEmbed('error', { title: `No results found for "${url}"` }) ] }
+    }
+    const result = (<ytsr.Video>term.items[0])
+    await info.queueManager.addToQueue([ { url: result.url, title: result.title, duration: result.duration, thumbnail: result.bestThumbnail.url } ], interaction.options.getInteger('position') - 1)
     await info.queueManager.connect(voiceChannel)
     return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, image: { url: result.bestThumbnail.url } }) ] }
 }
@@ -121,7 +146,7 @@ async function search(option: ApplicationCommandOptionChoice): Promise<Applicati
     return options
 }
 
-export const command: Command = { data: {
+export const command = new GuildChatCommand({
     name: 'play',
     description: 'Play a song',
     options: [
@@ -140,4 +165,4 @@ export const command: Command = { data: {
             required: false,
         },
     ],
-}, execute: play, autocomplete: search, guildOnly: true, ephemeral: true }
+}, { respond: play, autocomplete: search, ephemeral: true })

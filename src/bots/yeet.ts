@@ -82,7 +82,7 @@ client.on('interactionCreate', async interaction => {
         return
     }
 
-    const response = await interactionManager.parseCommand(interaction)
+    const response = await interactionManager.parseChatCommand(interaction)
     if (response) {
         void interaction.editReply(response)
     }

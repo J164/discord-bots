@@ -1,7 +1,7 @@
 import { CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
 import { playEuchre } from '../../core/modules/games/euchre.js'
+import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Command } from '../../core/utils/interfaces.js'
 
 async function euchre(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     //todo test
@@ -19,7 +19,7 @@ async function euchre(interaction: CommandInteraction): Promise<InteractionReply
     return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
-export const command: Command = { data: {
+export const command = new GuildChatCommand({
     name: 'euchre',
     description: 'Play Euchre',
     options: [
@@ -54,4 +54,4 @@ export const command: Command = { data: {
             required: false,
         },
     ],
-}, execute: euchre, guildOnly: true}
+}, { respond: euchre })

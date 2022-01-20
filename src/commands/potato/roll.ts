@@ -1,6 +1,6 @@
 import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Command } from '../../core/utils/interfaces.js'
 
 async function roll(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     const dice = interaction.options.getInteger('sides') ? interaction.options.getInteger('sides') : 6
@@ -14,7 +14,7 @@ async function roll(interaction: CommandInteraction): Promise<InteractionReplyOp
     return { embeds: [ diceResult ] }
 }
 
-export const command: Command = { data: {
+export const command = new ChatCommand({
     name: 'roll',
     description: 'Roll a die',
     options: [ {
@@ -24,4 +24,4 @@ export const command: Command = { data: {
         minValue: 2,
         required: false,
     } ],
-}, execute: roll }
+}, { respond: roll })

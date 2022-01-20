@@ -1,5 +1,5 @@
 import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { Command } from '../../core/utils/interfaces.js'
+import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 
 function yeet(interaction: CommandInteraction): InteractionReplyOptions {
     if (!interaction.options.getInteger('power')) {
@@ -12,7 +12,7 @@ function yeet(interaction: CommandInteraction): InteractionReplyOptions {
     return { content: `Y${middle}T!` }
 }
 
-export const command: Command = { data: {
+export const command = new ChatCommand({
     name: 'yeet',
     description: 'Ask Yeet Bot to yell YEET!',
     options: [ {
@@ -23,4 +23,4 @@ export const command: Command = { data: {
         maxValue: 1995,
         required: false,
     } ],
-}, execute: yeet }
+}, { respond: yeet })

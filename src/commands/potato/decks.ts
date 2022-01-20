@@ -1,7 +1,8 @@
 import { ButtonInteraction, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { Command, GuildInfo } from '../../core/utils/interfaces.js'
+import { BotInfo } from '../../core/utils/interfaces.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { request } from 'undici'
+import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 
 interface MagicCard {
     readonly name: string,
@@ -101,11 +102,11 @@ async function parseDeck(interaction: CommandInteraction, urls: { url: string }[
     collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
 }
 
-async function getDeck(interaction: CommandInteraction, info: GuildInfo): Promise<void> {
+async function getDeck(interaction: CommandInteraction, info: BotInfo): Promise<void> {
     void parseDeck(interaction, <{ url: string }[]> <unknown> await info.database.select('mtg_decks'))
 }
 
-export const command: Command = { data: {
+export const command = new ChatCommand({
     name: 'decks',
     description: 'Get a deck from Potato\'s database',
-}, execute: getDeck, ephemeral: true }
+}, { respond: getDeck, ephemeral: true })

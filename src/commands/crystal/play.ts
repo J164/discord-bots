@@ -3,10 +3,11 @@ import { ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOpt
 import { createReadStream, readFileSync } from 'node:fs'
 import Fuse from 'fuse.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Command, GuildInfo } from '../../core/utils/interfaces.js'
+import { Info } from '../../core/utils/interfaces.js'
 import process from 'node:process'
+import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
 
-async function play(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+async function play(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
     const member = await interaction.guild.members.fetch(interaction.user)
     const voiceChannel = member.voice.channel
     if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
@@ -54,7 +55,7 @@ function search(option: ApplicationCommandOptionChoice): ApplicationCommandOptio
     return options
 }
 
-export const command: Command = { data: {
+export const command = new GuildChatCommand({
     name: 'play',
     description: 'Play a song from the Naruto OST',
     options: [
@@ -72,4 +73,4 @@ export const command: Command = { data: {
             required: false,
         },
     ],
-}, execute: play, autocomplete: search, guildOnly: true }
+}, { respond: play, autocomplete: search })

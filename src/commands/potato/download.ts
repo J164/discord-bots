@@ -1,9 +1,9 @@
 import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Command } from '../../core/utils/interfaces.js'
 import process from 'node:process'
 import { exec } from 'node:child_process'
 import ytsr from 'ytsr'
+import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 
 async function download(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     if (interaction.user.id !== process.env.ADMIN) {
@@ -22,7 +22,7 @@ async function download(interaction: CommandInteraction): Promise<InteractionRep
         })
 }
 
-export const command: Command = { data: {
+export const command = new ChatCommand({
     name: 'download',
     description: 'Download a video off of Youtube',
     options: [
@@ -39,4 +39,4 @@ export const command: Command = { data: {
             required: false,
         },
     ],
-}, execute: download }
+}, { respond: download })

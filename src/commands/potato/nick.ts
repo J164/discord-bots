@@ -1,6 +1,6 @@
 import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Command } from '../../core/utils/interfaces.js'
 
 async function nick(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     const member = await interaction.guild.members.fetch(interaction.options.getUser('member'))
@@ -15,7 +15,7 @@ async function nick(interaction: CommandInteraction): Promise<InteractionReplyOp
     return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
-export const command: Command = { data: {
+export const command = new GuildChatCommand({
     name: 'nick',
     description: 'Change the nickname of a server member',
     options: [
@@ -32,4 +32,4 @@ export const command: Command = { data: {
             required: false,
         },
     ],
-}, execute: nick, guildOnly: true }
+}, { respond: nick })

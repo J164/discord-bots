@@ -1,11 +1,12 @@
 import { CommandInteraction } from 'discord.js'
-import { Command, GuildInfo } from '../../core/utils/interfaces.js'
+import { BotInfo } from '../../core/utils/interfaces.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import process from 'node:process'
 import { exec } from 'node:child_process'
 import ytsr from 'ytsr'
+import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 
-async function newSong(interaction: CommandInteraction, info: GuildInfo): Promise<void> {
+async function newSong(interaction: CommandInteraction, info: BotInfo): Promise<void> {
     if (interaction.user.id !== process.env.ADMIN && interaction.user.id !== process.env.SWEAR) {
         void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] })
         return
@@ -21,7 +22,7 @@ async function newSong(interaction: CommandInteraction, info: GuildInfo): Promis
     })
 }
 
-export const command: Command = { data: {
+export const command = new ChatCommand({
     name: 'newsong',
     description: 'Add a new song to Swear Bot\'s library',
     options: [
@@ -32,4 +33,4 @@ export const command: Command = { data: {
             required: true,
         },
     ],
-}, execute: newSong }
+}, { respond: newSong })

@@ -23,7 +23,7 @@ module.exports = {
 		"unicorn"
     ],
     rules: {
-		"complexity": ["warn", 15],
+		"complexity": ["warn", 20],
 		"eqeqeq": "error",
 		"no-invalid-this": "error",
 		"no-restricted-globals": [ "error", "process", "setTimeout", "setInterval" ],

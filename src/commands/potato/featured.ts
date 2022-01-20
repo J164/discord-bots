@@ -1,10 +1,11 @@
 import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Command, GuildInfo } from '../../core/utils/interfaces.js'
+import { Info } from '../../core/utils/interfaces.js'
 import { QueueItem } from '../../core/voice/queue-manager.js'
 import ytpl from 'ytpl'
+import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
 
-async function featured(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+async function featured(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
     const member = await interaction.guild.members.fetch(interaction.user)
     const voiceChannel = member.voice.channel
     if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
@@ -24,7 +25,7 @@ async function featured(interaction: CommandInteraction, info: GuildInfo): Promi
     return { embeds: [ generateEmbed('success', { title: `Added playlist "${results.title}" to queue!`, image: { url: results.bestThumbnail.url } }) ] }
 }
 
-export const command: Command = { data: {
+export const command = new GuildChatCommand({
     name: 'featured',
     description: 'Play a song from the list of featured playlists',
     options: [
@@ -60,4 +61,4 @@ export const command: Command = { data: {
             required: false,
         },
     ],
-}, execute: featured, guildOnly: true, ephemeral: true }
+}, { respond: featured, ephemeral: true })

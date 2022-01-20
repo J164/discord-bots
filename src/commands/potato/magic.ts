@@ -1,9 +1,10 @@
 import { CommandInteraction, InteractionReplyOptions, MessageEmbedOptions, SelectMenuInteraction, User } from 'discord.js'
 import { MagicGame } from '../../core/modules/games/magic-game.js'
+import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Command, GuildInfo } from '../../core/utils/interfaces.js'
+import { Info } from '../../core/utils/interfaces.js'
 
-async function play(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+async function play(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
     const channel = await interaction.guild.channels.fetch(interaction.channelId)
     if (!channel.isText()) {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong!' }) ] }
@@ -22,7 +23,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
-async function damage(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+async function damage(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
     const game = <MagicGame> info.games.get(interaction.channelId)
     if (!game.userInGame(interaction.options.getUser('player').id)) {
         return { embeds: [ generateEmbed('error', { title: 'That user is not part of this game!' }) ] }
@@ -54,7 +55,7 @@ async function damage(interaction: CommandInteraction, info: GuildInfo): Promise
     return { embeds: [ stats ] }
 }
 
-function eliminate(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
+function eliminate(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
     const game = <MagicGame> info.games.get(interaction.channelId)
     if (!game.userInGame(interaction.options.getUser('player').id)) {
         return { embeds: [ generateEmbed('error', { title: 'That user is not part of this game!' }) ] }
@@ -62,16 +63,16 @@ function eliminate(interaction: CommandInteraction, info: GuildInfo): Interactio
     return { embeds: [ game.eliminate(interaction.options.getUser('player').id) ] }
 }
 
-function end(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
+function end(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
     return { embeds: [ (<MagicGame> info.games.get(interaction.channelId)).finishGame() ] }
 }
 
-function standings(interaction: CommandInteraction, info: GuildInfo): InteractionReplyOptions {
+function standings(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
     const game = <MagicGame> info.games.get(interaction.channelId)
     return { embeds: [ game.printStandings() ] }
 }
 
-async function magic(interaction: CommandInteraction, info: GuildInfo): Promise<InteractionReplyOptions> {
+async function magic(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
     switch(interaction.options.getSubcommand()) {
         case 'play':
             return play(interaction, info)
@@ -91,7 +92,7 @@ async function magic(interaction: CommandInteraction, info: GuildInfo): Promise<
     }
 }
 
-export const command: Command = { data: {
+export const command = new GuildChatCommand({
     name: 'magic',
     description: 'Commands to interact with a Magic game',
     options: [
@@ -194,4 +195,4 @@ export const command: Command = { data: {
             ],
         },
     ],
-}, execute: magic, guildOnly: true, gameCommand: 'MAGICGAME' }
+}, { respond: magic, gameCommand: 'MAGICGAME' })

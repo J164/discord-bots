@@ -1,23 +1,18 @@
 import { DatabaseManager } from '../database-manager.js'
 import { QueueManager } from '../voice/queue-manager.js'
 import { VoiceManager } from '../voice/voice-manager.js'
-import { CommandInteraction, InteractionReplyOptions, ApplicationCommandOptionChoice, ApplicationCommandData } from 'discord.js'
 import { BaseGame } from './base-game.js'
 
 export type GameType = 'MAGICGAME'
 
-export interface GuildInfo {
-    readonly database?: DatabaseManager
-    readonly voiceManager?: VoiceManager
-    readonly queueManager?: QueueManager
-    readonly games?: Map<string, BaseGame>
+export type Info = BotInfo & GuildInfo
+
+export interface BotInfo {
+    readonly database: DatabaseManager
 }
 
-export interface Command {
-    readonly data: ApplicationCommandData
-    readonly execute: (interaction: CommandInteraction, info: GuildInfo) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void
-    readonly autocomplete?: (option: ApplicationCommandOptionChoice, info: GuildInfo) => Promise<ApplicationCommandOptionChoice[]> | ApplicationCommandOptionChoice[]
-    readonly gameCommand?: GameType,
-    readonly guildOnly?: boolean,
-    readonly ephemeral?: boolean
+export interface GuildInfo {
+    readonly voiceManager: VoiceManager
+    readonly queueManager: QueueManager
+    readonly games: Map<string, BaseGame>
 }
