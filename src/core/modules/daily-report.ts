@@ -164,7 +164,7 @@ export async function getDailyReport(date: Date): Promise<MessageOptions> {
     // todo meme of day
     const holiday = <Holidays[]> await (await request(`https://holidays.abstractapi.com/v1/?api_key=${process.env.ABSTRACTKEY}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)).body.json()
     const weather = <WeatherResponse> await (await request(`http://api.weatherapi.com/v1/current.json?key=${process.env.WEATHERKEY}&q=60069`)).body.json()
-    const quote = <QuoteResponse> await (await request(`http://quotes.rest/qod.json?category=inspire`)).body.json()
+    const quote = <QuoteResponse> await (await request('https://zenquotes.io?api=today')).body.json()
     const stringDate = getStringDate(date)
     const weatherEmoji = getWeatherEmoji(weather.current.condition.code)
     const response = { embeds: [ generateEmbed('info', {
