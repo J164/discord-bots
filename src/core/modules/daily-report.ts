@@ -3,16 +3,12 @@ import { request } from 'undici'
 import { generateEmbed } from '../utils/generators.js'
 import process from 'node:process'
 
-interface QuoteResponse {
-    readonly contents: {
-        readonly quotes: readonly {
-            readonly quote: string,
-            readonly author: string
-        }[]
-    }
+interface Quote {
+    readonly q: string,
+    readonly a: string
 }
 
-interface Holidays {
+interface Holiday {
     readonly name: string,
     readonly description: string
 }
@@ -162,9 +158,9 @@ function getWeatherEmoji(weatherCode: number): string {
 
 export async function getDailyReport(date: Date): Promise<MessageOptions> {
     // todo meme of day
-    const holiday = <Holidays[]> await (await request(`https://holidays.abstractapi.com/v1/?api_key=${process.env.ABSTRACTKEY}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)).body.json()
-    const weather = <WeatherResponse> await (await request(`http://api.weatherapi.com/v1/current.json?key=${process.env.WEATHERKEY}&q=60069`)).body.json()
-    const quote = <QuoteResponse> await (await request('https://zenquotes.io?api=today')).body.json()
+    const holiday = await (await request(`https://holidays.abstractapi.com/v1/?api_key=${process.env.ABSTRACTKEY}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)).body.json() as Holiday[]
+    const weather = await (await request(`http://api.weatherapi.com/v1/current.json?key=${process.env.WEATHERKEY}&q=60069`)).body.json() as WeatherResponse
+    const quote = await (await request('https://zenquotes.io?api=today')).body.json() as Quote[]
     const stringDate = getStringDate(date)
     const weatherEmoji = getWeatherEmoji(weather.current.condition.code)
     const response = { embeds: [ generateEmbed('info', {
@@ -172,7 +168,7 @@ export async function getDailyReport(date: Date): Promise<MessageOptions> {
         fields: [
             {
                 name: `Quote of the Day:`,
-                value: `"${quote.contents.quotes[0].quote}" -${quote.contents.quotes[0].author}`,
+                value: `"${quote[0].q}" -${quote[0].a}`,
             },
             {
                 name: `In Linconshire is is ${weather.current.condition.text} and ${weather.current.temp_f}°F`,
