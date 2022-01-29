@@ -10,11 +10,11 @@ import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-comm
 async function play(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
     const member = await interaction.guild.members.fetch(interaction.user)
     const voiceChannel = member.voice.channel
-    if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
+    if (!voiceChannel?.joinable || voiceChannel.type !== 'GUILD_VOICE') {
         return { content: 'This command can only be used while in a visable voice channel!' }
     }
 
-    const songs = (<{ songs: string[] }> JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf-8' }))).songs
+    const songs = (JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf-8' })) as { songs: string[] }).songs
 
     let song: number
 
@@ -41,10 +41,10 @@ async function play(interaction: CommandInteraction, info: Info): Promise<Intera
 }
 
 function search(option: ApplicationCommandOptionChoice): ApplicationCommandOptionChoice[] {
-    if ((<string> option.value).length < 3) {
+    if ((option.value as string).length < 3) {
         return
     }
-    const results = new Fuse((<{ songs: string[] }> JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf-8' }))).songs).search(<string> option.value)
+    const results = new Fuse((JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf-8' })) as { songs: string[] }).songs).search(option.value as string)
     const options: ApplicationCommandOptionChoice[] = []
     for (const result of results) {
         if (options.length > 3) {

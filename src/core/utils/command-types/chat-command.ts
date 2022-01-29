@@ -8,27 +8,15 @@ type AutocompleteFunction = (option: ApplicationCommandOptionChoice, info: BotIn
 
 export class ChatCommand extends BaseCommand {
 
-    protected readonly _respond: ResponseFunction
-    protected readonly _autocomplete?: AutocompleteFunction
-    private readonly _ephemeral?: boolean
+    public readonly respond: ResponseFunction
+    public readonly autocomplete?: AutocompleteFunction
+    public readonly ephemeral?: boolean
 
     public constructor(data: ApplicationCommandData, options: { respond: ResponseFunction, autocomplete?: AutocompleteFunction, ephemeral?: boolean }) {
         super(data)
-        this._respond = options.respond
-        this._autocomplete = options.autocomplete
-        this._ephemeral = options.ephemeral
-    }
-
-    public get respond(): ResponseFunction {
-        return this._respond
-    }
-
-    public get autocomplete(): AutocompleteFunction {
-        return this._autocomplete
-    }
-
-    public get ephemeral(): boolean {
-        return this._ephemeral
+        this.respond = options.respond
+        this.autocomplete = options.autocomplete
+        this.ephemeral = options.ephemeral
     }
 
     public isSlashCommand(): this is ChatCommand {

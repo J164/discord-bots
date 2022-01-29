@@ -25,7 +25,7 @@ interface WynncraftData {
 }
 
 async function wynncraft(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
-    const playerData = <WynncraftData> await (await request(`https://api.wynncraft.com/v2/player/${interaction.options.getString('player')}/stats`)).body.json()
+    const playerData = await (await request(`https://api.wynncraft.com/v2/player/${interaction.options.getString('player')}/stats`)).body.json() as WynncraftData
     const embed = generateEmbed('info', {
         title: playerData.data[0].username,
         fields: [ {

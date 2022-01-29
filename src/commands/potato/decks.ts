@@ -36,7 +36,7 @@ interface DeckstatsResponse {
 }
 
 async function getList(url: string): Promise<string> {
-    const decklist = (<{ list: string }> await (await request(`${url}list`)).body.json()).list
+    const decklist = (await (await request(`${url}list`)).body.json() as { list: string }).list
     const decklistArray = decklist.split('\n')
     for (let index = 0; index < decklistArray.length; index++) {
         if (!decklistArray[index] || decklistArray[index].startsWith('//')) {
@@ -60,12 +60,12 @@ async function parseDeck(interaction: CommandInteraction, urls: { url: string }[
     const authorID = fields[4]
     const deckID = fields[5].split('-')[0]
     const apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`
-    const results = <DeckstatsResponse> await (await request(`${apiUrl}json`)).body.json()
+    const results = await (await request(`${apiUrl}json`)).body.json() as DeckstatsResponse
     let image: string
     for (const section of results.sections) {
         const commander = section.cards.findIndex(card => card.isCommander)
         if (commander !== -1) {
-            const cardInfo = <ScryfallResponse> await (await request(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(section.cards[commander].name)}`)).body.json()
+            const cardInfo = await (await request(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(section.cards[commander].name)}`)).body.json() as ScryfallResponse
             image = cardInfo.data[0].image_uris.large
         }
     }
@@ -103,7 +103,7 @@ async function parseDeck(interaction: CommandInteraction, urls: { url: string }[
 }
 
 async function getDeck(interaction: CommandInteraction, info: BotInfo): Promise<void> {
-    void parseDeck(interaction, <{ url: string }[]> <unknown> await info.database.select('mtg_decks'))
+    void parseDeck(interaction, await info.database.select('mtg_decks') as unknown as { url: string }[])
 }
 
 export const command = new ChatCommand({

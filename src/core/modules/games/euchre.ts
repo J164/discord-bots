@@ -181,7 +181,7 @@ async function round(gameInfo: GameInfo, leader: number, solo = false, table: st
     collector.once('collect', async interaction => {
         await interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
         table.push(interaction.values[0])
-        lead ??= <'H' | 'D' | 'S' | 'C'>interaction.values[0][1]
+        lead ??= interaction.values[0][1] as 'H' | 'D' | 'S' | 'C'
         gameInfo.players[index].hand.splice(gameInfo.players[index].hand.findIndex(c => c.code === interaction.values[0]), 1)
         if (index === 3) {
             return determineTrick(gameInfo, table, lead, leader, solo)

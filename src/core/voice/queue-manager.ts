@@ -3,8 +3,9 @@ import { VoiceManager } from './voice-manager.js'
 import { AudioPlayerStatus } from '@discordjs/voice'
 import { generateEmbed } from '../utils/generators.js'
 import { setTimeout } from 'node:timers/promises'
-import { Readable } from 'node:stream'
-import { ChildProcessByStdio, spawn } from 'node:child_process'
+import { createStream } from '../modules/ytdl.js'
+import { Readable, Writable } from 'node:stream'
+import { ChildProcessByStdio } from 'node:child_process'
 
 export interface QueueItem {
     readonly url: string
@@ -17,8 +18,8 @@ export interface QueueItem {
 export class QueueManager {
 
     private readonly _voiceManager: VoiceManager
+    private _script: ChildProcessByStdio<Writable, Readable, null>
     private _queue: QueueItem[]
-    private _stream: ChildProcessByStdio<null, Readable, null>
     private _nowPlaying: QueueItem
     private _queueLoop: boolean
     private _queueLock: boolean
@@ -30,10 +31,6 @@ export class QueueManager {
         this._queueLoop = false
         this._queueLock = false
         this._transitioning = false
-    }
-
-    public get voiceManager(): VoiceManager {
-        return this._voiceManager
     }
 
     public get nowPlaying(): InteractionReplyOptions {
@@ -110,12 +107,9 @@ export class QueueManager {
         this._nowPlaying = this._queue.shift()
         this._queueLock = false
 
-        await this._voiceManager.playStream(await new Promise((resolve: (value: Readable) => void) => {
-            this._stream = spawn('./assets/binaries/yt-dlp', [ this._nowPlaying.url, '--output', '-', '--quiet', '--format', 'bestaudio[ext=webm][acodec=opus]/bestaudio[ext=ogg][acodec=opus]/bestaudio', '--limit-rate', '160K' ], { stdio: [ 'ignore', 'pipe', 'ignore' ] })
-            this._stream.once('spawn', () => {
-                resolve(this._stream.stdout)
-            })
-        }))
+        const { stream, script } = await createStream({ url: this._nowPlaying.url, outtmpl: '-', quiet: true, format: 'bestaudio[ext=webm][acodec=opus]/bestaudio[ext=ogg][acodec=opus]/bestaudio', ratelimit: 160_000 })
+        this._script = script
+        await this._voiceManager.playStream(stream)
 
         this._transitioning = false
 
@@ -125,7 +119,7 @@ export class QueueManager {
             }
             this._voiceManager.player.removeAllListeners('stateChange')
 
-            this._stream.kill()
+            this._script.kill()
             this._transitioning = true
 
             if (this._queueLoop || this._nowPlaying.looping) {
@@ -200,6 +194,14 @@ export class QueueManager {
         return this._voiceManager.player?.stop()
     }
 
+    public pause(): boolean {
+        return this._voiceManager.pause()
+    }
+
+    public resume(): boolean {
+        return this._voiceManager.resume()
+    }
+
     public async shuffleQueue(): Promise<boolean> {
         if (this._queue.length === 0) {
             return false
@@ -256,8 +258,7 @@ export class QueueManager {
     public reset(): void {
         this._voiceManager.reset()
         this._queue = []
-        this._stream?.kill()
-        this._stream = undefined
+        this._script?.kill()
         this._nowPlaying = undefined
         this._queueLoop = false
         this._queueLock = false

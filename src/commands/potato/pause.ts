@@ -4,7 +4,7 @@ import { generateEmbed } from '../../core/utils/generators.js'
 import { Info } from '../../core/utils/interfaces.js'
 
 function pause(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
-    if (info.queueManager.voiceManager.pause()) {
+    if (info.queueManager.pause()) {
         return { embeds: [ generateEmbed('success', { title: 'Paused!' }) ] }
     }
     return { embeds: [ generateEmbed('error', { title: 'Nothing is playing' }) ] }

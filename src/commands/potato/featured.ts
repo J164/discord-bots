@@ -8,7 +8,7 @@ import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-comm
 async function featured(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
     const member = await interaction.guild.members.fetch(interaction.user)
     const voiceChannel = member.voice.channel
-    if (!voiceChannel?.joinable || voiceChannel.type === 'GUILD_STAGE_VOICE') {
+    if (!voiceChannel?.joinable || voiceChannel.type !== 'GUILD_VOICE') {
         return { embeds: [ generateEmbed('error', { title: 'This command can only be used while in a visable voice channel!' }) ] }
     }
     const results = await ytpl(interaction.options.getString('name')).catch((): false => {

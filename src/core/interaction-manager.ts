@@ -25,7 +25,7 @@ export class InteractionManager {
         const currentCommands = await client.application.commands.fetch()
         for (const [ , slash ] of currentCommands) {
             try {
-                const { command } = <{ command: BaseCommand }> await import(`../commands/${botName}/${slash.name}.js`)
+                const { command } = await import(`../commands/${botName}/${slash.name}.js`) as { command: BaseCommand }
                 this._commands.set(slash.name, command)
             } catch {
                 console.warn(`Registered command missing from ${botName}'s command files (${slash.name})`)
@@ -36,14 +36,14 @@ export class InteractionManager {
     public static async deployCommands(client: Client, botName: string): Promise<void> {
         const commandData: ApplicationCommandData[] = []
         for (const slash of readdirSync(`./dist/commands/${botName}`).filter(file => file.endsWith('.js'))) {
-            const { command } = <{ command: BaseCommand }> await import(`../commands/${botName}/${slash}`)
+            const { command } = await import(`../commands/${botName}/${slash}`) as { command: BaseCommand }
             commandData.push(command.data)
         }
         await client.application.commands.set(commandData)
     }
 
     public async parseChatCommand(interaction: CommandInteraction): Promise<InteractionReplyOptions | void> {
-        const command = <ChatCommand> this._commands.get(interaction.commandName)
+        const command = this._commands.get(interaction.commandName) as ChatCommand
 
         await interaction.deferReply({ ephemeral: command.ephemeral })
 
@@ -71,7 +71,7 @@ export class InteractionManager {
     }
 
     public async autocomplete(interaction: AutocompleteInteraction): Promise<ApplicationCommandOptionChoice[]> {
-        const command = <ChatCommand> this._commands.get(interaction.commandName)
+        const command = this._commands.get(interaction.commandName) as ChatCommand
         if (command.isGuildOnly()) {
             if (!interaction.inGuild()) {
                 return []

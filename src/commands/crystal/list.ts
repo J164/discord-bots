@@ -20,7 +20,7 @@ function songEmbed(songs: string[], index: number): MessageEmbedOptions {
 }
 
 async function list(interaction: CommandInteraction, info: BotInfo, index = 0, button?: ButtonInteraction): Promise<void> {
-    const songs = <{ songs: string[] }> JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' }))
+    const songs = JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' })) as { songs: string[] }
     const replyOptions: InteractionUpdateOptions = { embeds: [ songEmbed(songs.songs, index) ], components: [ { components: [
         { type: 'BUTTON', customId: 'list-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY', disabled: index === 0 },
         { type: 'BUTTON', customId: 'list-arrowleft', emoji: '\u2B05\uFE0F', label: 'Previous Page', style: 'SECONDARY', disabled: index === 0 },

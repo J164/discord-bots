@@ -13,7 +13,7 @@ async function skipto(interaction: CommandInteraction, info: Info): Promise<Inte
 }
 
 function suggestions(option: ApplicationCommandOptionChoice, info: Info): ApplicationCommandOptionChoice[] {
-    const results = new Fuse(info.queueManager.queue, { keys: [ 'title' ] }).search(<string> option.value)
+    const results = new Fuse(info.queueManager.queue, { keys: [ 'title' ] }).search(option.value as string)
     const options: ApplicationCommandOptionChoice[] = []
     for (const result of results) {
         if (options.length > 3) {

@@ -7,17 +7,13 @@ type AutocompleteFunction = (option: ApplicationCommandOptionChoice, info: Info)
 
 export class GuildChatCommand extends ChatCommand {
 
-    protected readonly _respond: ResponseFunction
-    protected readonly _autocomplete?: AutocompleteFunction
-    readonly _gameCommand?: GameType
+    public readonly respond: ResponseFunction
+    public readonly autocomplete?: AutocompleteFunction
+    public readonly gameCommand?: GameType
 
     public constructor(data: ApplicationCommandData, options: { respond: ResponseFunction, autocomplete?: AutocompleteFunction, ephemeral?: boolean, gameCommand?: GameType }) {
         super(data, options)
-        this._gameCommand = options.gameCommand
-    }
-
-    public get gameCommand(): GameType {
-        return this._gameCommand
+        this.gameCommand = options.gameCommand
     }
 
     public isGuildOnly(): this is GuildChatCommand {

@@ -19,7 +19,6 @@ export class VoiceManager {
         this._voiceConnection = joinVoiceChannel({
             channelId: voiceChannel.id,
             guildId: voiceChannel.guild.id,
-            // @ts-expect-error recurring library types problem
             adapterCreator: voiceChannel.guild.voiceAdapterCreator,
         })
         this._voiceChannel = voiceChannel

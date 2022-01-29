@@ -32,7 +32,7 @@ client.once('ready', async () => {
 
     let broadcasted = false
     const guild = await client.guilds.fetch('619975185029922817')
-    const broadcastChannel = <TextChannel> await guild.channels.fetch('775752263808974858')
+    const broadcastChannel = await guild.channels.fetch('775752263808974858') as TextChannel
     let date = new Date()
 
     setInterval(async () => {

@@ -1,32 +1,18 @@
 import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import process from 'node:process'
-import { exec } from 'node:child_process'
-import { request } from 'undici'
 import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
+import { download } from '../../core/modules/ytdl.js'
 
-async function download(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
+async function downloadVideo(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
     if (interaction.user.id !== process.env.ADMIN) {
         return { embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] }
     }
-    let check: number
-    try {
-        check = (await request(interaction.options.getString('url'))).statusCode
-    } catch {
-        check = 0
-    }
-    if (check !== 200) {
+    if (!/^(?:https:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=]+)$/.test(interaction.options.getString('url'))) {
         return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
     }
     void interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
-    exec(`"./assets/binaries/yt-dlp" "${interaction.options.getString('url')}" --output "${process.env.DATA}/new_downloads/%(title)s.%(ext)s" --quiet --format "${ interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best'}" --limit-rate "1M"`,
-        error => {
-            if (error) {
-                void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] })
-                return
-            }
-            void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] })
-        })
+    await download({ url: interaction.options.getString('url'), quiet: true, outtmpl: `${process.env.DATA}/new_downloads/%(title)s.%(ext)s`, format: interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best' }) ? void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] }) : void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] })
 }
 
 export const command = new ChatCommand({
@@ -46,4 +32,4 @@ export const command = new ChatCommand({
             required: false,
         },
     ],
-}, { respond: download })
+}, { respond: downloadVideo })

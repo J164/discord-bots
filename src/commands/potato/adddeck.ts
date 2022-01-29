@@ -9,7 +9,7 @@ async function addDeck(interaction: CommandInteraction, info: BotInfo): Promise<
     if (interaction.user.id !== process.env.ADMIN && interaction.user.id !== process.env.SWEAR && interaction.user.id !== process.env.MAGIC) {
         return { embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] }
     }
-    const decks = <{ url: string }[]> <unknown> await info.database.select('mtg_decks')
+    const decks = await info.database.select('mtg_decks') as unknown as { url: string }[]
     if (decks.some(a => a.url === interaction.options.getString('url'))) {
         return { embeds: [ generateEmbed('error', { title: 'Failed! (Make sure the deck isn\'t a duplicate)' }) ] }
     }
@@ -21,7 +21,7 @@ async function addDeck(interaction: CommandInteraction, info: BotInfo): Promise<
         const authorID = fields[4]
         const deckID = fields[5].split('-')[0]
         apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${authorID}&id=${deckID}&response_type=`
-        name = (<{ name: string }> await (await request(`${apiUrl}json`)).body.json()).name
+        name = (await (await request(`${apiUrl}json`)).body.json() as { name: string }).name
     } catch {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong (Make sure you are using a deckstats url' }) ] }
     }

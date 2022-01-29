@@ -4,7 +4,7 @@ import { generateEmbed } from '../../core/utils/generators.js'
 import { Info } from '../../core/utils/interfaces.js'
 
 function resume(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
-    if (info.queueManager.voiceManager.resume()) {
+    if (info.queueManager.resume()) {
         return { embeds: [ generateEmbed('success', { title: 'Resumed!' }) ] }
     }
     return { embeds: [ generateEmbed('error', { title: 'Nothing is playing!' }) ] }

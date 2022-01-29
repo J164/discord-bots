@@ -1,4 +1,4 @@
-import { CommandInteraction, InteractionReplyOptions, MessageEmbedOptions, SelectMenuInteraction, User } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions, SelectMenuInteraction, User } from 'discord.js'
 import { MagicGame } from '../../core/modules/games/magic-game.js'
 import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
@@ -19,17 +19,16 @@ async function play(interaction: CommandInteraction, info: Info): Promise<Intera
     }
     const thread = await channel.threads.create({ name: interaction.options.getString('name') ?? 'Magic', autoArchiveDuration: 60 })
     info.games.set(thread.id, new MagicGame(playerlist, thread, interaction.options.getNumber('life') ?? 20))
-    await thread.send({ embeds: [ (<MagicGame> info.games.get(thread.id)).printStandings() ] })
+    await thread.send({ embeds: [ (info.games.get(thread.id) as MagicGame).printStandings() ] })
     return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
 async function damage(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
-    const game = <MagicGame> info.games.get(interaction.channelId)
+    const game = info.games.get(interaction.channelId) as MagicGame
     if (!game.userInGame(interaction.options.getUser('player').id)) {
         return { embeds: [ generateEmbed('error', { title: 'That user is not part of this game!' }) ] }
     }
-    let stats: MessageEmbedOptions
-    stats = game.changeLife(interaction.options.getUser('player').id, interaction.options.getInteger('amount') * -1)
+    let stats = game.changeLife(interaction.options.getUser('player').id, interaction.options.getInteger('amount') * -1)
     if (interaction.options.getBoolean('posion') && !game.over) {
         stats = game.changePoison(interaction.options.getUser('player').id, interaction.options.getInteger('amount'))
     }
@@ -56,7 +55,7 @@ async function damage(interaction: CommandInteraction, info: Info): Promise<Inte
 }
 
 function eliminate(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
-    const game = <MagicGame> info.games.get(interaction.channelId)
+    const game = info.games.get(interaction.channelId) as MagicGame
     if (!game.userInGame(interaction.options.getUser('player').id)) {
         return { embeds: [ generateEmbed('error', { title: 'That user is not part of this game!' }) ] }
     }
@@ -64,11 +63,11 @@ function eliminate(interaction: CommandInteraction, info: Info): InteractionRepl
 }
 
 function end(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
-    return { embeds: [ (<MagicGame> info.games.get(interaction.channelId)).finishGame() ] }
+    return { embeds: [ (info.games.get(interaction.channelId) as MagicGame).finishGame() ] }
 }
 
 function standings(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
-    const game = <MagicGame> info.games.get(interaction.channelId)
+    const game = info.games.get(interaction.channelId) as MagicGame
     return { embeds: [ game.printStandings() ] }
 }
 

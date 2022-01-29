@@ -62,7 +62,7 @@ async function search(interaction: CommandInteraction, info: BotInfo, results?: 
     if (!results) {
         const searchTerm = interaction.options.getString('query')
         try {
-            const response = <ScryfallResponse> await (await request(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)).body.json()
+            const response = await (await request(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)).body.json() as ScryfallResponse
             results = formatResponse(response)
         } catch {
             return { embeds: [ generateEmbed('error', {

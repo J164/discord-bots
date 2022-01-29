@@ -10,7 +10,7 @@ interface TenorResponse {
 }
 
 async function gif(): Promise<InteractionReplyOptions> {
-    const gifs = <TenorResponse> await (await request(`https://g.tenor.com/v1/search?q=yeet&key=${process.env.TENORKEY}&limit=50&contentfilter=medium`)).body.json()
+    const gifs = await (await request(`https://g.tenor.com/v1/search?q=yeet&key=${process.env.TENORKEY}&limit=50&contentfilter=medium`)).body.json() as TenorResponse
     return { content: gifs.results[Math.floor(Math.random() * gifs.results.length)].itemurl }
 }
 
