@@ -25,6 +25,7 @@ const interactionManager = new InteractionManager(new DatabaseManager())
 const swearStatus = [ 'Reading the Swear Dictionary', 'Singing Swears', 'Arresting people who don\'t swear', 'Inventing new swears' ]
 
 client.once('ready', async () => {
+    client.user.setStatus('dnd')
     await InteractionManager.deployCommands(client, 'swear')
     await interactionManager.getCommands(client, 'swear')
     client.user.setActivity(swearStatus[Math.floor(Math.random() * swearStatus.length)])
@@ -34,6 +35,7 @@ client.once('ready', async () => {
         interactionManager.statusCheck()
     }, 60_000)
 
+    client.user.setStatus('online')
     console.log(`\u001B[42m We have logged in as ${client.user.tag} \u001B[0m`)
 })
 

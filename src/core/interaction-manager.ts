@@ -64,12 +64,6 @@ export class InteractionManager {
         return command.respond(interaction, { database: this._database })
     }
 
-    public addGuild(guildId: string, options?: { voiceManager?: VoiceManager, queueManager?: QueueManager }): void {
-        if (!this._info.has(guildId)) {
-            this._info.set(guildId, { voiceManager: options?.voiceManager, queueManager: options?.queueManager, games: new Map<string, BaseGame>() })
-        }
-    }
-
     public async autocomplete(interaction: AutocompleteInteraction): Promise<ApplicationCommandOptionChoice[]> {
         const command = this._commands.get(interaction.commandName) as ChatCommand
         if (command.isGuildOnly()) {
@@ -79,6 +73,12 @@ export class InteractionManager {
             return (await command.autocomplete(interaction.options.getFocused(true), { ...this._info.get(interaction.guildId), database: this._database })) ?? []
         }
         return (await command.autocomplete(interaction.options.getFocused(true), { database: this._database })) ?? []
+    }
+
+    public addGuild(guildId: string, options?: { voiceManager?: VoiceManager, queueManager?: QueueManager }): void {
+        if (!this._info.has(guildId)) {
+            this._info.set(guildId, { voiceManager: options?.voiceManager, queueManager: options?.queueManager, games: new Map<string, BaseGame>() })
+        }
     }
 
     public statusCheck(): void {

@@ -9,7 +9,7 @@ export abstract class BaseCommand {
         this.data = data
     }
 
-    public isSlashCommand(): this is ChatCommand {
+    public isChatCommand(): this is ChatCommand {
         return false
     }
 }

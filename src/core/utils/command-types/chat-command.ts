@@ -19,8 +19,8 @@ export class ChatCommand extends BaseCommand {
         this.ephemeral = options.ephemeral
     }
 
-    public isSlashCommand(): this is ChatCommand {
-        return false
+    public isChatCommand(): this is ChatCommand {
+        return true
     }
 
     public isGuildOnly(): this is GuildChatCommand {

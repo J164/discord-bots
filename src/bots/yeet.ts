@@ -25,6 +25,7 @@ const interactionManager = new InteractionManager()
 const yeetStatus = [ 'Yeeting the Child', 'YA YEEEEEEEEEET', 'Yeeting People off Cliffs', 'Yeeting Washing Machines' ]
 
 client.once('ready', async () => {
+    client.user.setStatus('dnd')
     await InteractionManager.deployCommands(client, 'yeet')
     await interactionManager.getCommands(client, 'yeet')
     client.user.setActivity(yeetStatus[Math.floor(Math.random() * yeetStatus.length)])
@@ -39,6 +40,7 @@ client.once('ready', async () => {
         client.user.setActivity(yeetStatus[Math.floor(Math.random() * yeetStatus.length)])
     }, 60_000)
 
+    client.user.setStatus('online')
     console.log(`\u001B[42m We have logged in as ${client.user.tag} \u001B[0m`)
 })
 

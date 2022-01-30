@@ -26,6 +26,7 @@ const interactionManager = new InteractionManager(new DatabaseManager())
 const potatoStatus = [ 'Eating a baked potato', 'Farming potatoes', 'Decorating with potatoes', 'Looking up potato recipes', 'Potato Platformer 3000' ]
 
 client.once('ready', async () => {
+    client.user.setStatus('dnd')
     await InteractionManager.deployCommands(client, 'potato')
     await interactionManager.getCommands(client, 'potato')
     client.user.setActivity(potatoStatus[Math.floor(Math.random() * potatoStatus.length)])
@@ -49,6 +50,7 @@ client.once('ready', async () => {
         }
     }, 60_000)
 
+    client.user.setStatus('online')
     console.log(`\u001B[42m We have logged in as ${client.user.tag} \u001B[0m`)
 
     if (date.getHours() === 7 && date.getMinutes() >= 30 && date.getMinutes() <= 35) {

@@ -24,6 +24,7 @@ const interactionManager = new InteractionManager()
 const crystalStatus = [ 'Karl Needs a Bandage', 'The Agent Game', 'Gangster Town', 'The Running Game', 'The Games (Which one?)' ]
 
 client.once('ready', async () => {
+    client.user.setStatus('dnd')
     await InteractionManager.deployCommands(client, 'crystal')
     await interactionManager.getCommands(client, 'crystal')
     client.user.setActivity(crystalStatus[Math.floor(Math.random() * crystalStatus.length)])
@@ -33,6 +34,7 @@ client.once('ready', async () => {
         interactionManager.statusCheck()
     }, 60_000)
 
+    client.user.setStatus('online')
     console.log(`\u001B[42m We have logged in as ${client.user.tag} \u001B[0m`)
 })
 
