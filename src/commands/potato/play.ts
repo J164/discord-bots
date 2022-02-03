@@ -91,7 +91,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     }
 
     if (/^(?:https:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=]+)$/.test(url)) {
-        const result = JSON.parse(await resolve({ url: url, quiet: true, simulate: true, forceprint: [ '{"webpage_url":"%(webpage_url)s","title":"%(title)s","thumbnail":"%(thumbnail)s","duration":%(duration)s}' ] })) as { readonly webpage_url: string, readonly title: string, readonly thumbnail: string, readonly duration: number }
+        const result = await resolve({ url: url, quiet: true }) as { readonly webpage_url: string, readonly title: string, readonly thumbnail: string, readonly duration: number }
         if (!('webpage_url' in result)) {
             return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
         }

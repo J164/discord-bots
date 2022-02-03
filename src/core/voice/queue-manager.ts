@@ -4,7 +4,7 @@ import { AudioPlayerStatus } from '@discordjs/voice'
 import { generateEmbed } from '../utils/generators.js'
 import { setTimeout } from 'node:timers/promises'
 import { createStream } from '../modules/ytdl.js'
-import { Readable, Writable } from 'node:stream'
+import { Readable } from 'node:stream'
 import { ChildProcessByStdio } from 'node:child_process'
 
 export interface QueueItem {
@@ -18,7 +18,7 @@ export interface QueueItem {
 export class QueueManager {
 
     private readonly _voiceManager: VoiceManager
-    private _script: ChildProcessByStdio<Writable, Readable, null>
+    private _script: ChildProcessByStdio<null, Readable, null>
     private _queue: QueueItem[]
     private _nowPlaying: QueueItem
     private _queueLoop: boolean
@@ -107,9 +107,8 @@ export class QueueManager {
         this._nowPlaying = this._queue.shift()
         this._queueLock = false
 
-        const { stream, script } = await createStream({ url: this._nowPlaying.url, outtmpl: '-', quiet: true, format: 'bestaudio[ext=webm][acodec=opus]/bestaudio[ext=ogg][acodec=opus]/bestaudio', ratelimit: 160_000 })
-        this._script = script
-        await this._voiceManager.playStream(stream)
+        this._script = createStream({ url: this._nowPlaying.url, outtmpl: '-', quiet: true, format: 'bestaudio[ext=webm][acodec=opus]/bestaudio[ext=ogg][acodec=opus]/bestaudio', ratelimit: 160_000 })
+        await this._voiceManager.playStream(this._script.stdout)
 
         this._transitioning = false
 

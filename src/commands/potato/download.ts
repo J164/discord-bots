@@ -13,8 +13,8 @@ async function downloadVideo(interaction: CommandInteraction): Promise<Interacti
     }
     void interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
     await download({ url: interaction.options.getString('url'), quiet: true, outtmpl: `${process.env.DATA}/new_downloads/%(title)s.%(ext)s`, format: interaction.options.getBoolean('dev')
-	? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best' }) ? void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] }) 
-	: void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] })
+       ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best' }) ? void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] })
+       : void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] })
 }
 
 export const command = new ChatCommand({

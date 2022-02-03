@@ -2,16 +2,15 @@ import json
 import sys
 import yt_dlp
 
-print('READY')
-
-for line in sys.stdin:
-    options = json.loads(line.strip())
-    url = options['url']
-    options['url'] = None
-    options['noprogress'] = True
-    with yt_dlp.YoutubeDL(options) as ytdl:
-        try:
+options = json.loads(sys.argv[2])
+url = options['url']
+options['url'] = None
+options['noprogress'] = True
+with yt_dlp.YoutubeDL(options) as ytdl:
+    try:
+        if sys.argv[1] != 'resolve':
             ytdl.download([ url ])
-        except:
-            print('{ "error": "FAILED" }')
-    exit()
+        else:
+            print(json.dumps(ytdl.sanitize_info(ytdl.extract_info(url, False))))
+    except:
+        print('{ "error": "FAILED" }')
