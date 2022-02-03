@@ -12,8 +12,8 @@ async function downloadVideo(interaction: CommandInteraction): Promise<Interacti
         return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
     }
     void interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
-    await download({ url: interaction.options.getString('url'), quiet: true, outtmpl: `${process.env.DATA}/new_downloads/%(title)s.%(ext)s`, format: interaction.options.getBoolean('dev')
-       ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best' }) ? void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] })
+    await download({ url: interaction.options.getString('url'), quiet: true, outtmpl: `${process.env.DATA}/new_downloads/%(title)s.%(ext)s`, format: interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best' })
+       ? void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] })
        : void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] })
 }
 
