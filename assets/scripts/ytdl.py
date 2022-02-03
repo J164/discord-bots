@@ -11,6 +11,7 @@ with yt_dlp.YoutubeDL(options) as ytdl:
         if sys.argv[1] != 'resolve':
             ytdl.download([ url ])
         else:
-            print(json.dumps(ytdl.sanitize_info(ytdl.extract_info(url, False))))
+            data = ytdl.sanitize_info(ytdl.extract_info(url, False))
+            print(json.dumps({ 'webpage_url': data['webpage_url'], 'title': data['title'], 'thumbnail': data['thumbnail'], 'duration': data['duration'] }))
     except:
         print('{ "error": "FAILED" }')
