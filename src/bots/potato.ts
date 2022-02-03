@@ -1,25 +1,10 @@
 import { Client, Intents, TextChannel } from 'discord.js'
-import { writeFileSync } from 'node:fs'
 import { InteractionManager } from '../core/interaction-manager.js'
 import { QueueManager } from '../core/voice/queue-manager.js'
 import { getDailyReport } from '../core/modules/daily-report.js'
 import process from 'node:process'
 import { setInterval } from 'node:timers'
-import { config } from 'dotenv'
 import { DatabaseManager } from '../core/database-manager.js'
-
-config()
-
-process.on('unhandledRejection', (error: Error) => {
-    if (error.name === 'FetchError') {
-        process.exit()
-    }
-    if (error.message !== 'Unknown interaction') {
-        const date = new Date()
-        writeFileSync(`${process.env.DATA}/logs/${date.getUTCMonth()}-${date.getUTCDate()}-${date.getUTCHours()}-${date.getUTCMinutes()}-${date.getUTCSeconds()}-potato.txt`, `${error.name}\n${error.message}\n${error.stack}`)
-        process.exit()
-    }
-})
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ], partials: [ 'CHANNEL' ] })
 const interactionManager = new InteractionManager(new DatabaseManager())
@@ -66,7 +51,7 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.isAutocomplete()) {
         const response = await interactionManager.autocomplete(interaction)
-        void interaction.respond(response)
+        try { void interaction.respond(response) } catch { /* prevent unknown interaction */ }
         return
     }
 
