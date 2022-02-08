@@ -1,8 +1,8 @@
 import { Client, Intents } from 'discord.js'
-import { InteractionManager } from '../core/interaction-manager.js'
+import { InteractionManager } from './core/interaction-manager.js'
 import process from 'node:process'
 import { setInterval } from 'node:timers'
-import { VoiceManager } from '../core/voice/voice-manager.js'
+import { VoiceManager } from './core/voice/voice-manager.js'
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ], partials: [ 'CHANNEL' ] })
 const interactionManager = new InteractionManager()

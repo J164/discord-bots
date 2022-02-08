@@ -1,10 +1,10 @@
 import { Client, Intents, TextChannel } from 'discord.js'
-import { InteractionManager } from '../core/interaction-manager.js'
-import { QueueManager } from '../core/voice/queue-manager.js'
-import { getDailyReport } from '../core/modules/daily-report.js'
+import { InteractionManager } from './core/interaction-manager.js'
+import { QueueManager } from './core/voice/queue-manager.js'
+import { getDailyReport } from './core/modules/daily-report.js'
 import process from 'node:process'
 import { setInterval } from 'node:timers'
-import { DatabaseManager } from '../core/database-manager.js'
+import { DatabaseManager } from './core/database-manager.js'
 
 const client = new Client({ intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ], partials: [ 'CHANNEL' ] })
 const interactionManager = new InteractionManager(new DatabaseManager())
@@ -17,8 +17,8 @@ client.once('ready', async () => {
     client.user.setActivity(potatoStatus[Math.floor(Math.random() * potatoStatus.length)])
 
     let broadcasted = false
-    const guild = await client.guilds.fetch('619975185029922817')
-    const broadcastChannel = await guild.channels.fetch('775752263808974858') as TextChannel
+    const guild = await client.guilds.fetch(process.env.GUILD)
+    const broadcastChannel = await guild.channels.fetch(process.env.CHANNEL) as TextChannel
     let date = new Date()
 
     setInterval(async () => {
