@@ -1,4 +1,4 @@
-import { MessageOptions, WebhookMessageOptions } from 'discord.js'
+import { WebhookMessageOptions } from 'discord.js'
 import { request } from 'undici'
 import { generateEmbed } from '../utils/generators.js'
 import process from 'node:process'

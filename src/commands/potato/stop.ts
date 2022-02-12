@@ -3,8 +3,8 @@ import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-comm
 import { generateEmbed } from '../../core/utils/generators.js'
 import { Info } from '../../core/utils/interfaces.js'
 
-function stop(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
-    info.queueManager.reset()
+async function stop(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
+    await info.queueManager.reset()
     return { embeds: [ generateEmbed('success', { title: 'Success' }) ] }
 }
 

@@ -24,5 +24,6 @@ jobs:
           node-version: ${{ matrix.node-version }}
           
       - run: npm ci --no-optional --only=prod
+      - run: npm run build
       - run: npm run test
       
