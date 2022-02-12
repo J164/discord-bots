@@ -1,4 +1,4 @@
-import { MessageOptions } from 'discord.js'
+import { MessageOptions, WebhookMessageOptions } from 'discord.js'
 import { request } from 'undici'
 import { generateEmbed } from '../utils/generators.js'
 import process from 'node:process'
@@ -156,7 +156,7 @@ function getWeatherEmoji(weatherCode: number): string {
     }
 }
 
-export async function getDailyReport(date: Date): Promise<MessageOptions> {
+export async function getDailyReport(date: Date): Promise<WebhookMessageOptions> {
     // todo meme of day
     const holiday = await (await request(`https://holidays.abstractapi.com/v1/?api_key=${process.env.ABSTRACTKEY}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)).body.json() as Holiday[]
     const weather = await (await request(`http://api.weatherapi.com/v1/current.json?key=${process.env.WEATHERKEY}&q=60069`)).body.json() as WeatherResponse

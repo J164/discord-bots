@@ -60,9 +60,8 @@ export class QueueManager {
     }
 
     public async addToQueue(items: QueueItem[], position: number): Promise<void> {
-        if (this._queueLock) {
+        while (this._queueLock) {
             await setTimeout(200)
-            return this.addToQueue(items, position)
         }
 
         this._queueLock = true
@@ -83,7 +82,7 @@ export class QueueManager {
     public async connect(voiceChannel: VoiceChannel): Promise<void> {
         this._transitioning = true
         if (this._queue.length === 0) {
-            this.reset()
+            void this.reset()
             return
         }
         await this._voiceManager.connect(voiceChannel)
@@ -98,9 +97,8 @@ export class QueueManager {
             return
         }
 
-        if (this._queueLock) {
+        while (this._queueLock) {
             await setTimeout(200)
-            return this._playSong()
         }
 
         this._queueLock = true
@@ -122,21 +120,16 @@ export class QueueManager {
             this._transitioning = true
 
             if (this._queueLoop || this._nowPlaying.looping) {
-                const endSong = async (): Promise<void> => {
-                    if (this._queueLock) {
-                        await setTimeout(200)
-                        return endSong()
-                    }
-                    this._queueLock = true
-                    if (this._queueLoop) {
-                        this._queue.push(this._nowPlaying)
-                    } else if (this._nowPlaying.looping) {
-                        this._queue.unshift(this._nowPlaying)
-                    }
-                    this._queueLock = false
+                while (this._queueLock) {
+                    await setTimeout(200)
                 }
-
-                await endSong()
+                this._queueLock = true
+                if (this._queueLoop) {
+                    this._queue.push(this._nowPlaying)
+                } else if (this._nowPlaying.looping) {
+                    this._queue.unshift(this._nowPlaying)
+                }
+                this._queueLock = false
             }
 
             void this._playSong()
@@ -144,9 +137,8 @@ export class QueueManager {
     }
 
     public async skipTo(index: number): Promise<void> {
-        if (this._queueLock) {
+        while (this._queueLock) {
             await setTimeout(200)
-            return this.skipTo(index)
         }
 
         this._queueLock = true
@@ -205,9 +197,8 @@ export class QueueManager {
         if (this._queue.length === 0) {
             return false
         }
-        if (this._queueLock) {
+        while (this._queueLock) {
             await setTimeout(200)
-            return this.shuffleQueue()
         }
         this._queueLock = true
         for (let index = this._queue.length - 1; index > 0; index--) {
@@ -228,9 +219,8 @@ export class QueueManager {
             return [ [ this._nowPlaying ] ]
         }
         const queueArray: QueueItem[][] = []
-        if (this._queueLock) {
+        while (this._queueLock) {
             await setTimeout(200)
-            return this.getPaginatedQueue()
         }
         this._queueLock = true
         for (let r = 0; r < Math.ceil(this._queue.length / 25); r++) {
@@ -254,13 +244,17 @@ export class QueueManager {
         return this._voiceManager.isIdle() && !this._transitioning
     }
 
-    public reset(): void {
+    public async reset(): Promise<void> {
+        while (this._queueLock) {
+            await setTimeout(200)
+        }
+        this._queueLock = true
         this._voiceManager.reset()
         this._queue = []
         this._script?.kill()
         this._nowPlaying = undefined
         this._queueLoop = false
-        this._queueLock = false
         this._transitioning = false
+        this._queueLock = false
     }
 }

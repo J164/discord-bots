@@ -1,4 +1,4 @@
-name: Lint
+name: Test
 
 on:
   push:
@@ -23,6 +23,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           
-      - run: npm ci --no-optional
-      - run: npm run lint
+      - run: npm ci --no-optional --only=prod
+      - run: npm run test
       

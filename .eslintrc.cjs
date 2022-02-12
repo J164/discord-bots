@@ -7,7 +7,6 @@ module.exports = {
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
 		"plugin:@typescript-eslint/recommended-requiring-type-checking",
-		"plugin:import/typescript",
 		"plugin:unicorn/recommended"
     ],
     parser: "@typescript-eslint/parser",
@@ -19,7 +18,6 @@ module.exports = {
     },
     plugins: [
         "@typescript-eslint",
-		"import",
 		"unicorn"
     ],
     rules: {
@@ -49,8 +47,6 @@ module.exports = {
 
 		"@typescript-eslint/no-misused-promises": [ "error", { "checksVoidReturn": false } ],
 		"@typescript-eslint/prefer-readonly": "error",
-		"import/extensions": [ "error", "ignorePackages" ],
-		"import/no-commonjs": "error",
 		"unicorn/consistent-function-scoping": "off",
 		"unicorn/no-await-expression-member": "off",
     }

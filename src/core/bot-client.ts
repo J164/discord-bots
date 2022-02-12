@@ -1,49 +1,73 @@
-import { ApplicationCommandData, ApplicationCommandOptionChoice, AutocompleteInteraction, Client, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { ApplicationCommandOptionChoice, AutocompleteInteraction, Client, ClientOptions, CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { QueueManager } from './voice/queue-manager.js'
 import { DatabaseManager } from './database-manager.js'
 import { VoiceManager } from './voice/voice-manager.js'
 import { GuildInfo } from './utils/interfaces.js'
 import { generateEmbed } from './utils/generators.js'
-import { readdirSync } from 'node:fs'
 import { BaseGame } from './utils/base-game.js'
-import { BaseCommand } from './utils/command-types/base-command.js'
 import { ChatCommand } from './utils/command-types/chat-command.js'
+import { setInterval } from 'node:timers'
 
-export class InteractionManager {
+interface GuildOptions {
+    readonly voiceManager?: boolean,
+    readonly queueManager?: boolean
+}
 
-    private readonly _commands: Map<string, BaseCommand>
+interface BotOptions {
+    readonly name: string,
+    readonly status: string[],
+    readonly guildOptions: GuildOptions
+}
+
+export class BotClient extends Client {
+
+    private readonly _botOptions: BotOptions
     private readonly _database?: DatabaseManager
     private readonly _info: Map<string, GuildInfo>
 
-    public constructor(database?: DatabaseManager) {
-        this._commands = new Map<string, BaseCommand>()
+    public constructor(clientOptions: ClientOptions, botOptions: BotOptions, database?: DatabaseManager) {
+        super(clientOptions)
+        this._botOptions = botOptions
         this._database = database
         this._info = new Map<string, GuildInfo>()
-    }
-
-    public async getCommands(client: Client, botName: string): Promise<void> {
-        const currentCommands = await client.application.commands.fetch()
-        for (const [ , slash ] of currentCommands) {
-            try {
-                const { command } = await import(`../commands/${botName}/${slash.name}.js`) as { command: BaseCommand }
-                this._commands.set(slash.name, command)
-            } catch {
-                console.warn(`Registered command missing from ${botName}'s command files (${slash.name})`)
+        this.once('ready', () => { this.ready() })
+        this.on('interactionCreate', async interaction => {
+            if (interaction.inGuild() && !this._info.has(interaction.guildId)) {
+                this.addGuild(interaction.guildId, this._botOptions.guildOptions)
             }
-        }
+
+            if (interaction.isAutocomplete()) {
+                const response = await this.autocomplete(interaction)
+                try { void interaction.respond(response) } catch { /* prevent unknown interaction */ }
+                return
+            }
+
+            if (!interaction.isCommand()) {
+                return
+            }
+
+            const response = await this.parseChatCommand(interaction)
+            if (response) {
+                void interaction.editReply(response)
+            }
+        })
     }
 
-    public static async deployCommands(client: Client, botName: string): Promise<void> {
-        const commandData: ApplicationCommandData[] = []
-        for (const slash of readdirSync(`./dist/commands/${botName}`).filter(file => file.endsWith('.js'))) {
-            const { command } = await import(`../commands/${botName}/${slash}`) as { command: BaseCommand }
-            commandData.push(command.data)
-        }
-        await client.application.commands.set(commandData)
+    public ready(): void {
+        this.user.setStatus('dnd')
+        this.user.setActivity(this._botOptions.status[Math.floor(Math.random() * this._botOptions.status.length)])
+
+        setInterval(() => {
+            this.user.setActivity(this._botOptions.status[Math.floor(Math.random() * this._botOptions.status.length)])
+            this.statusCheck()
+        }, 300_000)
+
+        this.user.setStatus('online')
+        console.log(`\u001B[42m We have logged in as ${this.user.tag} \u001B[0m`)
     }
 
     public async parseChatCommand(interaction: CommandInteraction): Promise<InteractionReplyOptions | void> {
-        const command = this._commands.get(interaction.commandName) as ChatCommand
+        const command = (await import(`../commands/${this._botOptions.name}/${interaction.commandName}.js`) as { command: ChatCommand }).command
 
         await interaction.deferReply({ ephemeral: command.ephemeral })
 
@@ -65,7 +89,7 @@ export class InteractionManager {
     }
 
     public async autocomplete(interaction: AutocompleteInteraction): Promise<ApplicationCommandOptionChoice[]> {
-        const command = this._commands.get(interaction.commandName) as ChatCommand
+        const command = (await import(`../commands/${this._botOptions.name}/${interaction.commandName}.js`) as { command: ChatCommand }).command
         if (command.isGuildOnly()) {
             if (!interaction.inGuild()) {
                 return []
@@ -75,10 +99,8 @@ export class InteractionManager {
         return (await command.autocomplete(interaction.options.getFocused(true), { database: this._database })) ?? []
     }
 
-    public addGuild(guildId: string, options?: { voiceManager?: VoiceManager, queueManager?: QueueManager }): void {
-        if (!this._info.has(guildId)) {
-            this._info.set(guildId, { voiceManager: options?.voiceManager, queueManager: options?.queueManager, games: new Map<string, BaseGame>() })
-        }
+    public addGuild(guildId: string, options: GuildOptions): void {
+        this._info.set(guildId, { voiceManager: options.voiceManager ? new VoiceManager() : undefined, queueManager: options.queueManager ? new QueueManager() : undefined, games: new Map<string, BaseGame>() })
     }
 
     public statusCheck(): void {
@@ -87,7 +109,7 @@ export class InteractionManager {
                 guild.voiceManager.reset()
             }
             if (guild.queueManager?.isIdle()) {
-                guild.queueManager.reset()
+                void guild.queueManager.reset()
             }
             for (const [ id, game ] of guild.games) {
                 if (game.over) {

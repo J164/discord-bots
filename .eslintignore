@@ -1,4 +1,6 @@
 node_modules
 dist
+tests
 .eslintrc.cjs
-ecosystem.config.cjs
+*.config.cjs
+deploy.js
