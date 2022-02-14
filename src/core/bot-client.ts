@@ -13,27 +13,23 @@ interface GuildOptions {
     readonly queueManager?: boolean
 }
 
-interface BotOptions {
-    readonly name: string,
-    readonly status: string[],
-    readonly guildOptions: GuildOptions
-}
-
 export class BotClient extends Client {
 
-    private readonly _botOptions: BotOptions
+    private readonly _name: string
+    private readonly _status: string[]
     private readonly _database?: DatabaseManager
     private readonly _info: Map<string, GuildInfo>
 
-    public constructor(clientOptions: ClientOptions, botOptions: BotOptions, database?: DatabaseManager) {
+    public constructor(clientOptions: ClientOptions, botOptions: { readonly name: string, readonly status: string[], readonly guildOptions: GuildOptions, readonly database?: boolean }) {
         super(clientOptions)
-        this._botOptions = botOptions
-        this._database = database
+        this._name = botOptions.name
+        this._status = botOptions.status
+        this._database = botOptions.database ? new DatabaseManager() : undefined
         this._info = new Map<string, GuildInfo>()
         this.once('ready', () => { this.ready() })
         this.on('interactionCreate', async interaction => {
             if (interaction.inGuild() && !this._info.has(interaction.guildId)) {
-                this.addGuild(interaction.guildId, this._botOptions.guildOptions)
+                this.addGuild(interaction.guildId, botOptions.guildOptions)
             }
 
             if (interaction.isAutocomplete()) {
@@ -55,10 +51,10 @@ export class BotClient extends Client {
 
     public ready(): void {
         this.user.setStatus('dnd')
-        this.user.setActivity(this._botOptions.status[Math.floor(Math.random() * this._botOptions.status.length)])
+        this.user.setActivity(this._status[Math.floor(Math.random() * this._status.length)])
 
         setInterval(() => {
-            this.user.setActivity(this._botOptions.status[Math.floor(Math.random() * this._botOptions.status.length)])
+            this.user.setActivity(this._status[Math.floor(Math.random() * this._status.length)])
             this.statusCheck()
         }, 300_000)
 
@@ -67,7 +63,7 @@ export class BotClient extends Client {
     }
 
     public async parseChatCommand(interaction: CommandInteraction): Promise<InteractionReplyOptions | void> {
-        const command = (await import(`../commands/${this._botOptions.name}/${interaction.commandName}.js`) as { command: ChatCommand }).command
+        const command = (await import(`../commands/${this._name}/${interaction.commandName}.js`) as { command: ChatCommand }).command
 
         await interaction.deferReply({ ephemeral: command.ephemeral })
 
@@ -89,7 +85,7 @@ export class BotClient extends Client {
     }
 
     public async autocomplete(interaction: AutocompleteInteraction): Promise<ApplicationCommandOptionChoice[]> {
-        const command = (await import(`../commands/${this._botOptions.name}/${interaction.commandName}.js`) as { command: ChatCommand }).command
+        const command = (await import(`../commands/${this._name}/${interaction.commandName}.js`) as { command: ChatCommand }).command
         if (command.isGuildOnly()) {
             if (!interaction.inGuild()) {
                 return []
@@ -100,7 +96,11 @@ export class BotClient extends Client {
     }
 
     public addGuild(guildId: string, options: GuildOptions): void {
-        this._info.set(guildId, { voiceManager: options.voiceManager ? new VoiceManager() : undefined, queueManager: options.queueManager ? new QueueManager() : undefined, games: new Map<string, BaseGame>() })
+        this._info.set(guildId, {
+            voiceManager: options.voiceManager ? new VoiceManager() : undefined,
+            queueManager: options.queueManager ? new QueueManager() : undefined,
+            games: new Map<string, BaseGame>(),
+        })
     }
 
     public statusCheck(): void {

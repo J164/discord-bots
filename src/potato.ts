@@ -1,7 +1,6 @@
 import { Intents } from 'discord.js'
 import { BotClient } from './core/bot-client.js'
 import process from 'node:process'
-import { DatabaseManager } from './core/database-manager.js'
 
 void new BotClient(
     {
@@ -11,9 +10,9 @@ void new BotClient(
     {
         name: 'potato',
         status: [ 'Eating a baked potato', 'Farming potatoes', 'Decorating with potatoes', 'Looking up potato recipes', 'Potato Platformer 3000' ],
+        database: true,
         guildOptions: {
             queueManager: true,
         },
     },
-    new DatabaseManager(),
 ).login(process.env.POTATOTOKEN)
