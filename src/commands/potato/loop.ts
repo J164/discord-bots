@@ -4,9 +4,9 @@ import { Info } from '../../core/utils/interfaces.js'
 
 function loop(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
     if (interaction.options.getSubcommand() === 'current') {
-        return info.queueManager.loopSong()
+        return { embeds: [ info.queueManager.loopSong() ] }
     }
-    return info.queueManager.loopQueue()
+    return { embeds: [ info.queueManager.loopQueue() ] }
 }
 
 export const command = new GuildChatCommand({

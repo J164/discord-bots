@@ -14,7 +14,7 @@ async function play(interaction: CommandInteraction, info: Info): Promise<Intera
         return { content: 'This command can only be used while in a visable voice channel!' }
     }
 
-    const songs = (JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf-8' })) as { songs: string[] }).songs
+    const songs = (JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' })) as { songs: string[] }).songs
 
     let song: number
 
@@ -44,7 +44,7 @@ function search(option: ApplicationCommandOptionChoice): ApplicationCommandOptio
     if ((option.value as string).length < 3) {
         return
     }
-    const results = new Fuse((JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf-8' })) as { songs: string[] }).songs).search(option.value as string)
+    const results = new Fuse((JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' })) as { songs: string[] }).songs).search(option.value as string)
     const options: ApplicationCommandOptionChoice[] = []
     for (const result of results) {
         if (options.length > 3) {

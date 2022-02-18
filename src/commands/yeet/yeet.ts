@@ -2,14 +2,7 @@ import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 
 function yeet(interaction: CommandInteraction): InteractionReplyOptions {
-    if (!interaction.options.getInteger('power')) {
-        return { content: 'YEET!' }
-    }
-    let middle = ''
-    for (let index = 0; index < interaction.options.getInteger('power'); index++) {
-        middle += 'E'
-    }
-    return { content: `Y${middle}T!` }
+    return { content: `Y${'E'.repeat(interaction.options.getInteger('power') ?? 2)}T!` }
 }
 
 export const command = new ChatCommand({

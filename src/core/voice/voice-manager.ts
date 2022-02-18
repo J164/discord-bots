@@ -53,7 +53,6 @@ export class VoiceManager {
         this._player?.removeAllListeners()
         this._player?.stop()
         this._player = undefined
-        this._voiceConnection?.removeAllListeners()
         this._voiceConnection?.destroy()
         this._voiceConnection = undefined
         this._voiceChannel = undefined

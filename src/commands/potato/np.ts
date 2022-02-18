@@ -3,7 +3,7 @@ import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-comm
 import { Info } from '../../core/utils/interfaces.js'
 
 function nowPlaying(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
-    return info.queueManager.nowPlaying
+    return { embeds: [ info.queueManager.nowPlaying ] }
 }
 
 export const command = new GuildChatCommand({

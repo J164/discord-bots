@@ -4,7 +4,6 @@ import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-comm
 import { generateEmbed } from '../../core/utils/generators.js'
 
 async function euchre(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
-    //todo test
     const channel = await interaction.guild.channels.fetch(interaction.channelId)
     if (!channel.isText()) {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong!' }) ] }

@@ -163,7 +163,7 @@ export async function getDailyReport(date: Date): Promise<WebhookMessageOptions>
     const quote = await (await request('https://zenquotes.io?api=today')).body.json() as Quote[]
     const stringDate = getStringDate(date)
     const weatherEmoji = getWeatherEmoji(weather.current.condition.code)
-    const response = { embeds: [ generateEmbed('info', {
+    return { embeds: [ generateEmbed('info', {
         title: `Daily Report: ${stringDate}\t${weatherEmoji}`,
         fields: [
             {
@@ -174,10 +174,10 @@ export async function getDailyReport(date: Date): Promise<WebhookMessageOptions>
                 name: `In Linconshire is is ${weather.current.condition.text} and ${weather.current.temp_f}°F`,
                 value: `It feels like ${weather.current.feelslike_f}°F and the wind speed is ${weather.current.wind_mph} mph`,
             },
+            {
+                name: holiday.length > 0 ? `Today is ${holiday[0].name}` : 'Today can be whatever you\'d like!',
+                value: 'Have a great day!',
+            },
         ],
     }) ] }
-    if (holiday.length > 0) {
-        response.embeds[0].fields.push({ name: `Today is ${holiday[0].name}`, value: 'Have a great day!' })
-    }
-    return response
 }

@@ -1,4 +1,4 @@
-import { InteractionReplyOptions, VoiceChannel } from 'discord.js'
+import { MessageEmbedOptions, VoiceChannel } from 'discord.js'
 import { VoiceManager } from './voice-manager.js'
 import { AudioPlayerStatus } from '@discordjs/voice'
 import { generateEmbed } from '../utils/generators.js'
@@ -33,22 +33,19 @@ export class QueueManager {
         this._transitioning = false
     }
 
-    public get nowPlaying(): InteractionReplyOptions {
+    public get nowPlaying(): MessageEmbedOptions {
         if (!this._nowPlaying) {
-            return { embeds: [ generateEmbed('error', { title: 'Nothing has played yet!' }) ] }
+            return generateEmbed('error', { title: 'Nothing has played yet!' })
         }
-        const embed = generateEmbed('info', {
+        return generateEmbed('info', {
             title: `Now Playing: ${this._nowPlaying.title} (${this._nowPlaying.duration})`,
             fields: [ {
                 name: 'URL:',
                 value: this._nowPlaying.url,
             } ],
             image: { url: this._nowPlaying.thumbnail },
+            footer: this._nowPlaying.looping ? { text: 'Looping', iconURL: 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png' } : {},
         })
-        if (this._nowPlaying.looping) {
-            embed.footer = { text: 'Looping', iconURL: 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png' }
-        }
-        return { embeds: [ embed ] }
     }
 
     public get queue(): QueueItem[] {
@@ -80,15 +77,12 @@ export class QueueManager {
     }
 
     public async connect(voiceChannel: VoiceChannel): Promise<void> {
-        this._transitioning = true
-        if (this._queue.length === 0) {
-            void this.reset()
+        if (this._voiceManager.isActive()) {
             return
         }
+        this._transitioning = true
         await this._voiceManager.connect(voiceChannel)
-        if (!this._voiceManager.isActive()) {
-            void this._playSong()
-        }
+        void this._playSong()
     }
 
     private async _playSong(): Promise<void> {
@@ -116,8 +110,8 @@ export class QueueManager {
             }
             this._voiceManager.player.removeAllListeners('stateChange')
 
-            this._script.kill()
             this._transitioning = true
+            this._script.kill()
 
             if (this._queueLoop || this._nowPlaying.looping) {
                 while (this._queueLock) {
@@ -148,28 +142,28 @@ export class QueueManager {
         this.skip()
     }
 
-    public loopSong(): InteractionReplyOptions {
+    public loopSong(): MessageEmbedOptions {
         if (!this._voiceManager.isActive()) {
-            return { embeds: [ generateEmbed('error', { title: 'Nothing is playing!' }) ] }
+            return generateEmbed('error', { title: 'Nothing is playing!' })
         }
         if (this._nowPlaying.looping) {
             this._nowPlaying.looping = false
-            return { embeds: [ generateEmbed('success', { title: 'No longer looping' }) ] }
+            return generateEmbed('success', { title: 'No longer looping' })
         }
         this._nowPlaying.looping = true
-        return { embeds: [ generateEmbed('success', { title: 'Now Looping' }) ] }
+        return generateEmbed('success', { title: 'Now Looping' })
     }
 
-    public loopQueue(): InteractionReplyOptions {
+    public loopQueue(): MessageEmbedOptions {
         if (!this._voiceManager.isActive() || this._queue.length === 0) {
-            return { embeds: [ generateEmbed('error', { title: 'Nothing is queued!' }) ] }
+            return generateEmbed('error', { title: 'Nothing is queued!' })
         }
         if (this._queueLoop) {
             this._queueLoop = false
-            return { embeds: [ generateEmbed('success', { title: 'No longer looping queue' }) ] }
+            return generateEmbed('success', { title: 'No longer looping queue' })
         }
         this._queueLoop = true
-        return { embeds: [ generateEmbed('success', { title: 'Now looping queue' }) ] }
+        return generateEmbed('success', { title: 'Now looping queue' })
     }
 
     public clear(): boolean {
@@ -218,11 +212,11 @@ export class QueueManager {
         if (this._queue.length === 0) {
             return [ [ this._nowPlaying ] ]
         }
-        const queueArray: QueueItem[][] = []
         while (this._queueLock) {
             await setTimeout(200)
         }
         this._queueLock = true
+        const queueArray: QueueItem[][] = []
         for (let r = 0; r < Math.ceil(this._queue.length / 25); r++) {
             queueArray.push([])
             for (let index = -1; index < 25; index++) {
@@ -252,6 +246,7 @@ export class QueueManager {
         this._voiceManager.reset()
         this._queue = []
         this._script?.kill()
+        this._script = undefined
         this._nowPlaying = undefined
         this._queueLoop = false
         this._transitioning = false

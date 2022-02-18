@@ -16,20 +16,34 @@ interface GuildOptions {
 export class BotClient extends Client {
 
     private readonly _name: string
-    private readonly _status: string[]
+    private readonly _guildOptions: GuildOptions
     private readonly _database?: DatabaseManager
     private readonly _info: Map<string, GuildInfo>
 
     public constructor(clientOptions: ClientOptions, botOptions: { readonly name: string, readonly status: string[], readonly guildOptions: GuildOptions, readonly database?: boolean }) {
         super(clientOptions)
+
         this._name = botOptions.name
-        this._status = botOptions.status
+        this._guildOptions = botOptions.guildOptions
         this._database = botOptions.database ? new DatabaseManager() : undefined
         this._info = new Map<string, GuildInfo>()
-        this.once('ready', () => { this.ready() })
+
+        this.once('ready', () => { void this.ready(botOptions.status) })
+    }
+
+    private async ready(status: string[]): Promise<void> {
+        this.user.setStatus('dnd')
+        this.user.setActivity(status[Math.floor(Math.random() * status.length)])
+
+        setInterval(() => {
+            this.statusCheck()
+        }, 300_000)
+
+        await this._database?.connect()
+
         this.on('interactionCreate', async interaction => {
             if (interaction.inGuild() && !this._info.has(interaction.guildId)) {
-                this.addGuild(interaction.guildId, botOptions.guildOptions)
+                this.addGuild(interaction.guildId, this._guildOptions)
             }
 
             if (interaction.isAutocomplete()) {
@@ -47,29 +61,15 @@ export class BotClient extends Client {
                 void interaction.editReply(response)
             }
         })
-    }
-
-    public ready(): void {
-        this.user.setStatus('dnd')
-        this.user.setActivity(this._status[Math.floor(Math.random() * this._status.length)])
-
-        setInterval(() => {
-            this.user.setActivity(this._status[Math.floor(Math.random() * this._status.length)])
-            this.statusCheck()
-        }, 300_000)
 
         this.user.setStatus('online')
         console.log(`\u001B[42m We have logged in as ${this.user.tag} \u001B[0m`)
     }
 
-    public async parseChatCommand(interaction: CommandInteraction): Promise<InteractionReplyOptions | void> {
+    private async parseChatCommand(interaction: CommandInteraction): Promise<InteractionReplyOptions | void> {
         const command = (await import(`../commands/${this._name}/${interaction.commandName}.js`) as { command: ChatCommand }).command
 
         await interaction.deferReply({ ephemeral: command.ephemeral })
-
-        if (this._database?.offline) {
-            await this._database.connect()
-        }
 
         if (command.isGuildOnly()) {
             if (!interaction.inGuild()) {
@@ -84,7 +84,7 @@ export class BotClient extends Client {
         return command.respond(interaction, { database: this._database })
     }
 
-    public async autocomplete(interaction: AutocompleteInteraction): Promise<ApplicationCommandOptionChoice[]> {
+    private async autocomplete(interaction: AutocompleteInteraction): Promise<ApplicationCommandOptionChoice[]> {
         const command = (await import(`../commands/${this._name}/${interaction.commandName}.js`) as { command: ChatCommand }).command
         if (command.isGuildOnly()) {
             if (!interaction.inGuild()) {
@@ -95,7 +95,7 @@ export class BotClient extends Client {
         return (await command.autocomplete(interaction.options.getFocused(true), { database: this._database })) ?? []
     }
 
-    public addGuild(guildId: string, options: GuildOptions): void {
+    private addGuild(guildId: string, options: GuildOptions): void {
         this._info.set(guildId, {
             voiceManager: options.voiceManager ? new VoiceManager() : undefined,
             queueManager: options.queueManager ? new QueueManager() : undefined,
@@ -103,7 +103,7 @@ export class BotClient extends Client {
         })
     }
 
-    public statusCheck(): void {
+    private statusCheck(): void {
         for (const [ , guild ] of this._info) {
             if (guild.voiceManager?.isIdle()) {
                 guild.voiceManager.reset()
