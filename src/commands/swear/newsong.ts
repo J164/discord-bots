@@ -10,7 +10,7 @@ async function newSong(interaction: CommandInteraction, info: BotInfo): Promise<
         void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] })
         return
     }
-    if (!/^(?:https:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=]+)$/.test(interaction.options.get('url').value as string)) {
+    if (!/^(?:https:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(interaction.options.get('url').value as string)) {
         void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] })
         return
     }

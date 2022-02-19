@@ -13,7 +13,7 @@ async function getSongs(interaction: CommandInteraction, info: Info): Promise<vo
         return
     }
     const songs = (await info.database.select('swear_songs')).sort((a, b) => a.index - b.index) as unknown as { index: number, name: string }[]
-    const songNumber = interaction.options.getInteger('number') <= songs.length ? interaction.options.getInteger('number') - 1 : Math.floor(Math.random() * songs.length)
+    const songNumber = interaction.options.getInteger('number') && interaction.options.getInteger('number') <= songs.length ? interaction.options.getInteger('number') - 1 : Math.floor(Math.random() * songs.length)
     await info.voiceManager.connect(voiceChannel)
     await info.voiceManager.playStream(createReadStream(existsSync(`${process.env.DATA}/music_files/swear_songs/${songs[songNumber].name}.webm`) ? `${process.env.DATA}/music_files/swear_songs/${songs[songNumber].name}.webm` : `${process.env.DATA}/music_files/swear_songs/${songs[songNumber].name}.mp3`))
     void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Now Playing!' }) ] })

@@ -71,11 +71,11 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
 
     void interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Boiling potatoes...' }) ] })
 
-    if (/^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=]+)$/.test(url)) {
+    if (/^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=?]+)$/.test(url)) {
         return spotify(interaction, info, voiceChannel)
     }
 
-    if (/^(?:https:\/\/)?(?:www\.)?youtube\.com\/playlist\?list=([A-Za-z\d-_&=]+)$/.test(url)) {
+    if (/^(?:https:\/\/)?(?:www\.)?youtube\.com\/playlist\?list=([A-Za-z\d-_&=?]+)$/.test(url)) {
         const results = await ytpl(url).catch((): false => {
             void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] })
             return false
@@ -90,7 +90,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         return { embeds: [ generateEmbed('success', { title: `Added playlist "${results.title}" to queue!`, image: { url: results.bestThumbnail.url } }) ] }
     }
 
-    if (/^(?:https:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=]+)$/.test(url)) {
+    if (/^(?:https:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(url)) {
         const result = await resolve({ url: url, quiet: true }) as { readonly webpage_url: string, readonly title: string, readonly thumbnail: string, readonly duration: number }
         if (!('webpage_url' in result)) {
             return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
@@ -117,7 +117,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
 }
 
 async function search(option: ApplicationCommandOptionChoice): Promise<ApplicationCommandOptionChoice[]> {
-    if ((option.value as string).length < 3 || (/^(https:\/\/)?(www\.)?(youtube\.com|youtu\.be)\//).test(option.value as string) || (/^(https:\/\/)?open\.spotify\.com\/playlist\//).test(option.value as string)) {
+    if ((option.value as string).length < 3 || /^(?:https:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(option.value as string) || /^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=?]+)$/.test(option.value as string)) {
         return
     }
     const filter = (await ytsr.getFilters(option.value as string)).get('Type').get('Video')
