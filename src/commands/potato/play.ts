@@ -87,7 +87,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         }
         await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
         await info.queueManager.connect(voiceChannel)
-        return { embeds: [ generateEmbed('success', { title: `Added playlist "${results.title}" to queue!`, image: { url: results.bestThumbnail.url } }) ] }
+        return { embeds: [ generateEmbed('success', { title: `Added playlist "${results.title}" to queue!`, fields: [ { name: 'URL:', value: url } ], image: { url: results.bestThumbnail.url } }) ] }
     }
 
     if (/^(?:https:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(url)) {
@@ -100,7 +100,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
         const sec = (result.duration % 60)
         await info.queueManager.addToQueue([ { url: result.webpage_url, title: result.title, duration: `${hour > 0 ? (hour < 10 ? `0${hour}:` : `${hour}:`) : ''}${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec}`, thumbnail: result.thumbnail } ], interaction.options.getInteger('position') - 1)
         await info.queueManager.connect(voiceChannel)
-        return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, image: { url: result.thumbnail } }) ] }
+        return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, fields: [ { name: 'URL:', value: result.webpage_url } ], image: { url: result.thumbnail } }) ] }
     }
 
     const filter = (await ytsr.getFilters(url)).get('Type').get('Video')
@@ -113,7 +113,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     const result = term.items[0] as ytsr.Video
     await info.queueManager.addToQueue([ { url: result.url, title: result.title, duration: result.duration, thumbnail: result.bestThumbnail.url } ], interaction.options.getInteger('position') - 1)
     await info.queueManager.connect(voiceChannel)
-    return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, image: { url: result.bestThumbnail.url } }) ] }
+    return { embeds: [ generateEmbed('success', { title: `Added "${result.title}" to queue!`, fields: [ { name: 'URL:', value: result.url } ], image: { url: result.bestThumbnail.url } }) ] }
 }
 
 async function search(option: ApplicationCommandOptionChoice): Promise<ApplicationCommandOptionChoice[]> {

@@ -43,30 +43,24 @@ export class BotClient extends Client {
 
         this.on('interactionCreate', async interaction => {
             if (interaction.inGuild() && !this._info.has(interaction.guildId)) {
-                this.addGuild(interaction.guildId, this._guildOptions)
+                this.addGuild(interaction.guildId)
             }
 
             if (interaction.isAutocomplete()) {
-                const response = await this.autocomplete(interaction)
-                try { void interaction.respond(response) } catch { /* prevent unknown interaction */ }
+                void interaction.respond(await this.autocomplete(interaction)).catch()
                 return
             }
 
-            if (!interaction.isCommand()) {
-                return
-            }
+            if (!interaction.isCommand()) return
 
-            const response = await this.parseChatCommand(interaction)
-            if (response) {
-                void interaction.editReply(response)
-            }
+            void interaction.editReply(await this.parseChatCommand(interaction) ?? {}).catch()
         })
 
         this.user.setStatus('online')
         console.log(`\u001B[42m We have logged in as ${this.user.tag} \u001B[0m`)
     }
 
-    private async parseChatCommand(interaction: CommandInteraction): Promise<InteractionReplyOptions | void> {
+    private async parseChatCommand(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
         const command = (await import(`../commands/${this._name}/${interaction.commandName}.js`) as { command: ChatCommand }).command
 
         await interaction.deferReply({ ephemeral: command.ephemeral })
@@ -95,11 +89,11 @@ export class BotClient extends Client {
         return (await command.autocomplete(interaction.options.getFocused(true), { database: this._database })) ?? []
     }
 
-    private addGuild(guildId: string, options: GuildOptions): void {
+    private addGuild(guildId: string): void {
         this._info.set(guildId, {
-            voiceManager: options.voiceManager ? new VoiceManager() : undefined,
-            queueManager: options.queueManager ? new QueueManager() : undefined,
-            games: new Map<string, BaseGame>(),
+            voiceManager: this._guildOptions.voiceManager ? new VoiceManager() : undefined,
+            queueManager: this._guildOptions.queueManager ? new QueueManager() : undefined,
+            games: new Map<string, BaseGame>(), // TODO phase out global map
         })
     }
 

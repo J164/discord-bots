@@ -19,7 +19,7 @@ function songEmbed(songs: string[], index: number): MessageEmbedOptions {
     return embed
 }
 
-async function list(interaction: CommandInteraction, info: BotInfo, index = 0, button?: ButtonInteraction): Promise<void> {
+async function list(interaction: CommandInteraction, info: BotInfo, index = 0, button?: ButtonInteraction): Promise<undefined> {
     const songs = JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' })) as { songs: string[] }
     const replyOptions: InteractionUpdateOptions = { embeds: [ songEmbed(songs.songs, index) ], components: [ { components: [
         { type: 'BUTTON', customId: 'list-doublearrowleft', emoji: '\u23EA', label: 'Return to Beginning', style: 'SECONDARY', disabled: index === 0 },
@@ -48,6 +48,7 @@ async function list(interaction: CommandInteraction, info: BotInfo, index = 0, b
         }
     })
     collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
+    return undefined
 }
 
 export const command = new ChatCommand({

@@ -1,11 +1,11 @@
-import { CommandInteraction } from 'discord.js'
+import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
 import { BotInfo } from '../../core/utils/interfaces.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import process from 'node:process'
 import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 import { download } from '../../core/modules/ytdl.js'
 
-async function newSong(interaction: CommandInteraction, info: BotInfo): Promise<void> {
+async function newSong(interaction: CommandInteraction, info: BotInfo): Promise<InteractionReplyOptions> {
     if (interaction.user.id !== process.env.ADMIN && interaction.user.id !== process.env.SWEAR) {
         void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] })
         return
@@ -21,7 +21,7 @@ async function newSong(interaction: CommandInteraction, info: BotInfo): Promise<
         void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Success!' }) ] })
         return
     }
-    void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] })
+    return { embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] }
 }
 
 export const command = new ChatCommand({

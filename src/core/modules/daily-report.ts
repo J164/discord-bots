@@ -171,7 +171,7 @@ export async function getDailyReport(date: Date): Promise<WebhookMessageOptions>
                 value: `"${quote[0].q}" -${quote[0].a}`,
             },
             {
-                name: `In Linconshire is is ${weather.current.condition.text} and ${weather.current.temp_f}°F`,
+                name: `In Linconshire it is ${weather.current.condition.text} and ${weather.current.temp_f}°F`,
                 value: `It feels like ${weather.current.feelslike_f}°F and the wind speed is ${weather.current.wind_mph} mph`,
             },
             {

@@ -13,12 +13,11 @@ export class VoiceManager {
     }
 
     public async connect(voiceChannel: VoiceChannel): Promise<void> {
-        if (this._voiceConnection?.state.status === VoiceConnectionStatus.Ready) {
-            return
-        }
+        if (this._voiceConnection?.state.status === VoiceConnectionStatus.Ready) return
+
         this._voiceConnection = joinVoiceChannel({
             channelId: voiceChannel.id,
-            guildId: voiceChannel.guild.id,
+            guildId: voiceChannel.guildId,
             adapterCreator: voiceChannel.guild.voiceAdapterCreator,
         })
         this._voiceChannel = voiceChannel
@@ -39,10 +38,6 @@ export class VoiceManager {
 
     public resume(): boolean {
         return this._player?.unpause()
-    }
-
-    public isActive(): boolean {
-        return this._player?.state.status === AudioPlayerStatus.Playing || this._player?.state.status === AudioPlayerStatus.Paused
     }
 
     public isIdle(): boolean {

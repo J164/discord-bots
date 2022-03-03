@@ -3,7 +3,7 @@ import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 
 async function roll(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
-    const dice = interaction.options.getInteger('sides') ? interaction.options.getInteger('sides') : 6
+    const dice = interaction.options.getInteger('sides') ?? 6
     await interaction.editReply({ embeds: [ generateEmbed('info', { title: `Rolling a ${dice}-sided die...` }) ] })
     const diceResult = generateEmbed('info', { title: `${dice}-sided die result`, fields: [] })
     let chance = 10_000

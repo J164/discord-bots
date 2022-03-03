@@ -34,18 +34,17 @@ export class QueueManager {
     }
 
     public get nowPlaying(): MessageEmbedOptions {
-        if (!this._nowPlaying) {
-            return generateEmbed('error', { title: 'Nothing has played yet!' })
-        }
-        return generateEmbed('info', {
-            title: `Now Playing: ${this._nowPlaying.title} (${this._nowPlaying.duration})`,
-            fields: [ {
-                name: 'URL:',
-                value: this._nowPlaying.url,
-            } ],
-            image: { url: this._nowPlaying.thumbnail },
-            footer: this._nowPlaying.looping ? { text: 'Looping', iconURL: 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png' } : {},
-        })
+        return this._nowPlaying
+            ? generateEmbed('info', {
+                title: `Now Playing: ${this._nowPlaying.title} (${this._nowPlaying.duration})`,
+                fields: [ {
+                    name: 'URL:',
+                    value: this._nowPlaying.url,
+                } ],
+                image: { url: this._nowPlaying.thumbnail },
+                footer: this._nowPlaying.looping ? { text: 'Looping', iconURL: 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png' } : {},
+            })
+            : generateEmbed('error', { title: 'Nothing has played yet!' })
     }
 
     public get queue(): QueueItem[] {
@@ -57,72 +56,70 @@ export class QueueManager {
     }
 
     public async addToQueue(items: QueueItem[], position: number): Promise<void> {
-        while (this._queueLock) {
-            await setTimeout(200)
-        }
-
+        while (this._queueLock) await setTimeout(200)
         this._queueLock = true
-        if (position === -1 || position >= this._queue.length) {
-            this._queue.push(...items)
-            this._queueLock = false
-            return
-        }
-        if (position === 0) {
-            this._queue.unshift(...items)
-            this._queueLock = false
-            return
-        }
-        this._queue.splice(position, 0, ...items)
+
+            if (position === -1 || position >= this._queue.length) {
+                this._queue.push(...items)
+                this._queueLock = false
+                return
+            }
+            if (position === 0) {
+                this._queue.unshift(...items)
+                this._queueLock = false
+                return
+            }
+            this._queue.splice(position, 0, ...items)
+
         this._queueLock = false
     }
 
     public async connect(voiceChannel: VoiceChannel): Promise<void> {
-        if (this._voiceManager.isActive()) {
-            return
-        }
+        if (this.isActive()) return
+
         this._transitioning = true
         await this._voiceManager.connect(voiceChannel)
         void this._playSong()
     }
 
     private async _playSong(): Promise<void> {
-        if (this._queue.length === 0) {
-            this._transitioning = false
-            return
-        }
-
-        while (this._queueLock) {
-            await setTimeout(200)
-        }
-
+        while (this._queueLock) await setTimeout(200)
         this._queueLock = true
-        this._nowPlaying = this._queue.shift()
+
+            if (this._queue.length === 0) {
+                this._queueLock = false
+                this._transitioning = false
+                return
+            }
+
+            this._nowPlaying = this._queue.shift()
+
         this._queueLock = false
 
         this._script = createStream({ url: this._nowPlaying.url, outtmpl: '-', quiet: true, format: 'bestaudio[ext=webm][acodec=opus]/bestaudio[ext=ogg][acodec=opus]/bestaudio', ratelimit: 160_000 })
+        this._script.once('close', () => this._script.stdout.push(Buffer.from([ 0xF8, 0xFF, 0xFE, 0xF8, 0xFF, 0xFE, 0xF8, 0xFF, 0xFE, 0xF8, 0xFF, 0xFE, 0xF8, 0xFF, 0xFE ])))
         await this._voiceManager.playStream(this._script.stdout)
 
         this._transitioning = false
 
         this._voiceManager.player.on('stateChange', async (oldState, newState) => {
-            if (newState.status !== AudioPlayerStatus.Idle) {
-                return
-            }
+            if (newState.status !== AudioPlayerStatus.Idle) return
             this._voiceManager.player.removeAllListeners('stateChange')
 
             this._transitioning = true
+            this._script.stdout.removeAllListeners('close')
             this._script.kill()
 
             if (this._queueLoop || this._nowPlaying.looping) {
-                while (this._queueLock) {
-                    await setTimeout(200)
-                }
+                while (this._queueLock) await setTimeout(200)
                 this._queueLock = true
-                if (this._queueLoop) {
-                    this._queue.push(this._nowPlaying)
-                } else if (this._nowPlaying.looping) {
-                    this._queue.unshift(this._nowPlaying)
-                }
+
+                    if (this._queueLoop) {
+                        this._queue.push(this._nowPlaying)
+                    } else if (this._nowPlaying.looping) {
+                        this._queue.unshift(this._nowPlaying)
+                    }
+
                 this._queueLock = false
             }
 
@@ -131,21 +128,27 @@ export class QueueManager {
     }
 
     public async skipTo(index: number): Promise<void> {
-        while (this._queueLock) {
-            await setTimeout(200)
-        }
-
+        while (this._queueLock) await setTimeout(200)
         this._queueLock = true
-        index >= this._queue.length ? this._queue.unshift(this._queue.pop()) : this._queue.unshift(this._queue.splice(index - 1, 1)[0])
-        this._queueLock = false
 
+            if (this._queue.length === 0) {
+                this._queueLock = false
+                return
+            }
+
+            index >= this._queue.length
+                ? this._queue.unshift(this._queue.pop())
+                : this._queue.unshift(this._queue.splice(index - 1, 1)[0])
+
+        this._queueLock = false
         this.skip()
     }
 
     public loopSong(): MessageEmbedOptions {
-        if (!this._voiceManager.isActive()) {
+        if (!this.isActive()) {
             return generateEmbed('error', { title: 'Nothing is playing!' })
         }
+
         if (this._nowPlaying.looping) {
             this._nowPlaying.looping = false
             return generateEmbed('success', { title: 'No longer looping' })
@@ -155,9 +158,10 @@ export class QueueManager {
     }
 
     public loopQueue(): MessageEmbedOptions {
-        if (!this._voiceManager.isActive() || this._queue.length === 0) {
+        if (!this.isActive() || this._queue.length === 0) {
             return generateEmbed('error', { title: 'Nothing is queued!' })
         }
+
         if (this._queueLoop) {
             this._queueLoop = false
             return generateEmbed('success', { title: 'No longer looping queue' })
@@ -170,6 +174,7 @@ export class QueueManager {
         if (this._queue.length === 0) {
             return false
         }
+
         this._queue = []
         this._queueLoop = false
         return true
@@ -188,50 +193,56 @@ export class QueueManager {
     }
 
     public async shuffleQueue(): Promise<boolean> {
-        if (this._queue.length === 0) {
-            return false
-        }
-        while (this._queueLock) {
-            await setTimeout(200)
-        }
+        while (this._queueLock) await setTimeout(200)
         this._queueLock = true
-        for (let index = this._queue.length - 1; index > 0; index--) {
-            const randomIndex = Math.floor(Math.random() * (index + 1))
-            const temporary = this._queue[index]
-            this._queue[index] = this._queue[randomIndex]
-            this._queue[randomIndex] = temporary
-        }
+
+            if (this._queue.length === 0) {
+                this._queueLock = false
+                return false
+            }
+
+            for (let index = this._queue.length - 1; index > 0; index--) {
+                const randomIndex = Math.floor(Math.random() * (index + 1))
+                const temporary = this._queue[index]
+                this._queue[index] = this._queue[randomIndex]
+                this._queue[randomIndex] = temporary
+            }
+
         this._queueLock = false
         return true
     }
 
     public async getPaginatedQueue(): Promise<QueueItem[][]> {
-        if (!this._voiceManager.isActive()) {
-            return
-        }
-        if (this._queue.length === 0) {
-            return [ [ this._nowPlaying ] ]
-        }
-        while (this._queueLock) {
-            await setTimeout(200)
-        }
+        if (!this.isActive()) return
+
+        while (this._queueLock) await setTimeout(200)
         this._queueLock = true
-        const queueArray: QueueItem[][] = []
-        for (let r = 0; r < Math.ceil(this._queue.length / 25); r++) {
-            queueArray.push([])
-            for (let index = -1; index < 25; index++) {
-                if (r * 25 + index > this._queue.length - 1) {
-                    break
-                }
-                if (r === 0 && index === -1) {
-                    queueArray[r].push(this._nowPlaying)
-                    continue
-                }
-                queueArray[r].push(this._queue[r * 25 + index])
+
+            if (this._queue.length === 0) {
+                this._queueLock = false
+                return [ [ this._nowPlaying ] ]
             }
-        }
+            const queueArray: QueueItem[][] = []
+            for (let r = 0; r < Math.ceil(this._queue.length / 25); r++) {
+                queueArray.push([])
+                for (let index = -1; index < 25; index++) {
+                    if (r * 25 + index > this._queue.length - 1) {
+                        break
+                    }
+                    if (r === 0 && index === -1) {
+                        queueArray[r].push(this._nowPlaying)
+                        continue
+                    }
+                    queueArray[r].push(this._queue[r * 25 + index])
+                }
+            }
+
         this._queueLock = false
         return queueArray
+    }
+
+    private isActive(): boolean {
+        return this._voiceManager.player?.state.status === AudioPlayerStatus.Playing || this._voiceManager.player?.state.status === AudioPlayerStatus.Paused
     }
 
     public isIdle(): boolean {
@@ -239,17 +250,18 @@ export class QueueManager {
     }
 
     public async reset(): Promise<void> {
-        while (this._queueLock) {
-            await setTimeout(200)
-        }
+        while (this._queueLock) await setTimeout(200)
         this._queueLock = true
-        this._voiceManager.reset()
-        this._queue = []
-        this._script?.kill()
-        this._script = undefined
-        this._nowPlaying = undefined
-        this._queueLoop = false
-        this._transitioning = false
+
+            this._queue = []
+            this._voiceManager.reset()
+            this._script?.stdout.removeAllListeners('close')
+            this._script?.kill()
+            this._script = undefined
+            this._nowPlaying = undefined
+            this._queueLoop = false
+            this._transitioning = false
+
         this._queueLock = false
     }
 }

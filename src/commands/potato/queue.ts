@@ -4,7 +4,7 @@ import { generateEmbed } from '../../core/utils/generators.js'
 import { QueueItem } from '../../core/voice/queue-manager.js'
 import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
 
-async function queue(interaction: CommandInteraction, info: Info, queueArray?: QueueItem[][], button?: ButtonInteraction, page = 0): Promise<void> {
+async function queue(interaction: CommandInteraction, info: Info, queueArray?: QueueItem[][], button?: ButtonInteraction, page = 0): Promise<undefined> {
     if (!queueArray) {
         queueArray = await info.queueManager.getPaginatedQueue()
         if (!queueArray) {
@@ -51,6 +51,7 @@ async function queue(interaction: CommandInteraction, info: Info, queueArray?: Q
         }
     })
     collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
+    return undefined
 }
 
 export const command = new GuildChatCommand({

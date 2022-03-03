@@ -102,8 +102,9 @@ async function parseDeck(interaction: CommandInteraction, urls: { url: string }[
     collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
 }
 
-async function getDeck(interaction: CommandInteraction, info: BotInfo): Promise<void> {
+async function getDeck(interaction: CommandInteraction, info: BotInfo): Promise<undefined> {
     void parseDeck(interaction, await info.database.select('mtg_decks') as unknown as { url: string }[])
+    return undefined
 }
 
 export const command = new ChatCommand({
