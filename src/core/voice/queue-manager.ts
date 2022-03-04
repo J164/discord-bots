@@ -75,7 +75,7 @@ export class QueueManager {
     }
 
     public async connect(voiceChannel: VoiceChannel): Promise<void> {
-        if (this.isActive()) return
+        if (this._isActive()) return
 
         this._transitioning = true
         await this._voiceManager.connect(voiceChannel)
@@ -96,7 +96,7 @@ export class QueueManager {
 
         this._queueLock = false
 
-        this._script = createStream({ url: this._nowPlaying.url, outtmpl: '-', quiet: true, format: 'bestaudio[ext=webm][acodec=opus]/bestaudio[ext=ogg][acodec=opus]/bestaudio', ratelimit: 160_000 })
+        this._script = createStream(this._nowPlaying.url, { outtmpl: '-', noprogress: true, quiet: true, format: 'bestaudio[ext=webm][acodec=opus]/bestaudio[ext=ogg][acodec=opus]/bestaudio', ratelimit: 160_000 })
         this._script.once('close', () => this._script.stdout.push(Buffer.from([ 0xF8, 0xFF, 0xFE, 0xF8, 0xFF, 0xFE, 0xF8, 0xFF, 0xFE, 0xF8, 0xFF, 0xFE, 0xF8, 0xFF, 0xFE ])))
         await this._voiceManager.playStream(this._script.stdout)
 
@@ -145,7 +145,7 @@ export class QueueManager {
     }
 
     public loopSong(): MessageEmbedOptions {
-        if (!this.isActive()) {
+        if (!this._isActive()) {
             return generateEmbed('error', { title: 'Nothing is playing!' })
         }
 
@@ -158,7 +158,7 @@ export class QueueManager {
     }
 
     public loopQueue(): MessageEmbedOptions {
-        if (!this.isActive() || this._queue.length === 0) {
+        if (!this._isActive() || this._queue.length === 0) {
             return generateEmbed('error', { title: 'Nothing is queued!' })
         }
 
@@ -213,7 +213,7 @@ export class QueueManager {
     }
 
     public async getPaginatedQueue(): Promise<QueueItem[][]> {
-        if (!this.isActive()) return
+        if (!this._isActive()) return
 
         while (this._queueLock) await setTimeout(200)
         this._queueLock = true
@@ -241,7 +241,7 @@ export class QueueManager {
         return queueArray
     }
 
-    private isActive(): boolean {
+    private _isActive(): boolean {
         return this._voiceManager.player?.state.status === AudioPlayerStatus.Playing || this._voiceManager.player?.state.status === AudioPlayerStatus.Paused
     }
 

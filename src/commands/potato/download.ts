@@ -4,7 +4,7 @@ import process from 'node:process'
 import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 import { download } from '../../core/modules/ytdl.js'
 
-async function downloadVideo(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
+function downloadVideo(interaction: CommandInteraction): InteractionReplyOptions {
     if (interaction.user.id !== process.env.ADMIN) {
         return { embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] }
     }
@@ -12,9 +12,9 @@ async function downloadVideo(interaction: CommandInteraction): Promise<Interacti
         return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
     }
     void interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
-    await download({ url: interaction.options.getString('url'), quiet: true, outtmpl: `${process.env.DATA}/new_downloads/%(title)s.%(ext)s`, format: interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best' })
-       ? void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] })
-       : void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] })
+    download(interaction.options.getString('url'), { noprogress: true, quiet: true, outtmpl: `${process.env.DATA}/new_downloads/%(title)s.%(ext)s`, format: interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best' })
+       .then(void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] }))
+       .catch(void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] }))
 }
 
 export const command = new ChatCommand({

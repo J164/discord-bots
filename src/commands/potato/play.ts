@@ -91,8 +91,8 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     }
 
     if (/^(?:https:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(url)) {
-        const result = await resolve({ url: url, quiet: true }) as { readonly webpage_url: string, readonly title: string, readonly thumbnail: string, readonly duration: number }
-        if (!('webpage_url' in result)) {
+        const result = await resolve(url, { noprogress: true, quiet: true }) as { readonly webpage_url: string, readonly title: string, readonly thumbnail: string, readonly duration: number, readonly success: boolean }
+        if (!result.success) {
             return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
         }
         const hour = Math.floor(result.duration / 3600)
