@@ -15,10 +15,10 @@ function downloadVideo(interaction: CommandInteraction): InteractionReplyOptions
     download(interaction.options.getString('url'), { noprogress: true, quiet: true, outtmpl: `${process.env.DATA}/new_downloads/%(title)s.%(ext)s`, format: interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best' })
        .then(
             () => {
-                void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] })
+                void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] }).catch()
             },
             () => {
-                void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] })
+                void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] }).catch()
             },
         )
 }

@@ -1,4 +1,4 @@
-import { ButtonInteraction, CollectorFilter, DMChannel, MessageOptions } from 'discord.js'
+import { DMChannel, Message, MessageOptions } from 'discord.js'
 import { multicardMessage } from '../../utils/card-utils.js'
 import { Card, Deck } from '../../utils/deck.js'
 import { generateEmbed } from '../../utils/generators.js'
@@ -9,21 +9,21 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
     const dealer = Deck.randomCard({ number: 2, values: [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11 ] })
     const player = Deck.randomCard({ number: 2, values: [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11 ] })
 
-    const filter: CollectorFilter<[ButtonInteraction]> = b => b.customId.startsWith('blackjack')
     const prompt = async () => {
-        await channel.send({ ...await printStandings(player, dealer), components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-hit', style: 'PRIMARY', label: 'Hit' }, { type: 'BUTTON', customId: 'blackjack-stand', style: 'SECONDARY', label: 'Stand' } ] } ] })
+        const message = await channel.send({ ...await printStandings(player, dealer), components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-hit', style: 'PRIMARY', label: 'Hit' }, { type: 'BUTTON', customId: 'blackjack-stand', style: 'SECONDARY', label: 'Stand' } ] } ] })
         await new Promise<void>((resolve) => {
-            channel.createMessageComponentCollector({ filter: filter, componentType: 'BUTTON' }).once('collect', async b => {
-                void b.update({ components: [] })
-                if (b.customId === 'blackjack-hit') {
-                    if (hit(player) === -1) {
-                        resolve()
-                        return
+            channel.createMessageComponentCollector({ filter: b => b.customId.startsWith('blackjack'), componentType: 'BUTTON', max: 1, time: 300_000 })
+                .once('end', async b => {
+                    if (message.editable) void message.edit({ components: [] })
+                    if (!b.at(0)) return resolve()
+                    if (b.at(0).customId === 'blackjack-hit') {
+                        if (hit(player) === -1) {
+                            return resolve()
+                        }
+                        await prompt()
                     }
-                    await prompt()
-                }
-                resolve()
-            })
+                    resolve()
+                })
         })
     }
     await prompt()
@@ -31,30 +31,34 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
     const finish = finishGame(player, dealer)
     const standings = await printStandings(player, dealer, true)
 
+    let message: Message
+
     switch (finish) {
         case 'Bust':
-            await channel.send({ embeds: [ generateEmbed('info', { title: 'Bust! (You went over 21)' }), ...standings.embeds ], files: standings.files, components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-continue', label: 'Play Again?', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'blackjack-end', label: 'Cash Out', style: 'SECONDARY' } ] } ] })
+            message = await channel.send({ embeds: [ generateEmbed('info', { title: 'Bust! (You went over 21)' }), ...standings.embeds ], files: standings.files, components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-continue', label: 'Play Again?', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'blackjack-end', label: 'Cash Out', style: 'SECONDARY' } ] } ] })
             break
         case 'Push':
-            await channel.send({ embeds: [ generateEmbed('info', { title: 'Push! (You tied with the dealer)' }), ...standings.embeds ], files: standings.files, components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-continue', label: 'Play Again?', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'blackjack-end', label: 'Cash Out', style: 'SECONDARY' } ] } ] })
+            message = await channel.send({ embeds: [ generateEmbed('info', { title: 'Push! (You tied with the dealer)' }), ...standings.embeds ], files: standings.files, components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-continue', label: 'Play Again?', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'blackjack-end', label: 'Cash Out', style: 'SECONDARY' } ] } ] })
             break
         case 'Blackjack':
-            await channel.send({ embeds: [ generateEmbed('info', { title: 'Blackjack!' }), ...standings.embeds ], files: standings.files, components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-continue', label: 'Play Again?', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'blackjack-end', label: 'Cash Out', style: 'SECONDARY' } ] } ] })
+            message = await channel.send({ embeds: [ generateEmbed('info', { title: 'Blackjack!' }), ...standings.embeds ], files: standings.files, components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-continue', label: 'Play Again?', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'blackjack-end', label: 'Cash Out', style: 'SECONDARY' } ] } ] })
             break
         case 'Win':
-            await channel.send({ embeds: [ generateEmbed('info', { title: 'Win!' }), ...standings.embeds ], files: standings.files, components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-continue', label: 'Play Again?', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'blackjack-end', label: 'Cash Out', style: 'SECONDARY' } ] } ] })
+            message = await channel.send({ embeds: [ generateEmbed('info', { title: 'Win!' }), ...standings.embeds ], files: standings.files, components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-continue', label: 'Play Again?', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'blackjack-end', label: 'Cash Out', style: 'SECONDARY' } ] } ] })
             break
         case 'Lose':
-            await channel.send({ embeds: [ generateEmbed('info', { title: 'Lose!' }), ...standings.embeds ], files: standings.files, components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-continue', label: 'Play Again?', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'blackjack-end', label: 'Cash Out', style: 'SECONDARY' } ] } ] })
+            message = await channel.send({ embeds: [ generateEmbed('info', { title: 'Lose!' }), ...standings.embeds ], files: standings.files, components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-continue', label: 'Play Again?', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'blackjack-end', label: 'Cash Out', style: 'SECONDARY' } ] } ] })
             break
     }
 
-    channel.createMessageComponentCollector({ filter: filter, componentType: 'BUTTON' }).once('collect', b => {
-        void b.update({ components: [] })
-        if (b.customId === 'blackjack-continue') {
-            void playBlackjack(channel)
-        }
-    })
+    channel.createMessageComponentCollector({ filter: b => b.customId.startsWith('blackjack'), componentType: 'BUTTON', max: 1, time: 300_000 })
+        .once('end', b => {
+            void message.edit({ components: [] })
+            if (!b.at(0)) return
+            if (b.at(0).customId === 'blackjack-continue') {
+                void playBlackjack(channel)
+            }
+        })
 }
 
 function scoreHand(hand: Card[]): number {

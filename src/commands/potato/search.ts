@@ -97,30 +97,31 @@ async function search(interaction: CommandInteraction, info: BotInfo, results?: 
         { type: 'BUTTON', customId: 'search-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: page === results.length - 1 },
     ], type: 'ACTION_ROW' } ] }
     await (component ? component.update(options) : interaction.editReply(options))
-    const filter = (b: SelectMenuInteraction<'cached'> | ButtonInteraction<'cached'>) => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName)
-    const collector = interaction.channel.createMessageComponentCollector({ filter: filter, time: 60_000 })
-    collector.once('collect', async c => {
-        if (c.isSelectMenu()) {
-            void c.update(await generateResponse(results, page, Number.parseInt(c.values[0]) - 1))
-            return
-        }
-        if (!c.isButton()) return
-        switch (c.customId) {
-            case 'search-doublearrowleft':
-                void search(interaction, info, results, c)
-                break
-            case 'search-arrowleft':
-                void search(interaction, info, results, c, page - 1)
-                break
-            case 'search-arrowright':
-                void search(interaction, info, results, c, page + 1)
-                break
-            case 'search-doublearrowright':
-                void search(interaction, info, results, c, results.length - 1)
-                break
-        }
-    })
-    collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
+    interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName), time: 300_000, max: 1 })
+        .once('end', async c => {
+            void interaction.editReply({ components: [] }).catch()
+            if (!c.at(0)) return
+            const response = c.at(0)
+            if (response.isSelectMenu()) {
+                void response.update(await generateResponse(results, page, Number.parseInt(response.values[0]) - 1))
+                return
+            }
+            if (!response.isButton()) return
+            switch (c.at(0).customId) {
+                case 'search-doublearrowleft':
+                    void search(interaction, info, results, response)
+                    break
+                case 'search-arrowleft':
+                    void search(interaction, info, results, response, page - 1)
+                    break
+                case 'search-arrowright':
+                    void search(interaction, info, results, response, page + 1)
+                    break
+                case 'search-doublearrowright':
+                    void search(interaction, info, results, response, results.length - 1)
+                    break
+            }
+        })
 }
 
 export const command = new ChatCommand({

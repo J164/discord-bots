@@ -28,26 +28,25 @@ async function list(interaction: CommandInteraction, info: BotInfo, index = 0, b
         { type: 'BUTTON', customId: 'list-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: index === (Math.ceil(songs.songs.length / 25) - 1) },
     ], type: 'ACTION_ROW' } ] }
     await (button ? button.update(replyOptions) : interaction.editReply(replyOptions))
-    const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName)
-    const collector = interaction.channel.createMessageComponentCollector({ filter: filter, time: 60_000 })
-    collector.once('collect', b => {
-        if (!b.isButton()) return
-        switch (b.customId) {
-            case 'list-doublearrowleft':
-                void list(interaction, info, 0, b)
-                break
-            case 'list-arrowleft':
-                void list(interaction, info, index - 1, b)
-                break
-            case 'list-arrowright':
-                void list(interaction, info, index + 1, b)
-                break
-            case 'list-doublearrowright':
-                void list(interaction, info, songs.songs.length - 1, b)
-                break
-        }
-    })
-    collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
+    interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName), time: 300_000, componentType: 'BUTTON', max: 1 })
+        .once('end', b => {
+            void interaction.editReply({ components: [] }).catch()
+            if (!b.at(0)) return
+            switch (b.at(0).customId) {
+                case 'list-doublearrowleft':
+                    void list(interaction, info, 0, b.at(0))
+                    break
+                case 'list-arrowleft':
+                    void list(interaction, info, index - 1, b.at(0))
+                    break
+                case 'list-arrowright':
+                    void list(interaction, info, index + 1, b.at(0))
+                    break
+                case 'list-doublearrowright':
+                    void list(interaction, info, songs.songs.length - 1, b.at(0))
+                    break
+            }
+        })
     return undefined
 }
 

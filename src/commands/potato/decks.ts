@@ -77,29 +77,28 @@ async function parseDeck(interaction: CommandInteraction, urls: { url: string }[
         { type: 'BUTTON', customId: 'decks-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: index === urls.length - 1 },
     ], type: 'ACTION_ROW' } ] }
     await (!button ? interaction.editReply(options) : button.update(options))
-    const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName)
-    const collector = interaction.channel.createMessageComponentCollector({ filter: filter, time: 60_000 })
-    collector.once('collect', async b => {
-        if (!b.isButton()) return
-        switch (b.customId) {
-            case 'decks-doublearrowleft':
-                void parseDeck(interaction, urls, b)
-                break
-            case 'decks-arrowleft':
-                void parseDeck(interaction, urls, b, index - 1)
-                break
-            case 'decks-list':
-                b.update({ content: await getList(apiUrl), embeds: [], components: [] }).catch(() => b.update({ embeds: [ generateEmbed('error', { title: 'There seems to be something wrong with the Deckstats API at the moment. Try again later' }) ], components: [] }))
-                break
-            case 'decks-arrowright':
-                void parseDeck(interaction, urls, b, index + 1)
-                break
-            case 'decks-doublearrowright':
-                void parseDeck(interaction, urls, b, urls.length - 1)
-                break
-        }
-    })
-    collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
+    interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName), time: 300_000, componentType: 'BUTTON', max: 1 })
+        .once('end', async b => {
+            void interaction.editReply({ components: [] }).catch()
+            if (!b.at(0)) return
+            switch (b.at(0).customId) {
+                case 'decks-doublearrowleft':
+                    void parseDeck(interaction, urls, b.at(0))
+                    break
+                case 'decks-arrowleft':
+                    void parseDeck(interaction, urls, b.at(0), index - 1)
+                    break
+                case 'decks-list':
+                    b.at(0).update({ content: await getList(apiUrl), embeds: [], components: [] }).catch(() => b.at(0).update({ embeds: [ generateEmbed('error', { title: 'There seems to be something wrong with the Deckstats API at the moment. Try again later' }) ], components: [] }))
+                    break
+                case 'decks-arrowright':
+                    void parseDeck(interaction, urls, b.at(0), index + 1)
+                    break
+                case 'decks-doublearrowright':
+                    void parseDeck(interaction, urls, b.at(0), urls.length - 1)
+                    break
+            }
+        })
 }
 
 async function getDeck(interaction: CommandInteraction, info: BotInfo): Promise<undefined> {

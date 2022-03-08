@@ -6,6 +6,7 @@ import { setTimeout } from 'node:timers/promises'
 import { createStream } from '../modules/ytdl.js'
 import { Readable } from 'node:stream'
 import { ChildProcessByStdio } from 'node:child_process'
+import { setInterval } from 'node:timers'
 
 export interface QueueItem {
     readonly url: string
@@ -26,11 +27,17 @@ export class QueueManager {
     private _transitioning: boolean
 
     public constructor() {
-        this._voiceManager = new VoiceManager()
+        this._voiceManager = new VoiceManager(true)
         this._queue = []
         this._queueLoop = false
         this._queueLock = false
         this._transitioning = false
+
+        setInterval(() => {
+            if (this._isIdle()) {
+                void this.reset()
+            }
+        }, 300_000)
     }
 
     public get nowPlaying(): MessageEmbedOptions {
@@ -245,7 +252,7 @@ export class QueueManager {
         return this._voiceManager.player?.state.status === AudioPlayerStatus.Playing || this._voiceManager.player?.state.status === AudioPlayerStatus.Paused
     }
 
-    public isIdle(): boolean {
+    private _isIdle(): boolean {
         return this._voiceManager.isIdle() && !this._transitioning
     }
 

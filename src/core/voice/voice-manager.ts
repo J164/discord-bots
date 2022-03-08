@@ -1,12 +1,23 @@
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from '@discordjs/voice'
 import { VoiceChannel } from 'discord.js'
 import { Readable } from 'node:stream'
+import { setInterval } from 'node:timers'
 
 export class VoiceManager {
 
     private _voiceConnection: VoiceConnection
     private _voiceChannel: VoiceChannel
     private _player: AudioPlayer
+
+    public constructor(controlled?: boolean) {
+        if (controlled) return
+
+        setInterval(() => {
+            if (this.isIdle()) {
+                this.reset()
+            }
+        })
+    }
 
     public get player(): AudioPlayer {
         return this._player

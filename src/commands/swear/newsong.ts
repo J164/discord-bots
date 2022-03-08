@@ -18,9 +18,9 @@ async function newSong(interaction: CommandInteraction, info: BotInfo): Promise<
         .then(
             async () => {
                 await info.database.insert('swear_songs', { index: songs.length + 1, name: `song${songs.length + 1}` })
-                void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Success!' }) ] })
+                void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Success!' }) ] }).catch()
             }, () => {
-                void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] })
+                void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] }).catch()
             },
         )
 }

@@ -31,26 +31,25 @@ async function queue(interaction: CommandInteraction, info: Info, queueArray?: Q
         { type: 'BUTTON', customId: 'queue-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: page === queueArray.length - 1 },
     ], type: 'ACTION_ROW' } ] }
     await (!button ? interaction.editReply(options) : button.update(options))
-    const filter = (b: ButtonInteraction<'cached'>) => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName)
-    const collector = interaction.channel.createMessageComponentCollector({ filter: filter, time: 60_000 })
-    collector.once('collect', b => {
-        if (!b.isButton()) return
-        switch (b.customId) {
-            case 'queue-doublearrowleft':
-                void queue(interaction, info, queueArray, b)
-                break
-            case 'queue-arrowleft':
-                void queue(interaction, info, queueArray, b, page - 1)
-                break
-            case 'queue-arrowright':
-                void queue(interaction, info, queueArray, b, page + 1)
-                break
-            case 'queue-doublearrowright':
-                void queue(interaction, info, queueArray, b, queueArray.length - 1)
-                break
-        }
-    })
-    collector.once('end', () => { try { void interaction.editReply({ components: [] }) } catch { /* thread deleted */ } })
+    interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName), time: 300_000, componentType: 'BUTTON', max: 1 })
+        .once('end', b => {
+            void interaction.editReply({ components: [] }).catch()
+            if (!b.at(0)) return
+            switch (b.at(0).customId) {
+                case 'queue-doublearrowleft':
+                    void queue(interaction, info, queueArray, b.at(0))
+                    break
+                case 'queue-arrowleft':
+                    void queue(interaction, info, queueArray, b.at(0), page - 1)
+                    break
+                case 'queue-arrowright':
+                    void queue(interaction, info, queueArray, b.at(0), page + 1)
+                    break
+                case 'queue-doublearrowright':
+                    void queue(interaction, info, queueArray, b.at(0), queueArray.length - 1)
+                    break
+            }
+        })
     return undefined
 }
 

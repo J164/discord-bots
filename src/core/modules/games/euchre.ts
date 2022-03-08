@@ -1,4 +1,4 @@
-import { ButtonInteraction, CollectorFilter, MessageSelectOptionData, SelectMenuInteraction, ThreadChannel, User } from 'discord.js'
+import { MessageSelectOptionData, ThreadChannel, User } from 'discord.js'
 import { generateEmbed } from '../../utils/generators.js'
 import { multicardMessage } from '../../utils/card-utils.js'
 import { Card, Deck, Suit } from '../../utils/deck.js'
@@ -78,16 +78,15 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
     const promptThree = async (index: number): Promise<void> => {
         const channel = await gameInfo.players[index].user.createDM()
         await channel.send({ embeds: [ generateEmbed('prompt', { title: 'Would you like to go alone?' }) ], components: [ { components: [ { type: 'BUTTON', customId: 'three-yes', label: 'Yes', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'three-no', label: 'No', style: 'SECONDARY' } ], type: 'ACTION_ROW' } ] })
-        const filter: CollectorFilter<[ButtonInteraction]> = b => b.customId.startsWith('three-')
-        const collector = channel.createMessageComponentCollector({ filter: filter, componentType: 'BUTTON', max: 1 })
-        collector.once('collect', async interaction => {
-            await interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [] })
-            if (interaction.customId === 'three-yes') {
-                gameInfo.players.find(player => player.team === gameInfo.players[index].team && !player.user.equals(gameInfo.players[index].user)).out = true
-                return round(gameInfo, index, true)
-            }
-            void round(gameInfo, index)
-        })
+        channel.createMessageComponentCollector({ filter: b => b.customId.startsWith('three-'), componentType: 'BUTTON', max: 1 })
+            .once('end', async interaction => {
+                await interaction.at(0).update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [] })
+                if (interaction.at(0).customId === 'three-yes') {
+                    gameInfo.players.find(player => player.team === gameInfo.players[index].team && !player.user.equals(gameInfo.players[index].user)).out = true
+                    return round(gameInfo, index, true)
+                }
+                void round(gameInfo, index)
+            })
     }
 
     const promptTwo = async (index = 0): Promise<void> => {
@@ -99,22 +98,16 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
         } else {
             await channel.send({ embeds: [ embed ], files: [ file ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'two-select', placeholder: 'Select a Suit', options: [ { label: 'Spades', value: 'Spades', emoji: '\u2660\uFE0F' }, { label: 'Clubs', value: 'Clubs', emoji: '\u2663\uFE0F' }, { label: 'Hearts', value: 'Hearts', emoji: '\u2665\uFE0F' }, { label: 'Diamonds', value: 'Diamonds', emoji: '\u2666\uFE0F' } ] } ], type: 'ACTION_ROW' }, { components: [ { type: 'BUTTON', customId: 'two-pass', label: 'Pass', style: 'SECONDARY' } ], type: 'ACTION_ROW' } ] })
         }
-        const filter: CollectorFilter<[ButtonInteraction | SelectMenuInteraction]> = b => b.customId.startsWith('two-')
-        const collector1 = channel.createMessageComponentCollector({ filter: filter, componentType: 'SELECT_MENU', max: 1 })
-        const collector2 = channel.createMessageComponentCollector({ filter: filter, componentType: 'BUTTON', max: 1 })
-        collector1.once('collect', async interaction => {
-            collector2.stop()
-            collector2.removeAllListeners()
-            await interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
-            gameInfo.trump = top.suit
-            void promptThree(index)
-        })
-        collector2.once('collect', async interaction => {
-            collector1.stop()
-            collector1.removeAllListeners()
-            await interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
-            return promptTwo(index + 1)
-        })
+        channel.createMessageComponentCollector({ filter: b => b.customId.startsWith('two-'), max: 1 })
+            .once('end', async interaction => {
+                await interaction.at(0).update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
+                if (interaction.at(0).isSelectMenu()) {
+                    gameInfo.trump = top.suit
+                    void promptThree(index)
+                    return
+                }
+                return promptTwo(index + 1)
+            })
     }
 
     const promptReplace = async (index: number): Promise<void> => {
@@ -125,31 +118,29 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
         const channel = await gameInfo.players[3].user.createDM()
         const { embed, file } = await multicardMessage(gameInfo.players[3].hand, 'prompt', { title: 'Select a card to replace' }, 'hand')
         await channel.send({ embeds: [ embed ], files: [ file ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'replace', placeholder: 'Select a Card', options: options } ], type: 'ACTION_ROW' } ] })
-        const filter: CollectorFilter<[SelectMenuInteraction]> = b => b.customId === 'replace'
-        const collector = channel.createMessageComponentCollector({ filter: filter, componentType: 'SELECT_MENU', max: 1 })
-        collector.once('collect', async interaction => {
-            await interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
-            gameInfo.players[3].hand.splice(Number.parseInt(interaction.values[0]), 1, top)
-            gameInfo.trump = top.suit
-            void promptThree(index)
-        })
+        channel.createMessageComponentCollector({ filter: b => b.customId === 'replace', componentType: 'SELECT_MENU', max: 1 })
+            .once('end', async interaction => {
+                await interaction.at(0).update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
+                gameInfo.players[3].hand.splice(Number.parseInt(interaction.at(0).values[0]), 1, top)
+                gameInfo.trump = top.suit
+                void promptThree(index)
+            })
     }
 
     const promptOne = async (index = 0): Promise<void> => {
         const channel = await gameInfo.players[index].user.createDM()
         await channel.send({ embeds: [ generateEmbed('prompt', { title: index === 3 ? `Would you like to pass or pick it up?` : `Would you like to pass or have ${gameInfo.players[3].user.username} pick it up?`, image: { url: top.image } }) ], components: [ { components: [ { type: 'BUTTON', customId: 'one-pickup', label: 'Pick It Up', style: 'PRIMARY' }, { type: 'BUTTON', customId: 'one-pass', label: 'Pass', style: 'SECONDARY' } ], type: 'ACTION_ROW' } ] })
-        const filter: CollectorFilter<[ButtonInteraction]> = b => b.customId.startsWith('one-')
-        const collector = channel.createMessageComponentCollector({ filter: filter, componentType: 'BUTTON', max: 1 })
-        collector.once('collect', async interaction => {
-            await interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [] })
-            if (interaction.customId === 'one-pass') {
-                if (index === 3) {
-                    return promptTwo()
+        channel.createMessageComponentCollector({ filter: b => b.customId.startsWith('one-'), componentType: 'BUTTON', max: 1 })
+            .once('end', async interaction => {
+                await interaction.at(0).update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [] })
+                if (interaction.at(0).customId === 'one-pass') {
+                    if (index === 3) {
+                        return promptTwo()
+                    }
+                    return promptOne(index + 1)
                 }
-                return promptOne(index + 1)
-            }
-            void promptReplace(index)
-        })
+                void promptReplace(index)
+            })
     }
 
     void promptOne()
@@ -176,18 +167,17 @@ async function round(gameInfo: GameInfo, leader: number, solo = false, table: st
     const channel = await gameInfo.players[index].user.createDM()
     const { embed, file } = await multicardMessage(gameInfo.players[index].hand, 'prompt', { title: 'Select a card to play' }, 'hand')
     await channel.send({ embeds: [ embed ], files: [ file ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'play', placeholder: 'Select a Card', options: legalPlays } ], type: 'ACTION_ROW' } ] })
-    const filter: CollectorFilter<[SelectMenuInteraction]> = b => b.customId.startsWith('play')
-    const collector = channel.createMessageComponentCollector({ filter: filter, componentType: 'SELECT_MENU', max: 1 })
-    collector.once('collect', async interaction => {
-        await interaction.update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
-        table.push(interaction.values[0])
-        lead ??= interaction.values[0][1] as 'H' | 'D' | 'S' | 'C'
-        gameInfo.players[index].hand.splice(gameInfo.players[index].hand.findIndex(c => c.code === interaction.values[0]), 1)
-        if (index === 3) {
-            return determineTrick(gameInfo, table, lead, leader, solo)
-        }
-        return round(gameInfo, leader, solo, table, lead, index + 1)
-    })
+    channel.createMessageComponentCollector({ filter: b => b.customId.startsWith('play'), componentType: 'SELECT_MENU', max: 1 })
+        .once('end', async interaction => {
+            await interaction.at(0).update({ embeds: [ generateEmbed('success', { title: 'Success!' }) ], components: [], files: [] })
+            table.push(interaction.at(0).values[0])
+            lead ??= interaction.at(0).values[0][1] as 'H' | 'D' | 'S' | 'C'
+            gameInfo.players[index].hand.splice(gameInfo.players[index].hand.findIndex(c => c.code === interaction.at(0).values[0]), 1)
+            if (index === 3) {
+                return determineTrick(gameInfo, table, lead, leader, solo)
+            }
+            return round(gameInfo, leader, solo, table, lead, index + 1)
+        })
 }
 
 async function score(gameInfo: GameInfo, leader: number, solo: boolean): Promise<void> {

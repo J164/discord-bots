@@ -4,9 +4,7 @@ import { DatabaseManager } from './database-manager.js'
 import { VoiceManager } from './voice/voice-manager.js'
 import { GuildInfo } from './utils/interfaces.js'
 import { generateEmbed } from './utils/generators.js'
-import { BaseGame } from './utils/base-game.js'
 import { ChatCommand } from './utils/command-types/chat-command.js'
-import { setInterval } from 'node:timers'
 
 interface GuildOptions {
     readonly voiceManager?: boolean,
@@ -34,10 +32,6 @@ export class BotClient extends Client {
     private async ready(status: string[]): Promise<void> {
         this.user.setStatus('dnd')
         this.user.setActivity(status[Math.floor(Math.random() * status.length)])
-
-        setInterval(() => {
-            this.statusCheck()
-        }, 300_000)
 
         await this._database?.connect()
 
@@ -69,9 +63,6 @@ export class BotClient extends Client {
             if (!interaction.inGuild()) {
                 return { embeds: [ generateEmbed('error', { title: 'Please only use this command in servers!' }) ] }
             }
-            if (command.gameCommand && (this._info.get(interaction.guildId).games.get(interaction.channelId)?.type !== command.gameCommand || this._info.get(interaction.guildId).games.get(interaction.channelId)?.over)) {
-                return { embeds: [ generateEmbed('error', { title: `Please only use this command in ${command.gameCommand} threads!` }) ] }
-            }
             return command.respond(interaction, { ...this._info.get(interaction.guildId), database: this._database })
         }
 
@@ -93,23 +84,6 @@ export class BotClient extends Client {
         this._info.set(guildId, {
             voiceManager: this._guildOptions.voiceManager ? new VoiceManager() : undefined,
             queueManager: this._guildOptions.queueManager ? new QueueManager() : undefined,
-            games: new Map<string, BaseGame>(), // TODO phase out global map
         })
-    }
-
-    private statusCheck(): void {
-        for (const [ , guild ] of this._info) {
-            if (guild.voiceManager?.isIdle()) {
-                guild.voiceManager.reset()
-            }
-            if (guild.queueManager?.isIdle()) {
-                void guild.queueManager.reset()
-            }
-            for (const [ id, game ] of guild.games) {
-                if (game.over) {
-                    guild.games.delete(id)
-                }
-            }
-        }
     }
 }
