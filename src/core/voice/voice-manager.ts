@@ -10,13 +10,7 @@ export class VoiceManager {
     private _player: AudioPlayer
 
     public constructor(controlled?: boolean) {
-        if (controlled) return
-
-        setInterval(() => {
-            if (this.isIdle()) {
-                this.reset()
-            }
-        })
+        if (!controlled) setInterval(() => { if (this.isIdle()) this.reset() }, 300_000)
     }
 
     public get player(): AudioPlayer {

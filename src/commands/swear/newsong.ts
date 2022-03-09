@@ -14,7 +14,7 @@ async function newSong(interaction: CommandInteraction, info: BotInfo): Promise<
     }
     void interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
     const songs = await info.database.select('swear_songs') as unknown as { index: number, name: string }[]
-    download(interaction.options.getString('url'), { noprogress: true, quiet: true, outtmpl: `${process.env.DATA}/music_files/swear_songs/song${songs.length + 1}.%(ext)s`, format: 'bestaudio[ext=webm][acodec=opus]/bestaudio' })
+    download(interaction.options.getString('url'), { outtmpl: `${process.env.DATA}/music_files/swear_songs/song${songs.length + 1}.%(ext)s`, format: 'bestaudio[ext=webm][acodec=opus]/bestaudio' })
         .then(
             async () => {
                 await info.database.insert('swear_songs', { index: songs.length + 1, name: `song${songs.length + 1}` })

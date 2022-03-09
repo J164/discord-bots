@@ -12,7 +12,7 @@ function downloadVideo(interaction: CommandInteraction): InteractionReplyOptions
         return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
     }
     void interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
-    download(interaction.options.getString('url'), { noprogress: true, quiet: true, outtmpl: `${process.env.DATA}/new_downloads/%(title)s.%(ext)s`, format: interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best' })
+    download(interaction.options.getString('url'), { outtmpl: `${process.env.DATA}/new_downloads/%(title)s.%(ext)s`, format: interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best' })
        .then(
             () => {
                 void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] }).catch()

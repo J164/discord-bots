@@ -33,11 +33,7 @@ export class QueueManager {
         this._queueLock = false
         this._transitioning = false
 
-        setInterval(() => {
-            if (this._isIdle()) {
-                void this.reset()
-            }
-        }, 300_000)
+        setInterval(() => { if (this._isIdle()) void this.reset() }, 300_000)
     }
 
     public get nowPlaying(): MessageEmbedOptions {
@@ -103,8 +99,7 @@ export class QueueManager {
 
         this._queueLock = false
 
-        this._script = createStream(this._nowPlaying.url, { outtmpl: '-', noprogress: true, quiet: true, format: 'bestaudio[ext=webm][acodec=opus]/bestaudio[ext=ogg][acodec=opus]/bestaudio', ratelimit: 160_000 })
-        this._script.once('close', () => this._script.stdout.push(Buffer.from([ 0xF8, 0xFF, 0xFE, 0xF8, 0xFF, 0xFE, 0xF8, 0xFF, 0xFE, 0xF8, 0xFF, 0xFE, 0xF8, 0xFF, 0xFE ])))
+        this._script = createStream(this._nowPlaying.url, { format: 'bestaudio[ext=webm][acodec=opus]/bestaudio[ext=ogg][acodec=opus]/bestaudio' })
         await this._voiceManager.playStream(this._script.stdout)
 
         this._transitioning = false
@@ -114,7 +109,6 @@ export class QueueManager {
             this._voiceManager.player.removeAllListeners('stateChange')
 
             this._transitioning = true
-            this._script.stdout.removeAllListeners('close')
             this._script.kill()
 
             if (this._queueLoop || this._nowPlaying.looping) {
@@ -262,7 +256,6 @@ export class QueueManager {
 
             this._queue = []
             this._voiceManager.reset()
-            this._script?.stdout.removeAllListeners('close')
             this._script?.kill()
             this._script = undefined
             this._nowPlaying = undefined

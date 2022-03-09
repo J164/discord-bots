@@ -91,7 +91,7 @@ async function play(interaction: CommandInteraction, info: GuildInfo): Promise<I
     }
 
     if (/^(?:https:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(url)) {
-        const result = await resolve(url, { noprogress: true, quiet: true }) as { readonly webpage_url: string, readonly title: string, readonly thumbnail: string, readonly duration: number, readonly success: boolean }
+        const result = await resolve(url) as { readonly webpage_url: string, readonly title: string, readonly thumbnail: string, readonly duration: number, readonly success: boolean }
         if (!result.success) {
             return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
         }
@@ -121,7 +121,7 @@ async function search(option: ApplicationCommandOptionChoice): Promise<Applicati
         return
     }
     const filter = (await ytsr.getFilters(option.value as string)).get('Type').get('Video')
-    const results = await ytsr(filter.url, { limit: 4 }).catch((): { items: [] } => { return { items: [] } })
+    const results = await ytsr(filter.url, { limit: 4 })
     const options: ApplicationCommandOptionChoice[] = []
     for (const result of results.items as ytsr.Video[]) {
         options.push({ name: result.title, value: result.url })

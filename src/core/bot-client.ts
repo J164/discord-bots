@@ -41,13 +41,23 @@ export class BotClient extends Client {
             }
 
             if (interaction.isAutocomplete()) {
-                void interaction.respond(await this.autocomplete(interaction)).catch()
+                void interaction.respond(await this.autocomplete(interaction)
+                    .catch(error => {
+                        console.log(error)
+                        return []
+                    }),
+                ).catch()
                 return
             }
 
             if (!interaction.isCommand()) return
 
-            void interaction.editReply(await this.parseChatCommand(interaction) ?? {}).catch()
+            void interaction.editReply(await this.parseChatCommand(interaction)
+                .catch(error => {
+                    console.log(error)
+                    return { embeds: [ generateEmbed('error', { title: 'Something went wrong!' }) ] }
+                }) ?? {},
+            ).catch()
         })
 
         this.user.setStatus('online')
