@@ -10,7 +10,7 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
     const player = Deck.randomCard({ number: 2, values: [ 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11 ] })
 
     const prompt = async () => {
-        const message = await channel.send({ ...await printStandings(player, dealer), components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-hit', style: 'PRIMARY', label: 'Hit' }, { type: 'BUTTON', customId: 'blackjack-stand', style: 'SECONDARY', label: 'Stand' } ] } ] })
+        const message = await channel.send({ ...printStandings(player, dealer), components: [ { type: 'ACTION_ROW', components: [ { type: 'BUTTON', customId: 'blackjack-hit', style: 'PRIMARY', label: 'Hit' }, { type: 'BUTTON', customId: 'blackjack-stand', style: 'SECONDARY', label: 'Stand' } ] } ] })
         await new Promise<void>((resolve) => {
             channel.createMessageComponentCollector({ filter: b => b.customId.startsWith('blackjack'), componentType: 'BUTTON', max: 1, time: 300_000 })
                 .once('end', async b => {
@@ -29,7 +29,7 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
     await prompt()
 
     const finish = finishGame(player, dealer)
-    const standings = await printStandings(player, dealer, true)
+    const standings = printStandings(player, dealer, true)
 
     let message: Message
 
@@ -86,9 +86,9 @@ function hit(player: Card[]): number {
     return score
 }
 
-async function printStandings(player: Card[], dealer: Card[], gameEnd?: boolean): Promise<MessageOptions> {
-    const { embed: playerEmbed, file: playerFile } = await multicardMessage(player, 'info', { title: 'Player', fields: [ { name: 'Value:', value: scoreHand(player).toString(), inline: true } ] }, 'player')
-    const { embed: dealerEmbed, file: dealerFile } = await multicardMessage(gameEnd ? dealer : [ dealer[0], { code: 'back' } ], 'info', { title: 'Dealer', fields: [ { name: 'Value:', value: scoreHand(gameEnd ? dealer : [ dealer[0] ]).toString(), inline: true } ] }, 'dealer')
+function printStandings(player: Card[], dealer: Card[], gameEnd?: boolean): MessageOptions {
+    const { embed: playerEmbed, file: playerFile } = multicardMessage(player, 'info', { title: 'Player', fields: [ { name: 'Value:', value: scoreHand(player).toString(), inline: true } ] }, 'player')
+    const { embed: dealerEmbed, file: dealerFile } = multicardMessage(gameEnd ? dealer : [ dealer[0], { code: 'back' } ], 'info', { title: 'Dealer', fields: [ { name: 'Value:', value: scoreHand(gameEnd ? dealer : [ dealer[0] ]).toString(), inline: true } ] }, 'dealer')
     return { embeds: [ playerEmbed, dealerEmbed ], files: [ playerFile, dealerFile ] }
 }
 

@@ -24,7 +24,7 @@ module.exports = {
 		"complexity": ["warn", 20],
 		"eqeqeq": "error",
 		"no-invalid-this": "error",
-		"no-restricted-globals": [ "error", "process", "setTimeout", "setInterval" ],
+		"no-restricted-globals": [ "error", "process", "setTimeout", "setInterval", "Buffer" ],
 		"no-return-await": "error",
 		"no-warning-comments": "warn",
 		"no-useless-return": "error",

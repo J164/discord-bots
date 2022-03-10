@@ -1,9 +1,10 @@
-import canvas from 'canvas'
+import { createCanvas, Image } from '@napi-rs/canvas'
 import { ButtonInteraction, CommandInteraction, InteractionReplyOptions, InteractionUpdateOptions, SelectMenuInteraction } from 'discord.js'
 import { request } from 'undici'
 import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { BotInfo } from '../../core/utils/interfaces.js'
+import { Buffer } from 'node:buffer'
 
 interface MagicCard {
     readonly name: string,
@@ -26,14 +27,15 @@ interface ScryfallResponse {
     readonly data: MagicCard[]
 }
 
-async function mergeImages(filePaths: string[], options: { width: number; height: number }): Promise<Buffer> {
-    const activeCanvas = canvas.createCanvas(options.width, options.height)
+async function mergeImages(remotePaths: string[], options: { width: number; height: number }): Promise<Buffer> {
+    const activeCanvas = createCanvas(options.width, options.height)
     const context = activeCanvas.getContext('2d')
-    for (const [ index, path ] of filePaths.entries()) {
-        const image = await canvas.loadImage(path)
-        context.drawImage(image, index * (options.width / filePaths.length), 0)
+    for (const [ index, path ] of remotePaths.entries()) {
+        const image = new Image()
+        image.src = Buffer.from(await (await request(path)).body.arrayBuffer())
+        context.drawImage(image, index * (options.width / remotePaths.length), 0)
     }
-    return activeCanvas.toBuffer()
+    return activeCanvas.toBuffer('image/png')
 }
 
 function formatResponse(response: ScryfallResponse): MagicCard[][] {
@@ -53,6 +55,7 @@ function formatResponse(response: ScryfallResponse): MagicCard[][] {
 async function generateResponse(results: MagicCard[][], r: number, index: number): Promise<InteractionUpdateOptions> {
     const card = results[r][index]
     if (card.card_faces) {
+        console.log(card.card_faces[0].image_uris.large)
         return { embeds: [ generateEmbed('info', { title: card.name, footer: { text: `Price ($): ${card.prices.usd}` ?? 'unknown (not for sale)' }, image: { url: 'attachment://card.jpg' } }) ], files: [ { attachment: await mergeImages([ card.card_faces[0].image_uris.large, card.card_faces[1].image_uris.large ], { width: 1344, height: 936 }), name: 'card.jpg' } ], components: [] }
     }
     return { embeds: [ generateEmbed('info', { title: card.name, footer: { text: `Price ($): ${card.prices.usd}` ?? 'unknown (not for sale)' }, image: { url: card.image_uris.large } }) ], components: [] }
