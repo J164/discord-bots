@@ -29,8 +29,8 @@ async function list(interaction: CommandInteraction, info: BotInfo, index = 0, b
     ], type: 'ACTION_ROW' } ] }
     await (button ? button.update(replyOptions) : interaction.editReply(replyOptions))
     interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName), time: 300_000, componentType: 'BUTTON', max: 1 })
-        .once('end', b => {
-            void interaction.editReply({ components: [] }).catch()
+        .once('end', async b => {
+            await interaction.editReply({ components: [] }).catch()
             if (!b.at(0)) return
             switch (b.at(0).customId) {
                 case 'list-doublearrowleft':

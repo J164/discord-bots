@@ -29,7 +29,7 @@ async function listen(playerData: Collection<string, MagicPlayer>, gameChannel: 
 
     gameChannel.createMessageComponentCollector({ filter: b => b.customId.startsWith('magic'), componentType: 'BUTTON', max: 1, time: 300_000 })
         .once('end', async b => {
-            void message.edit({ components: [] })
+            if (message.editable) await message.edit({ components: [] })
             if (!b.at(0)) {
                 try { void gameChannel.setArchived(true) } catch { /*thread deleted*/ }
                 return

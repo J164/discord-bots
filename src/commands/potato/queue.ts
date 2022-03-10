@@ -33,8 +33,8 @@ async function queue(interaction: CommandInteraction, info: Info, queueArray?: Q
     await (!button ? interaction.editReply(options) : button.update(options))
     //todo create message component collector on reply rather than channel and simplify ids
     interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName), time: 300_000, componentType: 'BUTTON', max: 1 })
-        .once('end', b => {
-            void interaction.editReply({ components: [] }).catch()
+        .once('end', async b => {
+            await interaction.editReply({ components: [] }).catch()
             if (!b.at(0)) return
             switch (b.at(0).customId) {
                 case 'queue-doublearrowleft':

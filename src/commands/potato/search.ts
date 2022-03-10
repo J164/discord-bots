@@ -100,7 +100,7 @@ async function search(interaction: CommandInteraction, info: BotInfo, results?: 
     await (component ? component.update(options) : interaction.editReply(options))
     interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName), time: 300_000, max: 1 })
         .once('end', async c => {
-            void interaction.editReply({ components: [] }).catch()
+            await interaction.editReply({ components: [] }).catch()
             if (!c.at(0)) return
             const response = c.at(0)
             if (response.isSelectMenu()) {

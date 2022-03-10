@@ -19,7 +19,7 @@ export interface QueueItem {
 export class QueueManager {
 
     private readonly _voiceManager: VoiceManager
-    private _script: ChildProcessByStdio<null, Readable, null>
+    private _script: ChildProcessByStdio<null, Readable, Readable>
     private _queue: QueueItem[]
     private _nowPlaying: QueueItem
     private _queueLoop: boolean
@@ -100,6 +100,9 @@ export class QueueManager {
         this._queueLock = false
 
         this._script = createStream(this._nowPlaying.url, { format: 'bestaudio[ext=webm][acodec=opus]/bestaudio[ext=ogg][acodec=opus]/bestaudio' })
+        this._script.on('error', error => console.log(error))
+        this._script.on('exit', () => console.log('exit'))
+        this._script.on('close', () => console.log('close'))
         await this._voiceManager.playStream(this._script.stdout)
 
         this._transitioning = false

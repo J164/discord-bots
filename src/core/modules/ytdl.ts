@@ -1,8 +1,8 @@
 import { ChildProcessByStdio, exec, spawn } from 'node:child_process'
 import { Readable } from 'node:stream'
 
-export function createStream(url: string, options: unknown): ChildProcessByStdio<null, Readable, null> {
-    return spawn('python3', [ '-u', `./assets/scripts/yt-stream.py`, url, JSON.stringify(options) ], { stdio: [ 'ignore', 'pipe', 'ignore' ] })
+export function createStream(url: string, options: unknown): ChildProcessByStdio<null, Readable, Readable> {
+    return spawn('python3', [ '-u', `./assets/scripts/yt-stream.py`, url, JSON.stringify(options) ], { stdio: [ 'ignore', 'pipe', 'pipe' ] })
 }
 
 export async function resolve(url: string): Promise<unknown> {

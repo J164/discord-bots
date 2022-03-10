@@ -14,7 +14,7 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
         await new Promise<void>((resolve) => {
             channel.createMessageComponentCollector({ filter: b => b.customId.startsWith('blackjack'), componentType: 'BUTTON', max: 1, time: 300_000 })
                 .once('end', async b => {
-                    if (message.editable) void message.edit({ components: [] })
+                    if (message.editable) await message.edit({ components: [] })
                     if (!b.at(0)) return resolve()
                     if (b.at(0).customId === 'blackjack-hit') {
                         if (hit(player) === -1) {
@@ -52,8 +52,8 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
     }
 
     channel.createMessageComponentCollector({ filter: b => b.customId.startsWith('blackjack'), componentType: 'BUTTON', max: 1, time: 300_000 })
-        .once('end', b => {
-            void message.edit({ components: [] })
+        .once('end', async b => {
+            await message.edit({ components: [] })
             if (!b.at(0)) return
             if (b.at(0).customId === 'blackjack-continue') {
                 void playBlackjack(channel)

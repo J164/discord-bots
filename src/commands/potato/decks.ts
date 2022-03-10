@@ -79,7 +79,7 @@ async function parseDeck(interaction: CommandInteraction, urls: { url: string }[
     await (!button ? interaction.editReply(options) : button.update(options))
     interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName), time: 300_000, componentType: 'BUTTON', max: 1 })
         .once('end', async b => {
-            void interaction.editReply({ components: [] }).catch()
+            await interaction.editReply({ components: [] }).catch()
             if (!b.at(0)) return
             switch (b.at(0).customId) {
                 case 'decks-doublearrowleft':
