@@ -29,7 +29,7 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
     await prompt()
 
     const finish = finishGame(player, dealer)
-    const standings = printStandings(player, dealer, true)
+    const standings = await printStandings(player, dealer, true)
 
     let message: Message
 
@@ -86,9 +86,9 @@ function hit(player: Card[]): number {
     return score
 }
 
-function printStandings(player: Card[], dealer: Card[], gameEnd?: boolean): MessageOptions {
-    const { embed: playerEmbed, file: playerFile } = multicardMessage(player, 'info', { title: 'Player', fields: [ { name: 'Value:', value: scoreHand(player).toString(), inline: true } ] }, 'player')
-    const { embed: dealerEmbed, file: dealerFile } = multicardMessage(gameEnd ? dealer : [ dealer[0], { code: 'back' } ], 'info', { title: 'Dealer', fields: [ { name: 'Value:', value: scoreHand(gameEnd ? dealer : [ dealer[0] ]).toString(), inline: true } ] }, 'dealer')
+async function printStandings(player: Card[], dealer: Card[], gameEnd?: boolean): Promise<MessageOptions> {
+    const { embed: playerEmbed, file: playerFile } = await multicardMessage(player, 'info', { title: 'Player', fields: [ { name: 'Value:', value: scoreHand(player).toString(), inline: true } ] }, 'player')
+    const { embed: dealerEmbed, file: dealerFile } = await multicardMessage(gameEnd ? dealer : [ dealer[0], { code: 'back' } ], 'info', { title: 'Dealer', fields: [ { name: 'Value:', value: scoreHand(gameEnd ? dealer : [ dealer[0] ]).toString(), inline: true } ] }, 'dealer')
     return { embeds: [ playerEmbed, dealerEmbed ], files: [ playerFile, dealerFile ] }
 }
 
