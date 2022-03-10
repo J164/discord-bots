@@ -55,7 +55,6 @@ function formatResponse(response: ScryfallResponse): MagicCard[][] {
 async function generateResponse(results: MagicCard[][], r: number, index: number): Promise<InteractionUpdateOptions> {
     const card = results[r][index]
     if (card.card_faces) {
-        console.log(card.card_faces[0].image_uris.large)
         return { embeds: [ generateEmbed('info', { title: card.name, footer: { text: `Price ($): ${card.prices.usd}` ?? 'unknown (not for sale)' }, image: { url: 'attachment://card.jpg' } }) ], files: [ { attachment: await mergeImages([ card.card_faces[0].image_uris.large, card.card_faces[1].image_uris.large ], { width: 1344, height: 936 }), name: 'card.jpg' } ], components: [] }
     }
     return { embeds: [ generateEmbed('info', { title: card.name, footer: { text: `Price ($): ${card.prices.usd}` ?? 'unknown (not for sale)' }, image: { url: card.image_uris.large } }) ], components: [] }
