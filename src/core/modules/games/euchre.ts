@@ -69,10 +69,10 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
     const top = draws[20]
     for (const player of gameInfo.players) {
         const channel = await player.user.createDM()
-        const { embed, file } = await multicardMessage(player.hand, 'info', { title: 'Your Hand:' }, 'hand')
+        const { embed, file } = multicardMessage(player.hand, 'info', { title: 'Your Hand:' }, 'hand')
         await channel.send({ embeds: [ embed ], files: [ file ] })
     }
-    const { embed, file } = await multicardMessage([ top ], 'info', { title: 'Top of Stack:' }, 'hand')
+    const { embed, file } = multicardMessage([ top ], 'info', { title: 'Top of Stack:' }, 'hand')
     await gameInfo.gameChannel.send({ embeds: [ embed ], files: [ file ] })
 
     const promptThree = async (index: number): Promise<void> => {
@@ -91,7 +91,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 
     const promptTwo = async (index = 0): Promise<void> => {
         const channel = await gameInfo.players[index].user.createDM()
-        const { embed, file } = await multicardMessage(gameInfo.players[index].hand, 'prompt', { title: 'Would you like to pass or select trump?' }, 'hand')
+        const { embed, file } = multicardMessage(gameInfo.players[index].hand, 'prompt', { title: 'Would you like to pass or select trump?' }, 'hand')
         if (index === 3) {
             embed.title = 'Please select trump'
             await channel.send({ embeds: [ embed ], files: [ file ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'two-select', placeholder: 'Select a Suit', options: [ { label: 'Spades', value: 'Spades', emoji: '\u2660\uFE0F' }, { label: 'Clubs', value: 'Clubs', emoji: '\u2663\uFE0F' }, { label: 'Hearts', value: 'Hearts', emoji: '\u2665\uFE0F' }, { label: 'Diamonds', value: 'Diamonds', emoji: '\u2666\uFE0F' } ] } ], type: 'ACTION_ROW' } ] })
@@ -116,7 +116,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
             options.push({ label: `${card.name} of ${card.suit}`, value: id.toString() })
         }
         const channel = await gameInfo.players[3].user.createDM()
-        const { embed, file } = await multicardMessage(gameInfo.players[3].hand, 'prompt', { title: 'Select a card to replace' }, 'hand')
+        const { embed, file } = multicardMessage(gameInfo.players[3].hand, 'prompt', { title: 'Select a card to replace' }, 'hand')
         await channel.send({ embeds: [ embed ], files: [ file ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'replace', placeholder: 'Select a Card', options: options } ], type: 'ACTION_ROW' } ] })
         channel.createMessageComponentCollector({ filter: b => b.customId === 'replace', componentType: 'SELECT_MENU', max: 1 })
             .once('end', async interaction => {
@@ -165,7 +165,7 @@ async function round(gameInfo: GameInfo, leader: number, solo = false, table: st
         }
     }
     const channel = await gameInfo.players[index].user.createDM()
-    const { embed, file } = await multicardMessage(gameInfo.players[index].hand, 'prompt', { title: 'Select a card to play' }, 'hand')
+    const { embed, file } = multicardMessage(gameInfo.players[index].hand, 'prompt', { title: 'Select a card to play' }, 'hand')
     await channel.send({ embeds: [ embed ], files: [ file ], components: [ { components: [ { type: 'SELECT_MENU', customId: 'play', placeholder: 'Select a Card', options: legalPlays } ], type: 'ACTION_ROW' } ] })
     channel.createMessageComponentCollector({ filter: b => b.customId.startsWith('play'), componentType: 'SELECT_MENU', max: 1 })
         .once('end', async interaction => {

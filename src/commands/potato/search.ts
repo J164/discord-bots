@@ -1,10 +1,10 @@
-import canvas from 'canvas'
 import { ButtonInteraction, CommandInteraction, InteractionReplyOptions, InteractionUpdateOptions, SelectMenuInteraction } from 'discord.js'
 import { request } from 'undici'
 import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { BotInfo } from '../../core/utils/interfaces.js'
 import { Buffer } from 'node:buffer'
+import { createCanvas, Image } from '@napi-rs/canvas'
 
 interface MagicCard {
     readonly name: string,
@@ -28,13 +28,14 @@ interface ScryfallResponse {
 }
 
 async function mergeImages(remotePaths: string[], options: { width: number; height: number }): Promise<Buffer> {
-    const activeCanvas = canvas.createCanvas(options.width, options.height)
+    const activeCanvas = createCanvas(options.width, options.height)
     const context = activeCanvas.getContext('2d')
     for (const [ index, path ] of remotePaths.entries()) {
-        const image = await canvas.loadImage(path)
+        const image = new Image()
+        image.src = Buffer.from(await (await request(path)).body.arrayBuffer())
         context.drawImage(image, index * (options.width / remotePaths.length), 0)
     }
-    return activeCanvas.toBuffer()
+    return activeCanvas.toBuffer('image/png')
 }
 
 function formatResponse(response: ScryfallResponse): MagicCard[][] {
