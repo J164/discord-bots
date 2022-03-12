@@ -25,5 +25,5 @@ jobs:
           
       - run: npm ci --no-optional --only=prod
       - run: npm run build
-      - run: npm run test
+      # - run: npm run test
       
