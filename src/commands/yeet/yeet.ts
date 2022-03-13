@@ -1,11 +1,11 @@
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
+import { InteractionReplyOptions } from 'discord.js'
+import { GlobalChatCommand, GlobalChatCommandInfo } from '../../core/utils/interfaces'
 
-function yeet(interaction: CommandInteraction): InteractionReplyOptions {
-    return { content: `Y${'E'.repeat(interaction.options.getInteger('power') ?? 2)}T!` }
+function yeet(info: GlobalChatCommandInfo): InteractionReplyOptions {
+    return { content: `Y${'E'.repeat(info.interaction.options.getInteger('power') ?? 2)}T!` }
 }
 
-export const command = new ChatCommand({
+export const command = new GlobalChatCommand({
     name: 'yeet',
     description: 'Ask Yeet Bot to yell YEET!',
     options: [ {

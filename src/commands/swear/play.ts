@@ -1,19 +1,18 @@
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import {InteractionReplyOptions } from 'discord.js'
 import { createReadStream, existsSync } from 'node:fs'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Info } from '../../core/utils/interfaces.js'
 import process from 'node:process'
-import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
+import { GuildChatCommand, GuildChatCommandInfo } from '../../core/utils/interfaces.js'
 
-async function getSongs(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
-    const member = await interaction.guild.members.fetch(interaction.user)
+async function getSongs(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
+    const member = await info.interaction.guild.members.fetch(info.interaction.user)
     const voiceChannel = member.voice.channel
     if (!voiceChannel?.joinable || voiceChannel.type !== 'GUILD_VOICE') {
-        void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'This command can only be used while in a visable voice channel!' }) ] })
+        void info.interaction.editReply({ embeds: [ generateEmbed('error', { title: 'This command can only be used while in a visable voice channel!' }) ] })
         return
     }
     const songs = (await info.database.select('swear_songs')).sort((a, b) => a.index - b.index) as unknown as { index: number, name: string }[]
-    const songNumber = interaction.options.getInteger('number') && interaction.options.getInteger('number') <= songs.length ? interaction.options.getInteger('number') - 1 : Math.floor(Math.random() * songs.length)
+    const songNumber = info.interaction.options.getInteger('number') && info.interaction.options.getInteger('number') <= songs.length ? info.interaction.options.getInteger('number') - 1 : Math.floor(Math.random() * songs.length)
     await info.voiceManager.connect(voiceChannel)
     await info.voiceManager.playStream(createReadStream(existsSync(`${process.env.DATA}/music_files/swear_songs/${songs[songNumber].name}.webm`) ? `${process.env.DATA}/music_files/swear_songs/${songs[songNumber].name}.webm` : `${process.env.DATA}/music_files/swear_songs/${songs[songNumber].name}.mp3`))
     return { embeds: [ generateEmbed('success', { title: 'Now Playing!' }) ] }

@@ -1,14 +1,13 @@
 import { AudioPlayerStatus } from '@discordjs/voice'
-import { ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { ApplicationCommandOptionChoice, InteractionReplyOptions } from 'discord.js'
 import { createReadStream, readFileSync } from 'node:fs'
 import Fuse from 'fuse.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Info } from '../../core/utils/interfaces.js'
 import process from 'node:process'
-import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
+import { GuildAutocompleteInfo, GuildChatCommand, GuildChatCommandInfo } from '../../core/utils/interfaces.js'
 
-async function play(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
-    const member = await interaction.guild.members.fetch(interaction.user)
+async function play(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
+    const member = await info.interaction.guild.members.fetch(info.interaction.user)
     const voiceChannel = member.voice.channel
     if (!voiceChannel?.joinable || voiceChannel.type !== 'GUILD_VOICE') {
         return { content: 'This command can only be used while in a visable voice channel!' }
@@ -18,18 +17,18 @@ async function play(interaction: CommandInteraction, info: Info): Promise<Intera
 
     let song: number
 
-    if (!interaction.options.getString('name')) {
+    if (!info.interaction.options.getString('name')) {
         song = Math.floor(Math.random() * (songs.length - 1))
-    } else if (!songs.includes(interaction.options.getString('name'))) {
-        const results = new Fuse(songs).search(interaction.options.getString('name'))
+    } else if (!songs.includes(info.interaction.options.getString('name'))) {
+        const results = new Fuse(songs).search(info.interaction.options.getString('name'))
         song = results[0].refIndex + 1
     }
 
-    song ??= songs.indexOf(interaction.options.getString('name')) + 1
+    song ??= songs.indexOf(info.interaction.options.getString('name')) + 1
 
     await info.voiceManager.connect(voiceChannel)
     await info.voiceManager.playStream(createReadStream(`${process.env.DATA}/music_files/naruto_ost/${song}.webm`))
-    if (interaction.options.getBoolean('loop')) {
+    if (info.interaction.options.getBoolean('loop')) {
         info.voiceManager.player.on('stateChange', (oldState, newState) => {
             if (newState.status !== AudioPlayerStatus.Idle) {
                 return
@@ -37,14 +36,14 @@ async function play(interaction: CommandInteraction, info: Info): Promise<Intera
             void info.voiceManager.playStream(createReadStream(`${process.env.DATA}/music_files/naruto_ost/${song}.webm`))
         })
     }
-    void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Now Playing!' }) ] })
+    void info.interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Now Playing!' }) ] })
 }
 
-function search(option: ApplicationCommandOptionChoice): ApplicationCommandOptionChoice[] {
-    if ((option.value as string).length < 3) {
+function search(info: GuildAutocompleteInfo): ApplicationCommandOptionChoice[] {
+    if ((info.option.value as string).length < 3) {
         return
     }
-    const results = new Fuse((JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' })) as { songs: string[] }).songs).search(option.value as string)
+    const results = new Fuse((JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' })) as { songs: string[] }).songs).search(info.option.value as string)
     const options: ApplicationCommandOptionChoice[] = []
     for (const result of results) {
         if (options.length > 3) {

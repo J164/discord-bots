@@ -1,9 +1,8 @@
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
-import { Info } from '../../core/utils/interfaces.js'
+import { InteractionReplyOptions } from 'discord.js'
+import { GuildChatCommand, GuildChatCommandInfo } from '../../core/utils/interfaces.js'
 
-function loop(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
-    if (interaction.options.getSubcommand() === 'current') {
+function loop(info: GuildChatCommandInfo): InteractionReplyOptions {
+    if (info.interaction.options.getSubcommand() === 'current') {
         return { embeds: [ info.queueManager.loopSong() ] }
     }
     return { embeds: [ info.queueManager.loopQueue() ] }

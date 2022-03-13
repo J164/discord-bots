@@ -1,22 +1,22 @@
-import { CommandInteraction, InteractionReplyOptions, User } from 'discord.js'
+import { InteractionReplyOptions, User } from 'discord.js'
 import { playMagic } from '../../core/modules/games/magic-game.js'
-import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
+import { GuildChatCommand, GuildChatCommandInfo } from '../../core/utils/interfaces.js'
 
-async function magic(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
-    const channel = await interaction.guild.channels.fetch(interaction.channelId)
+async function magic(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
+    const channel = await info.interaction.guild.channels.fetch(info.interaction.channelId)
     if (!channel.isText()) {
         return { embeds: [ generateEmbed('error', { title: 'Something went wrong!' }) ] }
     }
     const playerlist: User[] = []
     for (let index = 1; index <= 4; index++) {
-        if (interaction.options.getUser(`player${index}`)) {
-            playerlist.push(interaction.options.getUser(`player${index}`))
+        if (info.interaction.options.getUser(`player${index}`)) {
+            playerlist.push(info.interaction.options.getUser(`player${index}`))
         } else {
             break
         }
     }
-    playMagic(playerlist, interaction.options.getNumber('life') ?? 20, await channel.threads.create({ name: interaction.options.getString('name') ?? 'Magic', autoArchiveDuration: 60 }))
+    playMagic(playerlist, info.interaction.options.getNumber('life') ?? 20, await channel.threads.create({ name: info.interaction.options.getString('name') ?? 'Magic', autoArchiveDuration: 60 }))
     return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 

@@ -1,29 +1,29 @@
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import process from 'node:process'
-import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 import { download } from '../../core/modules/ytdl.js'
+import { GlobalChatCommand, GlobalChatCommandInfo } from '../../core/utils/interfaces.js'
 
-function downloadVideo(interaction: CommandInteraction): InteractionReplyOptions {
-    if (interaction.user.id !== process.env.ADMIN) {
+function downloadVideo(info: GlobalChatCommandInfo): InteractionReplyOptions {
+    if (info.interaction.user.id !== process.env.ADMIN) {
         return { embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] }
     }
-    if (!/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(interaction.options.getString('url'))) {
+    if (!/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(info.interaction.options.getString('url'))) {
         return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
     }
-    void interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
-    download(interaction.options.getString('url'), { outtmpl: `${process.env.DATA}/new_downloads/%(title)s.%(ext)s`, format: interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best' })
+    void info.interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
+    download(info.interaction.options.getString('url'), { outtmpl: `${process.env.DATA}/new_downloads/%(title)s.%(ext)s`, format: info.interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best' })
        .then(
             () => {
-                void interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] }).catch()
+                void info.interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] }).catch()
             },
             () => {
-                void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] }).catch()
+                void info.interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] }).catch()
             },
         )
 }
 
-export const command = new ChatCommand({
+export const command = new GlobalChatCommand({
     name: 'download',
     description: 'Download a video off of Youtube',
     options: [

@@ -157,7 +157,7 @@ function getWeatherEmoji(weatherCode: number): string {
 }
 
 export async function getDailyReport(date: Date): Promise<WebhookMessageOptions> {
-    // todo meme of day
+    // todo meme of day and birthday thing
     const holiday = await (await request(`https://holidays.abstractapi.com/v1/?api_key=${process.env.ABSTRACTKEY}&country=US&year=${date.getFullYear()}&month=${date.getMonth() + 1}&day=${date.getDate()}`)).body.json() as Holiday[]
     const weather = await (await request(`http://api.weatherapi.com/v1/current.json?key=${process.env.WEATHERKEY}&q=60069`)).body.json() as WeatherResponse
     const quote = await (await request('https://zenquotes.io?api=today')).body.json() as Quote[]

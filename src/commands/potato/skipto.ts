@@ -1,19 +1,18 @@
-import { ApplicationCommandOptionChoice, CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { ApplicationCommandOptionChoice, InteractionReplyOptions } from 'discord.js'
 import Fuse from 'fuse.js'
-import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Info } from '../../core/utils/interfaces.js'
+import { GuildAutocompleteInfo, GuildChatCommand, GuildChatCommandInfo } from '../../core/utils/interfaces.js'
 
-async function skipto(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
+async function skipto(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
     if (info.queueManager.queue.length < 2) {
         return { embeds: [ generateEmbed('error', { title: 'The queue is too small to skip to a specific song!' }) ] }
     }
-    await info.queueManager.skipTo(interaction.options.getInteger('index') ?? new Fuse(info.queueManager.queue, { keys: [ 'title' ] }).search(interaction.options.getString('title'))[0].refIndex + 1)
+    await info.queueManager.skipTo(info.interaction.options.getInteger('index') ?? new Fuse(info.queueManager.queue, { keys: [ 'title' ] }).search(info.interaction.options.getString('title'))[0].refIndex + 1)
     return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
-function suggestions(option: ApplicationCommandOptionChoice, info: Info): ApplicationCommandOptionChoice[] {
-    const results = new Fuse(info.queueManager.queue, { keys: [ 'title' ] }).search(option.value as string)
+function suggestions(info: GuildAutocompleteInfo): ApplicationCommandOptionChoice[] {
+    const results = new Fuse(info.queueManager.queue, { keys: [ 'title' ] }).search(info.option.value as string)
     const options: ApplicationCommandOptionChoice[] = []
     for (const result of results) {
         if (options.length > 3) {

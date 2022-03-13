@@ -1,9 +1,8 @@
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
+import { InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Info } from '../../core/utils/interfaces.js'
+import { GuildChatCommand, GuildChatCommandInfo } from '../../core/utils/interfaces.js'
 
-function skip(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
+function skip(info: GuildChatCommandInfo): InteractionReplyOptions {
     if (info.queueManager.skip()) {
         return { embeds: [ generateEmbed('success', { title: 'Skipped' }) ] }
     }

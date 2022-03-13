@@ -1,7 +1,7 @@
 import { InteractionReplyOptions } from 'discord.js'
 import { request } from 'undici'
 import process from 'node:process'
-import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
+import { GlobalChatCommand } from '../../core/utils/interfaces'
 
 interface TenorResponse {
     readonly results: readonly {
@@ -14,7 +14,7 @@ async function gif(): Promise<InteractionReplyOptions> {
     return { content: gifs.results[Math.floor(Math.random() * gifs.results.length)].itemurl }
 }
 
-export const command = new ChatCommand({
+export const command = new GlobalChatCommand({
     name: 'gif',
     description: 'Get a gif related to YEET',
 }, { respond: gif })

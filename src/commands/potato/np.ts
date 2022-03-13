@@ -1,8 +1,7 @@
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
-import { Info } from '../../core/utils/interfaces.js'
+import { InteractionReplyOptions } from 'discord.js'
+import { GuildChatCommand, GuildChatCommandInfo } from '../../core/utils/interfaces.js'
 
-function nowPlaying(interaction: CommandInteraction, info: Info): InteractionReplyOptions {
+function nowPlaying(info: GuildChatCommandInfo): InteractionReplyOptions {
     return { embeds: [ info.queueManager.nowPlaying ] }
 }
 

@@ -1,14 +1,14 @@
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
+import { InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
+import { GuildChatCommand, GuildChatCommandInfo } from '../../core/utils/interfaces.js'
 
-async function nick(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
-    const member = await interaction.guild.members.fetch(interaction.options.getUser('member'))
-    if (interaction.options.getString('nickname')?.length > 32) {
+async function nick(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
+    const member = await info.interaction.guild.members.fetch(info.interaction.options.getUser('member'))
+    if (info.interaction.options.getString('nickname')?.length > 32) {
         return { embeds: [ generateEmbed('error', { title: 'Too many characters! (nicknames must be 32 characters or less)' }) ] }
     }
     try {
-        await member.setNickname(interaction.options.getString('nickname'))
+        await member.setNickname(info.interaction.options.getString('nickname'))
     } catch {
         return { embeds: [ generateEmbed('error', { title: 'This user\'s permissions are too powerful to perform this action!' }) ] }
     }

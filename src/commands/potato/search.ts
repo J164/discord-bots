@@ -1,10 +1,9 @@
-import { ButtonInteraction, CommandInteraction, InteractionReplyOptions, InteractionUpdateOptions, SelectMenuInteraction } from 'discord.js'
+import { ButtonInteraction, InteractionReplyOptions, InteractionUpdateOptions, SelectMenuInteraction } from 'discord.js'
 import { request } from 'undici'
-import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { BotInfo } from '../../core/utils/interfaces.js'
 import { Buffer } from 'node:buffer'
 import { createCanvas, Image } from '@napi-rs/canvas'
+import { GlobalChatCommand, GlobalChatCommandInfo } from '../../core/utils/interfaces.js'
 
 interface MagicCard {
     readonly name: string,
@@ -60,9 +59,9 @@ async function generateResponse(results: MagicCard[][], r: number, index: number
     return { embeds: [ generateEmbed('info', { title: card.name, footer: { text: `Price ($): ${card.prices.usd}` ?? 'unknown (not for sale)' }, image: { url: card.image_uris.large } }) ], components: [] }
 }
 
-async function search(interaction: CommandInteraction, info: BotInfo, results?: MagicCard[][], component?: ButtonInteraction | SelectMenuInteraction, page = 0): Promise<InteractionReplyOptions> {
+async function search(info: GlobalChatCommandInfo, results?: MagicCard[][], component?: ButtonInteraction | SelectMenuInteraction, page = 0): Promise<InteractionReplyOptions> {
     if (!results) {
-        const searchTerm = interaction.options.getString('query')
+        const searchTerm = info.interaction.options.getString('query')
         try {
             const response = await (await request(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)).body.json() as ScryfallResponse
             results = formatResponse(response)
@@ -98,10 +97,10 @@ async function search(interaction: CommandInteraction, info: BotInfo, results?: 
         { type: 'BUTTON', customId: 'search-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY', disabled: page === results.length - 1 },
         { type: 'BUTTON', customId: 'search-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: page === results.length - 1 },
     ], type: 'ACTION_ROW' } ] }
-    await (component ? component.update(options) : interaction.editReply(options))
-    interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName), time: 300_000, max: 1 })
+    await (component ? component.update(options) : info.interaction.editReply(options))
+    info.interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === info.interaction.user.id && b.customId.startsWith(info.interaction.commandName), time: 300_000, max: 1 })
         .once('end', async c => {
-            await interaction.editReply({ components: [] }).catch()
+            await info.interaction.editReply({ components: [] }).catch()
             if (!c.at(0)) return
             const response = c.at(0)
             if (response.isSelectMenu()) {
@@ -111,22 +110,22 @@ async function search(interaction: CommandInteraction, info: BotInfo, results?: 
             if (!response.isButton()) return
             switch (c.at(0).customId) {
                 case 'search-doublearrowleft':
-                    void search(interaction, info, results, response)
+                    void search(info, results, response)
                     break
                 case 'search-arrowleft':
-                    void search(interaction, info, results, response, page - 1)
+                    void search(info, results, response, page - 1)
                     break
                 case 'search-arrowright':
-                    void search(interaction, info, results, response, page + 1)
+                    void search(info, results, response, page + 1)
                     break
                 case 'search-doublearrowright':
-                    void search(interaction, info, results, response, results.length - 1)
+                    void search(info, results, response, results.length - 1)
                     break
             }
         })
 }
 
-export const command = new ChatCommand({
+export const command = new GlobalChatCommand({
     name: 'search',
     description: 'Search for Magic cards',
     options: [ {

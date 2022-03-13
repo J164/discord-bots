@@ -1,15 +1,14 @@
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { InteractionReplyOptions } from 'discord.js'
 import { playBlackjack } from '../../core/modules/games/blackjack.js'
-import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
+import { GlobalChatCommand, GlobalChatCommandInfo } from '../../core/utils/interfaces.js'
 
-async function blackjack(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
-    const dm = await interaction.user.createDM()
-    void playBlackjack(dm)
+async function blackjack(info: GlobalChatCommandInfo): Promise<InteractionReplyOptions> {
+    void playBlackjack(await info.interaction.user.createDM())
     return { embeds: [ generateEmbed('success', { title: 'Success!' }) ] }
 }
 
-export const command = new ChatCommand({
+export const command = new GlobalChatCommand({
     name: 'blackjack',
     description: 'Play Blackjack',
 }, { respond: blackjack })

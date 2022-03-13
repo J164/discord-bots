@@ -1,18 +1,17 @@
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Info } from '../../core/utils/interfaces.js'
 import { QueueItem } from '../../core/voice/queue-manager.js'
 import ytpl from 'ytpl'
-import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
+import { GuildChatCommand, GuildChatCommandInfo } from '../../core/utils/interfaces.js'
 
-async function featured(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
-    const member = await interaction.guild.members.fetch(interaction.user)
+async function featured(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
+    const member = await info.interaction.guild.members.fetch(info.interaction.user)
     const voiceChannel = member.voice.channel
     if (!voiceChannel?.joinable || voiceChannel.type !== 'GUILD_VOICE') {
         return { embeds: [ generateEmbed('error', { title: 'This command can only be used while in a visable voice channel!' }) ] }
     }
-    const results = await ytpl(interaction.options.getString('name')).catch((): false => {
-        void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] })
+    const results = await ytpl(info.interaction.options.getString('name')).catch((): false => {
+        void info.interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Please enter a valid url (private playlists will not work)' }) ] })
         return false
     })
     if (!results) return
@@ -20,7 +19,7 @@ async function featured(interaction: CommandInteraction, info: Info): Promise<In
     for (const item of results.items) {
         items.push({ url: item.shortUrl, title: item.title, duration: item.duration, thumbnail: item.bestThumbnail.url })
     }
-    await info.queueManager.addToQueue(items, interaction.options.getInteger('position') - 1)
+    await info.queueManager.addToQueue(items, info.interaction.options.getInteger('position') - 1)
     await info.queueManager.connect(voiceChannel)
     return { embeds: [ generateEmbed('success', { title: `Added playlist "${results.title}" to queue!`, image: { url: results.bestThumbnail.url } }) ] }
 }

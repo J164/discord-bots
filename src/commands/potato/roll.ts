@@ -1,10 +1,10 @@
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
+import { InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
+import { GlobalChatCommand, GlobalChatCommandInfo } from '../../core/utils/interfaces.js'
 
-async function roll(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
-    const dice = interaction.options.getInteger('sides') ?? 6
-    await interaction.editReply({ embeds: [ generateEmbed('info', { title: `Rolling a ${dice}-sided die...` }) ] })
+async function roll(info: GlobalChatCommandInfo): Promise<InteractionReplyOptions> {
+    const dice = info.interaction.options.getInteger('sides') ?? 6
+    await info.interaction.editReply({ embeds: [ generateEmbed('info', { title: `Rolling a ${dice}-sided die...` }) ] })
     const diceResult = generateEmbed('info', { title: `${dice}-sided die result`, fields: [] })
     let chance = 10_000
     while (100 / dice * chance < 1) {
@@ -14,7 +14,7 @@ async function roll(interaction: CommandInteraction): Promise<InteractionReplyOp
     return { embeds: [ diceResult ] }
 }
 
-export const command = new ChatCommand({
+export const command = new GlobalChatCommand({
     name: 'roll',
     description: 'Roll a die',
     options: [ {

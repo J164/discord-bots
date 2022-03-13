@@ -15,7 +15,7 @@ export class DatabaseManager {
         this._database = this._client.db('botdata')
     }
 
-    public async select(collection: string, filter?: Filter<Document>): Promise<WithId<Document>[]> {
+    public select(collection: string, filter?: Filter<Document>): Promise<WithId<Document>[]> {
         return this._database.collection(collection).find(filter ?? {}).toArray()
     }
 

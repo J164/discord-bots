@@ -6,10 +6,13 @@ void new BotClient(
     {
         intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES ],
         partials: [ 'CHANNEL' ],
+        presence: {
+            status: 'dnd',
+            activities: [ { name: process.env.CRYSTALSTATUS, type: 'PLAYING' } ],
+        },
     },
     {
         name: 'crystal',
-        status: [ 'Karl Needs a Bandage', 'The Agent Game', 'Gangster Town', 'The Running Game', 'The Games (Which one?)' ],
         guildOptions: {
             voiceManager: true,
         },

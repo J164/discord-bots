@@ -6,10 +6,13 @@ void new BotClient(
     {
         intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ],
         partials: [ 'CHANNEL' ],
+        presence: {
+            status: 'dnd',
+            activities: [ { name: process.env.YEETSTATUS, type: 'PLAYING' } ],
+        },
     },
     {
         name: 'yeet',
-        status: [ 'Yeeting the Child', 'YA YEEEEEEEEEET', 'Yeeting People off Cliffs', 'Yeeting Washing Machines' ],
         guildOptions: {},
     },
 ).on('messageCreate', message => {

@@ -1,7 +1,7 @@
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
+import { InteractionReplyOptions } from 'discord.js'
 import { request } from 'undici'
-import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
 import { generateEmbed } from '../../core/utils/generators.js'
+import { GlobalChatCommand, GlobalChatCommandInfo } from '../../core/utils/interfaces.js'
 
 interface WynncraftData {
     readonly data: readonly {
@@ -24,8 +24,8 @@ interface WynncraftData {
     }[]
 }
 
-async function wynncraft(interaction: CommandInteraction): Promise<InteractionReplyOptions> {
-    const playerData = await (await request(`https://api.wynncraft.com/v2/player/${interaction.options.getString('player')}/stats`)).body.json() as WynncraftData
+async function wynncraft(info: GlobalChatCommandInfo): Promise<InteractionReplyOptions> {
+    const playerData = await (await request(`https://api.wynncraft.com/v2/player/${info.interaction.options.getString('player')}/stats`)).body.json() as WynncraftData
     const embed = generateEmbed('info', {
         title: playerData.data[0].username,
         fields: [ {
@@ -43,7 +43,7 @@ async function wynncraft(interaction: CommandInteraction): Promise<InteractionRe
     return { embeds: [ embed ] }
 }
 
-export const command = new ChatCommand({
+export const command = new GlobalChatCommand({
     name: 'wynncraft',
     description: 'Get stats for a player on Wynncraft',
     options: [ {

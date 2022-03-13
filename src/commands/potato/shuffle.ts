@@ -1,9 +1,8 @@
-import { CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
+import { InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
-import { Info } from '../../core/utils/interfaces.js'
+import { GuildChatCommand, GuildChatCommandInfo } from '../../core/utils/interfaces.js'
 
-async function shuffle(interaction: CommandInteraction, info: Info): Promise<InteractionReplyOptions> {
+async function shuffle(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
     if (await info.queueManager.shuffleQueue()) {
         return { embeds: [ generateEmbed('success', { title: 'The queue has been shuffled' }) ] }
     }

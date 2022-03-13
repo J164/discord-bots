@@ -1,8 +1,7 @@
-import { ButtonInteraction, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { BotInfo } from '../../core/utils/interfaces.js'
+import { ButtonInteraction, InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
 import { request } from 'undici'
-import { ChatCommand } from '../../core/utils/command-types/chat-command.js'
+import { GlobalChatCommand, GlobalChatCommandInfo } from '../../core/utils/interfaces.js'
 
 interface MagicCard {
     readonly name: string,
@@ -54,7 +53,7 @@ async function getList(url: string): Promise<string> {
     return '\n' + decklistArray.join('\n')
 }
 
-async function parseDeck(interaction: CommandInteraction, urls: { url: string }[], button?: ButtonInteraction, index = 0): Promise<void> {
+async function parseDeck(info: GlobalChatCommandInfo, urls: { url: string }[], button?: ButtonInteraction, index = 0): Promise<void> {
     const url = urls[index].url
     const fields = url.split('/')
     const authorID = fields[4]
@@ -76,37 +75,37 @@ async function parseDeck(interaction: CommandInteraction, urls: { url: string }[
         { type: 'BUTTON', customId: 'decks-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY', disabled: index === urls.length - 1 },
         { type: 'BUTTON', customId: 'decks-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: index === urls.length - 1 },
     ], type: 'ACTION_ROW' } ] }
-    await (!button ? interaction.editReply(options) : button.update(options))
-    interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName), time: 300_000, componentType: 'BUTTON', max: 1 })
+    await (!button ? info.interaction.editReply(options) : button.update(options))
+    info.interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === info.interaction.user.id && b.customId.startsWith(info.interaction.commandName), time: 300_000, componentType: 'BUTTON', max: 1 })
         .once('end', async b => {
-            await interaction.editReply({ components: [] }).catch()
+            await info.interaction.editReply({ components: [] }).catch()
             if (!b.at(0)) return
             switch (b.at(0).customId) {
                 case 'decks-doublearrowleft':
-                    void parseDeck(interaction, urls, b.at(0))
+                    void parseDeck(info, urls, b.at(0))
                     break
                 case 'decks-arrowleft':
-                    void parseDeck(interaction, urls, b.at(0), index - 1)
+                    void parseDeck(info, urls, b.at(0), index - 1)
                     break
                 case 'decks-list':
                     b.at(0).update({ content: await getList(apiUrl), embeds: [], components: [] }).catch(() => b.at(0).update({ embeds: [ generateEmbed('error', { title: 'There seems to be something wrong with the Deckstats API at the moment. Try again later' }) ], components: [] }))
                     break
                 case 'decks-arrowright':
-                    void parseDeck(interaction, urls, b.at(0), index + 1)
+                    void parseDeck(info, urls, b.at(0), index + 1)
                     break
                 case 'decks-doublearrowright':
-                    void parseDeck(interaction, urls, b.at(0), urls.length - 1)
+                    void parseDeck(info, urls, b.at(0), urls.length - 1)
                     break
             }
         })
 }
 
-async function getDeck(interaction: CommandInteraction, info: BotInfo): Promise<undefined> {
-    void parseDeck(interaction, await info.database.select('mtg_decks') as unknown as { url: string }[])
+async function getDeck(info: GlobalChatCommandInfo): Promise<undefined> {
+    void parseDeck(info, await info.database.select('mtg_decks') as unknown as { url: string }[])
     return undefined
 }
 
-export const command = new ChatCommand({
+export const command = new GlobalChatCommand({
     name: 'decks',
     description: 'Get a deck from Potato\'s database',
 }, { respond: getDeck, ephemeral: true })

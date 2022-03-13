@@ -1,14 +1,13 @@
-import { ButtonInteraction, CommandInteraction, InteractionReplyOptions } from 'discord.js'
-import { Info } from '../../core/utils/interfaces.js'
+import { ButtonInteraction, InteractionReplyOptions } from 'discord.js'
 import { generateEmbed } from '../../core/utils/generators.js'
+import { GuildChatCommand, GuildChatCommandInfo } from '../../core/utils/interfaces.js'
 import { QueueItem } from '../../core/voice/queue-manager.js'
-import { GuildChatCommand } from '../../core/utils/command-types/guild-chat-command.js'
 
-async function queue(interaction: CommandInteraction, info: Info, queueArray?: QueueItem[][], button?: ButtonInteraction, page = 0): Promise<undefined> {
+async function queue(info: GuildChatCommandInfo, queueArray?: QueueItem[][], button?: ButtonInteraction, page = 0): Promise<undefined> {
     if (!queueArray) {
         queueArray = await info.queueManager.getPaginatedQueue()
         if (!queueArray) {
-            void interaction.editReply({ embeds: [ generateEmbed('error', { title: 'There is no queue!' }) ] })
+            void info.interaction.editReply({ embeds: [ generateEmbed('error', { title: 'There is no queue!' }) ] })
             return
         }
     }
@@ -30,24 +29,24 @@ async function queue(interaction: CommandInteraction, info: Info, queueArray?: Q
         { type: 'BUTTON', customId: 'queue-arrowright', emoji: '\u27A1\uFE0F', label: 'Next Page', style: 'SECONDARY', disabled: page === queueArray.length - 1 },
         { type: 'BUTTON', customId: 'queue-doublearrowright', emoji: '\u23E9', label: 'Jump to End', style: 'SECONDARY', disabled: page === queueArray.length - 1 },
     ], type: 'ACTION_ROW' } ] }
-    await (!button ? interaction.editReply(options) : button.update(options))
+    await (!button ? info.interaction.editReply(options) : button.update(options))
     //todo create message component collector on reply rather than channel and simplify ids
-    interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === interaction.user.id && b.customId.startsWith(interaction.commandName), time: 300_000, componentType: 'BUTTON', max: 1 })
+    info.interaction.channel.createMessageComponentCollector({ filter: b => b.user.id === info.interaction.user.id && b.customId.startsWith(info.interaction.commandName), time: 300_000, componentType: 'BUTTON', max: 1 })
         .once('end', async b => {
-            await interaction.editReply({ components: [] }).catch()
+            await info.interaction.editReply({ components: [] }).catch()
             if (!b.at(0)) return
             switch (b.at(0).customId) {
                 case 'queue-doublearrowleft':
-                    void queue(interaction, info, queueArray, b.at(0))
+                    void queue(info, queueArray, b.at(0))
                     break
                 case 'queue-arrowleft':
-                    void queue(interaction, info, queueArray, b.at(0), page - 1)
+                    void queue(info, queueArray, b.at(0), page - 1)
                     break
                 case 'queue-arrowright':
-                    void queue(interaction, info, queueArray, b.at(0), page + 1)
+                    void queue(info, queueArray, b.at(0), page + 1)
                     break
                 case 'queue-doublearrowright':
-                    void queue(interaction, info, queueArray, b.at(0), queueArray.length - 1)
+                    void queue(info, queueArray, b.at(0), queueArray.length - 1)
                     break
             }
         })
