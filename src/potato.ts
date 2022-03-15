@@ -13,6 +13,7 @@ void new BotClient(
     },
     {
         name: 'potato',
+        database: true,
         guildOptions: {
             queueManager: true,
         },

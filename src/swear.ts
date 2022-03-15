@@ -13,6 +13,7 @@ void new BotClient(
     },
     {
         name: 'swear',
+        database: true,
         guildOptions: {
             voiceManager: true,
         },
