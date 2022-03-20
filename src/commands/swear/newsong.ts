@@ -18,7 +18,8 @@ async function newSong(info: GlobalChatCommandInfo): Promise<InteractionReplyOpt
             async () => {
                 await info.database.insert('swear_songs', { index: songs.length + 1, name: `song${songs.length + 1}` })
                 void info.interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Success!' }) ] }).catch()
-            }, () => {
+            }, (error) => {
+		console.log(error)
                 void info.interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] }).catch()
             },
         )

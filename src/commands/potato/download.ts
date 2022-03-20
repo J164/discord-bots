@@ -17,7 +17,8 @@ function downloadVideo(info: GlobalChatCommandInfo): InteractionReplyOptions {
             () => {
                 void info.interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Download Successful!' }) ] }).catch()
             },
-            () => {
+            (error) => {
+		console.log(error)
                 void info.interaction.editReply({ embeds: [ generateEmbed('error', { title: 'Download Failed!' }) ] }).catch()
             },
         )

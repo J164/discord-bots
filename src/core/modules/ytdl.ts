@@ -7,7 +7,7 @@ export function createStream(url: string, options: unknown): ChildProcessByStdio
 
 export async function resolve(url: string): Promise<unknown> {
     return new Promise(resolve => {
-        exec(`python3 -u ./assets/scripts/yt-resolve.py ${url}`, (error, stdout) => {
+        exec(`python3 -u ./assets/scripts/yt-resolve.py "${url}"`, (error, stdout) => {
             resolve(JSON.parse(stdout))
         })
     })
@@ -15,9 +15,9 @@ export async function resolve(url: string): Promise<unknown> {
 
 export async function download(url: string, options: unknown): Promise<void> {
     return new Promise((resolve, reject) => {
-        exec(`python3 -u ./assets/scripts/yt-download.py ${url} ${JSON.stringify(options).replaceAll('"', '\\"')}`, (error) => {
+        exec(`python3 -u ./assets/scripts/yt-download.py "${url}" "${JSON.stringify(options).replaceAll('"', '\\"')}"`, (error) => {
             if (error) {
-                return reject()
+                return reject(error)
             }
             return resolve()
         })
