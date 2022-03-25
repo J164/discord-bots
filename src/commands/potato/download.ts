@@ -8,7 +8,7 @@ function downloadVideo(info: GlobalChatCommandInfo): InteractionReplyOptions {
     if (info.interaction.user.id !== process.env.ADMIN) {
         return { embeds: [ generateEmbed('error', { title: 'You don\'t have permission to use this command!' }) ] }
     }
-    if (!/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(info.interaction.options.getString('url'))) {
+    if (!/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(info.interaction.options.getString('url'))) {
         return { embeds: [ generateEmbed('error', { title: 'Not a valid url!' }) ] }
     }
     void info.interaction.editReply({ embeds: [ generateEmbed('info', { title: 'Downloading...' }) ] })
