@@ -1,0 +1,26 @@
+{
+  "root": true,
+  "env": {
+    "es2021": true,
+    "node": true
+  },
+  "extends": ["eslint:recommended", "plugin:unicorn/recommended"],
+  "plugins": ["unicorn"],
+  "rules": {
+    "complexity": ["warn", 20],
+    "eqeqeq": "error",
+    "no-invalid-this": "error",
+    "no-mixed-spaces-and-tabs": "off",
+    "no-restricted-globals": ["error", "process", "setTimeout", "setInterval", "Buffer"],
+    "no-return-await": "error",
+    "no-warning-comments": "warn",
+    "no-useless-return": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "yoda": "error",
+
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/no-await-expression-member": "off",
+    "unicorn/number-literal-case": "off"
+  }
+}
