@@ -20,13 +20,13 @@ test('ytdl resolve', async () => {
   });
 });
 
-test('ytdl valid download', () => {
-  expect(
+test('ytdl valid download', async () => {
+  await expect(
     download('https://youtu.be/8NGtL3HUPUo', {
       outtmpl: 'temp/%(title)s.%(ext)s',
       format: 'best[ext=mp4]',
     }),
-  ).resolves;
+  ).resolves.toBeUndefined();
 });
 
 test('ytdl invalid download', async () => {
@@ -35,7 +35,7 @@ test('ytdl invalid download', async () => {
       outtmpl: 'temp/%(title)s.%(ext)s',
       format: 'best[ext=mp4]',
     }),
-  ).rejects.toBeTruthy();
+  ).rejects.toBeDefined();
 });
 
 test('ytdl stream', async () => {
