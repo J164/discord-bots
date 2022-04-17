@@ -5,7 +5,7 @@ import { GuildChatCommandInfo, GuildChatCommand } from '../util/interfaces.js';
 async function shuffle(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
   if (await info.queueManager.shuffleQueue()) {
     return {
-      embeds: [buildEmbed('success', { title: 'The queue has been shuffled' })],
+      embeds: [buildEmbed('success', { title: 'Queue shuffled!' })],
     };
   }
   return {

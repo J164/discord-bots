@@ -179,10 +179,9 @@ export class Deck {
 
   public constructor(options: { codes?: readonly CardCode[]; values?: number[] }) {
     options.codes ??= Deck._fullDeck;
-    this._stack = [];
-    for (const code of options.codes) {
-      this._stack.push(Deck.parseCode(code, options.values));
-    }
+    this._stack = options.codes.map((code) => {
+      return Deck.parseCode(code, options.values);
+    });
   }
 
   public shuffle(): this {

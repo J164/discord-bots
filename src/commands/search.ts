@@ -123,19 +123,13 @@ async function search(
   const embed = buildEmbed('info', {
     title: 'Results',
     footer: { text: `${page + 1}/${results.length}` },
-    fields: [],
+    fields: results[page].map((entry, index) => {
+      return {
+        name: `${index + 1}.`,
+        value: `${entry.name}`,
+      };
+    }),
   });
-  for (const [index, entry] of results[page].entries()) {
-    embed.fields.push({ name: `${index + 1}.`, value: `${entry.name}` });
-  }
-  const selectOptions: { label: string; description: string; value: string }[] = [];
-  for (let r = 0; r < results[page].length; r++) {
-    selectOptions.push({
-      label: (r + 1).toString(),
-      description: results[page][r].name,
-      value: (r + 1).toString(),
-    });
-  }
   const options: InteractionUpdateOptions = {
     embeds: [embed],
     components: [
@@ -146,7 +140,13 @@ async function search(
             type: 'SELECT_MENU',
             customId: 'search-options',
             placeholder: 'Select a Card',
-            options: selectOptions,
+            options: results[page].map((value, index) => {
+              return {
+                label: (index + 1).toString(),
+                description: value.name,
+                value: (index + 1).toString(),
+              };
+            }),
           },
         ],
       },

@@ -135,15 +135,14 @@ async function play(info: GuildChatCommandInfo): Promise<InteractionReplyOptions
       return false;
     });
     if (!results) return;
-    const items: QueueItem[] = [];
-    for (const item of results.items) {
-      items.push({
+    const items = results.items.map((item) => {
+      return {
         url: item.shortUrl,
         title: item.title,
         duration: item.duration,
         thumbnail: item.bestThumbnail.url,
-      });
-    }
+      };
+    });
     await info.queueManager.addToQueue(items, info.interaction.options.getInteger('position') - 1);
     await info.queueManager.connect(voiceChannel);
     return {
@@ -234,10 +233,12 @@ async function search(info: GuildAutocompleteInfo): Promise<ApplicationCommandOp
   const results = await ytsr((await ytsr.getFilters(info.option.value as string)).get('Type').get('Video').url, {
     limit: 4,
   });
-  const options: ApplicationCommandOptionChoice[] = [];
-  for (const result of results.items as ytsr.Video[]) {
-    options.push({ name: result.title, value: result.url });
-  }
+  const options = results.items.map((result: ytsr.Video) => {
+    return {
+      name: result.title,
+      value: result.url,
+    };
+  });
   return options;
 }
 

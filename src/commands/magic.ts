@@ -1,4 +1,4 @@
-import { InteractionReplyOptions, User } from 'discord.js';
+import { InteractionReplyOptions } from 'discord.js';
 import { playMagic } from '../modules/games/magic-game.js';
 import { buildEmbed } from '../util/builders.js';
 import { GuildChatCommandInfo, GuildChatCommand } from '../util/interfaces.js';
@@ -10,8 +10,8 @@ async function magic(info: GuildChatCommandInfo): Promise<InteractionReplyOption
       embeds: [buildEmbed('error', { title: 'Something went wrong!' })],
     };
   }
-  const playerlist: User[] = [];
-  for (let index = 1; index <= 4; index++) {
+  const playerlist = [info.interaction.options.getUser('player1'), info.interaction.options.getUser('player2')];
+  for (let index = 3; index <= 4; index++) {
     if (info.interaction.options.getUser(`player${index}`)) {
       playerlist.push(info.interaction.options.getUser(`player${index}`));
     } else {

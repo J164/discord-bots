@@ -25,7 +25,7 @@ export class DatabaseManager {
     await this._database.collection(collection).insertOne(data);
   }
 
-  public async findOne(collection: string, filter?: Filter<Document>): Promise<WithId<Document>> {
+  public findOne(collection: string, filter?: Filter<Document>): Promise<WithId<Document>> {
     return this._database.collection(collection).findOne(filter ?? {});
   }
 

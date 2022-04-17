@@ -96,13 +96,14 @@ export class QueueManager {
 
   public async connect(voiceChannel: VoiceChannel): Promise<void> {
     if (this._isActive()) return;
-
     if (this._voiceConnection?.state.status === VoiceConnectionStatus.Ready) return;
+
     this._transitioning = true;
 
     this._voiceConnection = joinVoiceChannel({
       channelId: voiceChannel.id,
       guildId: voiceChannel.guild.id,
+      // @ts-expect-error library type incompatibility
       adapterCreator: voiceChannel.guild.voiceAdapterCreator,
     });
     this._voiceChannel = voiceChannel;

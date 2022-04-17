@@ -35,12 +35,15 @@ export function multicardMessage(
       },
     };
   }
-  const filePaths: string[] = [];
-  for (const card of cards) {
-    filePaths.push(`./assets/img/cards/${card.code}.png`);
-  }
   return {
     embed: hand,
-    file: { attachment: mergeImages(filePaths), name: `${fileName}.png` },
+    file: {
+      attachment: mergeImages(
+        cards.map((card) => {
+          return `./assets/img/cards/${card.code}.png`;
+        }),
+      ),
+      name: `${fileName}.png`,
+    },
   };
 }

@@ -11,15 +11,12 @@ async function skipto(info: GuildChatCommandInfo): Promise<InteractionReplyOptio
 }
 
 function suggestions(info: GuildAutocompleteInfo): ApplicationCommandOptionChoice[] {
-  const results = info.queueManager.searchQueue(info.option.value as string);
-  const options: ApplicationCommandOptionChoice[] = [];
-  for (const result of results) {
-    if (options.length > 3) {
-      break;
-    }
-    options.push({ name: result.item.title, value: result.item.title });
-  }
-  return options;
+  return info.queueManager.searchQueue(info.option.value as string).map((result) => {
+    return {
+      name: result.item.title,
+      value: result.item.title,
+    };
+  });
 }
 
 export const command: GuildChatCommand = {

@@ -34,25 +34,6 @@ interface DeckstatsResponse {
   }[];
 }
 
-async function getList(url: string): Promise<string> {
-  const decklist = ((await (await request(`${url}list`)).body.json()) as { list: string }).list;
-  const decklistArray = decklist.split('\n');
-  for (let index = 0; index < decklistArray.length; index++) {
-    if (!decklistArray[index] || decklistArray[index].startsWith('//')) {
-      decklistArray.splice(index, 1);
-      index--;
-      continue;
-    }
-    if (decklistArray[index].includes('//')) {
-      decklistArray[index] = decklistArray[index].slice(0, decklistArray[index].indexOf('//'));
-    }
-    if (decklistArray[index].includes('#')) {
-      decklistArray[index] = decklistArray[index].slice(0, decklistArray[index].indexOf('#'));
-    }
-  }
-  return '\n' + decklistArray.join('\n');
-}
-
 async function parseDeck(info: GlobalChatCommandInfo, urls: { url: string }[], button?: ButtonInteraction, index = 0): Promise<void> {
   const url = urls[index].url;
   const ids = /^(?:https?:\/\/)?(?:www\.)?deckstats\.net\/decks\/(\d+)\/(\d+)-[\dA-Za-z-]+$/.exec(url);
@@ -145,7 +126,7 @@ async function parseDeck(info: GlobalChatCommandInfo, urls: { url: string }[], b
         case 'decks-list':
           b.at(0)
             .update({
-              content: await getList(apiUrl),
+              content: ((await (await request(`${apiUrl}list`)).body.json()) as { list: string }).list.match(/^([^\n!#/]+)/gm).join('\n'),
               embeds: [],
               components: [],
             })

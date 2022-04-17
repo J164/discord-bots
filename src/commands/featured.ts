@@ -2,7 +2,6 @@ import { InteractionReplyOptions } from 'discord.js';
 import ytpl from 'ytpl';
 import { buildEmbed } from '../util/builders.js';
 import { GuildChatCommandInfo, GuildChatCommand } from '../util/interfaces.js';
-import { QueueItem } from '../voice/queue-manager.js';
 
 async function featured(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
   const voiceChannel = (await info.interaction.guild.members.fetch(info.interaction.user)).voice.channel;
@@ -26,15 +25,14 @@ async function featured(info: GuildChatCommandInfo): Promise<InteractionReplyOpt
     return false;
   });
   if (!results) return;
-  const items: QueueItem[] = [];
-  for (const item of results.items) {
-    items.push({
+  const items = results.items.map((item) => {
+    return {
       url: item.shortUrl,
       title: item.title,
       duration: item.duration,
       thumbnail: item.bestThumbnail.url,
-    });
-  }
+    };
+  });
   await info.queueManager.addToQueue(items, info.interaction.options.getInteger('position') - 1);
   await info.queueManager.connect(voiceChannel);
   return {

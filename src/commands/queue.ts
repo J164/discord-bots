@@ -17,14 +17,13 @@ async function queue(info: GuildChatCommandInfo, queueArray?: QueueItem[][], but
   const queueMessage = buildEmbed('info', {
     title: title,
     footer: { text: `${page + 1}/${queueArray.length}` },
-    fields: [],
+    fields: queueArray[page].map((entry, index) => {
+      return {
+        name: index === 0 && page === 0 ? 'Currently Playing:' : `${index + page * 25}.`,
+        value: `${entry.title} (${entry.duration})\n${entry.url}`,
+      };
+    }),
   });
-  for (const [index, entry] of queueArray[page].entries()) {
-    queueMessage.fields.push({
-      name: index === 0 && page === 0 ? 'Currently Playing:' : `${index + page * 25}.`,
-      value: `${entry.title} (${entry.duration})\n${entry.url}`,
-    });
-  }
   const options: InteractionUpdateOptions = {
     embeds: [queueMessage],
     components: [
