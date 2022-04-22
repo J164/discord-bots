@@ -11,13 +11,13 @@ export async function gradeReport(
   const oldGrades = (await databaseManager.findOne('grades', { studentId: ircAuth.id })) as unknown as Grades;
   if (!oldGrades) {
     void databaseManager.insertOne('grades', newGrades);
-    return
+    return;
   }
 
   const diff = checkUpdates(oldGrades, newGrades);
 
   if (!diff.changes) {
-    return
+    return;
   }
 
   await databaseManager.deleteMany('grades', { studentId: ircAuth.id });
@@ -42,7 +42,10 @@ export async function gradeReport(
         if (course.projectedGrade) {
           return {
             name: `${course.name} - ${course.projectedGrade.oldGrade} -> ${course.projectedGrade.newGrade}`,
-            value: course.standardScore.length > 0 ? `${course.standardScore[0].standard}: ${course.standardScore[0].oldScore} -> ${course.standardScore[0].newScore}` : 'Check IRC for more info',
+            value:
+              course.standardScore.length > 0
+                ? `${course.standardScore[0].standard}: ${course.standardScore[0].oldScore} -> ${course.standardScore[0].newScore}`
+                : 'Check IRC for more info',
           };
         }
         if (course.newAssignments.length > 0) {
