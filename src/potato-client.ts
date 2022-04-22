@@ -15,7 +15,7 @@ import { QueueManager } from './voice/queue-manager.js';
 import cron from 'node-cron';
 import { env } from 'node:process';
 import { getDailyReport } from './modules/daily-report.js';
-import { checkUpdates, fetchCourseData, Grades } from './util/irc.js';
+import { gradeReport } from './modules/grade-report.js';
 
 export class PotatoClient extends Client {
   private readonly _guildInfo: Map<string, GuildInfo>;
@@ -45,22 +45,12 @@ export class PotatoClient extends Client {
       });
 
       cron.schedule(env.GRADE_UPDATE_INTERVAL, async () => {
-        for (const user of Object.values(this._privateData.ircAuth)) {
-          const oldGrades = (await this._databaseManager.findOne('grades', (value: { readonly id: string }) => {
-            return value.id === user.id;
-          })) as unknown as Grades;
-          if (!oldGrades) {
-            void this._databaseManager.insertOne('grades', await fetchCourseData(user));
-            return;
-          }
-
-          const diff = checkUpdates(oldGrades, await fetchCourseData(user));
-
-          if (!diff.changes) {
-            return;
-          }
-
-          //todo send message
+        for (const user of Object.keys(this._privateData.ircAuth)) {
+          const report = await gradeReport(this._privateData.ircAuth[user], this._databaseManager)
+          if (!report) return
+          void (await (await this.users.fetch(user)).createDM()).send({
+            embeds: [report],
+          });
         }
       });
 

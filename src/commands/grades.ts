@@ -1,15 +1,15 @@
 import { InteractionReplyOptions } from 'discord.js';
 import { buildEmbed } from '../util/builders.js';
 import { GlobalChatCommand, GlobalChatCommandInfo } from '../util/interfaces.js';
-import { APIStandard, fetchCourseData } from '../util/irc.js';
+import { fetchCourseData, Standard } from '../util/irc.js';
 
-function buildScoreMap(standards: APIStandard[]): string {
+function buildScoreMap(standards: Standard[]): string {
   let string = '';
   for (const standard of standards) {
     if (standard.isHomeworkStandard) {
       continue;
     }
-    string += `**${standard.proficiency.proficiencyScore}** - ${standard.standardName}\n${standard.proficiency.exceedsCount} - ${standard.proficiency.meetsCount} - ${standard.proficiency.approachingCount} - ${standard.proficiency.developingCount}\n`;
+    string += `**${standard.proficiencyScore}** - "${standard.name}"\n${standard.proficiency.exceedsCount} - ${standard.proficiency.meetsCount} - ${standard.proficiency.approachingCount} - ${standard.proficiency.developingCount}\n`;
   }
   return string;
 }
@@ -18,20 +18,20 @@ async function grades(info: GlobalChatCommandInfo): Promise<InteractionReplyOpti
   return {
     embeds: (await fetchCourseData(info.privateData.ircAuth[info.interaction.user.id])).courses
       .map((course) => {
-        return buildEmbed(course.assessment.isFinal ? 'success' : 'info', {
+        return buildEmbed(course.isFinal ? 'success' : 'info', {
           title: course.name,
           fields: [
             {
-              name: course.assessment.isFinal ? 'Final Grade' : 'Projected Grade',
-              value: course.assessment.projectedGrade || course.assessment.weeklyGrowth,
+              name: course.isFinal ? 'Final Grade' : 'Projected Grade',
+              value: course.projectedGrade || course.weeklyGrowth,
             },
             {
               name: 'Weekly Growth',
-              value: course.assessment.weeklyGrowth,
+              value: course.weeklyGrowth,
             },
             {
               name: 'Score Ratios (exceeds - meets - approaching - developing)',
-              value: buildScoreMap(course.assessment.standards),
+              value: buildScoreMap(course.standards),
             },
           ],
         });

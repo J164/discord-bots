@@ -7,7 +7,7 @@ export class DatabaseManager {
 
   public constructor() {
     this._client = new MongoClient(env.MONGODB_URL);
-    this._database = this._client.db('botdata');
+    this._database = this._client.db('debug');
   }
 
   public async connect(): Promise<void> {
