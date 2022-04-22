@@ -52,19 +52,19 @@ export interface Grades {
 
 interface CourseDiff {
   isFinal?: boolean;
-    projectedGrade?: { oldGrade: string; newGrade: string };
-    newStandards: APIStandard[];
-    newAssignments: APIAssignment[];
-    standardScore?: {
-      standard: string;
-      oldScore: number;
-      newScore: number;
-    }[];
+  projectedGrade?: { oldGrade: string; newGrade: string };
+  newStandards: APIStandard[];
+  newAssignments: APIAssignment[];
+  standardScore?: {
+    standard: string;
+    oldScore: number;
+    newScore: number;
+  }[];
 }
 
 interface GradesDiff {
   changes: boolean;
-  newCourses: Course[]
+  newCourses: Course[];
   courses: CourseDiff[];
 }
 
@@ -130,12 +130,14 @@ export function checkUpdates(oldGrades: Grades, newGrades: Grades): GradesDiff {
   //fixme add changes prop
   const differences: GradesDiff = { courses: [], newCourses: [] };
   for (const newCourse of newGrades.courses) {
-    const oldCourse = newGrades.courses.find((value) => { return value.name === newCourse.name })
+    const oldCourse = newGrades.courses.find((value) => {
+      return value.name === newCourse.name;
+    });
     if (!oldCourse) {
-      differences.newCourses.push(newCourse)
-      continue
+      differences.newCourses.push(newCourse);
+      continue;
     }
-    const courseDiff: CourseDiff = { newStandards: [], newAssignments: [] }
+    const courseDiff: CourseDiff = { newStandards: [], newAssignments: [] };
     if (oldCourse.assessment.isFinal !== newCourse.assessment.isFinal) {
       courseDiff.isFinal = true;
     }
