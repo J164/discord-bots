@@ -1,5 +1,5 @@
 import { ButtonInteraction, InteractionUpdateOptions } from 'discord.js';
-import { request } from 'undici';
+import request from 'node-fetch';
 import { buildEmbed } from '../util/builders.js';
 import { GlobalChatCommandInfo, GlobalChatCommand } from '../util/interfaces.js';
 
@@ -38,14 +38,14 @@ async function parseDeck(info: GlobalChatCommandInfo, urls: { url: string }[], b
   const url = urls[index].url;
   const ids = /^(?:https?:\/\/)?(?:www\.)?deckstats\.net\/decks\/(\d+)\/(\d+)-[\dA-Za-z-]+$/.exec(url);
   const apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${ids[1]}&id=${ids[2]}&response_type=`;
-  const results = (await (await request(`${apiUrl}json`)).body.json()) as DeckstatsResponse;
+  const results = (await (await request(`${apiUrl}json`)).json()) as DeckstatsResponse;
   let image: string;
   for (const section of results.sections) {
     const commander = section.cards.findIndex((card) => card.isCommander);
     if (commander !== -1) {
       const cardInfo = (await (
         await request(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(section.cards[commander].name)}`)
-      ).body.json()) as ScryfallResponse;
+      ).json()) as ScryfallResponse;
       image = cardInfo.data[0].image_uris.large;
     }
   }
@@ -126,7 +126,7 @@ async function parseDeck(info: GlobalChatCommandInfo, urls: { url: string }[], b
         case 'decks-list':
           b.at(0)
             .update({
-              content: ((await (await request(`${apiUrl}list`)).body.json()) as { list: string }).list.match(/^([^\n!#/]+)/gm).join('\n'),
+              content: ((await (await request(`${apiUrl}list`)).json()) as { list: string }).list.match(/^([^\n!#/]+)/gm).join('\n'),
               embeds: [],
               components: [],
             })
