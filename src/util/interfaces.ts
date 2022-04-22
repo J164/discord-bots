@@ -6,8 +6,20 @@ export interface GuildInfo {
   readonly queueManager: QueueManager;
 }
 
+export interface PrivateData {
+  readonly ircAuth: {
+    [id: string]: {
+      readonly token: string;
+      readonly id: string;
+      readonly cid: string;
+      readonly tid: string;
+    };
+  };
+}
+
 interface GlobalInfo {
   readonly database: DatabaseManager;
+  readonly privateData: PrivateData;
 }
 
 export type GlobalChatCommandInfo = GlobalInfo & {

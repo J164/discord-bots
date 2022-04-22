@@ -1,5 +1,5 @@
 import { InteractionReplyOptions } from 'discord.js';
-import { request } from 'undici';
+import request from 'node-fetch';
 import { buildEmbed } from '../util/builders.js';
 import { GlobalChatCommandInfo, GlobalChatCommand } from '../util/interfaces.js';
 
@@ -30,7 +30,7 @@ async function addDeck(info: GlobalChatCommandInfo): Promise<InteractionReplyOpt
   const apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${ids[1]}&id=${ids[2]}&response_type=`;
   let name: string;
   try {
-    name = ((await (await request(`${apiUrl}json`)).body.json()) as { name: string }).name;
+    name = ((await (await request(`${apiUrl}json`)).json()) as { name: string }).name;
   } catch {
     return {
       embeds: [

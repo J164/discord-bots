@@ -1,12 +1,11 @@
 import { ApplicationCommandOptionChoice, InteractionReplyOptions, VoiceChannel } from 'discord.js';
 import ytsr from 'ytsr';
 import ytpl from 'ytpl';
-import { request } from 'undici';
+import request from 'node-fetch';
 import { env } from 'node:process';
 import { buildEmbed } from '../util/builders.js';
 import { GuildChatCommandInfo, GuildAutocompleteInfo, GuildChatCommand } from '../util/interfaces.js';
 import { resolve } from '../util/ytdl.js';
-import { QueueItem } from '../voice/queue-manager.js';
 
 interface SpotifyResponse {
   readonly name: string;
@@ -35,7 +34,7 @@ async function spotify(info: GuildChatCommandInfo, voiceChannel: VoiceChannel): 
         },
         body: 'grant_type=client_credentials',
       })
-    ).body.json()) as { access_token: string }
+    ).json()) as { access_token: string }
   ).access_token;
 
   let response: SpotifyResponse;
@@ -47,7 +46,7 @@ async function spotify(info: GuildChatCommandInfo, voiceChannel: VoiceChannel): 
         }`,
         { method: 'GET', headers: { Authorization: `Bearer ${token}` } },
       )
-    ).body.json()) as SpotifyResponse;
+    ).json()) as SpotifyResponse;
   } catch {
     return {
       embeds: [
@@ -62,30 +61,32 @@ async function spotify(info: GuildChatCommandInfo, voiceChannel: VoiceChannel): 
     embeds: [buildEmbed('info', { title: 'Locating Songs...' })],
   });
 
-  const items: QueueItem[] = [];
-
-  for (const song of response.tracks.items) {
-    const term = await ytsr((await ytsr.getFilters(`${song.track.name} ${song.track.artists[0].name}`)).get('Type').get('Video').url, {
-      limit: 1,
-    });
-    if (term.results < 1) {
-      void info.interaction.channel.send({
-        embeds: [
-          buildEmbed('error', {
-            title: `No results found for "${song.track.name}"`,
-          }),
-        ],
-      });
-      continue;
-    }
-    const ytvideo = term.items[0] as ytsr.Video;
-    items.push({
-      url: ytvideo.url,
-      title: ytvideo.title,
-      duration: ytvideo.duration,
-      thumbnail: ytvideo.bestThumbnail.url,
-    });
-  }
+  const items = (
+    await Promise.all(
+      response.tracks.items.map(async (song) => {
+        const term = await ytsr((await ytsr.getFilters(`${song.track.name} ${song.track.artists[0].name}`)).get('Type').get('Video').url, {
+          limit: 1,
+        });
+        if (term.results < 1) {
+          void info.interaction.channel.send({
+            embeds: [
+              buildEmbed('error', {
+                title: `No results found for "${song.track.name}"`,
+              }),
+            ],
+          });
+          return;
+        }
+        const ytvideo = term.items[0] as ytsr.Video;
+        return {
+          url: ytvideo.url,
+          title: ytvideo.title,
+          duration: ytvideo.duration,
+          thumbnail: ytvideo.bestThumbnail.url,
+        };
+      }),
+    )
+  ).filter(Boolean);
 
   await info.queueManager.addToQueue(items, info.interaction.options.getInteger('position') - 1);
   await info.queueManager.connect(voiceChannel);

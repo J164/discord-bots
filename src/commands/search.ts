@@ -1,5 +1,5 @@
 import { ButtonInteraction, InteractionReplyOptions, InteractionUpdateOptions, SelectMenuInteraction } from 'discord.js';
-import { request } from 'undici';
+import request from 'node-fetch';
 import { Buffer } from 'node:buffer';
 import { createCanvas, Image } from '@napi-rs/canvas';
 import { buildEmbed } from '../util/builders.js';
@@ -31,7 +31,7 @@ async function mergeImages(remotePaths: string[], options: { width: number; heig
   const context = activeCanvas.getContext('2d');
   for (const [index, path] of remotePaths.entries()) {
     const image = new Image();
-    image.src = Buffer.from(await (await request(path)).body.arrayBuffer());
+    image.src = Buffer.from(await (await request(path)).arrayBuffer());
     context.drawImage(image, index * (options.width / remotePaths.length), 0);
   }
   return activeCanvas.toBuffer('image/png');
@@ -100,9 +100,7 @@ async function search(
     const searchTerm = info.interaction.options.getString('query');
     try {
       results = formatResponse(
-        (await (
-          await request(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)
-        ).body.json()) as ScryfallResponse,
+        (await (await request(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)).json()) as ScryfallResponse,
       );
     } catch {
       return {

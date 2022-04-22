@@ -1,6 +1,6 @@
 import { WebhookMessageOptions } from 'discord.js';
 import { env } from 'node:process';
-import { request } from 'undici';
+import request from 'node-fetch';
 import { buildEmbed } from '../util/builders.js';
 import { DatabaseManager } from '../util/database-manager.js';
 
@@ -166,11 +166,11 @@ export async function getDailyReport(date: Date, database: DatabaseManager): Pro
         date.getMonth() + 1
       }&day=${date.getDate()}`,
     )
-  ).body.json()) as Holiday[];
+  ).json()) as Holiday[];
   const weather = (await (
     await request(`http://api.weatherapi.com/v1/current.json?key=${env.WEATHER_KEY}&q=60069`)
-  ).body.json()) as WeatherResponse;
-  const quote = (await (await request('https://zenquotes.io?api=today')).body.json()) as Quote[];
+  ).json()) as WeatherResponse;
+  const quote = (await (await request('https://zenquotes.io?api=today')).json()) as Quote[];
   const stringDate = getStringDate(date);
   const weatherEmoji = getWeatherEmoji(weather.current.condition.code);
 

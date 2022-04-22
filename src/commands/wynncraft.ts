@@ -1,5 +1,5 @@
 import { InteractionReplyOptions } from 'discord.js';
-import { request } from 'undici';
+import request from 'node-fetch';
 import { buildEmbed } from '../util/builders.js';
 import { GlobalChatCommandInfo, GlobalChatCommand } from '../util/interfaces.js';
 
@@ -27,7 +27,7 @@ interface WynncraftData {
 async function wynncraft(info: GlobalChatCommandInfo): Promise<InteractionReplyOptions> {
   const playerData = (await (
     await request(`https://api.wynncraft.com/v2/player/${info.interaction.options.getString('player')}/stats`)
-  ).body.json()) as WynncraftData;
+  ).json()) as WynncraftData;
   const embed = buildEmbed('info', {
     title: playerData.data[0].username,
     fields: [

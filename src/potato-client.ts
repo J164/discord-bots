@@ -7,17 +7,19 @@ import {
   InteractionReplyOptions,
   TextChannel,
 } from 'discord.js';
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { buildEmbed } from './util/builders.js';
 import { DatabaseManager } from './util/database-manager.js';
-import { BaseChatCommand, GlobalChatCommand, GuildChatCommand, GuildInfo } from './util/interfaces.js';
+import { BaseChatCommand, GlobalChatCommand, GuildChatCommand, GuildInfo, PrivateData } from './util/interfaces.js';
 import { QueueManager } from './voice/queue-manager.js';
 import cron from 'node-cron';
 import { env } from 'node:process';
 import { getDailyReport } from './modules/daily-report.js';
+import { gradeReport } from './modules/grade-report.js';
 
 export class PotatoClient extends Client {
   private readonly _guildInfo: Map<string, GuildInfo>;
+  private readonly _privateData: PrivateData;
   private readonly _commands: Map<string, BaseChatCommand>;
   private readonly _databaseManager: DatabaseManager;
 
@@ -25,6 +27,7 @@ export class PotatoClient extends Client {
     super(clientOptions);
 
     this._guildInfo = new Map<string, GuildInfo>();
+    this._privateData = JSON.parse(readFileSync('./assets/privateData.json', { encoding: 'utf8' })) as PrivateData;
     this._commands = new Map<string, BaseChatCommand>();
     this._databaseManager = new DatabaseManager();
 
@@ -39,6 +42,16 @@ export class PotatoClient extends Client {
         void ((await this.channels.fetch(env.ANNOUNCEMENT_CHANNEL)) as TextChannel).send(
           await getDailyReport(new Date(), this._databaseManager),
         );
+      });
+
+      cron.schedule(env.GRADE_UPDATE_INTERVAL, async () => {
+        for (const user of Object.keys(this._privateData.ircAuth)) {
+          const report = await gradeReport(this._privateData.ircAuth[user], this._databaseManager);
+          if (!report) return;
+          void (await (await this.users.fetch(user)).createDM()).send({
+            embeds: [report],
+          });
+        }
       });
 
       this.on('interactionCreate', async (interaction) => {
@@ -96,12 +109,14 @@ export class PotatoClient extends Client {
         ...this._guildInfo.get(interaction.guildId),
         interaction: interaction,
         database: this._databaseManager,
+        privateData: this._privateData,
       });
     }
 
     return (command as GlobalChatCommand).respond({
       interaction: interaction,
       database: this._databaseManager,
+      privateData: this._privateData,
     });
   }
 
@@ -116,6 +131,7 @@ export class PotatoClient extends Client {
           ...this._guildInfo.get(interaction.guildId),
           option: interaction.options.getFocused(true),
           database: this._databaseManager,
+          privateData: this._privateData,
         })) ?? []
       );
     }
@@ -124,6 +140,7 @@ export class PotatoClient extends Client {
       (await (command as GlobalChatCommand).autocomplete({
         option: interaction.options.getFocused(true),
         database: this._databaseManager,
+        privateData: this._privateData,
       })) ?? []
     );
   }
