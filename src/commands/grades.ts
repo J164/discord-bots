@@ -15,6 +15,9 @@ function buildScoreMap(standards: Standard[]): string {
 }
 
 async function grades(info: GlobalChatCommandInfo): Promise<InteractionReplyOptions> {
+  if (!info.privateData.ircAuth[info.interaction.user.id]) {
+    return { embeds: [buildEmbed('info', { title: 'You are not registered to use this command!' })] };
+  }
   return {
     embeds: (await fetchCourseData(info.privateData.ircAuth[info.interaction.user.id])).courses
       .map((course) => {
