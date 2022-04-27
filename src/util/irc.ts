@@ -237,9 +237,10 @@ export function checkUpdates(oldGrades: Grades, newGrades: Grades): GradesDiff {
       }
       for (const newAssignment of newStandard.assignments) {
         if (
-          !oldStandard.assignments.some((value) => {
+          newAssignment.score &&
+          !oldStandard.assignments.find((value) => {
             return value.name === newAssignment.name;
-          })
+          })?.score
         ) {
           courseDiff.newAssignments.push(newAssignment);
         }
