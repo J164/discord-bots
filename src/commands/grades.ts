@@ -11,7 +11,7 @@ function buildScoreMap(standards: Standard[]): string {
     }
     string += `**${standard.proficiencyScore}** - "${standard.name}"\n${standard.proficiency.exceedsCount} - ${standard.proficiency.meetsCount} - ${standard.proficiency.approachingCount} - ${standard.proficiency.developingCount}\n`;
   }
-  return string;
+  return string || 'No scores yet!';
 }
 
 async function grades(info: GlobalChatCommandInfo): Promise<InteractionReplyOptions> {
@@ -26,11 +26,11 @@ async function grades(info: GlobalChatCommandInfo): Promise<InteractionReplyOpti
           fields: [
             {
               name: course.isFinal ? 'Final Grade' : 'Projected Grade',
-              value: course.projectedGrade || course.weeklyGrowth,
+              value: course.projectedGrade ?? course.weeklyGrowth ?? 'No projected grade yet!',
             },
             {
               name: 'Weekly Growth',
-              value: course.weeklyGrowth,
+              value: course.weeklyGrowth ?? 'No weekly growth right now!',
             },
             {
               name: 'Score Ratios (exceeds - meets - approaching - developing)',

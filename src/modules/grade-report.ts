@@ -28,14 +28,14 @@ export async function gradeReport(
     fields: [
       ...diff.newCourses.map((course) => {
         return {
-          name: course.name,
-          value: course.projectedGrade,
+          name: `${course.name} was added to IRC`,
+          value: `Your current grade in this class is ${course.projectedGrade ?? 'not yet calculated'}`,
         };
       }),
       ...diff.courses.map((course) => {
         if (course.isFinal) {
           return {
-            name: `${course.name} - Grade Finalized`,
+            name: `${course.name} - Grade Finalized!`,
             value: `${course.projectedGrade.oldGrade} -> ${course.projectedGrade.newGrade}`,
           };
         }
@@ -45,13 +45,16 @@ export async function gradeReport(
             value:
               course.standardScore.length > 0
                 ? `${course.standardScore[0].standard}: ${course.standardScore[0].oldScore} -> ${course.standardScore[0].newScore}`
-                : 'Check IRC for more info',
+                : 'Check IRC for more info about this change',
           };
         }
         if (course.newAssignments.length > 0) {
           return {
             name: `You got a ${course.newAssignments[0].score} on assignment "${course.newAssignments[0].name}" in ${course.name}`,
-            value: course.newAssignments.length > 1 ? `and ${course.newAssignments.length - 1} more!` : "That's all for now!",
+            value:
+              course.newAssignments.length > 1
+                ? `There were also ${course.newAssignments.length - 1} more assignments added to this class! (Check IRC for details)`
+                : "That's all for now in this class!",
           };
         }
       }),
