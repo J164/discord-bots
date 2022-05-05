@@ -18,8 +18,12 @@ async function grades(info: GlobalChatCommandInfo): Promise<InteractionReplyOpti
   if (!info.privateData.ircAuth[info.interaction.user.id]) {
     return { embeds: [buildEmbed('info', { title: 'You are not registered to use this command!' })] };
   }
+  const courseData = await fetchCourseData(info.privateData.ircAuth[info.interaction.user.id]);
+  if (!courseData) {
+    return { embeds: [buildEmbed('error', { title: 'Token was reset!' })] };
+  }
   return {
-    embeds: (await fetchCourseData(info.privateData.ircAuth[info.interaction.user.id])).courses
+    embeds: courseData.courses
       .map((course) => {
         return buildEmbed(course.isFinal ? 'success' : 'info', {
           title: course.name,

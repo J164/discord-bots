@@ -44,9 +44,9 @@ export class PotatoClient extends Client {
         );
       });
 
-      cron.schedule(env.GRADE_UPDATE_INTERVAL, async () => {
+      const gradeTask = cron.schedule(env.GRADE_UPDATE_INTERVAL, async () => {
         for (const user of Object.keys(this._privateData.ircAuth)) {
-          const report = await gradeReport(this._privateData.ircAuth[user], this._databaseManager);
+          const report = await gradeReport(this._privateData.ircAuth[user], this._databaseManager, gradeTask);
           if (!report) return;
           void (await (await this.users.fetch(user)).createDM()).send({
             embeds: [report],

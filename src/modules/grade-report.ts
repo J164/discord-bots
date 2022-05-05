@@ -2,13 +2,15 @@ import { MessageEmbedOptions } from 'discord.js';
 import { buildEmbed } from '../util/builders.js';
 import { DatabaseManager } from '../util/database-manager.js';
 import { fetchCourseData, Grades, checkUpdates } from '../util/irc.js';
+import cron from 'node-cron';
 
-export async function gradeReport(
-  ircAuth: { id: string; cid: string; token: string; tid: string },
-  databaseManager: DatabaseManager,
-): Promise<MessageEmbedOptions> {
-  const newGrades = await fetchCourseData(ircAuth);
-  const oldGrades = (await databaseManager.findOne('grades', { studentId: ircAuth.id })) as unknown as Grades;
+export async function gradeReport(token: string, databaseManager: DatabaseManager, task: cron.ScheduledTask): Promise<MessageEmbedOptions> {
+  const newGrades = await fetchCourseData(token);
+  if (!newGrades) {
+    task.stop();
+    return buildEmbed('error', { title: 'Token has been reset!' });
+  }
+  const oldGrades = (await databaseManager.findOne('grades', { studentId: newGrades.studentId })) as unknown as Grades;
   if (!oldGrades) {
     void databaseManager.insertOne('grades', newGrades);
     return;
@@ -20,8 +22,14 @@ export async function gradeReport(
     return;
   }
 
-  await databaseManager.deleteMany('grades', { studentId: ircAuth.id });
+  await databaseManager.deleteMany('grades', { studentId: newGrades.studentId });
   void databaseManager.insertOne('grades', newGrades);
+
+  if (diff.termName) {
+    return buildEmbed('info', {
+      title: `New IRC Term! (${diff.termName.oldName} -> ${diff.termName.newName}`,
+    });
+  }
 
   return buildEmbed('info', {
     title: 'IRC Update!',

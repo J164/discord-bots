@@ -1,5 +1,15 @@
 import fetch from 'node-fetch';
 
+interface APIAuthenticate {
+  personId: number;
+}
+
+interface APITerm {
+  calendarId: number;
+  termId: number;
+  termName: string;
+}
+
 interface APIManifestEntry {
   courseId: number;
   courseName: string;
@@ -92,6 +102,7 @@ interface Course {
 
 export interface Grades {
   studentId: string;
+  termName: string;
   courses: Course[];
 }
 
@@ -109,16 +120,49 @@ interface CourseDiff {
 
 interface GradesDiff {
   changes: boolean;
+  termName?: { oldName: string; newName: string };
   newCourses: Course[];
   courses: CourseDiff[];
 }
 
-export async function fetchCourseData(auth: { token: string; id: string; cid: string; tid: string }): Promise<Grades> {
+export async function fetchCourseData(token: string): Promise<Grades> {
+  const response = await fetch('https://irc.d125.org/users/authenticate', {
+    headers: {
+      Accept: 'application/json',
+      'Accept-Language': 'en-US,en;q=0.5',
+      'Accept-Encoding': 'gzip, deflate, br',
+      Referer: 'https://irc.d125.org/',
+      'Content-Type': 'application/json',
+      DNT: '1',
+      Cookie: token,
+    },
+  });
+
+  if (response.status === 400) {
+    return;
+  }
+
+  const authenticate = (await response.json()) as APIAuthenticate;
+
+  const terms = (await (
+    await fetch('https://irc.d125.org/course/terms', {
+      headers: {
+        Accept: 'application/json',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',
+        Referer: 'https://irc.d125.org/reportcard',
+        'Content-Type': 'application/json',
+        DNT: '1',
+        Cookie: token,
+      },
+    })
+  ).json()) as APITerm[];
+
   const courseIds = new Set<number>();
 
   const manifest = (
     (await (
-      await fetch(`https://irc.d125.org/course/student?pid=${auth.id}&cid=${auth.cid}&tid=${auth.tid}`, {
+      await fetch(`https://irc.d125.org/course/student?pid=${authenticate.personId}&cid=${terms[0].calendarId}&tid=${terms[0].termId}`, {
         headers: {
           Accept: 'application/json',
           'Accept-Language': 'en-US,en;q=0.5',
@@ -126,7 +170,7 @@ export async function fetchCourseData(auth: { token: string; id: string; cid: st
           Referer: 'https://irc.d125.org/reportcard',
           'Content-Type': 'application/json',
           DNT: '1',
-          Cookie: auth.token,
+          Cookie: token,
         },
       })
     ).json()) as APIManifestEntry[]
@@ -139,13 +183,14 @@ export async function fetchCourseData(auth: { token: string; id: string; cid: st
   });
 
   return {
-    studentId: auth.id,
+    studentId: authenticate.personId.toString(),
+    termName: terms[0].termName,
     courses: (
       await Promise.all(
         manifest.map(async (course, index) => {
           const response = (await (
             await fetch(
-              `https://irc.d125.org/student/gradebookbystudent?sid=${course.sectionId}&pid=${auth.id}&isEBR=${
+              `https://irc.d125.org/student/gradebookbystudent?sid=${course.sectionId}&pid=${authenticate.personId}&isEBR=${
                 course.ebrFlag ? 'true' : 'false'
               }`,
               {
@@ -156,7 +201,7 @@ export async function fetchCourseData(auth: { token: string; id: string; cid: st
                   Referer: 'https://irc.d125.org/reportcard',
                   'Content-Type': 'application/json',
                   DNT: '1',
-                  Cookie: auth.token,
+                  Cookie: token,
                 },
               },
             )
@@ -204,6 +249,11 @@ export async function fetchCourseData(auth: { token: string; id: string; cid: st
 
 export function checkUpdates(oldGrades: Grades, newGrades: Grades): GradesDiff {
   const differences: GradesDiff = { courses: [], newCourses: [], changes: false };
+  if (oldGrades.termName !== newGrades.termName) {
+    differences.changes = true;
+    differences.termName = { newName: newGrades.termName, oldName: oldGrades.termName };
+    return differences;
+  }
   for (const newCourse of newGrades.courses) {
     const oldCourse = oldGrades.courses.find((value) => {
       return value.name === newCourse.name;
