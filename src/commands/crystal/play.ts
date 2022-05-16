@@ -17,9 +17,7 @@ async function play(info: GuildChatCommandInfo): Promise<InteractionReplyOptions
 
     let song: number
 
-    if (!info.interaction.options.getString('name')) {
-        song = Math.floor(Math.random() * (songs.length - 1))
-    } else if (!songs.includes(info.interaction.options.getString('name'))) {
+    if (!songs.includes(info.interaction.options.getString('name'))) {
         const results = new Fuse(songs).search(info.interaction.options.getString('name'))
         song = results[0].refIndex + 1
     }
@@ -63,7 +61,7 @@ export const command = new GuildChatCommand({
             description: 'The name of the song (defaults to a random song)',
             type: 'STRING',
             autocomplete: true,
-            required: false,
+            required: true,
         },
         {
             name: 'loop',
