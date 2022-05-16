@@ -1,5 +1,5 @@
 import { InteractionReplyOptions } from 'discord.js'
-import { GlobalChatCommand, GlobalChatCommandInfo } from '../../core/utils/interfaces'
+import { GlobalChatCommand, GlobalChatCommandInfo } from '../../core/utils/interfaces.js'
 
 function yeet(info: GlobalChatCommandInfo): InteractionReplyOptions {
     return { content: `Y${'E'.repeat(info.interaction.options.getInteger('power') ?? 2)}T!` }

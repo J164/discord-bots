@@ -1,7 +1,7 @@
 import { InteractionReplyOptions } from 'discord.js'
 import { request } from 'undici'
 import process from 'node:process'
-import { GlobalChatCommand } from '../../core/utils/interfaces'
+import { GlobalChatCommand } from '../../core/utils/interfaces.js'
 
 interface TenorResponse {
     readonly results: readonly {
