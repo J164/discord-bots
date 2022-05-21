@@ -27,7 +27,7 @@ export async function gradeReport(token: string, databaseManager: DatabaseManage
 
   if (diff.termName) {
     return buildEmbed('info', {
-      title: `New IRC Term! (${diff.termName.oldName} -> ${diff.termName.newName}`,
+      title: `New IRC Term! (${diff.termName.oldName} -> ${diff.termName.newName})`,
     });
   }
 
