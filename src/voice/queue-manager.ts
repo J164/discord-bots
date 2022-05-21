@@ -120,7 +120,7 @@ export class QueueManager {
 
     if (this._queue.length === 0) {
       this._queueLock = false;
-      this._transitioning = false;
+      void this.reset();
       return;
     }
 
