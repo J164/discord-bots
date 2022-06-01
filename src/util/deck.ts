@@ -1,20 +1,6 @@
 export type Suit = 'Hearts' | 'Diamonds' | 'Spades' | 'Clubs';
 export type CardCode = `${'2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | 'J' | 'Q' | 'K' | 'A'}${'S' | 'C' | 'H' | 'D'}`;
-export type CardName =
-  | 'one'
-  | 'two'
-  | 'three'
-  | 'four'
-  | 'five'
-  | 'six'
-  | 'seven'
-  | 'eight'
-  | 'nine'
-  | 'ten'
-  | 'jack'
-  | 'queen'
-  | 'king'
-  | 'ace';
+export type CardName = 'one' | 'two' | 'three' | 'four' | 'five' | 'six' | 'seven' | 'eight' | 'nine' | 'ten' | 'jack' | 'queen' | 'king' | 'ace';
 
 export interface Card {
   readonly code: CardCode;
@@ -83,8 +69,9 @@ export class Deck {
 
   public static randomCard(options: { number?: number; noRepeats?: boolean; codes?: CardCode[]; values?: number[] }): Card[] {
     options.codes ??= [...Deck._fullDeck];
+    options.number ??= 1;
     const cards: Card[] = [];
-    for (let index = 0; index < (options.number ?? 1); index++) {
+    for (let index = 0; index < (options.number > 52 ? 52 : options.number); index++) {
       const random = Math.floor(Math.random() * options.codes.length);
       cards.push(Deck.parseCode(options.noRepeats ? options.codes.splice(random, 1)[0] : options.codes[random], options.values));
     }
@@ -92,10 +79,7 @@ export class Deck {
   }
 
   // eslint-disable-next-line complexity
-  private static parseCode(code: CardCode, values?: number[]): Card {
-    if (!code) return;
-    values ??= [];
-
+  private static parseCode(code: CardCode, values: number[] = []): Card {
     let value: number;
     let name: CardName;
     switch (code[0]) {
@@ -151,6 +135,8 @@ export class Deck {
         value = values[12] ?? 14;
         name = 'ace';
         break;
+      default:
+        throw new Error('Value type incorrect');
     }
 
     let suit: Suit;
@@ -167,6 +153,8 @@ export class Deck {
       case 'H':
         suit = 'Hearts';
         break;
+      default:
+        throw new Error('Suit type incorrect');
     }
     return {
       code: code,

@@ -1,32 +1,24 @@
-import { InteractionReplyOptions } from 'discord.js';
-import { buildEmbed } from '../util/builders.js';
-import { GuildChatCommandInfo, GuildChatCommand } from '../util/interfaces.js';
+import { ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
+import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
+import { responseOptions } from '../util/builders.js';
 
 async function nick(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
-  const member = await info.interaction.guild.members.fetch(info.interaction.options.getUser('member'));
-  if (info.interaction.options.getString('nickname')?.length > 32) {
-    return {
-      embeds: [
-        buildEmbed('error', {
-          title: 'Too many characters! (nicknames must be 32 characters or less)',
-        }),
-      ],
-    };
+  const member = await info.response.interaction.guild.members.fetch(info.response.interaction.options.getUser('member', true));
+  if (info.response.interaction.options.getString('nickname') && info.response.interaction.options.getString('nickname', true).length > 32) {
+    return responseOptions('error', {
+      title: 'Nicknames must be 32 characters or less',
+    });
   }
   if (!member.manageable) {
-    return {
-      embeds: [
-        buildEmbed('error', {
-          title: "This user's permissions are too powerful to perform this action!",
-        }),
-      ],
-    };
+    return responseOptions('error', {
+      title: "This user's permissions are too powerful to perform this action!",
+    });
   }
-  await member.setNickname(info.interaction.options.getString('nickname'));
-  return { embeds: [buildEmbed('success', { title: 'Success!' })] };
+  await member.setNickname(info.response.interaction.options.getString('nickname'));
+  return responseOptions('success', { title: 'Success!' });
 }
 
-export const command: GuildChatCommand = {
+export const command: ChatCommand<'Guild'> = {
   data: {
     name: 'nick',
     description: 'Change the nickname of a server member',
@@ -34,13 +26,13 @@ export const command: GuildChatCommand = {
       {
         name: 'member',
         description: 'The member whose nickname will change',
-        type: 6,
+        type: ApplicationCommandOptionType.User,
         required: true,
       },
       {
         name: 'nickname',
-        description: "The member's new nickname",
-        type: 3,
+        description: "The member's new nickname (32 character limit)",
+        type: ApplicationCommandOptionType.String,
         required: false,
       },
     ],

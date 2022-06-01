@@ -1,9 +1,8 @@
-import { ButtonInteraction, InteractionReplyOptions, InteractionUpdateOptions, SelectMenuInteraction } from 'discord.js';
-import request from 'node-fetch';
-import { Buffer } from 'node:buffer';
 import { createCanvas, Image } from '@napi-rs/canvas';
-import { buildEmbed } from '../util/builders.js';
-import { GlobalChatCommandInfo, GlobalChatCommand } from '../util/interfaces.js';
+import { ApplicationCommandOptionType, ButtonStyle, ComponentType, InteractionReplyOptions, InteractionUpdateOptions } from 'discord.js';
+import { Buffer } from 'node:buffer';
+import { ChatCommand, GlobalChatCommandInfo } from '../potato-client.js';
+import { Emojis, responseEmbed, responseOptions } from '../util/builders.js';
 
 interface MagicCard {
   readonly name: string;
@@ -31,7 +30,7 @@ async function mergeImages(remotePaths: string[], options: { width: number; heig
   const context = activeCanvas.getContext('2d');
   for (const [index, path] of remotePaths.entries()) {
     const image = new Image();
-    image.src = Buffer.from(await (await request(path)).arrayBuffer());
+    image.src = Buffer.from(await (await fetch(path)).arrayBuffer());
     context.drawImage(image, index * (options.width / remotePaths.length), 0);
   }
   return activeCanvas.toBuffer('image/png');
@@ -56,7 +55,7 @@ async function generateResponse(results: MagicCard[][], r: number, index: number
   if (card.card_faces) {
     return {
       embeds: [
-        buildEmbed('info', {
+        responseEmbed('info', {
           title: card.name,
           footer: {
             text: `Price ($): ${card.prices.usd}` ?? 'unknown (not for sale)',
@@ -78,65 +77,40 @@ async function generateResponse(results: MagicCard[][], r: number, index: number
   }
   return {
     embeds: [
-      buildEmbed('info', {
+      responseEmbed('info', {
         title: card.name,
         footer: {
           text: `Price ($): ${card.prices.usd}` ?? 'unknown (not for sale)',
         },
-        image: { url: card.image_uris.large },
+        image: card.image_uris?.large ? { url: card.image_uris.large } : undefined,
       }),
     ],
     components: [],
   };
 }
 
-async function search(
-  info: GlobalChatCommandInfo,
-  results?: MagicCard[][],
-  component?: ButtonInteraction | SelectMenuInteraction,
-  page = 0,
-): Promise<InteractionReplyOptions> {
-  if (!results) {
-    const searchTerm = info.interaction.options.getString('query');
-    try {
-      results = formatResponse(
-        (await (await request(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)).json()) as ScryfallResponse,
-      );
-    } catch {
-      return {
-        embeds: [
-          buildEmbed('error', {
-            title: 'Card Not Found',
-            fields: [
-              {
-                name: `${searchTerm} not found`,
-                value: 'Check your spelling and/or try using a more general search term',
-              },
-            ],
-          }),
-        ],
-      };
-    }
-  }
-  const embed = buildEmbed('info', {
-    title: 'Results',
-    footer: { text: `${page + 1}/${results.length}` },
-    fields: results[page].map((entry, index) => {
-      return {
-        name: `${index + 1}.`,
-        value: `${entry.name}`,
-      };
-    }),
-  });
-  const options: InteractionUpdateOptions = {
-    embeds: [embed],
+function response(info: GlobalChatCommandInfo, results: MagicCard[][], page: number): InteractionUpdateOptions & InteractionReplyOptions {
+  void prompt(info, results, page);
+  return {
+    embeds: [
+      responseEmbed('info', {
+        title: 'Results',
+        footer: { text: `${page + 1}/${results.length}` },
+        fields: results[page].map((entry, index) => {
+          return {
+            name: `${index + 1}.`,
+            value: `${entry.name}`,
+          };
+        }),
+      }),
+    ],
     components: [
       {
-        type: 'ACTION_ROW',
+        type: ComponentType.ActionRow,
         components: [
           {
-            type: 'SELECT_MENU',
-            customId: 'search-options',
+            type: ComponentType.SelectMenu,
+            customId: 'options',
             placeholder: 'Select a Card',
             options: results[page].map((value, index) => {
               return {
@@ -149,78 +123,101 @@ async function search(
         ],
       },
       {
-        type: 'ACTION_ROW',
+        type: ComponentType.ActionRow,
         components: [
           {
-            type: 'BUTTON',
-            customId: 'search-doublearrowleft',
-            emoji: '\u23EA',
+            type: ComponentType.Button,
+            customId: 'jumpleft',
+            emoji: Emojis.DoubleArrowLeft,
             label: 'Return to Beginning',
-            style: 'SECONDARY',
+            style: ButtonStyle.Secondary,
             disabled: page === 0,
           },
           {
-            type: 'BUTTON',
-            customId: 'search-arrowleft',
-            emoji: '\u2B05\uFE0F',
+            type: ComponentType.Button,
+            customId: 'left',
+            emoji: Emojis.ArrowLeft,
             label: 'Previous Page',
-            style: 'SECONDARY',
+            style: ButtonStyle.Secondary,
             disabled: page === 0,
           },
           {
-            type: 'BUTTON',
-            customId: 'search-arrowright',
-            emoji: '\u27A1\uFE0F',
+            type: ComponentType.Button,
+            customId: 'right',
+            emoji: Emojis.ArrowRight,
             label: 'Next Page',
-            style: 'SECONDARY',
+            style: ButtonStyle.Secondary,
             disabled: page === results.length - 1,
           },
           {
-            type: 'BUTTON',
-            customId: 'search-doublearrowright',
-            emoji: '\u23E9',
+            type: ComponentType.Button,
+            customId: 'jumpright',
+            emoji: Emojis.DoubleArrowRight,
             label: 'Jump to End',
-            style: 'SECONDARY',
+            style: ButtonStyle.Secondary,
             disabled: page === results.length - 1,
           },
         ],
       },
     ],
   };
-  await (component ? component.update(options) : info.interaction.editReply(options));
-  info.interaction.channel
-    .createMessageComponentCollector({
-      filter: (b) => b.user.id === info.interaction.user.id && b.customId.startsWith(info.interaction.commandName),
-      time: 300_000,
-      max: 1,
-    })
-    .once('end', async (c) => {
-      await info.interaction.editReply({ components: [] }).catch();
-      if (!c.at(0)) return;
-      const response = c.at(0);
-      if (response.isSelectMenu()) {
-        void response.update(await generateResponse(results, page, Number.parseInt(response.values[0]) - 1));
-        return;
-      }
-      if (!response.isButton()) return;
-      switch (c.at(0).customId) {
-        case 'search-doublearrowleft':
-          void search(info, results, response);
-          break;
-        case 'search-arrowleft':
-          void search(info, results, response, page - 1);
-          break;
-        case 'search-arrowright':
-          void search(info, results, response, page + 1);
-          break;
-        case 'search-doublearrowright':
-          void search(info, results, response, results.length - 1);
-          break;
-      }
-    });
 }
 
-export const command: GlobalChatCommand = {
+async function prompt(info: GlobalChatCommandInfo, results: MagicCard[][], page: number): Promise<void> {
+  let component;
+  try {
+    component = await info.response.awaitMessageComponent({
+      filter: (b) => b.user.id === info.response.interaction.user.id,
+      time: 300_000,
+    });
+  } catch {
+    void info.response.interaction.editReply({ components: [] });
+    return;
+  }
+
+  if (component.isSelectMenu()) {
+    void component.update(await generateResponse(results, page, Number.parseInt(component.values[0]) - 1));
+    return;
+  }
+  switch (component.customId) {
+    case 'jumpleft':
+      void component.update(response(info, results, 0));
+      break;
+    case 'left':
+      void component.update(response(info, results, page - 1));
+      break;
+    case 'right':
+      void component.update(response(info, results, page + 1));
+      break;
+    case 'jumpright':
+      void component.update(response(info, results, results.length - 1));
+      break;
+  }
+}
+
+async function search(info: GlobalChatCommandInfo): Promise<void> {
+  const searchTerm = info.response.interaction.options.getString('query', true);
+  let results;
+  try {
+    results = formatResponse((await (await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`)).json()) as ScryfallResponse);
+  } catch {
+    void info.response.interaction.editReply(
+      responseOptions('error', {
+        title: 'Card Not Found',
+        fields: [
+          {
+            name: `${searchTerm} not found`,
+            value: 'Check your spelling and/or try using a more general search term',
+          },
+        ],
+      }),
+    );
+    return;
+  }
+  void info.response.interaction.editReply(response(info, results, 0));
+}
+
+export const command: ChatCommand<'Global'> = {
   data: {
     name: 'search',
     description: 'Search for Magic cards',
@@ -228,7 +225,7 @@ export const command: GlobalChatCommand = {
       {
         name: 'query',
         description: 'What to search for',
-        type: 3,
+        type: ApplicationCommandOptionType.String,
         required: true,
       },
     ],

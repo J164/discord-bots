@@ -1,8 +1,7 @@
 import { WebhookMessageOptions } from 'discord.js';
-import { env } from 'node:process';
-import request from 'node-fetch';
-import { buildEmbed } from '../util/builders.js';
-import { DatabaseManager } from '../util/database-manager.js';
+import { Db } from 'mongodb';
+import config from '../config.json' assert { type: 'json' };
+import { Emojis, responseEmbed } from '../util/builders.js';
 
 interface Quote {
   readonly q: string;
@@ -69,6 +68,8 @@ function getStringDate(date: Date): string {
     case 11:
       month = 'December';
       break;
+    default:
+      throw new Error('Invalid month');
   }
   switch (date.getDay()) {
     case 0:
@@ -92,6 +93,8 @@ function getStringDate(date: Date): string {
     case 6:
       weekDay = 'Saturday';
       break;
+    default:
+      throw new Error('Invalid weekday');
   }
   return `${weekDay}, ${month} ${day}, ${year}`;
 }
@@ -155,27 +158,25 @@ function getWeatherEmoji(weatherCode: number): string {
     case 1282:
       return '\uD83C\uDF29\uFE0F';
     default:
-      return '\u2753';
+      return Emojis.QuestionMark;
   }
 }
 
-export async function getDailyReport(date: Date, database: DatabaseManager): Promise<WebhookMessageOptions> {
+export async function getDailyReport(date: Date, database: Db): Promise<WebhookMessageOptions> {
   const holiday = (await (
-    await request(
-      `https://holidays.abstractapi.com/v1/?api_key=${env.ABSTRACT_KEY}&country=US&year=${date.getFullYear()}&month=${
+    await fetch(
+      `https://holidays.abstractapi.com/v1/?api_key=${config.ABSTRACT_KEY}&country=US&year=${date.getFullYear()}&month=${
         date.getMonth() + 1
       }&day=${date.getDate()}`,
     )
   ).json()) as Holiday[];
-  const weather = (await (
-    await request(`http://api.weatherapi.com/v1/current.json?key=${env.WEATHER_KEY}&q=60069`)
-  ).json()) as WeatherResponse;
-  const quote = (await (await request('https://zenquotes.io?api=today')).json()) as Quote[];
+  const weather = (await (await fetch(`http://api.weatherapi.com/v1/current.json?key=${config.WEATHER_KEY}&q=60069`)).json()) as WeatherResponse;
+  const quote = (await (await fetch('https://zenquotes.io?api=today')).json()) as Quote[];
   const stringDate = getStringDate(date);
   const weatherEmoji = getWeatherEmoji(weather.current.condition.code);
 
   const embeds = [
-    buildEmbed('info', {
+    responseEmbed('info', {
       title: `Daily Report: ${stringDate}\t${weatherEmoji}`,
       fields: [
         {
@@ -193,7 +194,7 @@ export async function getDailyReport(date: Date, database: DatabaseManager): Pro
       ],
     }),
   ];
-  const birthday = (await database.findOne('birthdays', { month: date.getMonth() + 1, day: date.getDate() })) as unknown as {
+  const birthday = (await database.collection('birthdays').findOne({ month: date.getMonth() + 1, day: date.getDate() })) as unknown as {
     id: string;
     month: number;
     day: number;

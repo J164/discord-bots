@@ -1,15 +1,15 @@
 import { InteractionReplyOptions } from 'discord.js';
-import { buildEmbed } from '../util/builders.js';
-import { GuildChatCommandInfo, GuildChatCommand } from '../util/interfaces.js';
+import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
+import { responseOptions } from '../util/builders.js';
 
 function resume(info: GuildChatCommandInfo): InteractionReplyOptions {
   if (info.queueManager.resume()) {
-    return { embeds: [buildEmbed('success', { title: 'Resumed!' })] };
+    return responseOptions('success', { title: 'Resumed!' });
   }
-  return { embeds: [buildEmbed('error', { title: 'Nothing is playing!' })] };
+  return responseOptions('error', { title: "Sorry, can't do that right now" });
 }
 
-export const command: GuildChatCommand = {
+export const command: ChatCommand<'Guild'> = {
   data: {
     name: 'resume',
     description: 'Resume song playback',

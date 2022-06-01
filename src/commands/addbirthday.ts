@@ -1,32 +1,32 @@
-import { InteractionReplyOptions } from 'discord.js';
-import { buildEmbed } from '../util/builders.js';
-import { GlobalChatCommand, GlobalChatCommandInfo } from '../util/interfaces.js';
+import { ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
+import { ChatCommand, GlobalChatCommandInfo } from '../potato-client.js';
+import { responseOptions } from '../util/builders.js';
 
 async function addBirthday(info: GlobalChatCommandInfo): Promise<InteractionReplyOptions> {
-  const existing = (await info.database.findOne('birthdays', { id: info.interaction.user.id })) as unknown as {
+  const existing = (await info.database.collection('birthdays').findOne({ id: info.response.interaction.user.id })) as unknown as {
     id: string;
     month: number;
     day: number;
   };
   if (
     existing &&
-    existing.month === info.interaction.options.getInteger('month') &&
-    existing.day === info.interaction.options.getInteger('day')
+    existing.month === info.response.interaction.options.getInteger('month') &&
+    existing.day === info.response.interaction.options.getInteger('day')
   ) {
-    return { embeds: [buildEmbed('error', { title: 'Your birthday is already registered!' })] };
+    return responseOptions('error', { title: 'Your birthday is already registered!' });
   }
 
-  await info.database.deleteMany('birthdays', { id: info.interaction.user.id });
-  await info.database.insertOne('birthdays', {
-    id: info.interaction.user.id,
-    month: info.interaction.options.getInteger('month'),
-    day: info.interaction.options.getInteger('day'),
+  await info.database.collection('birthdays').deleteMany({ id: info.response.interaction.user.id });
+  await info.database.collection('birthdays').insertOne({
+    id: info.response.interaction.user.id,
+    month: info.response.interaction.options.getInteger('month'),
+    day: info.response.interaction.options.getInteger('day'),
   });
 
-  return { embeds: [buildEmbed('success', { title: 'Birthday Added!' })] };
+  return responseOptions('success', { title: 'Birthday Added!' });
 }
 
-export const command: GlobalChatCommand = {
+export const command: ChatCommand<'Global'> = {
   data: {
     name: 'addbirthday',
     description: 'Add your birthday to get a special message!',
@@ -34,7 +34,7 @@ export const command: GlobalChatCommand = {
       {
         name: 'month',
         description: 'Your Birthday Month',
-        type: 4,
+        type: ApplicationCommandOptionType.Integer,
         minValue: 1,
         maxValue: 12,
         required: true,
@@ -42,7 +42,7 @@ export const command: GlobalChatCommand = {
       {
         name: 'day',
         description: 'Your Birthday',
-        type: 4,
+        type: ApplicationCommandOptionType.Integer,
         minValue: 1,
         maxValue: 31,
         required: true,

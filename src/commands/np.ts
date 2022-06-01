@@ -1,11 +1,11 @@
 import { InteractionReplyOptions } from 'discord.js';
-import { GuildChatCommandInfo, GuildChatCommand } from '../util/interfaces.js';
+import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
 
 function nowPlaying(info: GuildChatCommandInfo): InteractionReplyOptions {
-  return { embeds: [info.queueManager.nowPlaying] };
+  return info.queueManager.nowPlaying;
 }
 
-export const command: GuildChatCommand = {
+export const command: ChatCommand<'Guild'> = {
   data: {
     name: 'np',
     description: 'Get information on the song currently playing',

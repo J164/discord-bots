@@ -1,101 +1,104 @@
-import { ButtonInteraction, InteractionUpdateOptions } from 'discord.js';
-import { buildEmbed } from '../util/builders.js';
-import { GuildChatCommandInfo, GuildChatCommand } from '../util/interfaces.js';
+import { ButtonStyle, ComponentType, InteractionReplyOptions, InteractionUpdateOptions } from 'discord.js';
+import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
+import { Emojis, responseEmbed, responseOptions } from '../util/builders.js';
 import { QueueItem } from '../voice/queue-manager.js';
 
-async function queue(info: GuildChatCommandInfo, queueArray?: QueueItem[][], button?: ButtonInteraction, page = 0): Promise<undefined> {
-  if (!queueArray) {
-    queueArray = await info.queueManager.getPaginatedQueue();
-    if (!queueArray) {
-      void info.interaction.editReply({
-        embeds: [buildEmbed('error', { title: 'There is no queue!' })],
-      });
-      return;
-    }
-  }
-  const title = info.queueManager.queueLoop ? 'Queue (Looping)' : 'Queue';
-  const queueMessage = buildEmbed('info', {
-    title: title,
-    footer: { text: `${page + 1}/${queueArray.length}` },
-    fields: queueArray[page].map((entry, index) => {
-      return {
-        name: index === 0 && page === 0 ? 'Currently Playing:' : `${index + page * 25}.`,
-        value: `${entry.title} (${entry.duration})\n${entry.url}`,
-      };
-    }),
-  });
-  const options: InteractionUpdateOptions = {
-    embeds: [queueMessage],
+function response(info: GuildChatCommandInfo, queueArray: QueueItem[][], page: number): InteractionUpdateOptions & InteractionReplyOptions {
+  void prompt(info, queueArray, page);
+  return {
+    embeds: [
+      responseEmbed('info', {
+        title: info.queueManager.queueLoop ? 'Queue (Looping)' : 'Queue',
+        footer: { text: `${page + 1}/${queueArray.length}` },
+        fields: queueArray[page].map((entry, index) => {
+          return {
+            name: index === 0 && page === 0 ? 'Currently Playing:' : `${index + page * 25}.`,
+            value: `${entry.title} (${entry.duration})\n${entry.url}`,
+          };
+        }),
+      }),
+    ],
     components: [
       {
-        type: 'ACTION_ROW',
+        type: ComponentType.ActionRow,
         components: [
           {
-            type: 'BUTTON',
-            customId: 'queue-doublearrowleft',
-            emoji: '\u23EA',
+            type: ComponentType.Button,
+            customId: 'jumpleft',
+            emoji: Emojis.DoubleArrowLeft,
             label: 'Return to Beginning',
-            style: 'SECONDARY',
+            style: ButtonStyle.Secondary,
             disabled: page === 0,
           },
           {
-            type: 'BUTTON',
-            customId: 'queue-arrowleft',
-            emoji: '\u2B05\uFE0F',
+            type: ComponentType.Button,
+            customId: 'left',
+            emoji: Emojis.ArrowLeft,
             label: 'Previous Page',
-            style: 'SECONDARY',
+            style: ButtonStyle.Secondary,
             disabled: page === 0,
           },
           {
-            type: 'BUTTON',
-            customId: 'queue-arrowright',
-            emoji: '\u27A1\uFE0F',
+            type: ComponentType.Button,
+            customId: 'right',
+            emoji: Emojis.ArrowRight,
             label: 'Next Page',
-            style: 'SECONDARY',
+            style: ButtonStyle.Secondary,
             disabled: page === queueArray.length - 1,
           },
           {
-            type: 'BUTTON',
-            customId: 'queue-doublearrowright',
-            emoji: '\u23E9',
+            type: ComponentType.Button,
+            customId: 'jumpright',
+            emoji: Emojis.DoubleArrowRight,
             label: 'Jump to End',
-            style: 'SECONDARY',
+            style: ButtonStyle.Secondary,
             disabled: page === queueArray.length - 1,
           },
         ],
       },
     ],
   };
-  await (!button ? info.interaction.editReply(options) : button.update(options));
-  info.interaction.channel
-    .createMessageComponentCollector({
-      filter: (b) => b.user.id === info.interaction.user.id && b.customId.startsWith(info.interaction.commandName),
-      time: 300_000,
-      componentType: 'BUTTON',
-      max: 1,
-    })
-    .once('end', async (b) => {
-      await info.interaction.editReply({ components: [] }).catch();
-      if (!b.at(0)) return;
-      switch (b.at(0).customId) {
-        case 'queue-doublearrowleft':
-          void queue(info, queueArray, b.at(0));
-          break;
-        case 'queue-arrowleft':
-          void queue(info, queueArray, b.at(0), page - 1);
-          break;
-        case 'queue-arrowright':
-          void queue(info, queueArray, b.at(0), page + 1);
-          break;
-        case 'queue-doublearrowright':
-          void queue(info, queueArray, b.at(0), queueArray.length - 1);
-          break;
-      }
-    });
-  return undefined;
 }
 
-export const command: GuildChatCommand = {
+async function prompt(info: GuildChatCommandInfo, queueArray: QueueItem[][], page: number) {
+  let component;
+  try {
+    component = await info.response.awaitMessageComponent({
+      filter: (b) => b.user.id === info.response.interaction.user.id,
+      time: 300_000,
+      componentType: ComponentType.Button,
+    });
+  } catch {
+    void info.response.interaction.editReply({ components: [] }).catch();
+    return;
+  }
+
+  switch (component.customId) {
+    case 'jumpleft':
+      void component.update(response(info, queueArray, 0));
+      break;
+    case 'left':
+      void component.update(response(info, queueArray, page - 1));
+      break;
+    case 'right':
+      void component.update(response(info, queueArray, page + 1));
+      break;
+    case 'jumpright':
+      void component.update(response(info, queueArray, queueArray.length - 1));
+      break;
+  }
+}
+
+async function queue(info: GuildChatCommandInfo): Promise<void> {
+  const queueArray = await info.queueManager.getPaginatedQueue();
+  if (!queueArray) {
+    void info.response.interaction.editReply(responseOptions('error', { title: 'There is no queue!' }));
+    return;
+  }
+  void info.response.interaction.editReply(response(info, queueArray, 0));
+}
+
+export const command: ChatCommand<'Guild'> = {
   data: {
     name: 'queue',
     description: 'Get the song queue',

@@ -1,9 +1,8 @@
-import { FileOptions, MessageEmbedOptions } from 'discord.js';
-import { buildEmbed } from './builders.js';
-import { CardCode } from './deck.js';
 import { createCanvas, Image } from '@napi-rs/canvas';
-import { readFileSync } from 'node:fs';
+import { APIEmbed, FileOptions } from 'discord.js';
 import { Buffer } from 'node:buffer';
+import { readFileSync } from 'node:fs';
+import { CardCode } from './deck.js';
 
 function mergeImages(filePaths: string[]): Buffer {
   const activeCanvas = createCanvas(filePaths.length < 6 ? (filePaths.length % 6) * 226 : 1130, Math.ceil(filePaths.length / 5) * 314);
@@ -16,22 +15,14 @@ function mergeImages(filePaths: string[]): Buffer {
   return activeCanvas.toBuffer('image/png');
 }
 
-export function multicardMessage(
-  cards: { code: CardCode | 'back' }[],
-  embedType: 'info' | 'prompt',
-  embedOptions: MessageEmbedOptions,
-  fileName: string,
-): { embed: MessageEmbedOptions; file: FileOptions } {
-  const hand = buildEmbed(embedType, {
-    ...embedOptions,
-    image: { url: `attachment://${fileName}.png` },
-  });
+export function multicardMessage(name: string, cards: { code: CardCode | 'back' }[], embed: APIEmbed): { embed: APIEmbed; file: FileOptions } {
+  const hand = { ...embed, image: { url: `attachment://${name}.png` } };
   if (cards.length === 1) {
     return {
       embed: hand,
       file: {
         attachment: readFileSync(`./assets/img/cards/${cards[0].code}.png`),
-        name: `${fileName}.png`,
+        name: `${name}.png`,
       },
     };
   }
@@ -43,7 +34,7 @@ export function multicardMessage(
           return `./assets/img/cards/${card.code}.png`;
         }),
       ),
-      name: `${fileName}.png`,
+      name: `${name}.png`,
     },
   };
 }

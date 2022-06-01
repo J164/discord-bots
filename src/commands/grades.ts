@@ -1,6 +1,7 @@
 import { InteractionReplyOptions } from 'discord.js';
-import { buildEmbed } from '../util/builders.js';
-import { GlobalChatCommand, GlobalChatCommandInfo } from '../util/interfaces.js';
+import config from '../config.json' assert { type: 'json' };
+import { ChatCommand, GlobalChatCommandInfo } from '../potato-client.js';
+import { responseEmbed, responseOptions } from '../util/builders.js';
 import { fetchCourseData, Standard } from '../util/irc.js';
 
 function buildScoreMap(standards: Standard[]): string {
@@ -15,26 +16,26 @@ function buildScoreMap(standards: Standard[]): string {
 }
 
 async function grades(info: GlobalChatCommandInfo): Promise<InteractionReplyOptions> {
-  if (!info.privateData.ircAuth[info.interaction.user.id]) {
-    return { embeds: [buildEmbed('info', { title: 'You are not registered to use this command!' })] };
+  if (info.response.interaction.user.id !== config.ADMIN) {
+    return responseOptions('info', { title: 'You are not registered to use this command!' });
   }
-  const courseData = await fetchCourseData(info.privateData.ircAuth[info.interaction.user.id]);
+  const courseData = await fetchCourseData(config.IRC_AUTH);
   if (!courseData) {
-    return { embeds: [buildEmbed('error', { title: 'Token was reset!' })] };
+    return responseOptions('error', { title: 'Token was reset!' });
   }
   return {
     embeds: courseData.courses
       .map((course) => {
-        return buildEmbed(course.isFinal ? 'success' : 'info', {
+        return responseEmbed(course.isFinal ? 'success' : 'info', {
           title: course.name,
           fields: [
             {
               name: course.isFinal ? 'Final Grade' : 'Projected Grade',
-              value: course.projectedGrade ?? course.weeklyGrowth ?? 'No projected grade yet!',
+              value: course.projectedGrade || course.weeklyGrowth || 'No projected grade yet!',
             },
             {
               name: 'Weekly Growth',
-              value: course.weeklyGrowth ?? 'No weekly growth right now!',
+              value: course.weeklyGrowth || 'No weekly growth right now!',
             },
             {
               name: 'Score Ratios (exceeds - meets - approaching - developing)',
@@ -47,7 +48,7 @@ async function grades(info: GlobalChatCommandInfo): Promise<InteractionReplyOpti
   };
 }
 
-export const command: GlobalChatCommand = {
+export const command: ChatCommand<'Global'> = {
   data: {
     name: 'grades',
     description: 'Fetch your grades from IRC',

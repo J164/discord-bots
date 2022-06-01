@@ -1,17 +1,15 @@
 import { InteractionReplyOptions } from 'discord.js';
-import { buildEmbed } from '../util/builders.js';
-import { GuildChatCommandInfo, GuildChatCommand } from '../util/interfaces.js';
+import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
+import { responseOptions } from '../util/builders.js';
 
 function skip(info: GuildChatCommandInfo): InteractionReplyOptions {
   if (info.queueManager.skip()) {
-    return { embeds: [buildEmbed('success', { title: 'Skipped' })] };
+    return responseOptions('success', { title: 'Skipped' });
   }
-  return {
-    embeds: [buildEmbed('error', { title: 'There is nothing to skip!' })],
-  };
+  return responseOptions('error', { title: 'There is nothing to skip!' });
 }
 
-export const command: GuildChatCommand = {
+export const command: ChatCommand<'Guild'> = {
   data: {
     name: 'skip',
     description: 'Skip the current song',

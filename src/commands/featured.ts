@@ -1,51 +1,40 @@
-import { InteractionReplyOptions } from 'discord.js';
+import { ApplicationCommandOptionType, ChannelType, InteractionReplyOptions } from 'discord.js';
 import ytpl from 'ytpl';
-import { buildEmbed } from '../util/builders.js';
-import { GuildChatCommandInfo, GuildChatCommand } from '../util/interfaces.js';
+import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
+import { responseOptions } from '../util/builders.js';
 
 async function featured(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
-  const voiceChannel = (await info.interaction.guild.members.fetch(info.interaction.user)).voice.channel;
-  if (!voiceChannel?.joinable || voiceChannel.type !== 'GUILD_VOICE') {
-    return {
-      embeds: [
-        buildEmbed('error', {
-          title: 'This command can only be used while in a visable voice channel!',
-        }),
-      ],
-    };
-  }
-  const results = await ytpl(info.interaction.options.getString('name')).catch((): false => {
-    void info.interaction.editReply({
-      embeds: [
-        buildEmbed('error', {
-          title: 'Something went wrong. Please contact the developer',
-        }),
-      ],
+  const voiceChannel = info.response.interaction.channel?.isVoice() ? info.response.interaction.channel : info.response.interaction.member.voice.channel;
+  if (!voiceChannel?.joinable || voiceChannel.type !== ChannelType.GuildVoice) {
+    return responseOptions('error', {
+      title: 'This command can only be used in a voice channel!',
     });
-    return false;
-  });
-  if (!results) return;
+  }
+  let results;
+  try {
+    results = await ytpl(info.response.interaction.options.getString('name', true));
+  } catch {
+    return responseOptions('error', {
+      title: 'Something went wrong. Please use /report to report the problem',
+    });
+  }
   const items = results.items.map((item) => {
     return {
       url: item.shortUrl,
       title: item.title,
-      duration: item.duration,
-      thumbnail: item.bestThumbnail.url,
+      duration: item.duration!,
+      thumbnail: item.bestThumbnail.url!,
     };
   });
-  await info.queueManager.addToQueue(items, info.interaction.options.getInteger('position') - 1);
+  await info.queueManager.addToQueue(items, info.response.interaction.options.getInteger('position') ?? 0 - 1);
   await info.queueManager.connect(voiceChannel);
-  return {
-    embeds: [
-      buildEmbed('success', {
-        title: `Added playlist "${results.title}" to queue!`,
-        image: { url: results.bestThumbnail.url },
-      }),
-    ],
-  };
+  return responseOptions('success', {
+    title: `Added playlist "${results.title}" to queue!`,
+    image: { url: results.bestThumbnail.url! },
+  });
 }
 
-export const command: GuildChatCommand = {
+export const command: ChatCommand<'Guild'> = {
   data: {
     name: 'featured',
     description: 'Play a song from the list of featured playlists',
@@ -53,7 +42,7 @@ export const command: GuildChatCommand = {
       {
         name: 'name',
         description: 'The name of the playlist',
-        type: 3,
+        type: ApplicationCommandOptionType.String,
         required: true,
         choices: [
           {
@@ -77,7 +66,7 @@ export const command: GuildChatCommand = {
       {
         name: 'position',
         description: 'Where in the queue to put the song (defaults to the end)',
-        type: 4,
+        type: ApplicationCommandOptionType.Integer,
         minValue: 1,
         required: false,
       },

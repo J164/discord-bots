@@ -1,7 +1,6 @@
-import { InteractionReplyOptions } from 'discord.js';
-import request from 'node-fetch';
-import { buildEmbed } from '../util/builders.js';
-import { GlobalChatCommandInfo, GlobalChatCommand } from '../util/interfaces.js';
+import { ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
+import { ChatCommand, GlobalChatCommandInfo } from '../potato-client.js';
+import { responseEmbed } from '../util/builders.js';
 
 interface WynncraftData {
   readonly data: readonly {
@@ -26,9 +25,9 @@ interface WynncraftData {
 
 async function wynncraft(info: GlobalChatCommandInfo): Promise<InteractionReplyOptions> {
   const playerData = (await (
-    await request(`https://api.wynncraft.com/v2/player/${info.interaction.options.getString('player')}/stats`)
+    await fetch(`https://api.wynncraft.com/v2/player/${info.response.interaction.options.getString('player', true)}/stats`)
   ).json()) as WynncraftData;
-  const embed = buildEmbed('info', {
+  const embed = responseEmbed('info', {
     title: playerData.data[0].username,
     fields: [
       {
@@ -42,7 +41,7 @@ async function wynncraft(info: GlobalChatCommandInfo): Promise<InteractionReplyO
     const playtime = playerData.data[0].classes[index].playtime;
     const playHours = Math.floor(playtime / 60);
     const playSecs = playtime % 60;
-    embed.fields.push({
+    embed.fields!.push({
       name: `Profile ${index + 1}`,
       value: `Class: ${playerData.data[0].classes[index].name}\nPlaytime: ${playHours < 10 ? `0${playHours}` : playHours}:${
         playSecs < 10 ? `0${playSecs}` : playSecs
@@ -52,7 +51,7 @@ async function wynncraft(info: GlobalChatCommandInfo): Promise<InteractionReplyO
   return { embeds: [embed] };
 }
 
-export const command: GlobalChatCommand = {
+export const command: ChatCommand<'Global'> = {
   data: {
     name: 'wynncraft',
     description: 'Get stats for a player on Wynncraft',
@@ -60,7 +59,7 @@ export const command: GlobalChatCommand = {
       {
         name: 'player',
         description: 'The username of target player',
-        type: 3,
+        type: ApplicationCommandOptionType.String,
         required: true,
       },
     ],

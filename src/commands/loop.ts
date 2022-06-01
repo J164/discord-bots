@@ -1,14 +1,14 @@
-import { InteractionReplyOptions } from 'discord.js';
-import { GuildChatCommandInfo, GuildChatCommand } from '../util/interfaces.js';
+import { ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
+import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
 
 function loop(info: GuildChatCommandInfo): InteractionReplyOptions {
-  if (info.interaction.options.getSubcommand() === 'current') {
-    return { embeds: [info.queueManager.loopSong()] };
+  if (info.response.interaction.options.getSubcommand() === 'current') {
+    return info.queueManager.loopSong();
   }
-  return { embeds: [info.queueManager.loopQueue()] };
+  return info.queueManager.loopQueue();
 }
 
-export const command: GuildChatCommand = {
+export const command: ChatCommand<'Guild'> = {
   data: {
     name: 'loop',
     description: 'Loop the current song or queue',
@@ -16,12 +16,12 @@ export const command: GuildChatCommand = {
       {
         name: 'current',
         description: 'Loop just the current song',
-        type: 1,
+        type: ApplicationCommandOptionType.Subcommand,
       },
       {
         name: 'queue',
         description: 'Loop the entire queue',
-        type: 1,
+        type: ApplicationCommandOptionType.Subcommand,
       },
     ],
   },

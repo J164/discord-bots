@@ -1,8 +1,8 @@
-import { MessageEmbedOptions, MessageOptions, MessageSelectOptionData, ThreadChannel, User } from 'discord.js';
+import { APISelectMenuOption, ButtonStyle, ComponentType, MessageOptions, ThreadChannel, User } from 'discord.js';
 import { setTimeout } from 'node:timers';
+import { responseEmbed, responseOptions } from '../../util/builders.js';
 import { multicardMessage } from '../../util/card-utils.js';
-import { Suit, Card, Deck } from '../../util/deck.js';
-import { buildEmbed } from '../../util/builders.js';
+import { Card, Deck, Suit } from '../../util/deck.js';
 
 interface GameInfo {
   readonly team1: EuchreTeam;
@@ -62,60 +62,33 @@ export function playEuchre(playerlist: User[], gameChannel: ThreadChannel): void
 }
 
 async function startRound(gameInfo: GameInfo): Promise<void> {
-  await gameInfo.gameChannel.send({
-    embeds: [
-      buildEmbed('info', {
-        title: 'Player Order',
-        fields: [
-          {
-            name: `1. ${gameInfo.players[0].user.username}`,
-            value: gameInfo.players[0].team.name,
-          },
-          {
-            name: `2. ${gameInfo.players[1].user.username}`,
-            value: gameInfo.players[1].team.name,
-          },
-          {
-            name: `3. ${gameInfo.players[2].user.username}`,
-            value: gameInfo.players[2].team.name,
-          },
-          {
-            name: `4. ${gameInfo.players[3].user.username}`,
-            value: gameInfo.players[3].team.name,
-          },
-        ],
-      }),
-    ],
-  });
+  await gameInfo.gameChannel.send(
+    responseOptions('info', {
+      title: 'Player Order',
+      fields: [
+        {
+          name: `1. ${gameInfo.players[0].user.username}`,
+          value: gameInfo.players[0].team.name,
+        },
+        {
+          name: `2. ${gameInfo.players[1].user.username}`,
+          value: gameInfo.players[1].team.name,
+        },
+        {
+          name: `3. ${gameInfo.players[2].user.username}`,
+          value: gameInfo.players[2].team.name,
+        },
+        {
+          name: `4. ${gameInfo.players[3].user.username}`,
+          value: gameInfo.players[3].team.name,
+        },
+      ],
+    }),
+  );
   const draws = Deck.randomCard({
     number: 21,
     noRepeats: true,
-    codes: [
-      '9S',
-      '9D',
-      '9C',
-      '9H',
-      '0S',
-      '0D',
-      '0C',
-      '0H',
-      'JS',
-      'JD',
-      'JC',
-      'JH',
-      'QS',
-      'QD',
-      'QC',
-      'QH',
-      'KS',
-      'KD',
-      'KC',
-      'KH',
-      'AS',
-      'AD',
-      'AC',
-      'AH',
-    ],
+    codes: ['9S', '9D', '9C', '9H', '0S', '0D', '0C', '0H', 'JS', 'JD', 'JC', 'JH', 'QS', 'QD', 'QC', 'QH', 'KS', 'KD', 'KC', 'KH', 'AS', 'AD', 'AC', 'AH'],
   });
   for (const [index, player] of gameInfo.players.entries()) {
     for (let r = index; r < 17 + index; r += 4) {
@@ -125,75 +98,80 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
   const top = draws[20];
   for (const player of gameInfo.players) {
     const channel = await player.user.createDM();
-    const { embed, file } = multicardMessage(player.hand, 'info', { title: 'Your Hand:' }, 'hand');
+    const { embed, file } = multicardMessage('hand', player.hand, responseEmbed('info', { title: 'Your Hand:' }));
     await channel.send({ embeds: [embed], files: [file] });
   }
-  const { embed, file } = multicardMessage([top], 'info', { title: 'Top of Stack:' }, 'hand');
+  const { embed, file } = multicardMessage('top', [top], responseEmbed('info', { title: 'Top of Stack:' }));
   await gameInfo.gameChannel.send({ embeds: [embed], files: [file] });
 
   const promptThree = async (index: number): Promise<void> => {
-    const channel = await gameInfo.players[index].user.createDM();
-    await channel.send({
-      embeds: [buildEmbed('prompt', { title: 'Would you like to go alone?' })],
+    const message = await (
+      await gameInfo.players[index].user.createDM()
+    ).send({
+      embeds: [responseEmbed('prompt', { title: 'Would you like to go alone?' })],
       components: [
         {
           components: [
             {
-              type: 'BUTTON',
-              customId: 'three-yes',
+              type: ComponentType.Button,
+              customId: 'yes',
               label: 'Yes',
-              style: 'PRIMARY',
+              style: ButtonStyle.Primary,
             },
             {
-              type: 'BUTTON',
-              customId: 'three-no',
+              type: ComponentType.Button,
+              customId: 'no',
               label: 'No',
-              style: 'SECONDARY',
+              style: ButtonStyle.Secondary,
             },
           ],
-          type: 'ACTION_ROW',
+          type: ComponentType.ActionRow,
         },
       ],
     });
-    channel
-      .createMessageComponentCollector({
-        filter: (b) => b.customId.startsWith('three-'),
-        componentType: 'BUTTON',
-        max: 1,
-      })
-      .once('end', async (interaction) => {
-        await interaction.at(0).update({
-          embeds: [buildEmbed('success', { title: 'Success!' })],
-          components: [],
-        });
-        if (interaction.at(0).customId === 'three-yes') {
-          gameInfo.players.find(
-            (player) => player.team === gameInfo.players[index].team && !player.user.equals(gameInfo.players[index].user),
-          ).out = true;
-          return round(gameInfo, index, true);
-        }
-        void round(gameInfo, index);
+    let component;
+    try {
+      component = await message.awaitMessageComponent({
+        componentType: ComponentType.Button,
+        time: 300_000,
       });
+    } catch {
+      await message.edit({
+        embeds: [responseEmbed('success', { title: 'Success!' })],
+        components: [],
+      });
+
+      gameInfo.players.find((player) => player.team === gameInfo.players[index].team && !player.user.equals(gameInfo.players[index].user))!.out = true;
+      return round(gameInfo, index, true);
+    }
+    await component.update({
+      embeds: [responseEmbed('success', { title: 'Success!' })],
+      components: [],
+    });
+
+    if (component.customId === 'yes') {
+      gameInfo.players.find((player) => player.team === gameInfo.players[index].team && !player.user.equals(gameInfo.players[index].user))!.out = true;
+      return round(gameInfo, index, true);
+    }
+    void round(gameInfo, index);
   };
 
   const promptTwo = async (index = 0): Promise<void> => {
-    const channel = await gameInfo.players[index].user.createDM();
     const { embed, file } = multicardMessage(
-      gameInfo.players[index].hand,
-      'prompt',
-      { title: 'Would you like to pass or select trump?' },
       'hand',
+      gameInfo.players[index].hand,
+      responseEmbed('info', { title: index === 3 ? 'Please select trump' : 'Would you like to pass or select trump?' }),
     );
     const promptTemplate: MessageOptions = {
       embeds: [embed],
       files: [file],
       components: [
         {
-          type: 'ACTION_ROW',
+          type: ComponentType.ActionRow,
           components: [
             {
-              type: 'SELECT_MENU',
-              customId: 'two-select',
+              type: ComponentType.SelectMenu,
+              customId: 'suit',
               placeholder: 'Select a Suit',
               options: [
                 {
@@ -220,162 +198,183 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
             },
           ],
         },
-        {
-          type: 'ACTION_ROW',
-          components: [
-            {
-              type: 'BUTTON',
-              customId: 'two-pass',
-              label: 'Pass',
-              style: 'SECONDARY',
-            },
-          ],
-        },
       ],
     };
-    if (index === 3) {
-      (promptTemplate.embeds[0] as MessageEmbedOptions).title = 'Please select trump';
-      promptTemplate.components.pop();
-    }
-    await channel.send(promptTemplate);
-    channel
-      .createMessageComponentCollector({
-        filter: (b) => b.customId.startsWith('two-'),
-        max: 1,
-      })
-      .once('end', async (interaction) => {
-        await interaction.at(0).update({
-          embeds: [buildEmbed('success', { title: 'Success!' })],
-          components: [],
-          files: [],
-        });
-        if (interaction.at(0).isSelectMenu()) {
-          gameInfo.trump = top.suit;
-          void promptThree(index);
-          return;
-        }
-        return promptTwo(index + 1);
+    if (index !== 3) {
+      promptTemplate.components!.push({
+        type: ComponentType.ActionRow,
+        components: [
+          {
+            type: ComponentType.Button,
+            customId: 'pass',
+            label: 'Pass',
+            style: ButtonStyle.Secondary,
+          },
+        ],
       });
+    }
+    const message = await (await gameInfo.players[index].user.createDM()).send(promptTemplate);
+    let component;
+    try {
+      component = await message.awaitMessageComponent({
+        time: 300_000,
+      });
+    } catch {
+      await message.edit({
+        embeds: [responseEmbed('success', { title: 'Success!' })],
+        components: [],
+        files: [],
+      });
+
+      if (index === 3) {
+        gameInfo.trump = 'Clubs';
+        void promptThree(index);
+        return;
+      }
+      return promptTwo(index + 1);
+    }
+    await component.update({
+      embeds: [responseEmbed('success', { title: 'Success!' })],
+      components: [],
+      files: [],
+    });
+
+    if (component.isSelectMenu()) {
+      gameInfo.trump = component.customId as Suit;
+      void promptThree(index);
+      return;
+    }
+    return promptTwo(index + 1);
   };
 
   const promptReplace = async (index: number): Promise<void> => {
-    const options: MessageSelectOptionData[] = [];
-    for (const [id, card] of gameInfo.players[3].hand.entries()) {
-      options.push({
-        label: `${card.name} of ${card.suit}`,
-        value: id.toString(),
-      });
-    }
-    const channel = await gameInfo.players[3].user.createDM();
-    const { embed, file } = multicardMessage(gameInfo.players[3].hand, 'prompt', { title: 'Select a card to replace' }, 'hand');
-    await channel.send({
+    const { embed, file } = multicardMessage('hand', gameInfo.players[3].hand, responseEmbed('info', { title: 'Select a card to replace' }));
+    const message = await (
+      await gameInfo.players[3].user.createDM()
+    ).send({
       embeds: [embed],
       files: [file],
       components: [
         {
-          type: 'ACTION_ROW',
+          type: ComponentType.ActionRow,
           components: [
             {
-              type: 'SELECT_MENU',
+              type: ComponentType.SelectMenu,
               customId: 'replace',
               placeholder: 'Select a Card',
-              options: options,
+              options: gameInfo.players[3].hand.map((card, index) => {
+                return {
+                  label: `${card.name} of ${card.suit}`,
+                  value: index.toString(),
+                };
+              }),
             },
           ],
         },
       ],
     });
-    channel
-      .createMessageComponentCollector({
-        filter: (b) => b.customId === 'replace',
-        componentType: 'SELECT_MENU',
-        max: 1,
-      })
-      .once('end', async (interaction) => {
-        await interaction.at(0).update({
-          embeds: [buildEmbed('success', { title: 'Success!' })],
-          components: [],
-          files: [],
-        });
-        gameInfo.players[3].hand.splice(Number.parseInt(interaction.at(0).values[0]), 1, top);
-        gameInfo.trump = top.suit;
-        void promptThree(index);
+    let position;
+    try {
+      const component = await message.awaitMessageComponent({
+        componentType: ComponentType.SelectMenu,
+        time: 300_000,
       });
+      position = Number.parseInt(component.values[0]);
+
+      await component.update({
+        embeds: [responseEmbed('success', { title: 'Success!' })],
+        components: [],
+        files: [],
+      });
+    } catch {
+      await message.edit({
+        embeds: [responseEmbed('success', { title: 'Success!' })],
+        components: [],
+        files: [],
+      });
+
+      position = 0;
+    }
+
+    gameInfo.players[3].hand.splice(position, 1, top);
+    gameInfo.trump = top.suit;
+    void promptThree(index);
   };
 
   const promptOne = async (index = 0): Promise<void> => {
-    const channel = await gameInfo.players[index].user.createDM();
-    await channel.send({
+    const message = await (
+      await gameInfo.players[index].user.createDM()
+    ).send({
       embeds: [
-        buildEmbed('prompt', {
-          title:
-            index === 3
-              ? `Would you like to pass or pick it up?`
-              : `Would you like to pass or have ${gameInfo.players[3].user.username} pick it up?`,
+        responseEmbed('prompt', {
+          title: index === 3 ? `Would you like to pass or pick it up?` : `Would you like to pass or have ${gameInfo.players[3].user.username} pick it up?`,
           image: { url: top.image },
         }),
       ],
       components: [
         {
-          type: 'ACTION_ROW',
+          type: ComponentType.ActionRow,
           components: [
             {
-              type: 'BUTTON',
-              customId: 'one-pickup',
+              type: ComponentType.Button,
+              customId: 'pickup',
               label: 'Pick It Up',
-              style: 'PRIMARY',
+              style: ButtonStyle.Primary,
             },
             {
-              type: 'BUTTON',
-              customId: 'one-pass',
+              type: ComponentType.Button,
+              customId: 'pass',
               label: 'Pass',
-              style: 'PRIMARY',
+              style: ButtonStyle.Primary,
             },
           ],
         },
       ],
     });
-    channel
-      .createMessageComponentCollector({
-        filter: (b) => b.customId.startsWith('one-'),
-        componentType: 'BUTTON',
-        max: 1,
-      })
-      .once('end', async (interaction) => {
-        await interaction.at(0).update({
-          embeds: [buildEmbed('success', { title: 'Success!' })],
-          components: [],
-        });
-        if (interaction.at(0).customId === 'one-pass') {
-          if (index === 3) {
-            return promptTwo();
-          }
-          return promptOne(index + 1);
-        }
-        void promptReplace(index);
+    let component;
+    try {
+      component = await message.awaitMessageComponent({
+        componentType: ComponentType.Button,
+        time: 300_000,
       });
+    } catch {
+      await message.edit({
+        embeds: [responseEmbed('success', { title: 'Success!' })],
+        components: [],
+      });
+
+      if (index === 3) {
+        return promptTwo();
+      }
+      return promptOne(index + 1);
+    }
+    await component.update({
+      embeds: [responseEmbed('success', { title: 'Success!' })],
+      components: [],
+    });
+
+    if (component.customId === 'pass') {
+      if (index === 3) {
+        return promptTwo();
+      }
+      return promptOne(index + 1);
+    }
+    void promptReplace(index);
   };
 
   void promptOne();
 }
 
-async function round(
-  gameInfo: GameInfo,
-  leader: number,
-  solo = false,
-  table: string[] = [],
-  lead?: 'H' | 'D' | 'S' | 'C',
-  index = 0,
-): Promise<void> {
+async function round(gameInfo: GameInfo, leader: number, solo = false, table: string[] = [], lead?: 'H' | 'D' | 'S' | 'C', index = 0): Promise<void> {
   if (gameInfo.players[index].out) {
     if (index === 3) {
       return;
     }
     return round(gameInfo, leader, solo, table, lead, index + 1);
   }
-  const legalPlays: MessageSelectOptionData[] = [];
+  const legalPlays: APISelectMenuOption[] = [];
   for (const card of gameInfo.players[index].hand) {
-    if (!lead || lead === realSuit(gameInfo.trump, card)[0]) {
+    if (!lead || lead === realSuit(gameInfo.trump!, card)[0]) {
       legalPlays.push({
         label: `${card.name} of ${card.suit}`,
         value: card.code,
@@ -390,17 +389,18 @@ async function round(
       });
     }
   }
-  const channel = await gameInfo.players[index].user.createDM();
-  const { embed, file } = multicardMessage(gameInfo.players[index].hand, 'prompt', { title: 'Select a card to play' }, 'hand');
-  await channel.send({
+  const { embed, file } = multicardMessage('hand', gameInfo.players[index].hand, responseEmbed('info', { title: 'Select a card to play' }));
+  const message = await (
+    await gameInfo.players[index].user.createDM()
+  ).send({
     embeds: [embed],
     files: [file],
     components: [
       {
-        type: 'ACTION_ROW',
+        type: ComponentType.ActionRow,
         components: [
           {
-            type: 'SELECT_MENU',
+            type: ComponentType.SelectMenu,
             customId: 'play',
             placeholder: 'Select a Card',
             options: legalPlays,
@@ -409,29 +409,40 @@ async function round(
       },
     ],
   });
-  channel
-    .createMessageComponentCollector({
-      filter: (b) => b.customId.startsWith('play'),
-      componentType: 'SELECT_MENU',
-      max: 1,
-    })
-    .once('end', async (interaction) => {
-      await interaction.at(0).update({
-        embeds: [buildEmbed('success', { title: 'Success!' })],
-        components: [],
-        files: [],
-      });
-      table.push(interaction.at(0).values[0]);
-      lead ??= interaction.at(0).values[0][1] as 'H' | 'D' | 'S' | 'C';
-      gameInfo.players[index].hand.splice(
-        gameInfo.players[index].hand.findIndex((c) => c.code === interaction.at(0).values[0]),
-        1,
-      );
-      if (index === 3) {
-        return determineTrick(gameInfo, table, lead, leader, solo);
-      }
-      return round(gameInfo, leader, solo, table, lead, index + 1);
+  try {
+    const component = await message.awaitMessageComponent({
+      componentType: ComponentType.SelectMenu,
+      time: 300_000,
     });
+
+    await component.update({
+      embeds: [responseEmbed('success', { title: 'Success!' })],
+      components: [],
+      files: [],
+    });
+
+    table.push(component.values[0]);
+    lead ??= component.values[0][1] as 'H' | 'D' | 'S' | 'C';
+    gameInfo.players[index].hand.splice(
+      gameInfo.players[index].hand.findIndex((c) => c.code === component.values[0]),
+      1,
+    );
+  } catch {
+    await message.edit({
+      embeds: [responseEmbed('success', { title: 'Success!' })],
+      components: [],
+      files: [],
+    });
+
+    table.push(gameInfo.players[index].hand[0].code);
+    lead ??= gameInfo.players[index].hand[0].code[1] as 'H' | 'D' | 'S' | 'C';
+    gameInfo.players[index].hand.shift();
+  }
+
+  if (index === 3) {
+    return determineTrick(gameInfo, table, lead, leader, solo);
+  }
+  return round(gameInfo, leader, solo, table, lead, index + 1);
 }
 
 async function score(gameInfo: GameInfo, leader: number, solo: boolean): Promise<void> {
@@ -446,24 +457,22 @@ async function score(gameInfo: GameInfo, leader: number, solo: boolean): Promise
   if (winningTeam.score >= 10) {
     return finish(gameInfo, winningTeam);
   }
-  await gameInfo.gameChannel.send({
-    embeds: [
-      buildEmbed('info', {
-        title: 'Standings',
-        fields: [
-          {
-            name: 'Team 1',
-            value: `${gameInfo.team1.score} points`,
-          },
-          {
-            name: 'Team 2',
-            value: `${gameInfo.team2.score} points`,
-          },
-        ],
-      }),
-    ],
-  });
-  gameInfo.players.unshift(gameInfo.players.pop());
+  await gameInfo.gameChannel.send(
+    responseOptions('info', {
+      title: 'Standings',
+      fields: [
+        {
+          name: 'Team 1',
+          value: `${gameInfo.team1.score} points`,
+        },
+        {
+          name: 'Team 2',
+          value: `${gameInfo.team2.score} points`,
+        },
+      ],
+    }),
+  );
+  gameInfo.players.unshift(gameInfo.players.pop()!);
   for (const player of gameInfo.players) {
     player.out = false;
   }
@@ -471,20 +480,21 @@ async function score(gameInfo: GameInfo, leader: number, solo: boolean): Promise
 }
 
 async function finish(gameInfo: GameInfo, winningTeam: EuchreTeam): Promise<void> {
-  const embed = buildEmbed('info', {
-    title: `${winningTeam.name} Wins!`,
-    fields: [
-      {
-        name: 'Team 1',
-        value: `${gameInfo.team1.score} points`,
-      },
-      {
-        name: 'Team 2',
-        value: `${gameInfo.team2.score} points`,
-      },
-    ],
-  });
-  await gameInfo.gameChannel.send({ embeds: [embed] });
+  await gameInfo.gameChannel.send(
+    responseOptions('info', {
+      title: `${winningTeam.name} Wins!`,
+      fields: [
+        {
+          name: 'Team 1',
+          value: `${gameInfo.team1.score} points`,
+        },
+        {
+          name: 'Team 2',
+          value: `${gameInfo.team2.score} points`,
+        },
+      ],
+    }),
+  );
   setTimeout(() => {
     try {
       void gameInfo.gameChannel.setArchived(true);
@@ -495,22 +505,16 @@ async function finish(gameInfo: GameInfo, winningTeam: EuchreTeam): Promise<void
 }
 
 // eslint-disable-next-line complexity
-async function determineTrick(
-  gameInfo: GameInfo,
-  table: string[],
-  lead: 'H' | 'D' | 'S' | 'C',
-  leader: number,
-  solo: boolean,
-): Promise<void> {
+async function determineTrick(gameInfo: GameInfo, table: string[], lead: 'H' | 'D' | 'S' | 'C', leader: number, solo: boolean): Promise<void> {
   let leadingPlayer: number;
   let leadingScore = 0;
   for (const [id, code] of table.entries()) {
-    if (code[1] !== lead && code[1] !== gameInfo.trump[0]) {
+    if (code[1] !== lead && code[1] !== gameInfo.trump![0]) {
       continue;
     }
     let score: number;
     let inverse: 'H' | 'D' | 'S' | 'C';
-    switch (gameInfo.trump[0]) {
+    switch (gameInfo.trump![0]) {
       case 'H':
         inverse = 'D';
         break;
@@ -523,10 +527,12 @@ async function determineTrick(
       case 'C':
         inverse = 'S';
         break;
+      default:
+        throw new Error('Invalid suit');
     }
     if (code === `J${inverse}`) {
       score = 12;
-    } else if (code[1] === gameInfo.trump[0]) {
+    } else if (code[1] === gameInfo.trump![0]) {
       switch (code[0]) {
         case '9':
           score = 7;
@@ -546,6 +552,8 @@ async function determineTrick(
         case 'J':
           score = 13;
           break;
+        default:
+          throw new Error('Invalid card value');
       }
     } else {
       switch (code[0]) {
@@ -567,6 +575,8 @@ async function determineTrick(
         case 'A':
           score = 6;
           break;
+        default:
+          throw new Error('Invalid card value');
       }
     }
     if (score > leadingScore) {
@@ -574,24 +584,22 @@ async function determineTrick(
       leadingPlayer = id;
     }
   }
-  gameInfo.players[leadingPlayer].team.tricks++;
-  await gameInfo.gameChannel.send({
-    embeds: [
-      buildEmbed('info', {
-        title: 'Standings',
-        fields: [
-          {
-            name: 'Team 1:',
-            value: `${gameInfo.team1.tricks} tricks`,
-          },
-          {
-            name: 'Team 2',
-            value: `${gameInfo.team2.tricks} tricks`,
-          },
-        ],
-      }),
-    ],
-  });
+  gameInfo.players[leadingPlayer!].team.tricks++;
+  await gameInfo.gameChannel.send(
+    responseOptions('info', {
+      title: 'Standings',
+      fields: [
+        {
+          name: 'Team 1:',
+          value: `${gameInfo.team1.tricks} tricks`,
+        },
+        {
+          name: 'Team 2',
+          value: `${gameInfo.team2.tricks} tricks`,
+        },
+      ],
+    }),
+  );
   if (gameInfo.team1.tricks + gameInfo.team2.tricks === 5) {
     return score(gameInfo, leader, solo);
   }
@@ -607,21 +615,23 @@ function realSuit(trump: Suit, card: Card): Suit {
       if (trump === 'Spades') {
         return 'Spades';
       }
-      break;
+      return 'Clubs';
     case 'Spades':
       if (trump === 'Clubs') {
         return 'Clubs';
       }
-      break;
+      return 'Spades';
     case 'Hearts':
       if (trump === 'Diamonds') {
         return 'Diamonds';
       }
-      break;
+      return 'Hearts';
     case 'Diamonds':
       if (trump === 'Hearts') {
         return 'Hearts';
       }
-      break;
+      return 'Diamonds';
+    default:
+      throw new Error('Invalid suit');
   }
 }

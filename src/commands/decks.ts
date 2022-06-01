@@ -1,7 +1,6 @@
-import { ButtonInteraction, InteractionUpdateOptions } from 'discord.js';
-import request from 'node-fetch';
-import { buildEmbed } from '../util/builders.js';
-import { GlobalChatCommandInfo, GlobalChatCommand } from '../util/interfaces.js';
+import { ButtonStyle, ComponentType, InteractionReplyOptions, InteractionUpdateOptions } from 'discord.js';
+import { ChatCommand, GlobalChatCommandInfo } from '../potato-client.js';
+import { Emojis, responseEmbed } from '../util/builders.js';
 
 interface MagicCard {
   readonly name: string;
@@ -34,129 +33,134 @@ interface DeckstatsResponse {
   }[];
 }
 
-async function parseDeck(info: GlobalChatCommandInfo, urls: { url: string }[], button?: ButtonInteraction, index = 0): Promise<void> {
-  const url = urls[index].url;
-  const ids = /^(?:https?:\/\/)?(?:www\.)?deckstats\.net\/decks\/(\d+)\/(\d+)-[\dA-Za-z-]+$/.exec(url);
+async function response(info: GlobalChatCommandInfo, urls: { url: string }[], index: number): Promise<InteractionUpdateOptions & InteractionReplyOptions> {
+  const ids = /^(?:https?:\/\/)?(?:www\.)?deckstats\.net\/decks\/(\d+)\/(\d+)-[\dA-Za-z-]+$/.exec(urls[index].url)!;
   const apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${ids[1]}&id=${ids[2]}&response_type=`;
-  const results = (await (await request(`${apiUrl}json`)).json()) as DeckstatsResponse;
-  let image: string;
+  const results = (await (await fetch(`${apiUrl}json`)).json()) as DeckstatsResponse;
+  let image: string | undefined;
   for (const section of results.sections) {
     const commander = section.cards.findIndex((card) => card.isCommander);
     if (commander !== -1) {
       const cardInfo = (await (
-        await request(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(section.cards[commander].name)}`)
+        await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(section.cards[commander].name)}`)
       ).json()) as ScryfallResponse;
-      image = cardInfo.data[0].image_uris.large;
+      image = cardInfo.data[0].image_uris?.large;
     }
   }
-  const options: InteractionUpdateOptions = {
+  void prompt(info, urls, index);
+  return {
     embeds: [
-      buildEmbed('info', {
+      responseEmbed('info', {
         title: results.name,
-        image: { url: image },
-        fields: [{ name: 'Deckstats URL:', value: url }],
+        image: image ? { url: image } : undefined,
+        fields: [{ name: 'Deckstats URL:', value: urls[index].url }],
         footer: { text: `${index + 1}/${urls.length}` },
       }),
     ],
     components: [
       {
-        type: 'ACTION_ROW',
+        type: ComponentType.ActionRow,
         components: [
           {
-            type: 'BUTTON',
-            customId: 'decks-doublearrowleft',
-            emoji: '\u23EA',
+            type: ComponentType.Button,
+            customId: 'jumpleft',
+            emoji: Emojis.DoubleArrowLeft,
             label: 'Return to Beginning',
-            style: 'SECONDARY',
+            style: ButtonStyle.Secondary,
             disabled: index === 0,
           },
           {
-            type: 'BUTTON',
-            customId: 'decks-arrowleft',
-            emoji: '\u2B05\uFE0F',
+            type: ComponentType.Button,
+            customId: 'left',
+            emoji: Emojis.ArrowLeft,
             label: 'Previous Page',
-            style: 'SECONDARY',
+            style: ButtonStyle.Secondary,
             disabled: index === 0,
           },
           {
-            type: 'BUTTON',
-            customId: 'decks-list',
-            emoji: '\uD83D\uDCC4',
+            type: ComponentType.Button,
+            customId: 'list',
+            emoji: Emojis.Document,
             label: 'Decklist',
-            style: 'PRIMARY',
+            style: ButtonStyle.Primary,
           },
           {
-            type: 'BUTTON',
-            customId: 'decks-arrowright',
-            emoji: '\u27A1\uFE0F',
+            type: ComponentType.Button,
+            customId: 'right',
+            emoji: Emojis.ArrowRight,
             label: 'Next Page',
-            style: 'SECONDARY',
+            style: ButtonStyle.Secondary,
             disabled: index === urls.length - 1,
           },
           {
-            type: 'BUTTON',
-            customId: 'decks-doublearrowright',
-            emoji: '\u23E9',
+            type: ComponentType.Button,
+            customId: 'jumpright',
+            emoji: Emojis.DoubleArrowRight,
             label: 'Jump to End',
-            style: 'SECONDARY',
+            style: ButtonStyle.Secondary,
             disabled: index === urls.length - 1,
           },
         ],
       },
     ],
   };
-  await (!button ? info.interaction.editReply(options) : button.update(options));
-  info.interaction.channel
-    .createMessageComponentCollector({
-      filter: (b) => b.user.id === info.interaction.user.id && b.customId.startsWith(info.interaction.commandName),
+}
+
+async function prompt(info: GlobalChatCommandInfo, urls: { url: string }[], index: number) {
+  let component;
+  try {
+    component = await info.response.awaitMessageComponent({
+      filter: (b) => b.user.id === info.response.interaction.user.id,
       time: 300_000,
-      componentType: 'BUTTON',
-      max: 1,
-    })
-    .once('end', async (b) => {
-      await info.interaction.editReply({ components: [] }).catch();
-      if (!b.at(0)) return;
-      switch (b.at(0).customId) {
-        case 'decks-doublearrowleft':
-          void parseDeck(info, urls, b.at(0));
-          break;
-        case 'decks-arrowleft':
-          void parseDeck(info, urls, b.at(0), index - 1);
-          break;
-        case 'decks-list':
-          b.at(0)
-            .update({
-              content: ((await (await request(`${apiUrl}list`)).json()) as { list: string }).list.match(/^([^\n!#/]+)/gm).join('\n'),
-              embeds: [],
-              components: [],
-            })
-            .catch(() => {
-              void b.at(0).update({
-                embeds: [
-                  buildEmbed('error', {
-                    title: 'There seems to be something wrong with the Deckstats API at the moment. Try again later',
-                  }),
-                ],
-                components: [],
-              });
-            });
-          break;
-        case 'decks-arrowright':
-          void parseDeck(info, urls, b.at(0), index + 1);
-          break;
-        case 'decks-doublearrowright':
-          void parseDeck(info, urls, b.at(0), urls.length - 1);
-          break;
-      }
+      componentType: ComponentType.Button,
     });
+  } catch {
+    void info.response.interaction.editReply({ components: [] }).catch();
+    return;
+  }
+
+  switch (component.customId) {
+    case 'jumpleft':
+      await component.update(await response(info, urls, 0));
+      break;
+    case 'left':
+      await component.update(await response(info, urls, index - 1));
+      break;
+    case 'list':
+      try {
+        const ids = /^(?:https?:\/\/)?(?:www\.)?deckstats\.net\/decks\/(\d+)\/(\d+)-[\dA-Za-z-]+$/.exec(urls[index].url)!;
+        const apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${ids[1]}&id=${ids[2]}&response_type=`;
+        await component.update({
+          content: ((await (await fetch(`${apiUrl}list`)).json()) as { list: string }).list.match(/^([^\n!#/]+)/gm)?.join('\n'),
+          embeds: [],
+          components: [],
+        });
+      } catch {
+        void component.update({
+          embeds: [
+            responseEmbed('error', {
+              title: 'Something went wrong. Please try again later',
+            }),
+          ],
+          components: [],
+        });
+      }
+      return;
+    case 'right':
+      await component.update(await response(info, urls, index + 1));
+      break;
+    case 'jumpright':
+      await component.update(await response(info, urls, urls.length - 1));
+      break;
+  }
 }
 
-async function getDeck(info: GlobalChatCommandInfo): Promise<undefined> {
-  void parseDeck(info, (await info.database.findMany('mtg_decks')) as unknown as { url: string }[]);
-  return undefined;
+async function getDeck(info: GlobalChatCommandInfo): Promise<void> {
+  const urls = (await info.database.collection('mtg_decks').find({}).toArray()) as unknown as { url: string }[];
+  void info.response.interaction.editReply(await response(info, urls, 0));
 }
 
-export const command: GlobalChatCommand = {
+export const command: ChatCommand<'Global'> = {
   data: {
     name: 'decks',
     description: "Get a deck from Potato's database",

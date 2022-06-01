@@ -1,50 +1,51 @@
-import { MessageEmbedOptions } from 'discord.js';
-import { buildEmbed } from '../util/builders.js';
-import { DatabaseManager } from '../util/database-manager.js';
-import { fetchCourseData, Grades, checkUpdates } from '../util/irc.js';
+import { APIEmbed } from 'discord.js';
+import { APIEmbedField } from 'discord.js';
+import { Db } from 'mongodb';
 import cron from 'node-cron';
+import { responseEmbed } from '../util/builders.js';
+import { checkUpdates, fetchCourseData, Grades } from '../util/irc.js';
 
-export async function gradeReport(token: string, databaseManager: DatabaseManager, task: cron.ScheduledTask): Promise<MessageEmbedOptions> {
+export async function gradeReport(token: string, database: Db, task: cron.ScheduledTask): Promise<APIEmbed | null> {
   const newGrades = await fetchCourseData(token);
   if (!newGrades) {
     task.stop();
-    return buildEmbed('error', { title: 'Token has been reset!' });
+    return responseEmbed('error', { title: 'Token has been reset!' });
   }
-  const oldGrades = (await databaseManager.findOne('grades', { studentId: newGrades.studentId })) as unknown as Grades;
+  const oldGrades = (await database.collection('grades').findOne({ studentId: newGrades.studentId })) as unknown as Grades;
   if (!oldGrades) {
-    void databaseManager.insertOne('grades', newGrades);
-    return;
+    void database.collection('grades').insertOne(newGrades);
+    return null;
   }
 
   const diff = checkUpdates(oldGrades, newGrades);
 
   if (!diff.changes) {
-    return;
+    return null;
   }
 
-  await databaseManager.deleteMany('grades', { studentId: newGrades.studentId });
-  void databaseManager.insertOne('grades', newGrades);
+  await database.collection('grades').deleteMany({ studentId: newGrades.studentId });
+  void database.collection('grades').insertOne(newGrades);
 
   if (diff.termName) {
-    return buildEmbed('info', {
+    return responseEmbed('info', {
       title: `New IRC Term! (${diff.termName.oldName} -> ${diff.termName.newName})`,
     });
   }
 
-  return buildEmbed('info', {
+  return responseEmbed('info', {
     title: 'IRC Update!',
     fields: [
       ...diff.newCourses.map((course) => {
         return {
           name: `${course.name} was added to IRC`,
-          value: `Your current grade in this class is ${course.projectedGrade ?? 'not yet calculated'}`,
+          value: `Your current grade in this class is ${course.projectedGrade || 'not yet calculated'}`,
         };
       }),
       ...diff.courses.map((course) => {
         if (course.isFinal) {
           return {
             name: `${course.name} - Grade Finalized!`,
-            value: `${course.projectedGrade.oldGrade} -> ${course.projectedGrade.newGrade}`,
+            value: `${course.projectedGrade!.oldGrade} -> ${course.projectedGrade!.newGrade}`,
           };
         }
         if (course.projectedGrade) {
@@ -66,6 +67,6 @@ export async function gradeReport(token: string, databaseManager: DatabaseManage
           };
         }
       }),
-    ].filter(Boolean),
+    ].filter(Boolean) as APIEmbedField[],
   });
 }

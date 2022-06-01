@@ -1,17 +1,15 @@
 import { InteractionReplyOptions } from 'discord.js';
-import { buildEmbed } from '../util/builders.js';
-import { GuildChatCommandInfo, GuildChatCommand } from '../util/interfaces.js';
+import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
+import { responseOptions } from '../util/builders.js';
 
 function clear(info: GuildChatCommandInfo): InteractionReplyOptions {
   if (info.queueManager.clear()) {
-    return {
-      embeds: [buildEmbed('success', { title: 'The queue has been cleared' })],
-    };
+    return responseOptions('success', { title: 'The queue has been cleared' });
   }
-  return { embeds: [buildEmbed('error', { title: 'There is no queue!' })] };
+  return responseOptions('error', { title: 'There is no queue!' });
 }
 
-export const command: GuildChatCommand = {
+export const command: ChatCommand<'Guild'> = {
   data: {
     name: 'clear',
     description: 'Clear the song queue',

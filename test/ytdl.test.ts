@@ -1,45 +1,49 @@
 import { demuxProbe, StreamType } from '@discordjs/voice';
+import test from 'ava';
 import { mkdirSync, rmSync } from 'node:fs';
-import { download, resolve, createStream } from '../dist/util/ytdl.js';
+import { createStream, download, resolve } from '../src/voice/ytdl.js';
 
-beforeAll(() => {
+test.before(() => {
   mkdirSync('temp');
 });
 
-afterAll(() => {
+test.after(() => {
   rmSync('temp', { recursive: true });
 });
 
-test('ytdl resolve', async () => {
-  expect(await resolve('https://youtu.be/hKRUPYrAQoE')).toEqual({
+test('ytdl resolve', async (t) => {
+  t.deepEqual(await resolve('https://youtu.be/hKRUPYrAQoE'), {
     webpage_url: 'https://www.youtube.com/watch?v=hKRUPYrAQoE',
     title: 'Two Steps From Hell - Victory',
     thumbnail: 'https://i.ytimg.com/vi_webp/hKRUPYrAQoE/maxresdefault.webp',
     duration: 329,
-    success: true,
   });
 });
 
-test('ytdl valid download', async () => {
-  await expect(
+test('ytdl invalid resolve', async (t) => {
+  await t.throwsAsync(resolve('https://www.youtube.com/watch?v=u'));
+});
+
+test('ytdl valid download', async (t) => {
+  await t.notThrowsAsync(
     download('https://youtu.be/8NGtL3HUPUo', {
       outtmpl: 'temp/%(title)s.%(ext)s',
       format: 'best[ext=mp4]',
     }),
-  ).resolves.toBeUndefined();
+  );
 });
 
-test('ytdl invalid download', async () => {
-  await expect(
+test('ytdl invalid download', async (t) => {
+  await t.throwsAsync(
     download('https://www.youtube.com/watch?v=u', {
       outtmpl: 'temp/%(title)s.%(ext)s',
       format: 'best[ext=mp4]',
     }),
-  ).rejects.toBeDefined();
+  );
 });
 
-test('ytdl stream', async () => {
+test('ytdl stream', async (t) => {
   const stream = createStream('https://youtu.be/uYWC0eqRFEM', { format: 'bestaudio[ext=webm][acodec=opus]' });
-  expect((await demuxProbe(stream.stdout)).type).toBe(StreamType.WebmOpus);
+  t.deepEqual((await demuxProbe(stream.stdout)).type, StreamType.WebmOpus);
   stream.kill();
 });

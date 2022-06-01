@@ -1,13 +1,16 @@
 import {
+  APIEmbed,
+  APISelectMenuOption,
   ButtonInteraction,
+  ButtonStyle,
   Collection,
+  ComponentType,
+  MessageActionRowComponent,
   MessageEditOptions,
-  MessageEmbedOptions,
-  MessageSelectOptionData,
   ThreadChannel,
   User,
 } from 'discord.js';
-import { buildEmbed } from '../../util/builders.js';
+import { responseEmbed, responseOptions } from '../../util/builders.js';
 
 interface MagicPlayer {
   readonly name: string;
@@ -37,159 +40,148 @@ async function listen(playerData: Collection<string, MagicPlayer>, gameChannel: 
     embeds: [printStandings(playerData)],
     components: [
       {
-        type: 'ACTION_ROW',
+        type: ComponentType.ActionRow,
         components: [
           {
-            type: 'BUTTON',
+            type: ComponentType.Button,
             label: 'Damage',
-            customId: 'magic-damage',
-            style: 'PRIMARY',
+            customId: 'damage',
+            style: ButtonStyle.Primary,
           },
           {
-            type: 'BUTTON',
+            type: ComponentType.Button,
             label: 'Heal',
-            customId: 'magic-heal',
-            style: 'SECONDARY',
+            customId: 'heal',
+            style: ButtonStyle.Secondary,
           },
           {
-            type: 'BUTTON',
+            type: ComponentType.Button,
             label: 'End',
-            customId: 'magic-end',
-            style: 'DANGER',
+            customId: 'end',
+            style: ButtonStyle.Danger,
           },
         ],
       },
     ],
   });
 
-  gameChannel
-    .createMessageComponentCollector({
-      filter: (b) => b.customId.startsWith('magic'),
-      componentType: 'BUTTON',
-      max: 1,
+  let component;
+  try {
+    component = await message.awaitMessageComponent({
+      componentType: ComponentType.Button,
       time: 300_000,
-    })
-    .once('end', async (b) => {
-      if (message.editable) await message.edit({ components: [] });
-      if (!b.at(0)) {
-        try {
-          void gameChannel.setArchived(true);
-        } catch {
-          /*thread deleted*/
-        }
-        return;
-      }
-      switch (b.at(0).customId) {
-        case 'magic-damage':
-          await prompt(playerData, gameChannel, b.at(0));
-          return;
-        case 'magic-heal':
-          await heal(playerData, gameChannel, b.at(0));
-          return;
-        case 'magic-end':
-          await b.at(0).update({ embeds: [printStandings(playerData)] });
-          try {
-            void gameChannel.setArchived(true);
-          } catch {
-            /*thread deleted*/
-          }
-          break;
-      }
     });
+  } catch {
+    await message.edit({ components: [] }).catch();
+    void gameChannel.setArchived(true).catch();
+    return;
+  }
+  await component.update({ components: [] });
+
+  switch (component.customId) {
+    case 'damage':
+      await prompt(playerData, gameChannel, component);
+      return;
+    case 'heal':
+      await heal(playerData, gameChannel, component);
+      return;
+    case 'end':
+      await component.update({ embeds: [printStandings(playerData)] });
+      void gameChannel.setArchived(true).catch();
+      break;
+  }
 }
 
-async function heal(
-  playerData: Collection<string, MagicPlayer>,
-  gameChannel: ThreadChannel,
-  interaction: ButtonInteraction,
-): Promise<void> {
-  const players: MessageSelectOptionData[] = [];
+async function heal(playerData: Collection<string, MagicPlayer>, gameChannel: ThreadChannel, interaction: ButtonInteraction): Promise<void> {
+  const players: APISelectMenuOption[] = [];
   for (const [id, player] of playerData) {
     players.push({ label: player.name, value: id });
   }
   const components: MessageEditOptions['components'] = [
     {
-      type: 'ACTION_ROW',
+      type: ComponentType.ActionRow,
       components: [
         {
-          type: 'SELECT_MENU',
-          customId: 'magic-player_select',
+          type: ComponentType.SelectMenu,
+          customId: 'player_select',
           options: players,
         },
       ],
     },
     {
-      type: 'ACTION_ROW',
+      type: ComponentType.ActionRow,
       components: [
         {
-          type: 'BUTTON',
+          type: ComponentType.Button,
           label: 'Submit',
-          customId: 'magic-amount-submit',
-          style: 'PRIMARY',
+          customId: 'amount_submit',
+          style: ButtonStyle.Primary,
         },
         {
-          type: 'BUTTON',
+          type: ComponentType.Button,
           label: '1 Life',
-          customId: 'magic-amount-1',
-          style: 'SECONDARY',
+          customId: 'amount_1',
+          style: ButtonStyle.Secondary,
         },
         {
-          type: 'BUTTON',
+          type: ComponentType.Button,
           label: '2 Life',
-          customId: 'magic-amount-2',
-          style: 'SECONDARY',
+          customId: 'amount_2',
+          style: ButtonStyle.Secondary,
         },
         {
-          type: 'BUTTON',
+          type: ComponentType.Button,
           label: '5 Life',
-          customId: 'magic-amount-5',
-          style: 'SECONDARY',
+          customId: 'amount_5',
+          style: ButtonStyle.Secondary,
         },
         {
-          type: 'BUTTON',
+          type: ComponentType.Button,
           label: '10 Life',
-          customId: 'magic-amount-10',
-          style: 'SECONDARY',
+          customId: 'amount_10',
+          style: ButtonStyle.Secondary,
         },
       ],
     },
   ];
-  await interaction.update({ components: components });
+  const response = await interaction.update({ components: components });
   let responses: [string, number];
   try {
     responses = (await Promise.all([
       new Promise((resolve, reject) => {
-        gameChannel
-          .createMessageComponentCollector({
-            filter: (s) => s.customId === 'magic-player_select',
-            componentType: 'SELECT_MENU',
-            max: 1,
+        response
+          .awaitMessageComponent({
+            componentType: ComponentType.SelectMenu,
             time: 300_000,
           })
-          .once('end', async (s) => {
-            if (!s.at(0)) return reject();
-            components.shift();
-            await s.at(0).update({ components: components });
-            resolve(s.at(0).values[0]);
-          });
+          .then(
+            (component) => {
+              components.shift();
+              void component.update({ components: components }).then(() => {
+                resolve(component.values[0]);
+              });
+            },
+            () => {
+              reject();
+            },
+          );
       }),
       new Promise((resolve, reject) => {
         let amount = 0;
-        const collector = gameChannel
+        const collector = response
           .createMessageComponentCollector({
-            filter: (b) => b.customId.startsWith('magic-amount'),
-            componentType: 'BUTTON',
+            componentType: ComponentType.Button,
             time: 300_000,
           })
           .on('collect', async (b) => {
-            if (b.customId === 'magic-submit') {
+            if (b.customId === 'submit') {
               collector.stop();
               components.pop();
               await b.update({ components: components });
               resolve(amount);
               return;
             }
-            switch (b.customId.split('-')[2]) {
+            switch (b.customId.split('_')[1]) {
               case '1':
                 amount++;
                 break;
@@ -204,14 +196,14 @@ async function heal(
                 break;
             }
             await b.update({
-              embeds: [printStandings(playerData), buildEmbed('info', { title: `Current Amount: ${amount}` })],
+              embeds: [printStandings(playerData), responseEmbed('info', { title: `Current Amount: ${amount}` })],
             });
           })
           .once('end', async (b) => {
             if (!b.at(0)) return reject();
             components.pop();
-            await b.at(0).update({ components: components });
-            resolve(Number.parseInt(b.at(0).customId.split('-')[2]));
+            await b.at(0)!.update({ components: components });
+            resolve(Number.parseInt(b.at(0)!.customId.split('-')[2]));
           });
       }),
     ])) as [string, number];
@@ -220,149 +212,156 @@ async function heal(
     return;
   }
 
-  playerData.get(responses[0]).life += responses[1];
+  playerData.get(responses[0])!.life += responses[1];
   void listen(playerData, gameChannel);
 }
 
-async function prompt(
-  playerData: Collection<string, MagicPlayer>,
-  gameChannel: ThreadChannel,
-  interaction: ButtonInteraction,
-): Promise<void> {
-  const players: MessageSelectOptionData[] = [];
+async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: ThreadChannel, interaction: ButtonInteraction): Promise<void> {
+  const players: APISelectMenuOption[] = [];
   for (const [id, player] of playerData) {
     players.push({ label: player.name, value: id });
   }
-  const components: MessageEditOptions['components'] = [
-    {
-      type: 'ACTION_ROW',
-      components: [
-        {
-          type: 'SELECT_MENU',
-          customId: 'magic-player_select',
-          options: players,
-        },
-      ],
-    },
-    {
-      type: 'ACTION_ROW',
-      components: [
-        {
-          type: 'SELECT_MENU',
-          customId: 'magic-modifiers',
-          maxValues: 2,
-          options: [
-            {
-              label: 'None',
-              value: 'none',
-              description: 'None of the below options',
-            },
-            {
-              label: 'Poison',
-              value: 'poison',
-              description: 'Whether the damage will apply poison counters',
-            },
-            {
-              label: 'Commander',
-              value: 'commander',
-              description: 'Whether the damage will apply commander damage',
-            },
-          ],
-        },
-      ],
-    },
-    {
-      type: 'ACTION_ROW',
-      components: [
-        {
-          type: 'BUTTON',
-          label: 'Submit',
-          customId: 'magic-amount-submit',
-          style: 'PRIMARY',
-        },
-        {
-          type: 'BUTTON',
-          label: '1 Damage',
-          customId: 'magic-amount-1',
-          style: 'SECONDARY',
-        },
-        {
-          type: 'BUTTON',
-          label: '2 Damage',
-          customId: 'magic-amount-2',
-          style: 'SECONDARY',
-        },
-        {
-          type: 'BUTTON',
-          label: '5 Damage',
-          customId: 'magic-amount-5',
-          style: 'SECONDARY',
-        },
-        {
-          type: 'BUTTON',
-          label: '10 Damage',
-          customId: 'magic-amount-10',
-          style: 'SECONDARY',
-        },
-      ],
-    },
-  ];
-  await interaction.update({ components: components });
+  const response = await interaction.update({
+    components: [
+      {
+        type: ComponentType.ActionRow,
+        components: [
+          {
+            type: ComponentType.SelectMenu,
+            customId: 'player_select',
+            options: players,
+          },
+        ],
+      },
+      {
+        type: ComponentType.ActionRow,
+        components: [
+          {
+            type: ComponentType.SelectMenu,
+            customId: 'modifiers',
+            maxValues: 2,
+            options: [
+              {
+                label: 'None',
+                value: 'none',
+                description: 'None of the below options',
+              },
+              {
+                label: 'Poison',
+                value: 'poison',
+                description: 'Whether the damage will apply poison counters',
+              },
+              {
+                label: 'Commander',
+                value: 'commander',
+                description: 'Whether the damage will apply commander damage',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        type: ComponentType.ActionRow,
+        components: [
+          {
+            type: ComponentType.Button,
+            label: 'Submit',
+            customId: 'amount_submit',
+            style: ButtonStyle.Primary,
+          },
+          {
+            type: ComponentType.Button,
+            label: '1 Damage',
+            customId: 'amount_1',
+            style: ButtonStyle.Secondary,
+          },
+          {
+            type: ComponentType.Button,
+            label: '2 Damage',
+            customId: 'amount_2',
+            style: ButtonStyle.Secondary,
+          },
+          {
+            type: ComponentType.Button,
+            label: '5 Damage',
+            customId: 'amount_5',
+            style: ButtonStyle.Secondary,
+          },
+          {
+            type: ComponentType.Button,
+            label: '10 Damage',
+            customId: 'amount_10',
+            style: ButtonStyle.Secondary,
+          },
+        ],
+      },
+    ],
+  });
   let responses: [string[], string[], number];
   try {
     responses = (await Promise.all([
       new Promise((resolve, reject) => {
-        gameChannel
-          .createMessageComponentCollector({
-            filter: (s) => s.customId === 'magic-player_select',
-            componentType: 'SELECT_MENU',
-            max: 1,
+        response
+          .awaitMessageComponent({
+            filter: (s) => s.customId === 'player_select',
+            componentType: ComponentType.SelectMenu,
             time: 300_000,
           })
-          .once('end', async (s) => {
-            if (!s.at(0)) return reject();
-            components.shift();
-            await s.at(0).update({ components: components });
-            resolve([s.at(0).values[0], s.at(0).user.id]);
-          });
+          .then(
+            (component) => {
+              const components = [...component.message.components!];
+              components.shift();
+              void component.update({ components: components }).then(() => {
+                resolve([component.values[0], component.user.id]);
+              });
+            },
+            () => {
+              reject();
+            },
+          );
       }),
       new Promise((resolve, reject) => {
-        gameChannel
-          .createMessageComponentCollector({
-            filter: (s) => s.customId === 'magic-modifiers',
-            componentType: 'SELECT_MENU',
-            max: 1,
+        response
+          .awaitMessageComponent({
+            filter: (s) => s.customId === 'modifiers',
+            componentType: ComponentType.SelectMenu,
             time: 300_000,
           })
-          .once('end', async (s) => {
-            if (!s.at(0)) return reject();
-            for (const [index, component] of components.entries()) {
-              if ((component.components[0] as { customId: string }).customId === 'magic-modifiers') {
-                components.splice(index, 1);
-                break;
+          .then(
+            (component) => {
+              const components = [...component.message.components!];
+              for (const [index, component] of components.entries()) {
+                if ((component.components[0] as MessageActionRowComponent).customId === 'modifiers') {
+                  components.splice(index, 1);
+                  break;
+                }
               }
-            }
-            await s.at(0).update({ components: components });
-            resolve(s.at(0).values);
-          });
+              void component.update({ components: components }).then(() => {
+                resolve(component.values);
+              });
+            },
+            () => {
+              reject();
+            },
+          );
       }),
       new Promise((resolve) => {
         let amount = 0;
-        const collector = gameChannel
+        const collector = response
           .createMessageComponentCollector({
-            filter: (b) => b.customId.startsWith('magic-amount'),
-            componentType: 'BUTTON',
+            componentType: ComponentType.Button,
             time: 300_000,
           })
           .on('collect', async (b) => {
-            if (b.customId === 'magic-submit') {
+            if (b.customId === 'amount_submit') {
               collector.stop();
+              const components = [...b.message.components!];
               components.pop();
               await b.update({ components: components });
               resolve(amount);
               return;
             }
-            switch (b.customId.split('-')[2]) {
+            switch (b.customId.split('_')[1]) {
               case '1':
                 amount++;
                 break;
@@ -377,7 +376,7 @@ async function prompt(
                 break;
             }
             await b.update({
-              embeds: [printStandings(playerData), buildEmbed('info', { title: `Current Amount: ${amount}` })],
+              embeds: [printStandings(playerData), responseEmbed('info', { title: `Current Amount: ${amount}` })],
             });
           });
       }),
@@ -387,7 +386,7 @@ async function prompt(
     return;
   }
 
-  const target = playerData.get(responses[0][0]);
+  const target = playerData.get(responses[0][0])!;
   target.life -= responses[2];
   for (const value of responses[1]) {
     if (value === 'poison') {
@@ -403,10 +402,10 @@ async function prompt(
 }
 
 async function checkStatus(playerData: Collection<string, MagicPlayer>, gameChannel: ThreadChannel, player: string): Promise<void> {
-  if (playerData.get(player).life < 1 || playerData.get(player).poison >= 10) {
+  if (playerData.get(player)!.life < 1 || playerData.get(player)!.poison >= 10) {
     return endGame(playerData, gameChannel, player);
   }
-  for (const [, commander] of playerData.get(player).commanderDamage) {
+  for (const [, commander] of playerData.get(player)!.commanderDamage) {
     if (commander >= 21) {
       return endGame(playerData, gameChannel, player);
     }
@@ -415,23 +414,21 @@ async function checkStatus(playerData: Collection<string, MagicPlayer>, gameChan
 }
 
 async function endGame(playerData: Collection<string, MagicPlayer>, gameChannel: ThreadChannel, player: string): Promise<void> {
-  playerData.get(player).isAlive = false;
+  playerData.get(player)!.isAlive = false;
   if (playerData.filter((user) => user.isAlive).size < 2) {
-    await gameChannel.send({
-      embeds: [
-        buildEmbed('info', {
-          title: `${playerData.filter((player) => player.isAlive).first().name} Wins!`,
-          fields: [
-            {
-              name: `${playerData.filter((player) => player.isAlive).first().name}:`,
-              value: `Life Total: ${playerData.filter((player) => player.isAlive).first().life}\nPoison Counters: ${
-                playerData.filter((player) => player.isAlive).first().poison
-              }`,
-            },
-          ],
-        }),
-      ],
-    });
+    await gameChannel.send(
+      responseOptions('info', {
+        title: `${playerData.filter((player) => player.isAlive)!.first()!.name} Wins!`,
+        fields: [
+          {
+            name: `${playerData.filter((player) => player.isAlive)!.first()!.name}:`,
+            value: `Life Total: ${playerData.filter((player) => player.isAlive)!.first()!.life}\nPoison Counters: ${
+              playerData.filter((player) => player.isAlive)!.first()!.poison
+            }`,
+          },
+        ],
+      }),
+    );
     try {
       void gameChannel.setArchived(true);
     } catch {
@@ -440,17 +437,17 @@ async function endGame(playerData: Collection<string, MagicPlayer>, gameChannel:
   }
 }
 
-function printStandings(playerData: Collection<string, MagicPlayer>): MessageEmbedOptions {
-  const embed = buildEmbed('info', {
+function printStandings(playerData: Collection<string, MagicPlayer>): APIEmbed {
+  const embed = responseEmbed('info', {
     title: 'Current Standings',
     fields: [],
   });
   for (const [, player] of playerData) {
     let value = 'Commander Damage:\n';
     for (const [id, damage] of player.commanderDamage) {
-      value += `${playerData.get(id).name}: ${damage}\n`;
+      value += `${playerData.get(id)!.name}: ${damage}\n`;
     }
-    embed.fields.push({
+    embed.fields!.push({
       name: `${player.name}: ${player.isAlive ? `Life Total: ${player.life}\nPoison Counters: ${player.poison}` : 'ELIMINATED'}`,
       value: value,
     });

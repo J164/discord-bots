@@ -1,13 +1,13 @@
 import { InteractionReplyOptions } from 'discord.js';
-import { buildEmbed } from '../util/builders.js';
-import { GuildChatCommandInfo, GuildChatCommand } from '../util/interfaces.js';
+import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
+import { responseOptions } from '../util/builders.js';
 
 async function stop(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
   await info.queueManager.reset();
-  return { embeds: [buildEmbed('success', { title: 'Success' })] };
+  return responseOptions('success', { title: 'Success' });
 }
 
-export const command: GuildChatCommand = {
+export const command: ChatCommand<'Guild'> = {
   data: {
     name: 'stop',
     description: 'Disconnects Potato Bot from voice',

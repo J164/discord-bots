@@ -1,25 +1,21 @@
-import { InteractionReplyOptions } from 'discord.js';
-import { buildEmbed } from '../util/builders.js';
-import { GlobalChatCommandInfo, GlobalChatCommand } from '../util/interfaces.js';
+import { ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
+import { ChatCommand, GlobalChatCommandInfo } from '../potato-client.js';
+import { responseOptions } from '../util/builders.js';
 
 function roll(info: GlobalChatCommandInfo): InteractionReplyOptions {
-  const dice = info.interaction.options.getInteger('sides') ?? 6;
-  return {
-    embeds: [
-      buildEmbed('info', {
-        title: `${dice}-sided die result`,
-        fields: [
-          {
-            name: `${Math.floor(Math.random() * (dice - 1) + 1)}`,
-            value: `The chance of getting this result is about ${(100 / dice).toPrecision(4)}%`,
-          },
-        ],
-      }),
+  const dice = info.response.interaction.options.getInteger('sides') ?? 6;
+  return responseOptions('info', {
+    title: `${dice}-sided die result`,
+    fields: [
+      {
+        name: `${Math.floor(Math.random() * (dice - 1) + 1)}`,
+        value: `The chance of getting this result is about ${(100 / dice).toPrecision(4)}%`,
+      },
     ],
-  };
+  });
 }
 
-export const command: GlobalChatCommand = {
+export const command: ChatCommand<'Global'> = {
   data: {
     name: 'roll',
     description: 'Roll a die',
@@ -27,7 +23,7 @@ export const command: GlobalChatCommand = {
       {
         name: 'sides',
         description: 'How many sides on the die (defaults to 6)',
-        type: 4,
+        type: ApplicationCommandOptionType.Integer,
         minValue: 2,
         required: false,
       },

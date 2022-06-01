@@ -1,43 +1,33 @@
-import { InteractionReplyOptions } from 'discord.js';
-import { env } from 'node:process';
-import { buildEmbed } from '../util/builders.js';
-import { GlobalChatCommandInfo, GlobalChatCommand } from '../util/interfaces.js';
-import { download } from '../util/ytdl.js';
+import { ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
+import config from '../config.json' assert { type: 'json' };
+import { ChatCommand, GlobalChatCommandInfo } from '../potato-client.js';
+import { responseOptions } from '../util/builders.js';
+import { logger } from '../util/logger.js';
+import { download } from '../voice/ytdl.js';
 
-function downloadVideo(info: GlobalChatCommandInfo): InteractionReplyOptions {
+async function downloadVideo(info: GlobalChatCommandInfo): Promise<InteractionReplyOptions> {
   if (
-    !/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(
-      info.interaction.options.getString('url'),
-    )
+    !/^((http|https):\/\/)?(www\.)?([\d.A-Za-z]{2,256}\.[a-z]{2,6})(\/[\w#%&+./:=?@\\~-]*)?$/.test(info.response.interaction.options.getString('url', true))
   ) {
-    return { embeds: [buildEmbed('error', { title: 'Not a valid url!' })] };
+    return responseOptions('error', { title: 'Not a valid url!' });
   }
-  void info.interaction.editReply({
-    embeds: [buildEmbed('info', { title: 'Downloading...' })],
-  });
-  download(info.interaction.options.getString('url'), {
-    outtmpl: `${env.DOWNLOAD_DIR}/%(title)s.%(ext)s`,
-    format: info.interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best',
-  }).then(
-    () => {
-      void info.interaction
-        .editReply({
-          embeds: [buildEmbed('success', { title: 'Download Successful!' })],
-        })
-        .catch();
-    },
-    (error) => {
-      console.error(error);
-      void info.interaction
-        .editReply({
-          embeds: [buildEmbed('error', { title: 'Download Failed!' })],
-        })
-        .catch();
-    },
-  );
+  void info.response.interaction.editReply(responseOptions('info', { title: 'Downloading...' }));
+  try {
+    await download(info.response.interaction.options.getString('url', true), {
+      outtmpl: `${config.DOWNLOAD_DIRECTORY}/%(title)s.%(ext)s`,
+      format: info.response.interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best',
+    });
+    return responseOptions('success', { title: 'Download Successful!' });
+  } catch (error) {
+    logger.error(
+      { error: error, options: info.response.interaction.options.data },
+      `Chat Command Interaction #${info.response.interaction.id}) threw an error when downloading`,
+    );
+    return responseOptions('error', { title: 'Download Failed!' });
+  }
 }
 
-export const command: GlobalChatCommand = {
+export const command: ChatCommand<'Global'> = {
   data: {
     name: 'download',
     description: 'Download a video off of Youtube',
@@ -45,13 +35,13 @@ export const command: GlobalChatCommand = {
       {
         name: 'url',
         description: 'The url of the video you want to download',
-        type: 3,
+        type: ApplicationCommandOptionType.String,
         required: true,
       },
       {
         name: 'dev',
         description: 'Download the opus encoded webm file for this song',
-        type: 5,
+        type: ApplicationCommandOptionType.Boolean,
         required: false,
       },
     ],

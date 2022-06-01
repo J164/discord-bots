@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 interface APIAuthenticate {
   personId: number;
 }
@@ -111,7 +109,7 @@ interface CourseDiff {
   isFinal?: boolean;
   projectedGrade?: { oldGrade: string; newGrade: string };
   newAssignments: Assignment[];
-  standardScore?: {
+  standardScore: {
     standard: string;
     oldScore: number;
     newScore: number;
@@ -125,7 +123,7 @@ interface GradesDiff {
   courses: CourseDiff[];
 }
 
-export async function fetchCourseData(token: string): Promise<Grades> {
+export async function fetchCourseData(token: string): Promise<Grades | null> {
   const response = await fetch('https://irc.d125.org/users/authenticate', {
     headers: {
       Accept: 'application/json',
@@ -139,7 +137,7 @@ export async function fetchCourseData(token: string): Promise<Grades> {
   });
 
   if (response.status === 400) {
-    return;
+    return null;
   }
 
   const authenticate = (await response.json()) as APIAuthenticate;
@@ -190,9 +188,7 @@ export async function fetchCourseData(token: string): Promise<Grades> {
         manifest.map(async (course, index) => {
           const response = (await (
             await fetch(
-              `https://irc.d125.org/student/gradebookbystudent?sid=${course.sectionId}&pid=${authenticate.personId}&isEBR=${
-                course.ebrFlag ? 'true' : 'false'
-              }`,
+              `https://irc.d125.org/student/gradebookbystudent?sid=${course.sectionId}&pid=${authenticate.personId}&isEBR=${course.ebrFlag ? 'true' : 'false'}`,
               {
                 headers: {
                   Accept: 'application/json',
@@ -243,7 +239,7 @@ export async function fetchCourseData(token: string): Promise<Grades> {
           };
         }),
       )
-    ).filter(Boolean),
+    ).filter(Boolean) as Course[],
   };
 }
 

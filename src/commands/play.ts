@@ -1,21 +1,22 @@
-import { ApplicationCommandOptionChoice, InteractionReplyOptions, VoiceChannel } from 'discord.js';
-import ytsr from 'ytsr';
+import { ApplicationCommandOptionChoiceData, ApplicationCommandOptionType, ChannelType, InteractionReplyOptions } from 'discord.js';
 import ytpl from 'ytpl';
-import request from 'node-fetch';
-import { env } from 'node:process';
-import { buildEmbed } from '../util/builders.js';
-import { GuildChatCommandInfo, GuildAutocompleteInfo, GuildChatCommand } from '../util/interfaces.js';
-import { resolve } from '../util/ytdl.js';
+import ytsr from 'ytsr';
+import config from '../config.json' assert { type: 'json' };
+import { ChatCommand, GuildAutocompleteInfo, GuildChatCommandInfo } from '../potato-client.js';
+import { responseOptions } from '../util/builders.js';
+import { logger } from '../util/logger.js';
+import { resolve } from '../voice/ytdl.js';
+import { QueueItem } from '../voice/queue-manager.js';
 
 interface SpotifyResponse {
   readonly name: string;
   readonly external_urls: { readonly spotify: string };
   readonly images: readonly { readonly url: string }[];
   readonly tracks: {
-    readonly items: {
+    readonly items: readonly {
       readonly track: {
         readonly name: string;
-        readonly artists: {
+        readonly artists: readonly {
           readonly name: string;
         }[];
       };
@@ -23,77 +24,56 @@ interface SpotifyResponse {
   };
 }
 
-async function spotify(info: GuildChatCommandInfo, voiceChannel: VoiceChannel): Promise<InteractionReplyOptions> {
-  const token = (
-    (await (
-      await request('https://accounts.spotify.com/api/token', {
+async function parseUrl(url: string): Promise<{ response: InteractionReplyOptions; songs: QueueItem[] }> {
+  if (/^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=?]+)$/.test(url)) {
+    const token = (await (
+      await fetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: {
-          Authorization: `Basic ${env.SPOTIFY_TOKEN}`,
+          Authorization: `Basic ${config.SPOTIFY_TOKEN}`,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: 'grant_type=client_credentials',
       })
-    ).json()) as { access_token: string }
-  ).access_token;
+    ).json()) as { access_token: string };
 
-  let response: SpotifyResponse;
-  try {
-    response = (await (
-      await request(
-        `https://api.spotify.com/v1/playlists/${
-          /^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_]+)$/.exec(info.interaction.options.getString('name'))[1]
-        }`,
-        { method: 'GET', headers: { Authorization: `Bearer ${token}` } },
-      )
-    ).json()) as SpotifyResponse;
-  } catch {
+    let response: SpotifyResponse;
+    try {
+      response = (await (
+        await fetch(`https://api.spotify.com/v1/playlists/${/^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_]+)$/.exec(url)![1]}`, {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${token.access_token}` },
+        })
+      ).json()) as SpotifyResponse;
+    } catch {
+      throw new Error('Spotify authentication failed');
+    }
+
     return {
-      embeds: [
-        buildEmbed('error', {
-          title: 'Playlist not found! (Make sure it is a public playlist)',
-        }),
-      ],
-    };
-  }
-
-  void info.interaction.editReply({
-    embeds: [buildEmbed('info', { title: 'Locating Songs...' })],
-  });
-
-  const items = (
-    await Promise.all(
-      response.tracks.items.map(async (song) => {
-        const term = await ytsr((await ytsr.getFilters(`${song.track.name} ${song.track.artists[0].name}`)).get('Type').get('Video').url, {
-          limit: 1,
-        });
-        if (term.results < 1) {
-          void info.interaction.channel.send({
-            embeds: [
-              buildEmbed('error', {
-                title: `No results found for "${song.track.name}"`,
-              }),
-            ],
-          });
-          return;
-        }
-        const ytvideo = term.items[0] as ytsr.Video;
-        return {
-          url: ytvideo.url,
-          title: ytvideo.title,
-          duration: ytvideo.duration,
-          thumbnail: ytvideo.bestThumbnail.url,
-        };
-      }),
-    )
-  ).filter(Boolean);
-
-  await info.queueManager.addToQueue(items, info.interaction.options.getInteger('position') - 1);
-  await info.queueManager.connect(voiceChannel);
-
-  return {
-    embeds: [
-      buildEmbed('success', {
+      songs: (
+        await Promise.all(
+          response.tracks.items.map(async (song) => {
+            const filter = (await ytsr.getFilters(`${song.track.name} ${song.track.artists[0].name}`)).get('Type')?.get('Video')?.url;
+            if (!filter) {
+              return;
+            }
+            const term = await ytsr(filter, {
+              limit: 1,
+            });
+            if (term.results < 1) {
+              return;
+            }
+            const ytvideo = term.items[0] as ytsr.Video;
+            return {
+              url: ytvideo.url,
+              title: ytvideo.title,
+              duration: ytvideo.duration!,
+              thumbnail: ytvideo.bestThumbnail.url!,
+            };
+          }),
+        )
+      ).filter(Boolean) as QueueItem[],
+      response: responseOptions('success', {
         title: `Added "${response.name}" to queue!`,
         fields: [
           {
@@ -103,72 +83,42 @@ async function spotify(info: GuildChatCommandInfo, voiceChannel: VoiceChannel): 
         ],
         image: { url: response.images[0].url },
       }),
-    ],
-  };
-}
-
-async function play(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
-  const voiceChannel = (await info.interaction.guild.members.fetch(info.interaction.user)).voice.channel;
-  if (!voiceChannel?.joinable || voiceChannel.type !== 'GUILD_VOICE') {
-    return {
-      content: 'This command can only be used while in a visable voice channel!',
     };
-  }
-  const url = info.interaction.options.getString('name').trim();
-
-  void info.interaction.editReply({
-    embeds: [buildEmbed('info', { title: 'Boiling potatoes...' })],
-  });
-
-  if (/^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=?]+)$/.test(url)) {
-    return spotify(info, voiceChannel);
   }
 
   if (/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/playlist\?list=([A-Za-z\d-_&=?]+)$/.test(url)) {
-    const results = await ytpl(url).catch((): false => {
-      void info.interaction.editReply({
-        embeds: [
-          buildEmbed('error', {
-            title: 'Please enter a valid url (private playlists will not work)',
-          }),
-        ],
-      });
-      return false;
-    });
-    if (!results) return;
-    const items = results.items.map((item) => {
-      return {
-        url: item.shortUrl,
-        title: item.title,
-        duration: item.duration,
-        thumbnail: item.bestThumbnail.url,
-      };
-    });
-    await info.queueManager.addToQueue(items, info.interaction.options.getInteger('position') - 1);
-    await info.queueManager.connect(voiceChannel);
+    let results;
+    try {
+      results = await ytpl(url);
+    } catch {
+      throw new Error('Invalid URL');
+    }
+
     return {
-      embeds: [
-        buildEmbed('success', {
-          title: `Added playlist "${results.title}" to queue!`,
-          fields: [{ name: 'URL:', value: url }],
-          image: { url: results.bestThumbnail.url },
-        }),
-      ],
+      songs: results.items.map((item) => {
+        return {
+          url: item.shortUrl,
+          title: item.title,
+          duration: item.duration!,
+          thumbnail: item.bestThumbnail.url!,
+        };
+      }),
+      response: responseOptions('success', {
+        title: `Added playlist "${results.title}" to queue!`,
+        fields: [{ name: 'URL:', value: url }],
+        image: { url: results.bestThumbnail.url! },
+      }),
     };
   }
 
   if (/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(url)) {
     const result = await resolve(url);
-    if (!result.success) {
-      return {
-        embeds: [buildEmbed('error', { title: 'Not a valid url!' })],
-      };
-    }
     const hour = Math.floor(result.duration / 3600);
     const min = Math.floor((result.duration % 3600) / 60);
     const sec = result.duration % 60;
-    await info.queueManager.addToQueue(
-      [
+
+    return {
+      songs: [
         {
           url: result.webpage_url,
           title: result.title,
@@ -176,65 +126,81 @@ async function play(info: GuildChatCommandInfo): Promise<InteractionReplyOptions
           thumbnail: result.thumbnail,
         },
       ],
-      info.interaction.options.getInteger('position') - 1,
-    );
-    await info.queueManager.connect(voiceChannel);
-    return {
-      embeds: [
-        buildEmbed('success', {
-          title: `Added "${result.title}" to queue!`,
-          fields: [{ name: 'URL:', value: result.webpage_url }],
-          image: { url: result.thumbnail },
-        }),
-      ],
+      response: responseOptions('success', {
+        title: `Added "${result.title}" to queue!`,
+        fields: [{ name: 'URL:', value: result.webpage_url }],
+        image: { url: result.thumbnail },
+      }),
     };
   }
 
-  const term = await ytsr((await ytsr.getFilters(url)).get('Type').get('Video').url, {
+  const filter = (await ytsr.getFilters(url)).get('Type')?.get('Video')?.url;
+  if (!filter) {
+    throw new Error('No results');
+  }
+  const term = await ytsr(filter, {
     limit: 1,
   });
   if (term.results < 1) {
-    return {
-      embeds: [buildEmbed('error', { title: `No results found for "${url}"` })],
-    };
+    throw new Error('No results');
   }
   const result = term.items[0] as ytsr.Video;
-  await info.queueManager.addToQueue(
-    [
+
+  return {
+    songs: [
       {
         url: result.url,
         title: result.title,
-        duration: result.duration,
-        thumbnail: result.bestThumbnail.url,
+        duration: result.duration!,
+        thumbnail: result.bestThumbnail.url!,
       },
     ],
-    info.interaction.options.getInteger('position') - 1,
-  );
-  await info.queueManager.connect(voiceChannel);
-  return {
-    embeds: [
-      buildEmbed('success', {
-        title: `Added "${result.title}" to queue!`,
-        fields: [{ name: 'URL:', value: result.url }],
-        image: { url: result.bestThumbnail.url },
-      }),
-    ],
+    response: responseOptions('success', {
+      title: `Added "${result.title}" to queue!`,
+      fields: [{ name: 'URL:', value: result.url }],
+      image: { url: result.bestThumbnail.url! },
+    }),
   };
 }
 
-async function search(info: GuildAutocompleteInfo): Promise<ApplicationCommandOptionChoice[]> {
+async function play(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
+  const voiceChannel = info.response.interaction.channel?.isVoice() ? info.response.interaction.channel : info.response.interaction.member.voice.channel;
+  if (!voiceChannel?.joinable || voiceChannel.type !== ChannelType.GuildVoice) {
+    return responseOptions('error', { title: 'This command can only be used in a voice channel!' });
+  }
+
+  void info.response.interaction.editReply(responseOptions('info', { title: 'Boiling potatoes...' }));
+
+  let parsed: { songs: QueueItem[]; response: InteractionReplyOptions };
+  try {
+    parsed = await parseUrl(info.response.interaction.options.getString('name', true).trim());
+  } catch (error) {
+    logger.error(
+      { error: error, options: info.response.interaction.options.data },
+      `Chat Command Interaction #${info.response.interaction.id}) threw an error when locating songs`,
+    );
+    return responseOptions('error', { title: 'Song not found' });
+  }
+  await info.queueManager.addToQueue(parsed.songs, info.response.interaction.options.getInteger('position') ?? 0 - 1);
+  await info.queueManager.connect(voiceChannel);
+  return parsed.response;
+}
+
+async function search(info: GuildAutocompleteInfo): Promise<ApplicationCommandOptionChoiceData[]> {
   if (
     (info.option.value as string).length < 3 ||
-    /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(
-      info.option.value as string,
-    ) ||
+    /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(info.option.value as string) ||
     /^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=?]+)$/.test(info.option.value as string)
   )
-    return;
-  const results = await ytsr((await ytsr.getFilters(info.option.value as string)).get('Type').get('Video').url, {
+    return [];
+  const filter = (await ytsr.getFilters(info.option.value as string)).get('Type')?.get('Video')?.url;
+  if (!filter) {
+    return [];
+  }
+  const results = await ytsr(filter, {
     limit: 4,
   });
-  const options = results.items.map((result: ytsr.Video) => {
+  const options = (results.items as ytsr.Video[]).map((result) => {
     return {
       name: result.title,
       value: result.url,
@@ -243,7 +209,7 @@ async function search(info: GuildAutocompleteInfo): Promise<ApplicationCommandOp
   return options;
 }
 
-export const command: GuildChatCommand = {
+export const command: ChatCommand<'Guild'> = {
   data: {
     name: 'play',
     description: 'Play a song',
@@ -251,14 +217,14 @@ export const command: GuildChatCommand = {
       {
         name: 'name',
         description: 'The URL or title of the song',
-        type: 3,
+        type: ApplicationCommandOptionType.String,
         required: true,
         autocomplete: true,
       },
       {
         name: 'position',
         description: 'Where in the queue to put the song (defaults to the end)',
-        type: 4,
+        type: ApplicationCommandOptionType.Integer,
         minValue: 1,
         required: false,
       },

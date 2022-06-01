@@ -1,19 +1,15 @@
 import { InteractionReplyOptions } from 'discord.js';
-import { buildEmbed } from '../util/builders.js';
-import { GuildChatCommandInfo, GuildChatCommand } from '../util/interfaces.js';
+import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
+import { responseOptions } from '../util/builders.js';
 
 async function shuffle(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
   if (await info.queueManager.shuffleQueue()) {
-    return {
-      embeds: [buildEmbed('success', { title: 'Queue shuffled!' })],
-    };
+    return responseOptions('success', { title: 'Queue shuffled!' });
   }
-  return {
-    embeds: [buildEmbed('error', { title: 'There is nothing to shuffle!' })],
-  };
+  return responseOptions('error', { title: 'There is nothing to shuffle!' });
 }
 
-export const command: GuildChatCommand = {
+export const command: ChatCommand<'Guild'> = {
   data: {
     name: 'shuffle',
     description: 'Shuffles the song queue',

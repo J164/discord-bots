@@ -1,25 +1,31 @@
-import { ApplicationCommandOptionChoice, InteractionReplyOptions } from 'discord.js';
-import { buildEmbed } from '../util/builders.js';
-import { GuildChatCommandInfo, GuildAutocompleteInfo, GuildChatCommand } from '../util/interfaces.js';
+import { ApplicationCommandOptionChoiceData, ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
+import { ChatCommand, GuildAutocompleteInfo, GuildChatCommandInfo } from '../potato-client.js';
+import { responseOptions } from '../util/builders.js';
 
 async function skipto(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
-  await info.queueManager.skipTo({
-    index: info.interaction.options.getInteger('index'),
-    title: info.interaction.options.getString('title'),
-  });
-  return { embeds: [buildEmbed('success', { title: 'Success!' })] };
-}
-
-function suggestions(info: GuildAutocompleteInfo): ApplicationCommandOptionChoice[] {
-  return info.queueManager.searchQueue(info.option.value as string).map((result) => {
-    return {
-      name: result.item.title,
-      value: result.item.title,
-    };
+  if (await info.queueManager.skipTo((info.response.interaction.options.getInteger('index') ?? info.response.interaction.options.getString('title'))!)) {
+    return responseOptions('success', {
+      title: 'Success!',
+    });
+  }
+  return responseOptions('error', {
+    title: 'The queue is too small to skip to a specific song!',
   });
 }
 
-export const command: GuildChatCommand = {
+function suggestions(info: GuildAutocompleteInfo): ApplicationCommandOptionChoiceData[] {
+  return info.queueManager
+    .searchQueue(info.option.value as string)
+    .slice(0, 25)
+    .map((result) => {
+      return {
+        name: result.item.title,
+        value: result.item.title,
+      };
+    });
+}
+
+export const command: ChatCommand<'Guild'> = {
   data: {
     name: 'skipto',
     description: 'Pulls the selected song to the top of the queue and skips the current song',
@@ -27,12 +33,12 @@ export const command: GuildChatCommand = {
       {
         name: 'position',
         description: 'Skip to a song based on its position in the queue',
-        type: 1,
+        type: ApplicationCommandOptionType.Subcommand,
         options: [
           {
             name: 'index',
             description: 'The position of the song to skip to',
-            type: 4,
+            type: ApplicationCommandOptionType.Integer,
             minValue: 1,
             required: true,
           },
@@ -41,12 +47,12 @@ export const command: GuildChatCommand = {
       {
         name: 'name',
         description: 'Skip to the first instance of a song based on its name',
-        type: 1,
+        type: ApplicationCommandOptionType.Subcommand,
         options: [
           {
             name: 'title',
             description: 'The name of the song to skip to',
-            type: 3,
+            type: ApplicationCommandOptionType.String,
             required: true,
             autocomplete: true,
           },
