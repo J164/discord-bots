@@ -1,32 +1,29 @@
-import { Intents } from 'discord.js'
-import { BotClient } from './core/bot-client.js'
-import process from 'node:process'
+import { ActivityType, GatewayIntentBits, Partials } from 'discord.js';
+import config from './config.json' assert { type: 'json' };
+import { BotClient } from './bot-client.js';
 
 void new BotClient(
-    {
-        intents: [ Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ],
-        partials: [ 'CHANNEL' ],
-        presence: {
-            status: 'dnd',
-            activities: [ { name: process.env.YEETSTATUS, type: 'PLAYING' } ],
-        },
+  {
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+    partials: [Partials.Channel],
+    presence: {
+      activities: [{ name: config.YEETSTATUS, type: ActivityType.Playing }],
     },
-    {
-        name: 'yeet',
-        guildOptions: {},
-    },
-).on('messageCreate', message => {
+  },
+  'yeet',
+)
+  .on('messageCreate', (message) => {
     if (!message.guild || message.author.bot) {
-        return
+      return;
     }
 
-    const input = message.content.toLowerCase()
+    const input = message.content.toLowerCase();
     if (/(\W|^)yee+t(\W|$)/.test(input)) {
-        // todo yeetstreaks
-        if (input.slice(input.indexOf('yee') + 1, input.indexOf('yee') + 11) === 'eeeeeeeeee') {
-            void message.reply('Wow! Much Yeet!')
-            return
-        }
-        void message.reply('YEEEEEEEEEET!')
+      if (input.slice(input.indexOf('yee') + 1, input.indexOf('yee') + 11) === 'eeeeeeeeee') {
+        void message.reply('Wow! Much Yeet!');
+        return;
+      }
+      void message.reply('YEEEEEEEEEET!');
     }
-}).login(process.env.YEETTOKEN)
+  })
+  .login(config.YEETTOKEN);

@@ -3,5 +3,3 @@ dist
 .vscode
 coverage
 logs
-package-lock.json
-*.config.cjs

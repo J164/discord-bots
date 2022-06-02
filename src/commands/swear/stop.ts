@@ -1,13 +1,17 @@
-import { InteractionReplyOptions } from 'discord.js'
-import { generateEmbed } from '../../core/utils/generators.js'
-import { GuildChatCommand, GuildChatCommandInfo } from '../../core/utils/interfaces.js'
+import { InteractionReplyOptions } from 'discord.js';
+import { ChatCommand, GuildChatCommandInfo } from '../../bot-client.js';
+import { responseOptions } from '../../utils/builders.js';
 
 function stop(info: GuildChatCommandInfo): InteractionReplyOptions {
-    info.voiceManager.reset()
-    return { embeds: [ generateEmbed('success', { title: 'Success' }) ] }
+  info.voiceManager!.reset();
+  return responseOptions('success', { title: 'Success' });
 }
 
-export const command = new GuildChatCommand({
+export const command: ChatCommand<'Guild'> = {
+  data: {
     name: 'stop',
     description: 'Stop the song',
-}, { respond: stop })
+  },
+  respond: stop,
+  type: 'Guild',
+};

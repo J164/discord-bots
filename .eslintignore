@@ -1,6 +1,7 @@
 node_modules
 dist
-tests
-.eslintrc.cjs
-*.config.cjs
-deploy.js
+coverage
+test
+*.js
+*.cjs
+*.d.ts

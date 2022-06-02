@@ -1,73 +1,153 @@
-import { AudioPlayerStatus } from '@discordjs/voice'
-import { ApplicationCommandOptionChoice, InteractionReplyOptions } from 'discord.js'
-import { createReadStream, readFileSync } from 'node:fs'
-import Fuse from 'fuse.js'
-import { generateEmbed } from '../../core/utils/generators.js'
-import process from 'node:process'
-import { GuildAutocompleteInfo, GuildChatCommand, GuildChatCommandInfo } from '../../core/utils/interfaces.js'
+import { ApplicationCommandOptionChoiceData, ApplicationCommandOptionType, ChannelType, InteractionReplyOptions } from 'discord.js';
+import Fuse from 'fuse.js';
+import { readdirSync } from 'node:fs';
+import { ChatCommand, GuildAutocompleteInfo, GuildChatCommandInfo } from '../../bot-client.js';
+import config from '../../config.json' assert { type: 'json' };
+import { responseOptions } from '../../utils/builders.js';
 
 async function play(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
-    const member = await info.interaction.guild.members.fetch(info.interaction.user)
-    const voiceChannel = member.voice.channel
-    if (!voiceChannel?.joinable || voiceChannel.type !== 'GUILD_VOICE') {
-        return { content: 'This command can only be used while in a visable voice channel!' }
-    }
+  const voiceChannel = info.response.interaction.channel?.isVoice() ? info.response.interaction.channel : info.response.interaction.member.voice.channel;
+  if (!voiceChannel?.joinable || voiceChannel.type !== ChannelType.GuildVoice) {
+    return responseOptions('error', { title: 'This command can only be used while in a visable voice channel!' });
+  }
 
-    const songs = (JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' })) as { songs: string[] }).songs
+  const path = `${config.DATA}/music_files/${info.response.interaction.options.getSubcommand()}_ost`;
 
-    let song: number
+  const songs = readdirSync(path).map((value) => {
+    return value.split('.').slice(0, -1).join('.');
+  });
 
-    if (!songs.includes(info.interaction.options.getString('name'))) {
-        const results = new Fuse(songs).search(info.interaction.options.getString('name'))
-        song = results[0].refIndex + 1
-    }
+  const results = new Fuse(songs).search(info.response.interaction.options.getString('name', true));
 
-    song ??= songs.indexOf(info.interaction.options.getString('name')) + 1
-
-    await info.voiceManager.connect(voiceChannel)
-    await info.voiceManager.playStream(createReadStream(`${process.env.DATA}/music_files/naruto_ost/${song}.webm`))
-    if (info.interaction.options.getBoolean('loop')) {
-        info.voiceManager.player.on('stateChange', (oldState, newState) => {
-            if (newState.status !== AudioPlayerStatus.Idle) {
-                return
-            }
-            void info.voiceManager.playStream(createReadStream(`${process.env.DATA}/music_files/naruto_ost/${song}.webm`))
-        })
-    }
-    void info.interaction.editReply({ embeds: [ generateEmbed('success', { title: 'Now Playing!' }) ] })
+  await info.voiceManager!.play(voiceChannel, `${path}/${results[0].item}.webm`, info.response.interaction.options.getBoolean('loop') ?? false);
+  return responseOptions('success', { title: 'Now Playing!' });
 }
 
-function search(info: GuildAutocompleteInfo): ApplicationCommandOptionChoice[] {
-    if ((info.option.value as string).length < 3) {
-        return
-    }
-    const results = new Fuse((JSON.parse(readFileSync('./assets/data/naruto.json', { encoding: 'utf8' })) as { songs: string[] }).songs).search(info.option.value as string)
-    const options: ApplicationCommandOptionChoice[] = []
-    for (const result of results) {
-        if (options.length > 3) {
-            break
-        }
-        options.push({ name: result.item, value: result.item })
-    }
-    return options
+function search(info: GuildAutocompleteInfo): ApplicationCommandOptionChoiceData[] {
+  if ((info.interaction.options.getFocused() as string).length < 3) {
+    return [];
+  }
+  const path = `${config.DATA}/music_files/${info.interaction.options.getSubcommand(true)}_ost`;
+  const songs = readdirSync(path).map((value) => {
+    return value.split('.').slice(0, -1).join('.');
+  });
+  const results = new Fuse(songs).search(info.interaction.options.getFocused() as string);
+  return results.slice(0, 25).map((result) => {
+    return {
+      name: result.item,
+      value: result.item,
+    };
+  });
 }
 
-export const command = new GuildChatCommand({
+export const command: ChatCommand<'Guild'> = {
+  data: {
     name: 'play',
     description: 'Play a song from the Naruto OST',
     options: [
-        {
+      {
+        name: 'naruto',
+        description: 'Play a song from the Naruto OST',
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+          {
             name: 'name',
-            description: 'The name of the song (defaults to a random song)',
-            type: 'STRING',
+            description: 'The name of the song',
+            type: ApplicationCommandOptionType.String,
             autocomplete: true,
             required: true,
-        },
-        {
+          },
+          {
             name: 'loop',
             description: 'Whether to loop the song',
-            type: 'BOOLEAN',
+            type: ApplicationCommandOptionType.Boolean,
             required: false,
-        },
+          },
+        ],
+      },
+      {
+        name: 'death_note',
+        description: 'Play a song from the Death Note OST',
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+          {
+            name: 'name',
+            description: 'The name of the song',
+            type: ApplicationCommandOptionType.String,
+            autocomplete: true,
+            required: true,
+          },
+          {
+            name: 'loop',
+            description: 'Whether to loop the song',
+            type: ApplicationCommandOptionType.Boolean,
+            required: false,
+          },
+        ],
+      },
+      {
+        name: 'subnautica',
+        description: 'Play a song from the Subnautica OST',
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+          {
+            name: 'name',
+            description: 'The name of the song',
+            type: ApplicationCommandOptionType.String,
+            autocomplete: true,
+            required: true,
+          },
+          {
+            name: 'loop',
+            description: 'Whether to loop the song',
+            type: ApplicationCommandOptionType.Boolean,
+            required: false,
+          },
+        ],
+      },
+      {
+        name: 'hollow_knight',
+        description: 'Play a song from the Hollow Knight OST',
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+          {
+            name: 'name',
+            description: 'The name of the song',
+            type: ApplicationCommandOptionType.String,
+            autocomplete: true,
+            required: true,
+          },
+          {
+            name: 'loop',
+            description: 'Whether to loop the song',
+            type: ApplicationCommandOptionType.Boolean,
+            required: false,
+          },
+        ],
+      },
+      {
+        name: 'undertale',
+        description: 'Play a song from the Undertale OST',
+        type: ApplicationCommandOptionType.Subcommand,
+        options: [
+          {
+            name: 'name',
+            description: 'The name of the song',
+            type: ApplicationCommandOptionType.String,
+            autocomplete: true,
+            required: true,
+          },
+          {
+            name: 'loop',
+            description: 'Whether to loop the song',
+            type: ApplicationCommandOptionType.Boolean,
+            required: false,
+          },
+        ],
+      },
     ],
-}, { respond: play, autocomplete: search })
+  },
+  respond: play,
+  autocomplete: search,
+  type: 'Guild',
+};
