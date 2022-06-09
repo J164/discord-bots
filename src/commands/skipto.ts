@@ -14,13 +14,15 @@ async function skipto(info: GuildChatCommandInfo): Promise<InteractionReplyOptio
 }
 
 function suggestions(info: GuildAutocompleteInfo): ApplicationCommandOptionChoiceData[] {
+  if ((info.option.value as string).length < 3) return [];
+
   return info.queueManager
     .searchQueue(info.option.value as string)
     .slice(0, 25)
     .map((result) => {
       return {
-        name: result.item.title,
-        value: result.item.title,
+        name: result.item,
+        value: result.item,
       };
     });
 }

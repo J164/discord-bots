@@ -1,15 +1,4 @@
-import {
-  APIEmbed,
-  APISelectMenuOption,
-  ButtonInteraction,
-  ButtonStyle,
-  Collection,
-  ComponentType,
-  MessageActionRowComponent,
-  MessageEditOptions,
-  ThreadChannel,
-  User,
-} from 'discord.js';
+import { APIEmbed, APISelectMenuOption, ButtonInteraction, ButtonStyle, Collection, ComponentType, MessageEditOptions, ThreadChannel, User } from 'discord.js';
 import { responseEmbed, responseOptions } from '../../util/builders.js';
 
 interface MagicPlayer {
@@ -309,7 +298,7 @@ async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: 
           })
           .then(
             (component) => {
-              const components = [...component.message.components!];
+              const components = [...component.message.components];
               components.shift();
               void component.update({ components: components }).then(() => {
                 resolve([component.values[0], component.user.id]);
@@ -329,9 +318,9 @@ async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: 
           })
           .then(
             (component) => {
-              const components = [...component.message.components!];
+              const components = [...component.message.components];
               for (const [index, component] of components.entries()) {
-                if ((component.components[0] as MessageActionRowComponent).customId === 'modifiers') {
+                if (component.components[0].customId === 'modifiers') {
                   components.splice(index, 1);
                   break;
                 }
@@ -355,7 +344,7 @@ async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: 
           .on('collect', async (b) => {
             if (b.customId === 'amount_submit') {
               collector.stop();
-              const components = [...b.message.components!];
+              const components = [...b.message.components];
               components.pop();
               await b.update({ components: components });
               resolve(amount);

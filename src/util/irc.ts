@@ -180,66 +180,65 @@ export async function fetchCourseData(token: string): Promise<Grades | null> {
     return true;
   });
 
+  const courses = [];
+  for (const course of manifest) {
+    const response = (await (
+      await fetch(
+        `https://irc.d125.org/student/gradebookbystudent?sid=${course.sectionId}&pid=${authenticate.personId}&isEBR=${course.ebrFlag ? 'true' : 'false'}`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            Referer: 'https://irc.d125.org/reportcard',
+            'Content-Type': 'application/json',
+            DNT: '1',
+            Cookie: token,
+          },
+        },
+      )
+    ).json()) as APICourse;
+
+    if (response.assessment.weeklyGrowth === null) {
+      continue;
+    }
+
+    courses.push({
+      name: course.courseName,
+      projectedGrade: response.assessment.projectedGrade,
+      weeklyGrowth: response.assessment.weeklyGrowth,
+      standards: response.assessment.standards.map((standard) => {
+        return {
+          name: standard.standardName,
+          proficiencyScore: standard.proficiency.proficiencyScore,
+          proficiency: {
+            exceedsCount: standard.proficiency.exceedsCount,
+            meetsCount: standard.proficiency.meetsCount,
+            approachingCount: standard.proficiency.approachingCount,
+            developingCount: standard.proficiency.developingCount,
+          },
+          isHomeworkStandard: standard.isHomeworkStandard,
+          assignments: standard.assignments.map((assignment) => {
+            return {
+              name: assignment.activityName,
+              score: assignment.score,
+              assigned: !assignment.isNotAssigned,
+              active: assignment.standardEventActive === 1 ? true : false,
+              isHomework: assignment.isHomework,
+              isMissing: assignment.isMissing,
+              comments: assignment.comments,
+            };
+          }),
+        };
+      }),
+      isFinal: response.assessment.isFinal,
+    });
+  }
+
   return {
     studentId: authenticate.personId.toString(),
     termName: terms[0].termName,
-    courses: (
-      await Promise.all(
-        manifest.map(async (course, index) => {
-          const response = (await (
-            await fetch(
-              `https://irc.d125.org/student/gradebookbystudent?sid=${course.sectionId}&pid=${authenticate.personId}&isEBR=${course.ebrFlag ? 'true' : 'false'}`,
-              {
-                headers: {
-                  Accept: 'application/json',
-                  'Accept-Language': 'en-US,en;q=0.5',
-                  'Accept-Encoding': 'gzip, deflate, br',
-                  Referer: 'https://irc.d125.org/reportcard',
-                  'Content-Type': 'application/json',
-                  DNT: '1',
-                  Cookie: token,
-                },
-              },
-            )
-          ).json()) as APICourse;
-
-          if (response.assessment.weeklyGrowth === null) {
-            return;
-          }
-
-          return {
-            name: manifest[index].courseName,
-            projectedGrade: response.assessment.projectedGrade,
-            weeklyGrowth: response.assessment.weeklyGrowth,
-            standards: response.assessment.standards.map((standard) => {
-              return {
-                name: standard.standardName,
-                proficiencyScore: standard.proficiency.proficiencyScore,
-                proficiency: {
-                  exceedsCount: standard.proficiency.exceedsCount,
-                  meetsCount: standard.proficiency.meetsCount,
-                  approachingCount: standard.proficiency.approachingCount,
-                  developingCount: standard.proficiency.developingCount,
-                },
-                isHomeworkStandard: standard.isHomeworkStandard,
-                assignments: standard.assignments.map((assignment) => {
-                  return {
-                    name: assignment.activityName,
-                    score: assignment.score,
-                    assigned: !assignment.isNotAssigned,
-                    active: assignment.standardEventActive === 1 ? true : false,
-                    isHomework: assignment.isHomework,
-                    isMissing: assignment.isMissing,
-                    comments: assignment.comments,
-                  };
-                }),
-              };
-            }),
-            isFinal: response.assessment.isFinal,
-          };
-        }),
-      )
-    ).filter(Boolean) as Course[],
+    courses: courses,
   };
 }
 

@@ -49,30 +49,29 @@ async function parseUrl(url: string): Promise<{ response: InteractionReplyOption
       throw new Error('Spotify authentication failed');
     }
 
+    const songs = [];
+    for (const song of response.tracks.items) {
+      const filter = (await ytsr.getFilters(`${song.track.name} ${song.track.artists[0].name}`)).get('Type')?.get('Video')?.url;
+      if (!filter) {
+        continue;
+      }
+      const term = await ytsr(filter, {
+        limit: 1,
+      });
+      if (term.results < 1) {
+        continue;
+      }
+      const ytvideo = term.items[0] as ytsr.Video;
+      songs.push({
+        url: ytvideo.url,
+        title: ytvideo.title,
+        duration: ytvideo.duration!,
+        thumbnail: ytvideo.bestThumbnail.url!,
+      });
+    }
+
     return {
-      songs: (
-        await Promise.all(
-          response.tracks.items.map(async (song) => {
-            const filter = (await ytsr.getFilters(`${song.track.name} ${song.track.artists[0].name}`)).get('Type')?.get('Video')?.url;
-            if (!filter) {
-              return;
-            }
-            const term = await ytsr(filter, {
-              limit: 1,
-            });
-            if (term.results < 1) {
-              return;
-            }
-            const ytvideo = term.items[0] as ytsr.Video;
-            return {
-              url: ytvideo.url,
-              title: ytvideo.title,
-              duration: ytvideo.duration!,
-              thumbnail: ytvideo.bestThumbnail.url!,
-            };
-          }),
-        )
-      ).filter(Boolean) as QueueItem[],
+      songs: songs,
       response: responseOptions('success', {
         title: `Added "${response.name}" to queue!`,
         fields: [
@@ -164,7 +163,7 @@ async function parseUrl(url: string): Promise<{ response: InteractionReplyOption
 }
 
 async function play(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
-  const voiceChannel = info.response.interaction.channel?.isVoice() ? info.response.interaction.channel : info.response.interaction.member.voice.channel;
+  const voiceChannel = info.response.interaction.channel?.isVoiceBased() ? info.response.interaction.channel : info.response.interaction.member.voice.channel;
   if (!voiceChannel?.joinable || voiceChannel.type !== ChannelType.GuildVoice) {
     return responseOptions('error', { title: 'This command can only be used in a voice channel!' });
   }
@@ -175,10 +174,7 @@ async function play(info: GuildChatCommandInfo): Promise<InteractionReplyOptions
   try {
     parsed = await parseUrl(info.response.interaction.options.getString('name', true).trim());
   } catch (error) {
-    logger.error(
-      { error: error, options: info.response.interaction.options.data },
-      `Chat Command Interaction #${info.response.interaction.id}) threw an error when locating songs`,
-    );
+    logger.error(error, `Chat Command Interaction #${info.response.interaction.id}) threw an error when locating songs`);
     return responseOptions('error', { title: 'Song not found' });
   }
   await info.queueManager.addToQueue(parsed.songs, info.response.interaction.options.getInteger('position') ?? 0 - 1);

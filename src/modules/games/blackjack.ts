@@ -1,4 +1,4 @@
-import { APIEmbed, ButtonStyle, ComponentType, DMChannel, FileOptions, Message, MessageOptions } from 'discord.js';
+import { APIEmbed, AttachmentPayload, ButtonStyle, ComponentType, DMChannel, Message, MessageOptions } from 'discord.js';
 import { responseEmbed } from '../../util/builders.js';
 import { multicardMessage } from '../../util/card-utils.js';
 import { Card, Deck } from '../../util/deck.js';
@@ -156,7 +156,7 @@ function hit(player: Card[]): number {
   return score;
 }
 
-function printStandings(player: Card[], dealer: Card[], gameEnd?: boolean): { embeds: APIEmbed[]; files: FileOptions[] } {
+function printStandings(player: Card[], dealer: Card[], gameEnd?: boolean): { embeds: APIEmbed[]; files: AttachmentPayload[] } {
   const { embed: playerEmbed, file: playerFile } = multicardMessage(
     'player',
     player,

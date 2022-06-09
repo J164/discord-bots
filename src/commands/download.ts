@@ -19,10 +19,7 @@ async function downloadVideo(info: GlobalChatCommandInfo): Promise<InteractionRe
     });
     return responseOptions('success', { title: 'Download Successful!' });
   } catch (error) {
-    logger.error(
-      { error: error, options: info.response.interaction.options.data },
-      `Chat Command Interaction #${info.response.interaction.id}) threw an error when downloading`,
-    );
+    logger.error(error, `Chat Command Interaction #${info.response.interaction.id}) threw an error when downloading`);
     return responseOptions('error', { title: 'Download Failed!' });
   }
 }

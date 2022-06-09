@@ -1,5 +1,5 @@
 import { createCanvas, Image } from '@napi-rs/canvas';
-import { APIEmbed, FileOptions } from 'discord.js';
+import { APIEmbed, AttachmentPayload } from 'discord.js';
 import { Buffer } from 'node:buffer';
 import { readFileSync } from 'node:fs';
 import { CardCode } from './deck.js';
@@ -15,7 +15,7 @@ function mergeImages(filePaths: string[]): Buffer {
   return activeCanvas.toBuffer('image/png');
 }
 
-export function multicardMessage(name: string, cards: { code: CardCode | 'back' }[], embed: APIEmbed): { embed: APIEmbed; file: FileOptions } {
+export function multicardMessage(name: string, cards: { code: CardCode | 'back' }[], embed: APIEmbed): { embed: APIEmbed; file: AttachmentPayload } {
   const hand = { ...embed, image: { url: `attachment://${name}.png` } };
   if (cards.length === 1) {
     return {

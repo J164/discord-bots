@@ -4,7 +4,7 @@ import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
 import { responseOptions } from '../util/builders.js';
 
 async function featured(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
-  const voiceChannel = info.response.interaction.channel?.isVoice() ? info.response.interaction.channel : info.response.interaction.member.voice.channel;
+  const voiceChannel = info.response.interaction.channel?.isVoiceBased() ? info.response.interaction.channel : info.response.interaction.member.voice.channel;
   if (!voiceChannel?.joinable || voiceChannel.type !== ChannelType.GuildVoice) {
     return responseOptions('error', {
       title: 'This command can only be used in a voice channel!',

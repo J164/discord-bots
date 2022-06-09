@@ -1,5 +1,4 @@
 import { APIEmbed } from 'discord.js';
-import { APIEmbedField } from 'discord.js';
 import { Db } from 'mongodb';
 import cron from 'node-cron';
 import { responseEmbed } from '../util/builders.js';
@@ -32,41 +31,40 @@ export async function gradeReport(token: string, database: Db, task: cron.Schedu
     });
   }
 
+  const fields = diff.newCourses.map((course) => {
+    return {
+      name: `${course.name} was added to IRC`,
+      value: `Your current grade in this class is ${course.projectedGrade || 'not yet calculated'}`,
+    };
+  });
+
+  for (const course of diff.courses) {
+    if (course.isFinal) {
+      fields.push({
+        name: `${course.name} - Grade Finalized!`,
+        value: `${course.projectedGrade!.oldGrade} -> ${course.projectedGrade!.newGrade}`,
+      });
+    } else if (course.projectedGrade) {
+      fields.push({
+        name: `${course.name} - ${course.projectedGrade.oldGrade} -> ${course.projectedGrade.newGrade}`,
+        value:
+          course.standardScore.length > 0
+            ? `${course.standardScore[0].standard}: ${course.standardScore[0].oldScore} -> ${course.standardScore[0].newScore}`
+            : 'Check IRC for more info about this change',
+      });
+    } else if (course.newAssignments.length > 0) {
+      fields.push({
+        name: `You got a ${course.newAssignments[0].score} on assignment "${course.newAssignments[0].name}" in ${course.name}`,
+        value:
+          course.newAssignments.length > 1
+            ? `There were also ${course.newAssignments.length - 1} more assignments added to this class! (Check IRC for details)`
+            : "That's all for now in this class!",
+      });
+    }
+  }
+
   return responseEmbed('info', {
     title: 'IRC Update!',
-    fields: [
-      ...diff.newCourses.map((course) => {
-        return {
-          name: `${course.name} was added to IRC`,
-          value: `Your current grade in this class is ${course.projectedGrade || 'not yet calculated'}`,
-        };
-      }),
-      ...diff.courses.map((course) => {
-        if (course.isFinal) {
-          return {
-            name: `${course.name} - Grade Finalized!`,
-            value: `${course.projectedGrade!.oldGrade} -> ${course.projectedGrade!.newGrade}`,
-          };
-        }
-        if (course.projectedGrade) {
-          return {
-            name: `${course.name} - ${course.projectedGrade.oldGrade} -> ${course.projectedGrade.newGrade}`,
-            value:
-              course.standardScore.length > 0
-                ? `${course.standardScore[0].standard}: ${course.standardScore[0].oldScore} -> ${course.standardScore[0].newScore}`
-                : 'Check IRC for more info about this change',
-          };
-        }
-        if (course.newAssignments.length > 0) {
-          return {
-            name: `You got a ${course.newAssignments[0].score} on assignment "${course.newAssignments[0].name}" in ${course.name}`,
-            value:
-              course.newAssignments.length > 1
-                ? `There were also ${course.newAssignments.length - 1} more assignments added to this class! (Check IRC for details)`
-                : "That's all for now in this class!",
-          };
-        }
-      }),
-    ].filter(Boolean) as APIEmbedField[],
+    fields: fields.slice(0, 25),
   });
 }

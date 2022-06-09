@@ -23,6 +23,9 @@ async function grades(info: GlobalChatCommandInfo): Promise<InteractionReplyOpti
   if (!courseData) {
     return responseOptions('error', { title: 'Token was reset!' });
   }
+  if (courseData.courses.length === 0) {
+    return responseOptions('info', { title: 'No courses yet!' });
+  }
   return {
     embeds: courseData.courses
       .map((course) => {
@@ -44,7 +47,7 @@ async function grades(info: GlobalChatCommandInfo): Promise<InteractionReplyOpti
           ],
         });
       })
-      .slice(0, 9),
+      .slice(0, 10),
   };
 }
 

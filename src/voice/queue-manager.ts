@@ -188,8 +188,12 @@ export class QueueManager {
     });
   }
 
-  public searchQueue(search: string): Fuse.FuseResult<QueueItem>[] {
-    return new Fuse(this._queue, { keys: ['title'], fieldNormWeight: 0 }).search(search);
+  public searchQueue(query: string): Fuse.FuseResult<string>[] {
+    return new Fuse(
+      this._queue.map((item) => {
+        return item.title;
+      }),
+    ).search(query);
   }
 
   public async skipTo(term: string | number): Promise<boolean> {

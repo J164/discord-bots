@@ -1,11 +1,11 @@
-import { ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
+import { ApplicationCommandOptionType, ChannelType, InteractionReplyOptions } from 'discord.js';
 import { playMagic } from '../modules/games/magic-game.js';
 import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
 import { responseOptions } from '../util/builders.js';
 
 async function magic(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
   const channel = await info.response.interaction.guild.channels.fetch(info.response.interaction.channelId);
-  if (!channel?.isText()) {
+  if (!(channel?.isTextBased() && channel.type === ChannelType.GuildText)) {
     return responseOptions('error', { title: 'This command can only be used in text channels' });
   }
   const playerlist = [info.response.interaction.options.getUser('player1', true), info.response.interaction.options.getUser('player2', true)];

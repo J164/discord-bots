@@ -92,7 +92,7 @@ export class PotatoClient extends Client {
             await getDailyReport(date, this._databaseClient.db(config.DATABASE_NAME)),
           );
         } catch (error) {
-          logger.error({ error: error }, `Daily Announcement threw an error`);
+          logger.error(error, `Daily Announcement threw an error`);
           announcementTask.stop();
         }
       });
@@ -105,7 +105,7 @@ export class PotatoClient extends Client {
             embeds: [report],
           });
         } catch (error) {
-          logger.error({ error: error }, 'Grade Monitor threw an error');
+          logger.error(error, 'Grade Monitor threw an error');
           gradeTask.stop();
         }
       });
@@ -120,7 +120,8 @@ export class PotatoClient extends Client {
           try {
             response = await this._autocompleteChatCommand(interaction);
           } catch (error) {
-            logger.error({ error: error, options: interaction.options.data }, `Chat Command Autocomplete #${interaction.id} threw an error`);
+            logger.info({ options: interaction.options.data }, `(${interaction.id}) /${interaction.commandName}`);
+            logger.error(error, `Chat Command Autocomplete #${interaction.id} threw an error`);
             response = [];
           }
 
@@ -136,7 +137,7 @@ export class PotatoClient extends Client {
         try {
           response = await this._respondChatCommand(interaction);
         } catch (error) {
-          logger.error({ error: error, options: interaction.options.data }, `Chat Command Interaction #${interaction.id} threw an error`);
+          logger.error(error, `Chat Command Interaction #${interaction.id} threw an error`);
           response = responseOptions('error', { title: 'Something went wrong!' });
         }
 
