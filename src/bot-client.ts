@@ -8,6 +8,7 @@ import {
   ClientOptions,
   InteractionReplyOptions,
   InteractionResponse,
+  InteractionType,
 } from 'discord.js';
 import { readdirSync } from 'node:fs';
 import { responseOptions } from './utils/builders.js';
@@ -76,12 +77,13 @@ export class BotClient extends Client {
           this._guildInfo.set(interaction.guildId, { voiceManager: new VoiceManager() });
         }
 
-        if (interaction.isAutocomplete()) {
+        if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
           let response: ApplicationCommandOptionChoiceData[];
           try {
             response = await this._autocompleteChatCommand(interaction);
           } catch (error) {
-            logger.error({ error: error, options: interaction.options.data }, `Chat Command Autocomplete #${interaction.id} threw an error`);
+            logger.info({ options: interaction.options.data }, `(${interaction.id}) /${interaction.commandName}`);
+            logger.error(error, `Chat Command Autocomplete #${interaction.id} threw an error`);
             response = [];
           }
 
@@ -97,7 +99,7 @@ export class BotClient extends Client {
         try {
           response = await this._respondChatCommand(interaction);
         } catch (error) {
-          logger.error({ error: error, options: interaction.options.data }, `Chat Command Interaction #${interaction.id} threw an error`);
+          logger.error(error, `Chat Command Interaction #${interaction.id} threw an error`);
           response = responseOptions('error', { title: 'Something went wrong!' });
         }
 

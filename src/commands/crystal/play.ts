@@ -6,7 +6,7 @@ import config from '../../config.json' assert { type: 'json' };
 import { responseOptions } from '../../utils/builders.js';
 
 async function play(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
-  const voiceChannel = info.response.interaction.channel?.isVoice() ? info.response.interaction.channel : info.response.interaction.member.voice.channel;
+  const voiceChannel = info.response.interaction.channel?.isVoiceBased() ? info.response.interaction.channel : info.response.interaction.member.voice.channel;
   if (!voiceChannel?.joinable || voiceChannel.type !== ChannelType.GuildVoice) {
     return responseOptions('error', { title: 'This command can only be used while in a visable voice channel!' });
   }

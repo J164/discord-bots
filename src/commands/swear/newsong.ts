@@ -19,15 +19,12 @@ async function newSong(info: GlobalChatCommandInfo): Promise<InteractionReplyOpt
   const songs = readdirSync(`${config.DATA}/music_files/swear_songs/`);
   try {
     await download(info.response.interaction.options.getString('url', true), {
-      outtmpl: `${config.DATA}/music_files/swear_songs/song${songs.length + 1}.%(ext)s`,
-      format: 'bestaudio[ext=webm][acodec=opus]/bestaudio',
+      outtmpl: `${config.DATA}/music_files/swear_songs/${songs.length + 1}.%(ext)s`,
+      format: 'bestaudio[ext=webm][acodec=opus]',
     });
     return responseOptions('success', { title: 'Success!' });
   } catch (error) {
-    logger.error(
-      { error: error, options: info.response.interaction.options.data },
-      `Chat Command Interaction #${info.response.interaction.id}) threw an error when downloading`,
-    );
+    logger.error(error, `Chat Command Interaction #${info.response.interaction.id}) threw an error when downloading`);
     return responseOptions('error', { title: 'Download Failed!' });
   }
 }
