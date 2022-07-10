@@ -174,7 +174,7 @@ export class Deck {
 
   public shuffle(): this {
     for (let index = this._stack.length - 1; index > 0; index--) {
-      const randomIndex = Math.floor(Math.random() * (index + 1));
+      const randomIndex = Math.floor(Math.random() * index);
       const temporary = this._stack[index];
       this._stack[index] = this._stack[randomIndex];
       this._stack[randomIndex] = temporary;
