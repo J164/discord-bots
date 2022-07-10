@@ -272,7 +272,7 @@ export class QueueManager {
     }
 
     for (let index = this._queue.length - 1; index > 0; index--) {
-      const randomIndex = Math.round(Math.random() * (index - 1));
+      const randomIndex = Math.floor(Math.random() * index);
       const temporary = this._queue[index];
       this._queue[index] = this._queue[randomIndex];
       this._queue[randomIndex] = temporary;
