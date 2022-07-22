@@ -4,6 +4,47 @@ import { Buffer } from 'node:buffer';
 import { readFileSync } from 'node:fs';
 import { CardCode } from './deck.js';
 
+type SuitId = 1 | 2 | 3 | 4
+type RankId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13
+
+class Card {
+  public readonly suit: SuitId
+  public readonly rank: RankId
+
+  public constructor(suit: SuitId, rank: RankId) {
+    this.suit = suit
+    this.rank = rank
+  }
+
+  public get suitName(): string {
+    switch (this.suit) {
+      case 1:
+        return 'spades'
+      case 2:
+        return 'clubs'
+      case 3:
+        return 'diamonds'
+      case 4:
+        return 'hearts'
+    }
+  }
+
+  public get rankName(): string {
+    switch (this.rank) {
+      case 1:
+        return 'ace'
+      case 2:
+        return 'two'
+      case 3:
+        return 'three'
+    }
+  }
+}
+
+class Deck {
+
+}
+
 function mergeImages(filePaths: string[]): Buffer {
   const activeCanvas = createCanvas(filePaths.length < 6 ? (filePaths.length % 6) * 226 : 1130, Math.ceil(filePaths.length / 5) * 314);
   const context = activeCanvas.getContext('2d');

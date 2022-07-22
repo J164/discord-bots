@@ -26,7 +26,7 @@ export interface QueueItem {
 }
 
 export class QueueManager {
-  private readonly _queue: QueueItem[];
+  private _queue: QueueItem[];
   private _voiceConnection: VoiceConnection | null;
   private _voiceChannel: VoiceChannel | null;
   private _player: AudioPlayer | null;
@@ -239,12 +239,17 @@ export class QueueManager {
     return responseOptions('success', { title: 'Now looping queue' });
   }
 
-  public clear(): boolean {
+  public async clear(): Promise<boolean> {
     if (this._queue.length === 0) {
       return false;
     }
 
-    this._queue.length = 0;
+    while (this._queueLock) await setTimeout(200);
+    this._queueLock = true;
+
+    this._queue = [];
+
+    this._queueLock = false;
     this._queueLoop = false;
     return true;
   }
@@ -263,19 +268,16 @@ export class QueueManager {
   }
 
   public async shuffleQueue(): Promise<boolean> {
-    while (this._queueLock) await setTimeout(200);
-    this._queueLock = true;
-
     if (this._queue.length === 0) {
-      this._queueLock = false;
       return false;
     }
 
+    while (this._queueLock) await setTimeout(200);
+    this._queueLock = true;
+
     for (let index = this._queue.length - 1; index > 0; index--) {
-      const randomIndex = Math.floor(Math.random() * index);
-      const temporary = this._queue[index];
-      this._queue[index] = this._queue[randomIndex];
-      this._queue[randomIndex] = temporary;
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [this._queue[index], this._queue[randomIndex]] = [this._queue[randomIndex], this._queue[index]]
     }
 
     this._queueLock = false;
@@ -286,7 +288,7 @@ export class QueueManager {
     while (this._queueLock) await setTimeout(200);
     this._queueLock = true;
 
-    this._queue.length = 0;
+    this._queue = [];
     this._player?.removeAllListeners();
     this._player?.stop();
     this._player = null;

@@ -1,4 +1,14 @@
-import { APIEmbed, APISelectMenuOption, ButtonInteraction, ButtonStyle, Collection, ComponentType, MessageEditOptions, ThreadChannel, User } from 'discord.js';
+import {
+  APIEmbed,
+  APISelectMenuOption,
+  ButtonInteraction,
+  ButtonStyle,
+  Collection,
+  ComponentType,
+  InteractionUpdateOptions,
+  ThreadChannel,
+  User,
+} from 'discord.js';
 import { responseEmbed, responseOptions } from '../../util/builders.js';
 
 interface MagicPlayer {
@@ -81,59 +91,72 @@ async function listen(playerData: Collection<string, MagicPlayer>, gameChannel: 
   }
 }
 
+function healPrompt(players: APISelectMenuOption[], playerResponse: boolean, amountResponse: boolean): InteractionUpdateOptions {
+  return {
+    components: [
+      {
+        type: ComponentType.ActionRow,
+        components: [
+          {
+            type: ComponentType.SelectMenu,
+            customId: 'player_select',
+            options: players,
+            disabled: playerResponse,
+          },
+        ],
+      },
+      {
+        type: ComponentType.ActionRow,
+        components: [
+          {
+            type: ComponentType.Button,
+            label: 'Submit',
+            customId: 'amount_submit',
+            style: ButtonStyle.Primary,
+            disabled: amountResponse,
+          },
+          {
+            type: ComponentType.Button,
+            label: '1 Life',
+            customId: 'amount_1',
+            style: ButtonStyle.Secondary,
+            disabled: amountResponse,
+          },
+          {
+            type: ComponentType.Button,
+            label: '2 Life',
+            customId: 'amount_2',
+            style: ButtonStyle.Secondary,
+            disabled: amountResponse,
+          },
+          {
+            type: ComponentType.Button,
+            label: '5 Life',
+            customId: 'amount_5',
+            style: ButtonStyle.Secondary,
+            disabled: amountResponse,
+          },
+          {
+            type: ComponentType.Button,
+            label: '10 Life',
+            customId: 'amount_10',
+            style: ButtonStyle.Secondary,
+            disabled: amountResponse,
+          },
+        ],
+      },
+    ],
+  };
+}
+
 async function heal(playerData: Collection<string, MagicPlayer>, gameChannel: ThreadChannel, interaction: ButtonInteraction): Promise<void> {
   const players: APISelectMenuOption[] = [];
   for (const [id, player] of playerData) {
     players.push({ label: player.name, value: id });
   }
-  const components: MessageEditOptions['components'] = [
-    {
-      type: ComponentType.ActionRow,
-      components: [
-        {
-          type: ComponentType.SelectMenu,
-          customId: 'player_select',
-          options: players,
-        },
-      ],
-    },
-    {
-      type: ComponentType.ActionRow,
-      components: [
-        {
-          type: ComponentType.Button,
-          label: 'Submit',
-          customId: 'amount_submit',
-          style: ButtonStyle.Primary,
-        },
-        {
-          type: ComponentType.Button,
-          label: '1 Life',
-          customId: 'amount_1',
-          style: ButtonStyle.Secondary,
-        },
-        {
-          type: ComponentType.Button,
-          label: '2 Life',
-          customId: 'amount_2',
-          style: ButtonStyle.Secondary,
-        },
-        {
-          type: ComponentType.Button,
-          label: '5 Life',
-          customId: 'amount_5',
-          style: ButtonStyle.Secondary,
-        },
-        {
-          type: ComponentType.Button,
-          label: '10 Life',
-          customId: 'amount_10',
-          style: ButtonStyle.Secondary,
-        },
-      ],
-    },
-  ];
-  const response = await interaction.update({ components: components });
+  let playerResponse = false;
+  let amountResponse = false;
+  const response = await interaction.update(healPrompt(players, playerResponse, amountResponse));
   let responses: [string, number];
   try {
     responses = (await Promise.all([
@@ -145,8 +168,8 @@ async function heal(playerData: Collection<string, MagicPlayer>, gameChannel: Th
           })
           .then(
             (component) => {
-              components.shift();
-              void component.update({ components: components }).then(() => {
+              playerResponse = true;
+              void component.update(healPrompt(players, playerResponse, amountResponse)).then(() => {
                 resolve(component.values[0]);
               });
             },
@@ -165,8 +188,8 @@ async function heal(playerData: Collection<string, MagicPlayer>, gameChannel: Th
           .on('collect', async (b) => {
             if (b.customId === 'submit') {
               collector.stop();
-              components.pop();
-              await b.update({ components: components });
+              amountResponse = true;
+              await b.update(healPrompt(players, playerResponse, amountResponse));
               resolve(amount);
               return;
             }
@@ -189,10 +212,11 @@ async function heal(playerData: Collection<string, MagicPlayer>, gameChannel: Th
             });
           })
           .once('end', async (b) => {
-            if (!b.at(0)) return reject();
-            components.pop();
-            await b.at(0)!.update({ components: components });
-            resolve(Number.parseInt(b.at(0)!.customId.split('-')[2]));
+            const interaction = b.at(0);
+            if (!interaction) return reject();
+            amountResponse = true;
+            await interaction.update(healPrompt(players, playerResponse, amountResponse));
+            resolve(Number.parseInt(interaction.customId.split('-')[2]));
           });
       }),
     ])) as [string, number];
@@ -205,12 +229,8 @@ async function heal(playerData: Collection<string, MagicPlayer>, gameChannel: Th
   void listen(playerData, gameChannel);
 }
 
-async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: ThreadChannel, interaction: ButtonInteraction): Promise<void> {
-  const players: APISelectMenuOption[] = [];
-  for (const [id, player] of playerData) {
-    players.push({ label: player.name, value: id });
-  }
-  const response = await interaction.update({
+function damagePrompt(players: APISelectMenuOption[], playerResponse: boolean, modifierResponse: boolean, amountResponse: boolean): InteractionUpdateOptions {
+  return {
     components: [
       {
         type: ComponentType.ActionRow,
@@ -219,6 +239,7 @@ async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: 
             type: ComponentType.SelectMenu,
             customId: 'player_select',
             options: players,
+            disabled: playerResponse,
           },
         ],
       },
@@ -246,6 +267,7 @@ async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: 
                 description: 'Whether the damage will apply commander damage',
               },
             ],
+            disabled: modifierResponse,
           },
         ],
       },
@@ -257,35 +279,51 @@ async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: 
             label: 'Submit',
             customId: 'amount_submit',
             style: ButtonStyle.Primary,
+            disabled: amountResponse,
           },
           {
             type: ComponentType.Button,
             label: '1 Damage',
             customId: 'amount_1',
             style: ButtonStyle.Secondary,
+            disabled: amountResponse,
           },
           {
             type: ComponentType.Button,
             label: '2 Damage',
             customId: 'amount_2',
             style: ButtonStyle.Secondary,
+            disabled: amountResponse,
           },
           {
             type: ComponentType.Button,
             label: '5 Damage',
             customId: 'amount_5',
             style: ButtonStyle.Secondary,
+            disabled: amountResponse,
           },
           {
             type: ComponentType.Button,
             label: '10 Damage',
             customId: 'amount_10',
             style: ButtonStyle.Secondary,
+            disabled: amountResponse,
           },
         ],
       },
     ],
-  });
+  };
+}
+
+async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: ThreadChannel, interaction: ButtonInteraction): Promise<void> {
+  const players: APISelectMenuOption[] = [];
+  for (const [id, player] of playerData) {
+    players.push({ label: player.name, value: id });
+  }
+  let playerResponse = false;
+  let modifierResponse = false;
+  let amountResponse = false;
+  const response = await interaction.update(damagePrompt(players, playerResponse, modifierResponse, amountResponse));
   let responses: [string[], string[], number];
   try {
     responses = (await Promise.all([
@@ -298,9 +336,8 @@ async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: 
           })
           .then(
             (component) => {
-              const components = [...component.message.components];
-              components.shift();
-              void component.update({ components: components }).then(() => {
+              playerResponse = true;
+              void component.update(damagePrompt(players, playerResponse, modifierResponse, amountResponse)).then(() => {
                 resolve([component.values[0], component.user.id]);
               });
             },
@@ -318,14 +355,8 @@ async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: 
           })
           .then(
             (component) => {
-              const components = [...component.message.components];
-              for (const [index, component] of components.entries()) {
-                if (component.components[0].customId === 'modifiers') {
-                  components.splice(index, 1);
-                  break;
-                }
-              }
-              void component.update({ components: components }).then(() => {
+              modifierResponse = true;
+              void component.update(damagePrompt(players, playerResponse, modifierResponse, amountResponse)).then(() => {
                 resolve(component.values);
               });
             },
@@ -344,9 +375,8 @@ async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: 
           .on('collect', async (b) => {
             if (b.customId === 'amount_submit') {
               collector.stop();
-              const components = [...b.message.components];
-              components.pop();
-              await b.update({ components: components });
+              amountResponse = true;
+              await b.update(damagePrompt(players, playerResponse, modifierResponse, amountResponse));
               resolve(amount);
               return;
             }

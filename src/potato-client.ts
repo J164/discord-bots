@@ -8,6 +8,7 @@ import {
   ClientOptions,
   InteractionReplyOptions,
   InteractionResponse,
+  InteractionType,
   TextChannel,
 } from 'discord.js';
 import { Db, MongoClient } from 'mongodb';
@@ -115,7 +116,7 @@ export class PotatoClient extends Client {
           this._guildInfo.set(interaction.guildId, { queueManager: new QueueManager() });
         }
 
-        if (interaction.isAutocomplete()) {
+        if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
           let response: ApplicationCommandOptionChoiceData[];
           try {
             response = await this._autocompleteChatCommand(interaction);
