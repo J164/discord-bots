@@ -1,6 +1,6 @@
 import { InteractionReplyOptions } from 'discord.js';
+import { ChatCommand, GlobalChatCommandInfo } from '../index.js';
 import { playBlackjack } from '../modules/games/blackjack.js';
-import { ChatCommand, GlobalChatCommandInfo } from '../potato-client.js';
 import { responseOptions } from '../util/builders.js';
 
 async function blackjack(info: GlobalChatCommandInfo): Promise<InteractionReplyOptions> {

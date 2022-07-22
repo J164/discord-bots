@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType, ChannelType, InteractionReplyOptions } from 'discord.js';
+import { ChatCommand, GuildChatCommandInfo } from '../index.js';
 import { playEuchre } from '../modules/games/euchre.js';
-import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
 import { responseOptions } from '../util/builders.js';
 
 async function euchre(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {

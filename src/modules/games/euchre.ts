@@ -1,15 +1,14 @@
-import { APISelectMenuOption, ButtonStyle, ComponentType, MessageOptions, ThreadChannel, User } from 'discord.js';
+import { APISelectMenuOption, ButtonStyle, ComponentType, ThreadChannel, User } from 'discord.js';
 import { setTimeout } from 'node:timers';
 import { responseEmbed, responseOptions } from '../../util/builders.js';
-import { multicardMessage } from '../../util/card-utils.js';
-import { Card, Deck, Suit } from '../../util/deck.js';
+import { Card, CardRank, CardSuit, Deck, multicardMessage } from '../../util/card-utils.js';
 
 interface GameInfo {
   readonly team1: EuchreTeam;
   readonly team2: EuchreTeam;
   readonly players: EuchrePlayer[];
   gameChannel: ThreadChannel;
-  trump?: Suit;
+  trump?: CardSuit;
 }
 
 interface EuchreTeam {
@@ -85,23 +84,24 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
       ],
     }),
   );
-  const draws = Deck.randomCard({
-    number: 21,
-    noRepeats: true,
-    codes: ['9S', '9D', '9C', '9H', '0S', '0D', '0C', '0H', 'JS', 'JD', 'JC', 'JH', 'QS', 'QD', 'QC', 'QH', 'KS', 'KD', 'KC', 'KH', 'AS', 'AD', 'AC', 'AH'],
-  });
-  for (const [index, player] of gameInfo.players.entries()) {
-    for (let r = index; r < 17 + index; r += 4) {
-      player.hand.push(draws[r]);
+  const draws = new Deck({ ranks: [1, 9, 10, 11, 12, 13] }).shuffle();
+  for (const player of gameInfo.players) {
+    for (let r = 0; r < 5; r++) {
+      player.hand.push(draws.drawCard()!);
     }
   }
-  const top = draws[20];
+  const top = draws.drawCard()!;
   for (const player of gameInfo.players) {
     const channel = await player.user.createDM();
-    const { embed, file } = multicardMessage('hand', player.hand, responseEmbed('info', { title: 'Your Hand:' }));
+    const { embed, file } = multicardMessage(
+      player.hand.map((card) => {
+        return card.cardCode;
+      }),
+      responseEmbed('info', { title: 'Your Hand:' }),
+    );
     await channel.send({ embeds: [embed], files: [file] });
   }
-  const { embed, file } = multicardMessage('top', [top], responseEmbed('info', { title: 'Top of Stack:' }));
+  const { embed, file } = multicardMessage([top.cardCode], responseEmbed('info', { title: 'Top of Stack:' }));
   await gameInfo.gameChannel.send({ embeds: [embed], files: [file] });
 
   const promptThree = async (index: number): Promise<void> => {
@@ -158,11 +158,14 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 
   const promptTwo = async (index = 0): Promise<void> => {
     const { embed, file } = multicardMessage(
-      'hand',
-      gameInfo.players[index].hand,
+      gameInfo.players[index].hand.map((card) => {
+        return card.cardCode;
+      }),
       responseEmbed('info', { title: index === 3 ? 'Please select trump' : 'Would you like to pass or select trump?' }),
     );
-    const promptTemplate: MessageOptions = {
+    const message = await (
+      await gameInfo.players[index].user.createDM()
+    ).send({
       embeds: [embed],
       files: [file],
       components: [
@@ -176,44 +179,37 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
               options: [
                 {
                   label: 'Spades',
-                  value: 'Spades',
+                  value: '1',
                   emoji: '\u2660\uFE0F',
                 },
                 {
                   label: 'Clubs',
-                  value: 'Clubs',
+                  value: '2',
                   emoji: '\u2663\uFE0F',
                 },
                 {
                   label: 'Hearts',
-                  value: 'Hearts',
+                  value: '3',
                   emoji: '\u2665\uFE0F',
                 },
                 {
                   label: 'Diamonds',
-                  value: 'Diamonds',
+                  value: '4',
                   emoji: '\u2666\uFE0F',
                 },
               ],
             },
+            {
+              type: ComponentType.Button,
+              customId: 'pass',
+              label: 'Pass',
+              style: ButtonStyle.Secondary,
+              disabled: index === 3,
+            },
           ],
         },
       ],
-    };
-    if (index !== 3) {
-      promptTemplate.components!.push({
-        type: ComponentType.ActionRow,
-        components: [
-          {
-            type: ComponentType.Button,
-            customId: 'pass',
-            label: 'Pass',
-            style: ButtonStyle.Secondary,
-          },
-        ],
-      });
-    }
-    const message = await (await gameInfo.players[index].user.createDM()).send(promptTemplate);
+    });
     let component;
     try {
       component = await message.awaitMessageComponent({
@@ -227,7 +223,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
       });
 
       if (index === 3) {
-        gameInfo.trump = 'Clubs';
+        gameInfo.trump = 0 as CardSuit;
         void promptThree(index);
         return;
       }
@@ -240,7 +236,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
     });
 
     if (component.isSelectMenu()) {
-      gameInfo.trump = component.customId as Suit;
+      gameInfo.trump = Number.parseInt(component.values[0]) as CardSuit;
       void promptThree(index);
       return;
     }
@@ -248,7 +244,12 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
   };
 
   const promptReplace = async (index: number): Promise<void> => {
-    const { embed, file } = multicardMessage('hand', gameInfo.players[3].hand, responseEmbed('info', { title: 'Select a card to replace' }));
+    const { embed, file } = multicardMessage(
+      gameInfo.players[3].hand.map((card) => {
+        return card.cardCode;
+      }),
+      responseEmbed('info', { title: 'Select a card to replace' }),
+    );
     const message = await (
       await gameInfo.players[3].user.createDM()
     ).send({
@@ -264,7 +265,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
               placeholder: 'Select a Card',
               options: gameInfo.players[3].hand.map((card, index) => {
                 return {
-                  label: `${card.name} of ${card.suit}`,
+                  label: `${card.rankName} of ${card.suitName}`,
                   value: index.toString(),
                 };
               }),
@@ -365,7 +366,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
   void promptOne();
 }
 
-async function round(gameInfo: GameInfo, leader: number, solo = false, table: string[] = [], lead?: 'H' | 'D' | 'S' | 'C', index = 0): Promise<void> {
+async function round(gameInfo: GameInfo, leader: number, solo = false, table: Card[] = [], lead?: CardSuit, index = 0): Promise<void> {
   if (gameInfo.players[index].out) {
     if (index === 3) {
       return;
@@ -373,23 +374,28 @@ async function round(gameInfo: GameInfo, leader: number, solo = false, table: st
     return round(gameInfo, leader, solo, table, lead, index + 1);
   }
   const legalPlays: APISelectMenuOption[] = [];
-  for (const card of gameInfo.players[index].hand) {
-    if (!lead || lead === realSuit(gameInfo.trump!, card)[0]) {
+  for (const [id, card] of gameInfo.players[index].hand.entries()) {
+    if (!lead || lead === realSuit(gameInfo.trump!, card)) {
       legalPlays.push({
-        label: `${card.name} of ${card.suit}`,
-        value: card.code,
+        label: `${card.rankName} of ${card.suitName}`,
+        value: id.toString(),
       });
     }
   }
   if (legalPlays.length === 0) {
-    for (const card of gameInfo.players[index].hand) {
+    for (const [id, card] of gameInfo.players[index].hand.entries()) {
       legalPlays.push({
-        label: `${card.name} of ${card.suit}`,
-        value: card.code,
+        label: `${card.rankName} of ${card.suitName}`,
+        value: id.toString(),
       });
     }
   }
-  const { embed, file } = multicardMessage('hand', gameInfo.players[index].hand, responseEmbed('info', { title: 'Select a card to play' }));
+  const { embed, file } = multicardMessage(
+    gameInfo.players[index].hand.map((card) => {
+      return card.cardCode;
+    }),
+    responseEmbed('info', { title: 'Select a card to play' }),
+  );
   const message = await (
     await gameInfo.players[index].user.createDM()
   ).send({
@@ -421,12 +427,9 @@ async function round(gameInfo: GameInfo, leader: number, solo = false, table: st
       files: [],
     });
 
-    table.push(component.values[0]);
-    lead ??= component.values[0][1] as 'H' | 'D' | 'S' | 'C';
-    gameInfo.players[index].hand.splice(
-      gameInfo.players[index].hand.findIndex((c) => c.code === component.values[0]),
-      1,
-    );
+    const playedCard = gameInfo.players[index].hand.splice(Number.parseInt(component.values[0]))[0];
+    table.push(playedCard);
+    lead ??= playedCard.suit;
   } catch {
     await message.edit({
       embeds: [responseEmbed('success', { title: 'Success!' })],
@@ -434,9 +437,9 @@ async function round(gameInfo: GameInfo, leader: number, solo = false, table: st
       files: [],
     });
 
-    table.push(gameInfo.players[index].hand[0].code);
-    lead ??= gameInfo.players[index].hand[0].code[1] as 'H' | 'D' | 'S' | 'C';
-    gameInfo.players[index].hand.shift();
+    const playedCard = gameInfo.players[index].hand.splice(Number.parseInt(legalPlays[0].value))[0];
+    table.push(playedCard);
+    lead ??= playedCard.suit;
   }
 
   if (index === 3) {
@@ -505,74 +508,57 @@ async function finish(gameInfo: GameInfo, winningTeam: EuchreTeam): Promise<void
 }
 
 // eslint-disable-next-line complexity
-async function determineTrick(gameInfo: GameInfo, table: string[], lead: 'H' | 'D' | 'S' | 'C', leader: number, solo: boolean): Promise<void> {
+async function determineTrick(gameInfo: GameInfo, table: Card[], lead: CardSuit, leader: number, solo: boolean): Promise<void> {
   let leadingPlayer: number;
   let leadingScore = 0;
-  for (const [id, code] of table.entries()) {
-    if (code[1] !== lead && code[1] !== gameInfo.trump![0]) {
+  for (const [id, card] of table.entries()) {
+    if (card.suit !== lead && card.suit !== gameInfo.trump!) {
       continue;
     }
     let score: number;
-    let inverse: 'H' | 'D' | 'S' | 'C';
-    switch (gameInfo.trump![0]) {
-      case 'H':
-        inverse = 'D';
-        break;
-      case 'D':
-        inverse = 'H';
-        break;
-      case 'S':
-        inverse = 'C';
-        break;
-      case 'C':
-        inverse = 'S';
-        break;
-      default:
-        throw new Error('Invalid suit');
-    }
-    if (code === `J${inverse}`) {
+    if (card.rank === CardRank.Jack && card.suit === invertSuit(gameInfo.trump!)) {
       score = 12;
-    } else if (code[1] === gameInfo.trump![0]) {
-      switch (code[0]) {
-        case '9':
+    } else if (card.suit === gameInfo.trump) {
+      switch (card.rank) {
+        case CardRank.Nine:
           score = 7;
           break;
-        case '0':
+        case CardRank.Ten:
           score = 8;
           break;
-        case 'Q':
+        case CardRank.Queen:
           score = 9;
           break;
-        case 'K':
+        case CardRank.King:
           score = 10;
           break;
-        case 'A':
+        case CardRank.Ace:
           score = 11;
           break;
-        case 'J':
+        case CardRank.Jack:
           score = 13;
           break;
         default:
           throw new Error('Invalid card value');
       }
     } else {
-      switch (code[0]) {
-        case '9':
+      switch (card.rank) {
+        case CardRank.Nine:
           score = 1;
           break;
-        case '0':
+        case CardRank.Ten:
           score = 2;
           break;
-        case 'J':
+        case CardRank.Jack:
           score = 3;
           break;
-        case 'Q':
+        case CardRank.Queen:
           score = 4;
           break;
-        case 'K':
+        case CardRank.King:
           score = 5;
           break;
-        case 'A':
+        case CardRank.Ace:
           score = 6;
           break;
         default:
@@ -606,32 +592,19 @@ async function determineTrick(gameInfo: GameInfo, table: string[], lead: 'H' | '
   void round(gameInfo, leader, solo);
 }
 
-function realSuit(trump: Suit, card: Card): Suit {
-  if (card.code[0] !== 'J') {
-    return card.suit;
+function invertSuit(suit: CardSuit): CardSuit {
+  switch (suit) {
+    case CardSuit.Spades:
+      return CardSuit.Clubs;
+    case CardSuit.Clubs:
+      return CardSuit.Spades;
+    case CardSuit.Hearts:
+      return CardSuit.Diamonds;
+    case CardSuit.Diamonds:
+      return CardSuit.Hearts;
   }
-  switch (card.suit) {
-    case 'Clubs':
-      if (trump === 'Spades') {
-        return 'Spades';
-      }
-      return 'Clubs';
-    case 'Spades':
-      if (trump === 'Clubs') {
-        return 'Clubs';
-      }
-      return 'Spades';
-    case 'Hearts':
-      if (trump === 'Diamonds') {
-        return 'Diamonds';
-      }
-      return 'Hearts';
-    case 'Diamonds':
-      if (trump === 'Hearts') {
-        return 'Hearts';
-      }
-      return 'Diamonds';
-    default:
-      throw new Error('Invalid suit');
-  }
+}
+
+function realSuit(trump: CardSuit, card: Card): CardSuit {
+  return card.rank === CardRank.Jack && card.suit === invertSuit(trump) ? trump : card.suit;
 }

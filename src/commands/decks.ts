@@ -1,5 +1,5 @@
 import { ButtonStyle, ComponentType, InteractionReplyOptions, InteractionUpdateOptions } from 'discord.js';
-import { ChatCommand, GlobalChatCommandInfo } from '../potato-client.js';
+import { ChatCommand, GlobalChatCommandInfo } from '../index.js';
 import { Emojis, responseEmbed } from '../util/builders.js';
 
 interface MagicCard {

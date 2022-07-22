@@ -277,7 +277,7 @@ export class QueueManager {
 
     for (let index = this._queue.length - 1; index > 0; index--) {
       const randomIndex = Math.floor(Math.random() * (index + 1));
-      [this._queue[index], this._queue[randomIndex]] = [this._queue[randomIndex], this._queue[index]]
+      [this._queue[index], this._queue[randomIndex]] = [this._queue[randomIndex], this._queue[index]];
     }
 
     this._queueLock = false;

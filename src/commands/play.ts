@@ -2,11 +2,11 @@ import { ApplicationCommandOptionChoiceData, ApplicationCommandOptionType, Chann
 import ytpl from 'ytpl';
 import ytsr from 'ytsr';
 import config from '../config.json' assert { type: 'json' };
-import { ChatCommand, GuildAutocompleteInfo, GuildChatCommandInfo } from '../potato-client.js';
+import { ChatCommand, GuildAutocompleteInfo, GuildChatCommandInfo } from '../index.js';
 import { responseOptions } from '../util/builders.js';
 import { logger } from '../util/logger.js';
-import { resolve } from '../voice/ytdl.js';
 import { QueueItem } from '../voice/queue-manager.js';
+import { resolve } from '../voice/ytdl.js';
 
 interface SpotifyResponse {
   readonly name: string;
@@ -183,13 +183,14 @@ async function play(info: GuildChatCommandInfo): Promise<InteractionReplyOptions
 }
 
 async function search(info: GuildAutocompleteInfo): Promise<ApplicationCommandOptionChoiceData[]> {
+  const value = info.interaction.options.getFocused(true).value;
   if (
-    (info.option.value as string).length < 3 ||
-    /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(info.option.value as string) ||
-    /^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=?]+)$/.test(info.option.value as string)
+    value.length < 3 ||
+    /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(value) ||
+    /^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=?]+)$/.test(value)
   )
     return [];
-  const filter = (await ytsr.getFilters(info.option.value as string)).get('Type')?.get('Video')?.url;
+  const filter = (await ytsr.getFilters(value)).get('Type')?.get('Video')?.url;
   if (!filter) {
     return [];
   }

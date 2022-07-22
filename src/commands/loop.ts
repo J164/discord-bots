@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
-import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
+import { ChatCommand, GuildChatCommandInfo } from '../index.js';
 
 function loop(info: GuildChatCommandInfo): InteractionReplyOptions {
   if (info.response.interaction.options.getSubcommand() === 'current') {

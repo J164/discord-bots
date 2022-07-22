@@ -1,5 +1,5 @@
 import { InteractionReplyOptions } from 'discord.js';
-import { ChatCommand } from '../potato-client.js';
+import { ChatCommand } from '../index.js';
 import { responseOptions } from '../util/builders.js';
 
 function flip(): InteractionReplyOptions {

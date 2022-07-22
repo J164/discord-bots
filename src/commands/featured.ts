@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType, ChannelType, InteractionReplyOptions } from 'discord.js';
 import ytpl from 'ytpl';
-import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
+import { ChatCommand, GuildChatCommandInfo } from '../index.js';
 import { responseOptions } from '../util/builders.js';
 
 async function featured(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {

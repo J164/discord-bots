@@ -1,5 +1,5 @@
 import { InteractionReplyOptions } from 'discord.js';
-import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
+import { ChatCommand, GuildChatCommandInfo } from '../index.js';
 
 function nowPlaying(info: GuildChatCommandInfo): InteractionReplyOptions {
   return info.queueManager.nowPlaying;

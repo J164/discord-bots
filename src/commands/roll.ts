@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
-import { ChatCommand, GlobalChatCommandInfo } from '../potato-client.js';
+import { ChatCommand, GlobalChatCommandInfo } from '../index.js';
 import { responseOptions } from '../util/builders.js';
 
 function roll(info: GlobalChatCommandInfo): InteractionReplyOptions {

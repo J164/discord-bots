@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionChoiceData, ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
-import { ChatCommand, GuildAutocompleteInfo, GuildChatCommandInfo } from '../potato-client.js';
+import { ChatCommand, GuildAutocompleteInfo, GuildChatCommandInfo } from '../index.js';
 import { responseOptions } from '../util/builders.js';
 
 async function skipto(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
@@ -14,10 +14,11 @@ async function skipto(info: GuildChatCommandInfo): Promise<InteractionReplyOptio
 }
 
 function suggestions(info: GuildAutocompleteInfo): ApplicationCommandOptionChoiceData[] {
-  if ((info.option.value as string).length < 3) return [];
+  const value = info.interaction.options.getFocused(true).value;
+  if (value.length < 3) return [];
 
   return info.queueManager
-    .searchQueue(info.option.value as string)
+    .searchQueue(value)
     .slice(0, 25)
     .map((result) => {
       return {

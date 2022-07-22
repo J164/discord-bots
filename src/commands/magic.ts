@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType, ChannelType, InteractionReplyOptions } from 'discord.js';
+import { ChatCommand, GuildChatCommandInfo } from '../index.js';
 import { playMagic } from '../modules/games/magic-game.js';
-import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
 import { responseOptions } from '../util/builders.js';
 
 async function magic(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {

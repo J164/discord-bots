@@ -1,19 +1,12 @@
 import { APIEmbed, AttachmentPayload, ButtonStyle, ComponentType, DMChannel, Message, MessageOptions } from 'discord.js';
 import { responseEmbed } from '../../util/builders.js';
-import { multicardMessage } from '../../util/card-utils.js';
-import { Card, Deck } from '../../util/deck.js';
+import { Card, CardRank, Deck, multicardMessage } from '../../util/card-utils.js';
 
 type Result = 'Bust' | 'Push' | 'Blackjack' | 'Win' | 'Lose';
 
 export async function playBlackjack(channel: DMChannel): Promise<void> {
-  const dealer = Deck.randomCard({
-    number: 2,
-    values: [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11],
-  });
-  const player = Deck.randomCard({
-    number: 2,
-    values: [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11],
-  });
+  const dealer = Deck.randomCards(2, {});
+  const player = Deck.randomCards(2, {});
 
   const prompt = async () => {
     const message = await channel.send({
@@ -131,10 +124,18 @@ function scoreHand(hand: Card[]): number {
   let numberAces = 0;
   let score = 0;
   for (const card of hand) {
-    if (card.name === 'ace') {
+    if (card.rank === CardRank.Ace) {
       numberAces++;
+      score += 11;
+      continue;
     }
-    score += card.value;
+
+    if (card.rank > 10) {
+      score += 10;
+      continue;
+    }
+
+    score += card.rank;
   }
 
   while (score > 21 && numberAces > 0) {
@@ -146,11 +147,7 @@ function scoreHand(hand: Card[]): number {
 }
 
 function hit(player: Card[]): number {
-  player.push(
-    Deck.randomCard({
-      values: [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11],
-    })[0],
-  );
+  player.push(Deck.randomCard({}));
   const score = scoreHand(player);
   if (score > 21) return -1;
   return score;
@@ -158,16 +155,20 @@ function hit(player: Card[]): number {
 
 function printStandings(player: Card[], dealer: Card[], gameEnd?: boolean): { embeds: APIEmbed[]; files: AttachmentPayload[] } {
   const { embed: playerEmbed, file: playerFile } = multicardMessage(
-    'player',
-    player,
+    player.map((card) => {
+      return card.cardCode;
+    }),
     responseEmbed('info', {
       title: 'Player',
       fields: [{ name: 'Value:', value: scoreHand(player).toString(), inline: true }],
     }),
   );
   const { embed: dealerEmbed, file: dealerFile } = multicardMessage(
-    'dealer',
-    gameEnd ? dealer : [dealer[0], { code: 'back' }],
+    gameEnd
+      ? dealer.map((card) => {
+          return card.cardCode;
+        })
+      : [dealer[0].cardCode, 'back'],
     responseEmbed('info', {
       title: 'Dealer',
       fields: [
@@ -187,11 +188,7 @@ function printStandings(player: Card[], dealer: Card[], gameEnd?: boolean): { em
 
 function finishGame(player: Card[], dealer: Card[]): Result {
   while (scoreHand(dealer) < 17) {
-    dealer.push(
-      Deck.randomCard({
-        values: [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11],
-      })[0],
-    );
+    dealer.push(Deck.randomCard({}));
   }
 
   const playerScore = scoreHand(player);

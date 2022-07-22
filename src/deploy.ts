@@ -1,8 +1,8 @@
-import { readdirSync } from 'node:fs';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v10';
+import { readdirSync } from 'node:fs';
 import { env } from 'node:process';
-import { ChatCommand } from './potato-client.js';
+import { ChatCommand } from './index.js';
 
 const commandData = await Promise.all(
   readdirSync('./dist/src/commands')

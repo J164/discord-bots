@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
-import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
+import { ChatCommand, GuildChatCommandInfo } from '../index.js';
 import { responseOptions } from '../util/builders.js';
 
 async function nick(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {

@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
 import config from '../config.json' assert { type: 'json' };
-import { ChatCommand, GlobalChatCommandInfo } from '../potato-client.js';
+import { ChatCommand, GlobalChatCommandInfo } from '../index.js';
 import { responseOptions } from '../util/builders.js';
 import { logger } from '../util/logger.js';
 import { download } from '../voice/ytdl.js';

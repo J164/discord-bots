@@ -1,6 +1,6 @@
 import { InteractionReplyOptions } from 'discord.js';
 import config from '../config.json' assert { type: 'json' };
-import { ChatCommand, GlobalChatCommandInfo } from '../potato-client.js';
+import { ChatCommand, GlobalChatCommandInfo } from '../index.js';
 import { responseEmbed, responseOptions } from '../util/builders.js';
 import { fetchCourseData, Standard } from '../util/irc.js';
 

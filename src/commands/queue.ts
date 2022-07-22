@@ -1,5 +1,5 @@
 import { ButtonStyle, ComponentType, InteractionReplyOptions, InteractionUpdateOptions } from 'discord.js';
-import { ChatCommand, GuildChatCommandInfo } from '../potato-client.js';
+import { ChatCommand, GuildChatCommandInfo } from '../index.js';
 import { Emojis, responseEmbed, responseOptions } from '../util/builders.js';
 import { QueueItem } from '../voice/queue-manager.js';
 

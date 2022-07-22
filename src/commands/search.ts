@@ -1,7 +1,7 @@
 import { createCanvas, Image } from '@napi-rs/canvas';
 import { ApplicationCommandOptionType, ButtonStyle, ComponentType, InteractionReplyOptions, InteractionUpdateOptions } from 'discord.js';
 import { Buffer } from 'node:buffer';
-import { ChatCommand, GlobalChatCommandInfo } from '../potato-client.js';
+import { ChatCommand, GlobalChatCommandInfo } from '../index.js';
 import { Emojis, responseEmbed, responseOptions } from '../util/builders.js';
 
 interface MagicCard {
