@@ -24,14 +24,14 @@ async function play(info: GuildChatCommandInfo): Promise<InteractionReplyOptions
 }
 
 function search(info: GuildAutocompleteInfo): ApplicationCommandOptionChoiceData[] {
-  if ((info.interaction.options.getFocused() as string).length < 3) {
+  if (info.interaction.options.getFocused().length < 3) {
     return [];
   }
   const path = `${config.DATA}/music_files/${info.interaction.options.getSubcommand(true)}_ost`;
   const songs = readdirSync(path).map((value) => {
     return value.split('.').slice(0, -1).join('.');
   });
-  const results = new Fuse(songs).search(info.interaction.options.getFocused() as string);
+  const results = new Fuse(songs).search(info.interaction.options.getFocused());
   return results.slice(0, 25).map((result) => {
     return {
       name: result.item,
