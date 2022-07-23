@@ -3,10 +3,8 @@ import { ChatCommand, GuildChatCommandInfo } from '../index.js';
 import { responseOptions } from '../util/builders.js';
 
 async function clear(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
-  if (await info.queueManager.clear()) {
-    return responseOptions('success', { title: 'The queue has been cleared' });
-  }
-  return responseOptions('error', { title: 'There is no queue!' });
+  await info.queueManager.clear();
+  return responseOptions('success', { title: 'The queue has been cleared' });
 }
 
 export const command: ChatCommand<'Guild'> = {

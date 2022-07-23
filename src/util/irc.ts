@@ -1,13 +1,22 @@
+/**
+ * Response from IRC provided after successful authentication
+ */
 interface APIAuthenticate {
   personId: number;
 }
 
+/**
+ * IRC API data representing a term
+ */
 interface APITerm {
   calendarId: number;
   termId: number;
   termName: string;
 }
 
+/**
+ * IRC API data providing an overview of a course
+ */
 interface APIManifestEntry {
   courseId: number;
   courseName: string;
@@ -25,6 +34,9 @@ interface APIManifestEntry {
   isDropped: 0 | 1;
 }
 
+/**
+ * IRC API data representing a course's grades
+ */
 interface APICourse {
   assessment: {
     studentPersonID: number;
@@ -67,6 +79,9 @@ interface APICourse {
   }[];
 }
 
+/**
+ * IRC API data representing an assignment
+ */
 interface Assignment {
   name: string;
   score: string;
@@ -77,6 +92,9 @@ interface Assignment {
   comments: string;
 }
 
+/**
+ * Formatted representation of a grade standard
+ */
 export interface Standard {
   name: string;
   isHomeworkStandard: boolean;
@@ -90,6 +108,9 @@ export interface Standard {
   assignments: Assignment[];
 }
 
+/**
+ * Formatted representation of a course
+ */
 interface Course {
   name: string;
   projectedGrade: string;
@@ -98,12 +119,18 @@ interface Course {
   isFinal: boolean;
 }
 
+/**
+ * Object containing all relevant grade data
+ */
 export interface Grades {
   studentId: string;
   termName: string;
   courses: Course[];
 }
 
+/**
+ * Object representing the difference between two course objects
+ */
 interface CourseDiff {
   name: string;
   isFinal?: boolean;
@@ -116,6 +143,9 @@ interface CourseDiff {
   }[];
 }
 
+/**
+ * Object containing the difference between two grade objects
+ */
 interface GradesDiff {
   changes: boolean;
   termName?: { oldName: string; newName: string };
@@ -123,6 +153,11 @@ interface GradesDiff {
   courses: CourseDiff[];
 }
 
+/**
+ * Authenticates with IRC, requests, and formats all relevent data
+ * @param token IRC login token
+ * @returns a promise containing the formatted response or null if the request failed
+ */
 export async function fetchCourseData(token: string): Promise<Grades | null> {
   const response = await fetch('https://irc.d125.org/users/authenticate', {
     headers: {
@@ -242,6 +277,12 @@ export async function fetchCourseData(token: string): Promise<Grades | null> {
   };
 }
 
+/**
+ * Compares two sets of grades to check for updates
+ * @param oldGrades the original set of grades to compare to
+ * @param newGrades the new set of grades to compare with
+ * @returns an object representing the difference between the two sets of grades
+ */
 export function checkUpdates(oldGrades: Grades, newGrades: Grades): GradesDiff {
   const differences: GradesDiff = { courses: [], newCourses: [], changes: false };
   if (oldGrades.termName !== newGrades.termName) {

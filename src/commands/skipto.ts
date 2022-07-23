@@ -3,7 +3,12 @@ import { ChatCommand, GuildAutocompleteInfo, GuildChatCommandInfo } from '../ind
 import { responseOptions } from '../util/builders.js';
 
 async function skipto(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
-  if (await info.queueManager.skipTo((info.response.interaction.options.getInteger('index') ?? info.response.interaction.options.getString('title'))!)) {
+  if (
+    await info.queueManager.skipTo(
+      (info.response.interaction.options.getInteger('index') ??
+        info.queueManager.searchQueue(info.response.interaction.options.getString('title')!)[0].refIndex + 1)!,
+    )
+  ) {
     return responseOptions('success', {
       title: 'Success!',
     });

@@ -21,6 +21,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - run: npm i
+      - run: yarn install --immutable --ignore-optional --production
       - run: npm run build
       - run: npm run deploy --application_id=${{ secrets.APPLICATION_ID }} --application_token=${{ secrets.APPLICATION_TOKEN }}

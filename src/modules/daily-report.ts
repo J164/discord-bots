@@ -1,18 +1,27 @@
-import { WebhookMessageOptions } from 'discord.js';
+import { MessageOptions } from 'discord.js';
 import { Db } from 'mongodb';
 import config from '../config.json' assert { type: 'json' };
 import { Emojis, responseEmbed } from '../util/builders.js';
 
+/**
+ * Response data from zenquotes
+ */
 interface Quote {
   readonly q: string;
   readonly a: string;
 }
 
+/**
+ * Response data from the holiday API
+ */
 interface Holiday {
   readonly name: string;
   readonly description: string;
 }
 
+/**
+ * Response data from the weather API
+ */
 interface WeatherResponse {
   readonly current: {
     readonly temp_f: number;
@@ -25,13 +34,20 @@ interface WeatherResponse {
   };
 }
 
-// eslint-disable-next-line complexity
+type MonthNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+type DayNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+/**
+ * Uses a node date object to make a human readable date
+ * @param date node date object
+ * @returns readable date string
+ */
 function getStringDate(date: Date): string {
   const day = date.getDate();
   const year = date.getFullYear();
   let month: string;
   let weekDay: string;
-  switch (date.getMonth()) {
+  switch (date.getMonth() as MonthNumber) {
     case 0:
       month = 'January';
       break;
@@ -68,10 +84,8 @@ function getStringDate(date: Date): string {
     case 11:
       month = 'December';
       break;
-    default:
-      throw new Error('Invalid month');
   }
-  switch (date.getDay()) {
+  switch (date.getDay() as DayNumber) {
     case 0:
       weekDay = 'Sunday';
       break;
@@ -93,12 +107,15 @@ function getStringDate(date: Date): string {
     case 6:
       weekDay = 'Saturday';
       break;
-    default:
-      throw new Error('Invalid weekday');
   }
   return `${weekDay}, ${month} ${day}, ${year}`;
 }
 
+/**
+ * Takes a weather API weather code and converts it to an emoji
+ * @param weatherCode code from the weather API representing the weather
+ * @returns emoji representing the weather
+ */
 // eslint-disable-next-line complexity
 function getWeatherEmoji(weatherCode: number): string {
   switch (weatherCode) {
@@ -162,7 +179,13 @@ function getWeatherEmoji(weatherCode: number): string {
   }
 }
 
-export async function getDailyReport(date: Date, database: Db): Promise<WebhookMessageOptions> {
+/**
+ * Generates a daily report based on the date
+ * @param date the date to generate a daily report for
+ * @param database MongoDB database connection object
+ * @returns the daily report as message options
+ */
+export async function getDailyReport(date: Date, database: Db): Promise<MessageOptions> {
   const holiday = (await (
     await fetch(
       `https://holidays.abstractapi.com/v1/?api_key=${config.ABSTRACT_KEY}&country=US&year=${date.getFullYear()}&month=${
@@ -188,7 +211,7 @@ export async function getDailyReport(date: Date, database: Db): Promise<WebhookM
           value: `It feels like ${weather.current.feelslike_f}°F and the wind speed is ${weather.current.wind_mph} mph`,
         },
         {
-          name: holiday.length > 0 ? `Today is ${holiday[0].name}` : "Today can be whatever you'd like!",
+          name: holiday.length > 0 ? `Today is ${holiday[0].name}` : 'Today is whatever you make it!',
           value: 'Have a great day!',
         },
       ],

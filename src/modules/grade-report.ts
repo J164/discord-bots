@@ -4,6 +4,13 @@ import cron from 'node-cron';
 import { responseEmbed } from '../util/builders.js';
 import { checkUpdates, fetchCourseData, Grades } from '../util/irc.js';
 
+/**
+ * Compares current grade data with previously stored data and creates an embed reporting any changes
+ * @param token IRC authentication token
+ * @param database MongoDB database connection object
+ * @param task cron task scheduling the grade report task
+ * @returns the embed reporting any changes or null if there are no changes
+ */
 export async function gradeReport(token: string, database: Db, task: cron.ScheduledTask): Promise<APIEmbed | null> {
   const newGrades = await fetchCourseData(token);
   if (!newGrades) {

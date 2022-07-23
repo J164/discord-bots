@@ -17,6 +17,9 @@ import { setTimeout } from 'node:timers/promises';
 import { responseOptions } from '../util/builders.js';
 import { createStream } from './ytdl.js';
 
+/**
+ * Object representing an item in the queue
+ */
 export interface QueueItem {
   readonly url: string;
   readonly title: string;
@@ -25,6 +28,9 @@ export interface QueueItem {
   looping?: boolean;
 }
 
+/**
+ * Represents a queue manager for a guild
+ */
 export class QueueManager {
   private _queue: QueueItem[];
   private _voiceConnection: VoiceConnection | null;
@@ -46,62 +52,24 @@ export class QueueManager {
     this._queueLock = false;
   }
 
+  public get queue(): QueueItem[] {
+    return this._queue;
+  }
+
   public get queueLoop(): boolean {
     return this._queueLoop;
   }
 
-  public get nowPlaying(): InteractionReplyOptions {
-    return this._nowPlaying
-      ? responseOptions('info', {
-          title: `Now Playing: ${this._nowPlaying.title} (${this._nowPlaying.duration})`,
-          fields: [
-            {
-              name: 'URL:',
-              value: this._nowPlaying.url,
-            },
-          ],
-          image: { url: this._nowPlaying.thumbnail },
-          footer: this._nowPlaying.looping
-            ? {
-                text: 'Looping',
-                icon_url: 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png',
-              }
-            : undefined,
-        })
-      : responseOptions('error', { title: 'Nothing has played yet!' });
+  public get nowPlaying(): QueueItem | null {
+    return this._nowPlaying;
   }
 
-  public async getPaginatedQueue(): Promise<QueueItem[][] | null> {
-    if (!this._nowPlaying) {
-      return null;
-    }
-
-    if (this._queue.length === 0) {
-      return [[this._nowPlaying]];
-    }
-
-    while (this._queueLock) await setTimeout(200);
-    this._queueLock = true;
-
-    const queueArray: QueueItem[][] = [];
-    for (let r = 0; r < Math.ceil(this._queue.length / 25); r++) {
-      queueArray.push([]);
-      for (let index = -1; index < 25; index++) {
-        if (r * 25 + index > this._queue.length - 1) {
-          break;
-        }
-        if (r === 0 && index === -1) {
-          queueArray[r].push(this._nowPlaying);
-          continue;
-        }
-        queueArray[r].push(this._queue[r * 25 + index]);
-      }
-    }
-
-    this._queueLock = false;
-    return queueArray;
-  }
-
+  /**
+   * Adds items to the queue
+   * @param items the items to add to the queue
+   * @param position where in the queue to insert the items
+   * @returns
+   */
   public async addToQueue(items: QueueItem[], position: number): Promise<void> {
     while (this._queueLock) await setTimeout(200);
     this._queueLock = true;
@@ -120,6 +88,11 @@ export class QueueManager {
     this._queueLock = false;
   }
 
+  /**
+   * Connects the bot to voice and starts playing the queue if a voice connection has not already been made
+   * @param voiceChannel the channel to connect the bot to
+   * @returns
+   */
   public async connect(voiceChannel: VoiceChannel): Promise<void> {
     if (this._voiceConnection) return;
 
@@ -142,6 +115,10 @@ export class QueueManager {
     void this._play();
   }
 
+  /**
+   * Starts playing items in the queue
+   * @returns
+   */
   private async _play(): Promise<void> {
     if (!this._nowPlaying?.looping) {
       while (this._queueLock) await setTimeout(200);
@@ -188,6 +165,11 @@ export class QueueManager {
     });
   }
 
+  /**
+   * Searches the queue for an item with a title matching the query
+   * @param query the name of the item to search for
+   * @returns An array of fuse search results
+   */
   public searchQueue(query: string): Fuse.FuseResult<string>[] {
     return new Fuse(
       this._queue.map((item) => {
@@ -196,14 +178,18 @@ export class QueueManager {
     ).search(query);
   }
 
-  public async skipTo(term: string | number): Promise<boolean> {
+  /**
+   * Pulls an item to the beginning of the queue and skips the current song
+   * @param index index of the item to skip to
+   * @returns whether the operation succeeded or not
+   */
+  public async skipTo(index: number): Promise<boolean> {
     if (this._queue.length < 2) {
       return false;
     }
 
     while (this._queueLock) await setTimeout(200);
     this._queueLock = true;
-    const index = typeof term === 'number' ? term : this.searchQueue(term)[0].refIndex + 1;
     index >= this._queue.length ? this._queue.unshift(this._queue.pop()!) : this._queue.unshift(this._queue.splice(index - 1, 1)[0]);
     this._queueLock = false;
 
@@ -211,6 +197,10 @@ export class QueueManager {
     return true;
   }
 
+  /**
+   * Toggles whether the current song is looping or not
+   * @returns interaction response representing the result of the operation
+   */
   public loopSong(): InteractionReplyOptions {
     if (this._player?.state.status === AudioPlayerStatus.Idle) {
       return responseOptions('error', { title: 'Nothing is playing!' });
@@ -225,6 +215,10 @@ export class QueueManager {
     return responseOptions('success', { title: 'Now Looping' });
   }
 
+  /**
+   * Toggles whether the queue is looping or not
+   * @returns interaction response representing the result of the operation
+   */
   public loopQueue(): InteractionReplyOptions {
     if (this._queue.length === 0) {
       return responseOptions('error', { title: 'Nothing is queued!' });
@@ -239,9 +233,13 @@ export class QueueManager {
     return responseOptions('success', { title: 'Now looping queue' });
   }
 
-  public async clear(): Promise<boolean> {
+  /**
+   * Clears the entire queue
+   * @returns
+   */
+  public async clear(): Promise<void> {
     if (this._queue.length === 0) {
-      return false;
+      return;
     }
 
     while (this._queueLock) await setTimeout(200);
@@ -251,22 +249,38 @@ export class QueueManager {
 
     this._queueLock = false;
     this._queueLoop = false;
-    return true;
+    return;
   }
 
-  public skip(): boolean | null {
+  /**
+   * Skips the currently playing song
+   * @returns whether the operation succeeded or not
+   */
+  public skip(): boolean {
     this._nowPlaying!.looping = false;
-    return this._player?.stop() ?? null;
+    return this._player?.stop() ?? false;
   }
 
-  public pause(): boolean | null {
-    return this._player?.pause(true) ?? null;
+  /**
+   * Pauses the currently playing song
+   * @returns whether the operation succeeded or not
+   */
+  public pause(): boolean {
+    return this._player?.pause(true) ?? false;
   }
 
-  public resume(): boolean | null {
-    return this._player?.unpause() ?? null;
+  /**
+   * Resumes the currently playing song
+   * @returns whether the operation succeeded or not
+   */
+  public resume(): boolean {
+    return this._player?.unpause() ?? false;
   }
 
+  /**
+   * Randomizes the order of the queue
+   * @returns whether the operation succeeded or not
+   */
   public async shuffleQueue(): Promise<boolean> {
     if (this._queue.length === 0) {
       return false;
@@ -284,6 +298,10 @@ export class QueueManager {
     return true;
   }
 
+  /**
+   * Resets the QueueManager to its original state
+   * @returns
+   */
   public async reset(): Promise<void> {
     while (this._queueLock) await setTimeout(200);
     this._queueLock = true;

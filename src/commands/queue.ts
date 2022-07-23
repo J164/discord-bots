@@ -3,14 +3,14 @@ import { ChatCommand, GuildChatCommandInfo } from '../index.js';
 import { Emojis, responseEmbed, responseOptions } from '../util/builders.js';
 import { QueueItem } from '../voice/queue-manager.js';
 
-function response(info: GuildChatCommandInfo, queueArray: QueueItem[][], page: number): InteractionUpdateOptions & InteractionReplyOptions {
-  void prompt(info, queueArray, page);
+function response(info: GuildChatCommandInfo, queue: QueueItem[], page: number): InteractionUpdateOptions & InteractionReplyOptions {
+  void prompt(info, queue, page);
   return {
     embeds: [
       responseEmbed('info', {
         title: info.queueManager.queueLoop ? 'Queue (Looping)' : 'Queue',
-        footer: { text: `${page + 1}/${queueArray.length}` },
-        fields: queueArray[page].map((entry, index) => {
+        footer: { text: `${page + 1}/${Math.floor(queue.length / 25) + 1}` },
+        fields: queue.slice(page * 25, (page + 1) * 25).map((entry, index) => {
           return {
             name: index === 0 && page === 0 ? 'Currently Playing:' : `${index + page * 25}.`,
             value: `${entry.title} (${entry.duration})\n${entry.url}`,
@@ -44,7 +44,7 @@ function response(info: GuildChatCommandInfo, queueArray: QueueItem[][], page: n
             emoji: Emojis.ArrowRight,
             label: 'Next Page',
             style: ButtonStyle.Secondary,
-            disabled: page === queueArray.length - 1,
+            disabled: page === Math.floor(queue.length / 25),
           },
           {
             type: ComponentType.Button,
@@ -52,7 +52,7 @@ function response(info: GuildChatCommandInfo, queueArray: QueueItem[][], page: n
             emoji: Emojis.DoubleArrowRight,
             label: 'Jump to End',
             style: ButtonStyle.Secondary,
-            disabled: page === queueArray.length - 1,
+            disabled: page === Math.floor(queue.length / 25),
           },
         ],
       },
@@ -60,7 +60,7 @@ function response(info: GuildChatCommandInfo, queueArray: QueueItem[][], page: n
   };
 }
 
-async function prompt(info: GuildChatCommandInfo, queueArray: QueueItem[][], page: number) {
+async function prompt(info: GuildChatCommandInfo, queue: QueueItem[], page: number) {
   let component;
   try {
     component = await info.response.awaitMessageComponent({
@@ -75,27 +75,26 @@ async function prompt(info: GuildChatCommandInfo, queueArray: QueueItem[][], pag
 
   switch (component.customId) {
     case 'jumpleft':
-      void component.update(response(info, queueArray, 0));
+      void component.update(response(info, queue, 0));
       break;
     case 'left':
-      void component.update(response(info, queueArray, page - 1));
+      void component.update(response(info, queue, page - 1));
       break;
     case 'right':
-      void component.update(response(info, queueArray, page + 1));
+      void component.update(response(info, queue, page + 1));
       break;
     case 'jumpright':
-      void component.update(response(info, queueArray, queueArray.length - 1));
+      void component.update(response(info, queue, Math.floor(queue.length / 25)));
       break;
   }
 }
 
-async function queue(info: GuildChatCommandInfo): Promise<void> {
-  const queueArray = await info.queueManager.getPaginatedQueue();
-  if (!queueArray) {
+function queue(info: GuildChatCommandInfo): void {
+  if (!info.queueManager.nowPlaying) {
     void info.response.interaction.editReply(responseOptions('error', { title: 'There is no queue!' }));
     return;
   }
-  void info.response.interaction.editReply(response(info, queueArray, 0));
+  void info.response.interaction.editReply(response(info, [info.queueManager.nowPlaying, ...info.queueManager.queue], 0));
 }
 
 export const command: ChatCommand<'Guild'> = {

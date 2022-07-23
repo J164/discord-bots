@@ -1,5 +1,8 @@
 import { APIEmbed } from 'discord.js';
 
+/**
+ * Enum representing commonly used emojis
+ */
 export const enum Emojis {
   Document = '\uD83D\uDCC4',
   RedX = '\u274C',
@@ -11,6 +14,9 @@ export const enum Emojis {
   DoubleArrowRight = '\u23E9',
 }
 
+/**
+ * Enum representing commonly used colors
+ */
 export const enum PotatoColors {
   DefaultBlue = 0x00_99_ff,
   ErrorRed = 0xff_00_00,
@@ -18,6 +24,12 @@ export const enum PotatoColors {
   QuestionOrange = 0xff_a5_00,
 }
 
+/**
+ * Formats an embed based on its type
+ * @param type which type of formatting to use
+ * @param options the embed to be formated
+ * @returns the formated embed
+ */
 export function responseEmbed(type: 'info' | 'error' | 'success' | 'prompt', options: APIEmbed): APIEmbed {
   switch (type) {
     case 'info':
@@ -40,6 +52,12 @@ export function responseEmbed(type: 'info' | 'error' | 'success' | 'prompt', opt
   return options;
 }
 
+/**
+ * Formats an embed based on its type and wraps it as a message
+ * @param type which type of formatting to use
+ * @param options the embed to be formated
+ * @returns the formated embed wrapped as a message
+ */
 export function responseOptions(type: 'info' | 'error' | 'success' | 'prompt', options: APIEmbed) {
   return { embeds: [responseEmbed(type, options)] };
 }

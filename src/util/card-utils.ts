@@ -5,6 +5,9 @@ import { readFileSync } from 'node:fs';
 
 export type CardCode = `${'2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | 'J' | 'Q' | 'K' | 'A'}${'S' | 'C' | 'H' | 'D'}` | 'back';
 
+/**
+ * Enum representing possible playing card suits
+ */
 export const enum CardSuit {
   Spades = 1,
   Clubs = 2,
@@ -12,6 +15,9 @@ export const enum CardSuit {
   Diamonds = 4,
 }
 
+/**
+ * Enum representing possible playing card ranks
+ */
 export const enum CardRank {
   Ace = 1,
   Two = 2,
@@ -28,6 +34,9 @@ export const enum CardRank {
   King = 13,
 }
 
+/**
+ * Represents a playing card
+ */
 export class Card {
   public readonly suit: CardSuit;
   public readonly rank: CardRank;
@@ -92,9 +101,17 @@ export class Card {
   }
 }
 
+/**
+ * Represents a deck of playing cards
+ */
 export class Deck {
   private readonly _cards: Card[];
 
+  /**
+   * Generates a random playing card
+   * @param options which cards can be selected from
+   * @returns a randomly generated card
+   */
   public static randomCard(options: { suits?: CardSuit[]; ranks?: CardRank[] }): Card {
     options.suits ??= [1, 2, 3, 4];
     options.ranks ??= [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
@@ -102,6 +119,12 @@ export class Deck {
     return new Card(options.suits[Math.floor(Math.random() * 3)], options.ranks[Math.floor(Math.random() * 12)]);
   }
 
+  /**
+   * Generates a number of random playing cards
+   * @param number number of random cards to generate
+   * @param options which cards can be selected from
+   * @returns array of randomly generated cards
+   */
   public static randomCards(number: number, options: { suits?: CardSuit[]; ranks?: CardRank[] }): Card[] {
     const cards = [];
     for (let index = 0; index < number; index++) {
@@ -127,6 +150,10 @@ export class Deck {
     return this._cards.length;
   }
 
+  /**
+   * Randomizes the order of cards in the deck
+   * @returns this
+   */
   public shuffle(): this {
     for (let index = this._cards.length - 1; index > 0; index--) {
       const randomIndex = Math.floor(Math.random() * (index + 1));
@@ -135,10 +162,19 @@ export class Deck {
     return this;
   }
 
+  /**
+   * Removes a card from the deck and returns it
+   * @returns the drawn card or null if the deck is empty
+   */
   public drawCard(): Card | null {
     return this._cards.pop() ?? null;
   }
 
+  /**
+   * Removes a number of cards rom the deck and returns them
+   * @param number number of cards to draw
+   * @returns an array of the drawn cards or null if number is greater than the size of the deck
+   */
   public drawCards(number: number): Card[] | null {
     if (number > this._cards.length) {
       return null;
@@ -147,6 +183,11 @@ export class Deck {
   }
 }
 
+/**
+ * Merges a number of images into one image
+ * @param filePaths list of valid file paths to 226x314 images of cards
+ * @returns the merged image as a buffer
+ */
 function mergeImages(filePaths: string[]): Buffer {
   const activeCanvas = createCanvas(filePaths.length < 6 ? (filePaths.length % 6) * 226 : 1130, Math.ceil(filePaths.length / 5) * 314);
   const context = activeCanvas.getContext('2d');
@@ -158,6 +199,12 @@ function mergeImages(filePaths: string[]): Buffer {
   return activeCanvas.toBuffer('image/png');
 }
 
+/**
+ * Takes a number of card codes and an embed and formats them to be sent as a message
+ * @param cards an array of card codes representing the cards to be sent
+ * @param embed the embed to be sent with the merged card image
+ * @returns the embed and an attachment payload containing the image
+ */
 export function multicardMessage(cards: CardCode[], embed: APIEmbed): { embed: APIEmbed; file: AttachmentPayload } {
   const name = Date.now();
   const hand = { ...embed, image: { url: `attachment://${name}.png` } };
