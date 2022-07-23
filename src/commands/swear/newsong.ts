@@ -12,7 +12,9 @@ async function newSong(info: GlobalChatCommandInfo): Promise<InteractionReplyOpt
       title: "You don't have permission to use this command!",
     });
   }
-  if (!/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(info.response.interaction.options.getString('url', true))) {
+  if (
+    !/^((http|https):\/\/)?(www\.)?([\d.A-Za-z]{2,256}\.[a-z]{2,6})(\/[\w#%&+./:=?@\\~-]*)?$/.test(info.response.interaction.options.getString('url', true))
+  ) {
     return responseOptions('error', { title: 'Not a valid url!' });
   }
   void info.response.interaction.editReply(responseOptions('info', { title: 'Downloading...' }));
