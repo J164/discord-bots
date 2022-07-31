@@ -2,6 +2,7 @@ import { MessageOptions } from 'discord.js';
 import { Db } from 'mongodb';
 import config from '../config.json' assert { type: 'json' };
 import { Emojis, responseEmbed } from '../util/builders.js';
+import { WeatherResponse } from './weather-report.js';
 
 /**
  * Response data from zenquotes
@@ -17,21 +18,6 @@ interface Quote {
 interface Holiday {
   readonly name: string;
   readonly description: string;
-}
-
-/**
- * Response data from the weather API
- */
-interface WeatherResponse {
-  readonly current: {
-    readonly temp_f: number;
-    readonly condition: {
-      readonly text: string;
-      readonly code: number;
-    };
-    readonly wind_mph: number;
-    readonly feelslike_f: number;
-  };
 }
 
 type MonthNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
@@ -182,10 +168,11 @@ function getWeatherEmoji(weatherCode: number): string {
 /**
  * Generates a daily report based on the date
  * @param date the date to generate a daily report for
+ * @param weather the daily weather to use to generate the report
  * @param database MongoDB database connection object
  * @returns the daily report as message options
  */
-export async function getDailyReport(date: Date, database: Db): Promise<MessageOptions> {
+export async function getDailyReport(date: Date, weather: WeatherResponse, database: Db): Promise<MessageOptions> {
   const holiday = (await (
     await fetch(
       `https://holidays.abstractapi.com/v1/?api_key=${config.ABSTRACT_KEY}&country=US&year=${date.getFullYear()}&month=${
@@ -193,22 +180,23 @@ export async function getDailyReport(date: Date, database: Db): Promise<MessageO
       }&day=${date.getDate()}`,
     )
   ).json()) as Holiday[];
-  const weather = (await (await fetch(`http://api.weatherapi.com/v1/current.json?key=${config.WEATHER_KEY}&q=60069`)).json()) as WeatherResponse;
   const quote = (await (await fetch('https://zenquotes.io?api=today')).json()) as Quote[];
-  const stringDate = getStringDate(date);
-  const weatherEmoji = getWeatherEmoji(weather.current.condition.code);
 
   const embeds = [
     responseEmbed('info', {
-      title: `Daily Report: ${stringDate}\t${weatherEmoji}`,
+      title: `Daily Report: ${getStringDate(date)}\t${getWeatherEmoji(weather.forecast.forecastday[0].day.condition.code)}`,
       fields: [
         {
           name: `Quote of the Day:`,
           value: `"${quote[0].q}" -${quote[0].a}`,
         },
         {
-          name: `In Linconshire it is ${weather.current.condition.text} and ${weather.current.temp_f}°F`,
-          value: `It feels like ${weather.current.feelslike_f}°F and the wind speed is ${weather.current.wind_mph} mph`,
+          name: `In Linconshire the high is ${weather.forecast.forecastday[0].day.maxtemp_f}°F and the low is ${weather.forecast.forecastday[0].day.mintemp_f}°F`,
+          value: `It will be ${weather.forecast.forecastday[0].day.condition.text.toLowerCase()} today`,
+        },
+        {
+          name: `Sunrise today is at ${weather.forecast.forecastday[0].astro.sunrise} and sunset is at ${weather.forecast.forecastday[0].astro.sunset}`,
+          value: `Today's moon phase is ${weather.forecast.forecastday[0].astro.moon_phase.toLowerCase()}`,
         },
         {
           name: holiday.length > 0 ? `Today is ${holiday[0].name}` : 'Today is whatever you make it!',
@@ -217,6 +205,11 @@ export async function getDailyReport(date: Date, database: Db): Promise<MessageO
       ],
     }),
   ];
+  if (weather.forecast.forecastday[0].day.daily_will_it_rain === 1) {
+    embeds.push(responseEmbed('info', { title: 'Watch out! It may rain today!\t\u2602\uFE0F' }));
+  } else if (weather.forecast.forecastday[0].day.daily_will_it_snow === 1) {
+    embeds.push(responseEmbed('info', { title: 'Watch out! It may snow today!\t\u2744\uFE0F' }));
+  }
   const birthday = (await database.collection('birthdays').findOne({ month: date.getMonth() + 1, day: date.getDate() })) as unknown as {
     id: string;
     month: number;

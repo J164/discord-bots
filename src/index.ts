@@ -19,12 +19,14 @@ import { readdirSync } from 'node:fs';
 import config from './config.json' assert { type: 'json' };
 import { getDailyReport } from './modules/daily-report.js';
 import { gradeReport } from './modules/grade-report.js';
+import { getWeatherReport, partialISOString, WeatherResponse } from './modules/weather-report.js';
 import { responseOptions } from './util/builders.js';
 import { logger } from './util/logger.js';
 import { QueueManager } from './voice/queue-manager.js';
 
 interface GlobalInfo {
   readonly database: Db;
+  readonly weather: Map<string, WeatherResponse>;
 }
 
 interface GuildInfo {
@@ -72,6 +74,7 @@ export type ChatCommand<T extends 'Global' | 'Guild'> = (T extends 'Global'
 const guildInfo = new Map<string, GuildInfo>();
 const commands = new Map<string, ChatCommand<'Global' | 'Guild'>>();
 const databaseClient = new MongoClient(config.MONGODB_URL);
+const weather = new Map<string, WeatherResponse>();
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
@@ -89,18 +92,30 @@ const client = new Client({
 client.once('ready', async () => {
   await databaseClient.connect();
 
+  const now = new Date();
+  weather.set(partialISOString(now), await getWeatherReport(now));
+
   for (const file of readdirSync('./dist/src/commands').filter((file) => file.endsWith('.js'))) {
     const { command } = (await import(`./commands/${file}`)) as { command: ChatCommand<'Global' | 'Guild'> };
     commands.set(command.data.name, command);
   }
 
+  const weatherTask = cron.schedule('0 0 * * *', async (date) => {
+    try {
+      weather.set(partialISOString(date), await getWeatherReport(date));
+    } catch (error) {
+      logger.error(error, 'Weather Report threw an error');
+      weatherTask.stop();
+    }
+  });
+
   const announcementTask = cron.schedule(config.ANNOUNCEMENT_TIME, async (date) => {
     try {
       void ((await client.channels.fetch(config.ANNOUNCEMENT_CHANNEL)) as TextChannel).send(
-        await getDailyReport(date, databaseClient.db(config.DATABASE_NAME)),
+        await getDailyReport(date, weather.get(partialISOString(date))!, databaseClient.db(config.DATABASE_NAME)),
       );
     } catch (error) {
-      logger.error(error, `Daily Announcement threw an error`);
+      logger.error(error, 'Daily Announcement threw an error');
       announcementTask.stop();
     }
   });
@@ -172,12 +187,14 @@ async function respondChatCommand(interaction: ChatInputCommandInteraction): Pro
       ...guildInfo.get(interaction.guildId)!,
       response: interactionResponse as ChatCommandResponse<'cached'>,
       database: databaseClient.db(config.DATABASE_NAME),
+      weather: weather,
     });
   }
 
   return command.respond({
     response: interactionResponse,
     database: databaseClient.db(config.DATABASE_NAME),
+    weather: weather,
   });
 }
 
@@ -195,12 +212,14 @@ async function autocompleteChatCommand(interaction: AutocompleteInteraction): Pr
       ...guildInfo.get(interaction.guildId)!,
       interaction: interaction,
       database: databaseClient.db(config.DATABASE_NAME),
+      weather: weather,
     });
   }
 
   return command.autocomplete({
     interaction: interaction,
     database: databaseClient.db(config.DATABASE_NAME),
+    weather: weather,
   });
 }
 
