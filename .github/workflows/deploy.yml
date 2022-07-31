@@ -24,4 +24,5 @@ jobs:
       #TODO: yarn install --immutable --ignore-optional
       - run: npm install
       - run: yarn run build
-      - run: yarn run deploy --application_id=${{ secrets.APPLICATION_ID }} --application_token=${{ secrets.APPLICATION_TOKEN }}
+      #TODO: figure out how to switch this to yarn
+      - run: npm run deploy --application_id=${{ secrets.APPLICATION_ID }} --application_token=${{ secrets.APPLICATION_TOKEN }}
