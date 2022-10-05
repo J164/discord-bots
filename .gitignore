@@ -1,7 +1,6 @@
+.vscode
+.env
 node_modules
 dist
-.vscode
-coverage
 logs
-yarn.lock
 *.config.cjs

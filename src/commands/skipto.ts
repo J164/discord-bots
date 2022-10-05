@@ -1,74 +1,53 @@
-import { ApplicationCommandOptionChoiceData, ApplicationCommandOptionType, InteractionReplyOptions } from 'discord.js';
-import { ChatCommand, GuildAutocompleteInfo, GuildChatCommandInfo } from '../index.js';
+import type { ApplicationCommandOptionChoiceData, InteractionReplyOptions } from 'discord.js';
+import { ApplicationCommandOptionType } from 'discord.js';
+import type { ChatCommand, GlobalAutocompleteInfo, GlobalChatCommandInfo, GuildInfo } from '../types/commands.js';
 import { responseOptions } from '../util/builders.js';
 
-async function skipto(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
-  if (
-    await info.queueManager.skipTo(
-      (info.response.interaction.options.getInteger('index') ??
-        info.queueManager.searchQueue(info.response.interaction.options.getString('title')!)[0].refIndex + 1)!,
-    )
-  ) {
-    return responseOptions('success', {
-      title: 'Success!',
-    });
-  }
-  return responseOptions('error', {
-    title: 'The queue is too small to skip to a specific song!',
-  });
+function skipto(globalInfo: GlobalChatCommandInfo<'Guild'>, guildInfo: GuildInfo): InteractionReplyOptions {
+	if (guildInfo.queueManager?.skipTo(globalInfo.response.interaction.options.getInteger('index', true))) {
+		return responseOptions('success', {
+			title: 'Success!',
+		});
+	}
+
+	return responseOptions('error', {
+		title: "Couldn't skip to the song in that position!",
+	});
 }
 
-function suggestions(info: GuildAutocompleteInfo): ApplicationCommandOptionChoiceData[] {
-  const value = info.interaction.options.getFocused(true).value;
-  if (value.length < 3) return [];
+function suggestions(globalInfo: GlobalAutocompleteInfo, guildInfo: GuildInfo): ApplicationCommandOptionChoiceData[] {
+	const value = Number.parseInt(globalInfo.interaction.options.getFocused(), 10);
+	if (Number.isNaN(value)) return [];
 
-  return info.queueManager
-    .searchQueue(value)
-    .slice(0, 25)
-    .map((result) => {
-      return {
-        name: result.item,
-        value: result.item,
-      };
-    });
+	const items = guildInfo.queueManager?.queue.slice(value > 3 ? value - 3 : 0, value < guildInfo.queueManager.queue.length - 1 ? value + 1 : undefined);
+
+	return (
+		items?.map((item, index) => {
+			const location = value > 3 ? value - 3 + index : index;
+			return {
+				name: `${location}: ${item.title}`,
+				value: location,
+			};
+		}) ?? []
+	);
 }
 
 export const command: ChatCommand<'Guild'> = {
-  data: {
-    name: 'skipto',
-    description: 'Pulls the selected song to the top of the queue and skips the current song',
-    options: [
-      {
-        name: 'position',
-        description: 'Skip to a song based on its position in the queue',
-        type: ApplicationCommandOptionType.Subcommand,
-        options: [
-          {
-            name: 'index',
-            description: 'The position of the song to skip to',
-            type: ApplicationCommandOptionType.Integer,
-            minValue: 1,
-            required: true,
-          },
-        ],
-      },
-      {
-        name: 'name',
-        description: 'Skip to the first instance of a song based on its name',
-        type: ApplicationCommandOptionType.Subcommand,
-        options: [
-          {
-            name: 'title',
-            description: 'The name of the song to skip to',
-            type: ApplicationCommandOptionType.String,
-            required: true,
-            autocomplete: true,
-          },
-        ],
-      },
-    ],
-  },
-  respond: skipto,
-  autocomplete: suggestions,
-  type: 'Guild',
+	data: {
+		name: 'skipto',
+		description: 'Pulls the selected song to the top of the queue and skips the current song',
+		options: [
+			{
+				name: 'index',
+				description: 'The position of the song to skip to',
+				type: ApplicationCommandOptionType.Integer,
+				minValue: 1,
+				required: true,
+				autocomplete: true,
+			},
+		],
+	},
+	respond: skipto,
+	autocomplete: suggestions,
+	type: 'Guild',
 };

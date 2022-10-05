@@ -1,226 +1,223 @@
-import {
-  ActivityType,
-  ApplicationCommandOptionChoiceData,
-  AutocompleteInteraction,
-  CacheType,
-  ChatInputApplicationCommandData,
-  ChatInputCommandInteraction,
-  Client,
-  GatewayIntentBits,
-  InteractionReplyOptions,
-  InteractionResponse,
-  InteractionType,
-  Partials,
-  TextChannel,
+import { readdir } from 'node:fs/promises';
+import type {
+	ApplicationCommandOptionChoiceData,
+	AutocompleteInteraction,
+	CacheType,
+	ChatInputCommandInteraction,
+	InteractionReplyOptions,
+	TextChannel,
 } from 'discord.js';
-import { Db, MongoClient } from 'mongodb';
+import { ActivityType, Client, GatewayIntentBits, InteractionType, Partials } from 'discord.js';
+import { MongoClient } from 'mongodb';
 import cron from 'node-cron';
-import { readdirSync } from 'node:fs';
-import config from './config.json' assert { type: 'json' };
+import { environment } from './config.js';
 import { getDailyReport } from './modules/daily-report.js';
 import { gradeReport } from './modules/grade-report.js';
-import { getWeatherReport, partialISOString, WeatherResponse } from './modules/weather-report.js';
+import { getWeatherReport } from './modules/weather-report.js';
+import type { ChatCommand, ChatCommandResponse, GuildInfo } from './types/commands.js';
 import { responseOptions } from './util/builders.js';
 import { logger } from './util/logger.js';
-import { QueueManager } from './voice/queue-manager.js';
 
-interface GlobalInfo {
-  readonly database: Db;
-  readonly weather: Map<string, WeatherResponse>;
-}
-
-interface GuildInfo {
-  readonly queueManager: QueueManager;
-}
-
-type ChatCommandResponse<T extends CacheType> = Omit<InteractionResponse, 'interaction'> & {
-  interaction: ChatInputCommandInteraction<T>;
-};
-
-export type GlobalChatCommandInfo = GlobalInfo & {
-  readonly response: ChatCommandResponse<CacheType>;
-};
-export type GlobalAutocompleteInfo = GlobalInfo & {
-  readonly interaction: AutocompleteInteraction;
-};
-
-export type GuildChatCommandInfo = GlobalInfo & GuildInfo & { readonly response: ChatCommandResponse<'cached'> };
-export type GuildAutocompleteInfo = GlobalInfo &
-  GuildInfo & {
-    readonly interaction: AutocompleteInteraction;
-  };
-
-type GlobalResponseFunction = (info: GlobalChatCommandInfo) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void;
-type GlobalAutocompleteFunction = (info: GlobalAutocompleteInfo) => Promise<ApplicationCommandOptionChoiceData[]> | ApplicationCommandOptionChoiceData[];
-
-type GuildResponseFunction = (info: GuildChatCommandInfo) => Promise<InteractionReplyOptions | void> | InteractionReplyOptions | void;
-type GuildAutocompleteFunction = (info: GuildAutocompleteInfo) => Promise<ApplicationCommandOptionChoiceData[]> | ApplicationCommandOptionChoiceData[];
-
-export type ChatCommand<T extends 'Global' | 'Guild'> = (T extends 'Global'
-  ? {
-      readonly respond: GlobalResponseFunction;
-      readonly autocomplete?: GlobalAutocompleteFunction;
-      readonly type: T;
-    }
-  : {
-      readonly respond: GuildResponseFunction;
-      readonly autocomplete?: GuildAutocompleteFunction;
-      readonly type: T;
-    }) & {
-  readonly data: ChatInputApplicationCommandData;
-  readonly ephemeral?: boolean;
-};
+const config = await environment();
 
 const guildInfo = new Map<string, GuildInfo>();
 const commands = new Map<string, ChatCommand<'Global' | 'Guild'>>();
 const databaseClient = new MongoClient(config.MONGODB_URL);
-const weather = new Map<string, WeatherResponse>();
+let weather = await getWeatherReport(new Date(), config.WEATHER_KEY);
+
+/**
+ * Imports a command from the specified file
+ * @param fileName The file to import the command from
+ */
+async function importCommand(fileName: string) {
+	const { command } = (await import(`./commands/${fileName}`)) as { command: ChatCommand<'Global' | 'Guild'> };
+	commands.set(command.data.name, command);
+}
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
-  partials: [Partials.Channel],
-  presence: {
-    activities: [
-      {
-        name: config.STATUS,
-        type: ActivityType.Playing,
-      },
-    ],
-  },
+	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
+	partials: [Partials.Channel],
+	presence: {
+		activities: [
+			{
+				name: config.STATUS,
+				type: ActivityType.Playing,
+			},
+		],
+	},
 });
 
 client.once('ready', async () => {
-  await databaseClient.connect();
+	await databaseClient.connect();
 
-  const now = new Date();
-  weather.set(partialISOString(now), await getWeatherReport(now));
+	const commandFiles = await readdir('./dist/commands');
 
-  for (const file of readdirSync('./dist/src/commands').filter((file) => file.endsWith('.js'))) {
-    const { command } = (await import(`./commands/${file}`)) as { command: ChatCommand<'Global' | 'Guild'> };
-    commands.set(command.data.name, command);
-  }
+	await Promise.all(
+		commandFiles
+			.filter((file) => file.endsWith('.js'))
+			.map(async (file) => {
+				return importCommand(file);
+			}),
+	);
 
-  const weatherTask = cron.schedule('0 0 * * *', async (date) => {
-    try {
-      weather.set(partialISOString(date), await getWeatherReport(date));
-    } catch (error) {
-      logger.error(error, 'Weather Report threw an error');
-      weatherTask.stop();
-    }
-  });
+	const weatherTask = cron.schedule('0 0 * * *', async (date) => {
+		try {
+			weather = await getWeatherReport(date, config.WEATHER_KEY);
+		} catch (error) {
+			logger.error(error, 'Weather Report threw an error');
+			weatherTask.stop();
+		}
+	});
 
-  const announcementTask = cron.schedule(config.ANNOUNCEMENT_TIME, async (date) => {
-    try {
-      void ((await client.channels.fetch(config.ANNOUNCEMENT_CHANNEL)) as TextChannel).send(
-        await getDailyReport(date, weather.get(partialISOString(date))!, databaseClient.db(config.DATABASE_NAME)),
-      );
-    } catch (error) {
-      logger.error(error, 'Daily Announcement threw an error');
-      announcementTask.stop();
-    }
-  });
+	const announcementTask = cron.schedule(config.ANNOUNCEMENT_TIME, async (date) => {
+		try {
+			void ((await client.channels.fetch(config.ANNOUNCEMENT_CHANNEL)) as TextChannel).send(
+				await getDailyReport(date, databaseClient.db(config.DATABASE_NAME), config.ABSTRACT_KEY, weather),
+			);
+		} catch (error) {
+			logger.error(error, 'Daily Announcement threw an error');
+			announcementTask.stop();
+		}
+	});
 
-  const gradeTask = cron.schedule(config.GRADE_UPDATE_INTERVAL, async () => {
-    try {
-      const report = await gradeReport(config.IRC_AUTH, databaseClient.db(config.DATABASE_NAME), gradeTask);
-      if (!report) return;
-      void (await (await client.users.fetch(config.ADMIN)).createDM()).send({
-        embeds: [report],
-      });
-    } catch (error) {
-      logger.error(error, 'Grade Monitor threw an error');
-      gradeTask.stop();
-    }
-  });
+	const gradeTask = cron.schedule(config.GRADE_UPDATE_INTERVAL, async () => {
+		try {
+			const report = await gradeReport(config.IRC_TOKEN, databaseClient.db(config.DATABASE_NAME), gradeTask);
+			if (!report) return;
+			const admin = await client.users.fetch(config.ADMIN);
+			const dm = await admin.createDM();
+			void dm.send({
+				embeds: [report],
+			});
+		} catch (error) {
+			logger.error(error, 'Grade Monitor threw an error');
+			gradeTask.stop();
+		}
+	});
 
-  client.on('interactionCreate', async (interaction) => {
-    if (interaction.inCachedGuild() && !guildInfo.has(interaction.guildId)) {
-      guildInfo.set(interaction.guildId, { queueManager: new QueueManager() });
-    }
+	client.on('interactionCreate', async (interaction) => {
+		if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
+			let response: ApplicationCommandOptionChoiceData[];
+			try {
+				response = await autocompleteChatCommand(interaction);
+			} catch (error) {
+				logger.info({ options: interaction.options.data }, `(${interaction.id}) /${interaction.commandName}`);
+				logger.error(error, `Chat Command Autocomplete #${interaction.id} threw an error`);
+				response = [];
+			}
 
-    if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
-      let response: ApplicationCommandOptionChoiceData[];
-      try {
-        response = await autocompleteChatCommand(interaction);
-      } catch (error) {
-        logger.info({ options: interaction.options.data }, `(${interaction.id}) /${interaction.commandName}`);
-        logger.error(error, `Chat Command Autocomplete #${interaction.id} threw an error`);
-        response = [];
-      }
+			void interaction.respond(response).catch();
+			return;
+		}
 
-      void interaction.respond(response).catch();
-      return;
-    }
+		if (!interaction.isChatInputCommand()) return;
 
-    if (!interaction.isChatInputCommand()) return;
+		logger.info({ options: interaction.options.data }, `(${interaction.id}) /${interaction.commandName}`);
 
-    logger.info({ options: interaction.options.data }, `(${interaction.id}) /${interaction.commandName}`);
+		let response;
+		try {
+			response = await respondChatCommand(interaction);
+		} catch (error) {
+			logger.error(error, `Chat Command Interaction #${interaction.id} threw an error`);
+			response = responseOptions('error', { title: 'Something went wrong!' });
+		}
 
-    let response;
-    try {
-      response = await respondChatCommand(interaction);
-    } catch (error) {
-      logger.error(error, `Chat Command Interaction #${interaction.id} threw an error`);
-      response = responseOptions('error', { title: 'Something went wrong!' });
-    }
+		if (response) {
+			void interaction.editReply(response).catch();
+		}
+	});
 
-    if (response) {
-      void interaction.editReply(response).catch();
-    }
-  });
-
-  logger.info(`\u001B[42m We have logged in as ${client.user!.tag} \u001B[0m`);
+	logger.info(`\u001B[42m We have logged in! \u001B[0m`);
 });
 
+/**
+ * Returns the response to a ChatInputCommandInteraction
+ * @param interaction The ChatInputCommandInteraction to respond to
+ * @returns A Promise resolving to the response to send to Discord or nothing if the command doesn't give a response
+ */
 async function respondChatCommand(interaction: ChatInputCommandInteraction): Promise<InteractionReplyOptions | void> {
-  const command = commands.get(interaction.commandName)!;
+	const command = commands.get(interaction.commandName);
 
-  const interactionResponse = (await interaction.deferReply({ ephemeral: command.ephemeral })) as ChatCommandResponse<CacheType>;
+	if (!command) {
+		return responseOptions('error', { title: `Command ${interaction.commandName} not found!` });
+	}
 
-  if (command.type === 'Guild') {
-    if (!interaction.inCachedGuild()) {
-      return responseOptions('error', {
-        title: 'This is a server only command!',
-      });
-    }
-    return command.respond({
-      ...guildInfo.get(interaction.guildId)!,
-      response: interactionResponse as ChatCommandResponse<'cached'>,
-      database: databaseClient.db(config.DATABASE_NAME),
-      weather: weather,
-    });
-  }
+	const interactionResponse = (await interaction.deferReply({ ephemeral: command.ephemeral })) as ChatCommandResponse<CacheType>;
 
-  return command.respond({
-    response: interactionResponse,
-    database: databaseClient.db(config.DATABASE_NAME),
-    weather: weather,
-  });
+	if (command.allowedUsers && !command.allowedUsers.includes(interaction.user.id)) {
+		return responseOptions('info', { title: 'You are not registered to use this command!' });
+	}
+
+	const globalData = {
+		response: interactionResponse as ChatCommandResponse<'cached'>,
+		database: databaseClient.db(config.DATABASE_NAME),
+		weather,
+		spotifyToken: config.SPOTIFY_TOKEN,
+		announcementChannel: config.ANNOUNCEMENT_CHANNEL,
+		downloadDirectory: config.DOWNLOAD_DIRECTORY,
+		ircToken: config.IRC_TOKEN,
+	};
+
+	if (command.type === 'Guild') {
+		if (!interaction.inCachedGuild()) {
+			return responseOptions('error', {
+				title: 'This is a server only command!',
+			});
+		}
+
+		const guildData = guildInfo.get(interaction.guildId) ?? { queueManager: undefined };
+		guildInfo.set(interaction.guildId, guildData);
+
+		return command.respond(globalData, guildData);
+	}
+
+	return command.respond({
+		response: interactionResponse,
+		database: databaseClient.db(config.DATABASE_NAME),
+		weather,
+		spotifyToken: config.SPOTIFY_TOKEN,
+		announcementChannel: config.ANNOUNCEMENT_CHANNEL,
+		downloadDirectory: config.DOWNLOAD_DIRECTORY,
+		ircToken: config.IRC_TOKEN,
+	});
 }
 
+/**
+ * Returns the response to an AutocompleteInteraction
+ * @param interaction The AutocompleteInteraction to respond to
+ * @returns A Promise resolving to an array of suggestions to send to Discord
+ */
 async function autocompleteChatCommand(interaction: AutocompleteInteraction): Promise<ApplicationCommandOptionChoiceData[]> {
-  const command = commands.get(interaction.commandName)!;
+	const command = commands.get(interaction.commandName);
 
-  if (!command.autocomplete) {
-    return [];
-  }
+	if (!command?.autocomplete) {
+		return [];
+	}
 
-  if (command.type === 'Guild') {
-    if (!interaction.inCachedGuild()) return [];
+	if (command.allowedUsers && !command.allowedUsers.includes(interaction.user.id)) {
+		return [];
+	}
 
-    return command.autocomplete({
-      ...guildInfo.get(interaction.guildId)!,
-      interaction: interaction,
-      database: databaseClient.db(config.DATABASE_NAME),
-      weather: weather,
-    });
-  }
+	const globalData = {
+		interaction,
+		database: databaseClient.db(config.DATABASE_NAME),
+		weather,
+		spotifyToken: config.SPOTIFY_TOKEN,
+		announcementChannel: config.ANNOUNCEMENT_CHANNEL,
+		downloadDirectory: config.DOWNLOAD_DIRECTORY,
+		ircToken: config.IRC_TOKEN,
+	};
 
-  return command.autocomplete({
-    interaction: interaction,
-    database: databaseClient.db(config.DATABASE_NAME),
-    weather: weather,
-  });
+	if (command.type === 'Guild') {
+		if (!interaction.inCachedGuild()) return [];
+
+		const guildData = guildInfo.get(interaction.guildId) ?? { queueManager: undefined };
+		guildInfo.set(interaction.guildId, guildData);
+
+		return command.autocomplete(globalData, guildData);
+	}
+
+	return command.autocomplete(globalData);
 }
 
 void client.login(config.TOKEN);

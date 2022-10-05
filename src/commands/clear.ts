@@ -1,17 +1,17 @@
-import { InteractionReplyOptions } from 'discord.js';
-import { ChatCommand, GuildChatCommandInfo } from '../index.js';
+import type { InteractionReplyOptions } from 'discord.js';
+import type { GlobalChatCommandInfo, GuildInfo, ChatCommand } from '../types/commands.js';
 import { responseOptions } from '../util/builders.js';
 
-async function clear(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
-  await info.queueManager.clear();
-  return responseOptions('success', { title: 'The queue has been cleared' });
+function clear(globalInfo: GlobalChatCommandInfo<'Guild'>, guildInfo: GuildInfo): InteractionReplyOptions {
+	guildInfo.queueManager?.clear();
+	return responseOptions('success', { title: 'The queue has been cleared' });
 }
 
 export const command: ChatCommand<'Guild'> = {
-  data: {
-    name: 'clear',
-    description: 'Clear the song queue',
-  },
-  respond: clear,
-  type: 'Guild',
+	data: {
+		name: 'clear',
+		description: 'Clear the song queue',
+	},
+	respond: clear,
+	type: 'Guild',
 };
