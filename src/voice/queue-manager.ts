@@ -1,41 +1,29 @@
 import type { InteractionReplyOptions, VoiceChannel } from 'discord.js';
-import type { GuildInfo } from '../types/commands.js';
 import type { QueueItem } from '../types/voice.js';
-import { responseOptions } from '../util/builders.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 import { Player } from './player.js';
 
 /** Represents the audio queue for a guild */
 export class QueueManager {
-	/**
-	 * Creates a new QueueManager if one is not already present, adds the items to the queue, and plays them in a voice channel
-	 * @param guildInfo The guildInfo for the guild to play audio in
-	 * @param voiceChannel The voice channel to play audio in
-	 * @param items The items to add to the queue
-	 * @param position The position in the queue to insert the items
-	 * @returns A Promise that resolves when the QueueManager has connected
-	 */
-	public static async play(guildInfo: GuildInfo, voiceChannel: VoiceChannel, items: QueueItem[], position: number): Promise<void> {
-		guildInfo.queueManager ??= new QueueManager(voiceChannel);
-		guildInfo.queueManager._addToQueue(items, position);
-		await guildInfo.queueManager._connect(voiceChannel);
-	}
-
 	private _player: Player;
 	private _queue: QueueItem[];
 	private _nowPlaying: QueueItem | undefined;
 	private _queueLoop: boolean;
 
-	private constructor(voiceChannel: VoiceChannel) {
-		this._player = new Player(voiceChannel, () => {
-			this.reset();
-		});
+	public constructor(voiceChannel: VoiceChannel) {
+		this._player = this._createPlayer(voiceChannel);
+
 		this._queue = [];
 		this._nowPlaying = undefined;
 		this._queueLoop = false;
 	}
 
 	public get queue(): QueueItem[] {
-		return this._queue;
+		if (!this._nowPlaying) {
+			return [];
+		}
+
+		return [this._nowPlaying, ...this._queue];
 	}
 
 	public get queueLoop(): boolean {
@@ -44,6 +32,25 @@ export class QueueManager {
 
 	public get nowPlaying(): QueueItem | undefined {
 		return this._nowPlaying;
+	}
+
+	/**
+	 * Adds QueueItems to the queue
+	 * @param voiceChannel The VoiceChannel to connect to
+	 * @param items The items to add to the queue
+	 * @param position Where in the queue to insert the items
+	 * @returns A Promise that resolves when the items have been added
+	 */
+	public async addToQueue(voiceChannel: VoiceChannel, items: QueueItem[], position: number): Promise<void> {
+		if (position === -1 || position >= this._queue.length) {
+			this._queue.push(...items);
+		} else if (position === 0) {
+			this._queue.unshift(...items);
+		} else {
+			this._queue.splice(position, 0, ...items);
+		}
+
+		await this._connect(voiceChannel);
 	}
 
 	/**
@@ -73,12 +80,12 @@ export class QueueManager {
 
 		if (this._nowPlaying.looping) {
 			this._nowPlaying.looping = false;
-			return responseOptions('success', { title: 'No longer looping' });
+			return responseOptions(EmbedType.Success, 'No longer looping');
 		}
 
 		this._queueLoop = false;
 		this._nowPlaying.looping = true;
-		return responseOptions('success', { title: 'Now Looping' });
+		return responseOptions(EmbedType.Success, 'Now Looping');
 	}
 
 	/**
@@ -92,7 +99,7 @@ export class QueueManager {
 
 		if (this._queueLoop) {
 			this._queueLoop = false;
-			return responseOptions('success', { title: 'No longer looping queue' });
+			return responseOptions(EmbedType.Success, 'No longer looping queue');
 		}
 
 		if (this._nowPlaying) {
@@ -100,7 +107,7 @@ export class QueueManager {
 		}
 
 		this._queueLoop = true;
-		return responseOptions('success', { title: 'Now looping queue' });
+		return responseOptions(EmbedType.Success, 'Now looping queue');
 	}
 
 	/** Clears the entire queue */
@@ -163,22 +170,14 @@ export class QueueManager {
 	}
 
 	/**
-	 * Adds QueueItems to the queue
-	 * @param items The items to add to the queue
-	 * @param position Where in the queue to insert the items
+	 * Creates a Player and subscribes to the "destroyed" event
+	 * @param voiceChannel The VoiceChannel to connect to
+	 * @returns The Player
 	 */
-	private _addToQueue(items: QueueItem[], position: number): void {
-		if (position === -1 || position >= this._queue.length) {
-			this._queue.push(...items);
-			return;
-		}
-
-		if (position === 0) {
-			this._queue.unshift(...items);
-			return;
-		}
-
-		this._queue.splice(position, 0, ...items);
+	private _createPlayer(voiceChannel: VoiceChannel): Player {
+		return new Player(voiceChannel).once('destroyed', () => {
+			this.reset();
+		});
 	}
 
 	/**
@@ -192,14 +191,11 @@ export class QueueManager {
 		}
 
 		if (this._player.destroyed) {
-			this._player = new Player(voiceChannel, () => {
-				this.reset();
-			});
+			this._player = this._createPlayer(voiceChannel);
 		}
 
 		await this._player.subscribe();
-
-		void this._play();
+		await this._play();
 	}
 
 	/**
@@ -216,17 +212,19 @@ export class QueueManager {
 			}
 		}
 
-		const success = await this._player.play(this._nowPlaying, () => {
+		const success = await this._player.play(this._nowPlaying);
+
+		this._player.once('audioEnded', async () => {
 			if (this._queueLoop && this._nowPlaying) {
 				this._queue.push(this._nowPlaying);
 			}
 
-			void this._play();
+			await this._play();
 		});
 
 		if (!success) {
 			this._nowPlaying.looping = false;
-			void this._play();
+			await this._play();
 		}
 	}
 }

@@ -1,33 +1,7 @@
-import type { InteractionReplyOptions } from 'discord.js';
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import { playEuchre } from '../modules/games/euchre.js';
-import type { ChatCommand, GlobalChatCommandInfo } from '../types/commands.js';
-import { responseOptions } from '../util/builders.js';
-
-async function euchre(globalInfo: GlobalChatCommandInfo<'Guild'>): Promise<InteractionReplyOptions> {
-	const channel = await globalInfo.response.interaction.guild.channels.fetch(globalInfo.response.interaction.channelId);
-	if (!(channel?.isTextBased() && channel.type === ChannelType.GuildText)) {
-		return responseOptions('error', { title: 'This command can only be used in text channels' });
-	}
-
-	const playerlist = [globalInfo.response.interaction.options.getUser('player1', true), globalInfo.response.interaction.options.getUser('player2', true)];
-	for (let index = 3; index <= 4; index++) {
-		if (globalInfo.response.interaction.options.getUser(`player${index}`)) {
-			playerlist.push(globalInfo.response.interaction.options.getUser(`player${index}`, true));
-		} else {
-			break;
-		}
-	}
-
-	playEuchre(
-		playerlist,
-		await channel.threads.create({
-			name: globalInfo.response.interaction.options.getString('name') ?? 'Euchre',
-			autoArchiveDuration: 60,
-		}),
-	);
-	return responseOptions('success', { title: 'Success!' });
-}
+import type { ChatCommand } from '../types/commands.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 
 export const command: ChatCommand<'Guild'> = {
 	data: {
@@ -66,6 +40,30 @@ export const command: ChatCommand<'Guild'> = {
 			},
 		],
 	},
-	respond: euchre,
+	async respond(response) {
+		const channel = await response.interaction.guild.channels.fetch(response.interaction.channelId);
+		if (!(channel?.isTextBased() && channel.type === ChannelType.GuildText)) {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, 'This command can only be used in text channels'));
+			return;
+		}
+
+		const playerlist = [response.interaction.options.getUser('player1', true), response.interaction.options.getUser('player2', true)];
+		for (let index = 3; index <= 4; index++) {
+			if (response.interaction.options.getUser(`player${index}`)) {
+				playerlist.push(response.interaction.options.getUser(`player${index}`, true));
+			} else {
+				break;
+			}
+		}
+
+		playEuchre(
+			playerlist,
+			await channel.threads.create({
+				name: response.interaction.options.getString('name') ?? 'Euchre',
+				autoArchiveDuration: 60,
+			}),
+		);
+		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Success!'));
+	},
 	type: 'Guild',
 };

@@ -1,7 +1,7 @@
-import type { InteractionReplyOptions, InteractionUpdateOptions } from 'discord.js';
-import { ApplicationCommandOptionType, ButtonStyle, ComponentType } from 'discord.js';
-import type { ChatCommand, GlobalChatCommandInfo } from '../types/commands.js';
-import { Emojis, responseEmbed, responseOptions } from '../util/builders.js';
+import type { ButtonInteraction, InteractionUpdateOptions, MessageActionRowComponentBuilder, SelectMenuBuilder } from 'discord.js';
+import { ActionRowBuilder, ApplicationCommandOptionType, ButtonStyle, ComponentType } from 'discord.js';
+import type { ChatCommand, GlobalChatCommandResponse } from '../types/commands.js';
+import { EmbedType, Emojis, responseEmbed, responseOptions } from '../util/builders.js';
 import { mergeImages } from '../util/image-utils.js';
 
 function formatResponse(response: ScryfallResponse): ScryfallMagicCard[][] {
@@ -25,8 +25,7 @@ async function generateResponse(results: ScryfallMagicCard[][], r: number, index
 	if (card.card_faces) {
 		return {
 			embeds: [
-				responseEmbed('info', {
-					title: card.name,
+				responseEmbed(EmbedType.Info, card.name, {
 					footer: {
 						text: `Price ($): ${card.prices.usd ?? 'unknown (not for sale)'}`,
 					},
@@ -45,8 +44,7 @@ async function generateResponse(results: ScryfallMagicCard[][], r: number, index
 
 	return {
 		embeds: [
-			responseEmbed('info', {
-				title: card.name,
+			responseEmbed(EmbedType.Info, card.name, {
 				footer: {
 					text: `Price ($): ${card.prices.usd ?? 'unknown (not for sale)'}`,
 				},
@@ -57,16 +55,10 @@ async function generateResponse(results: ScryfallMagicCard[][], r: number, index
 	};
 }
 
-function response(
-	globalInfo: GlobalChatCommandInfo<'Global'>,
-	results: ScryfallMagicCard[][],
-	page: number,
-): InteractionUpdateOptions & InteractionReplyOptions {
-	void prompt(globalInfo, results, page);
-	return {
+async function updateResponse(response: GlobalChatCommandResponse, results: ScryfallMagicCard[][], page: number, component?: ButtonInteraction): Promise<void> {
+	const reply = {
 		embeds: [
-			responseEmbed('info', {
-				title: 'Results',
+			responseEmbed(EmbedType.Info, 'Results', {
 				footer: { text: `${page + 1}/${results.length}` },
 				fields: results[page].map((entry, index) => {
 					return {
@@ -77,8 +69,7 @@ function response(
 			}),
 		],
 		components: [
-			{
-				type: ComponentType.ActionRow,
+			new ActionRowBuilder<SelectMenuBuilder>({
 				components: [
 					{
 						type: ComponentType.SelectMenu,
@@ -93,9 +84,8 @@ function response(
 						}),
 					},
 				],
-			},
-			{
-				type: ComponentType.ActionRow,
+			}),
+			new ActionRowBuilder<MessageActionRowComponentBuilder>({
 				components: [
 					{
 						type: ComponentType.Button,
@@ -130,65 +120,45 @@ function response(
 						disabled: page === results.length - 1,
 					},
 				],
-			},
+			}),
 		],
 	};
+
+	await (component ? component.update(reply) : response.interaction.editReply(reply));
+	await promptUser(response, results, page);
 }
 
-async function prompt(globalInfo: GlobalChatCommandInfo<'Global'>, results: ScryfallMagicCard[][], page: number): Promise<void> {
+async function promptUser(response: GlobalChatCommandResponse, scryfallResults: ScryfallMagicCard[][], page: number): Promise<void> {
 	let component;
 	try {
-		component = await globalInfo.response.awaitMessageComponent({
-			filter: (b) => b.user.id === globalInfo.response.interaction.user.id,
+		component = await response.awaitMessageComponent({
+			filter: (b) => b.user.id === response.interaction.user.id,
 			time: 300_000,
 		});
 	} catch {
-		void globalInfo.response.interaction.editReply({ components: [] });
+		await response.interaction.editReply({ components: [] });
 		return;
 	}
 
 	if (component.isSelectMenu()) {
-		void component.update(await generateResponse(results, page, Number.parseInt(component.values[0], 10) - 1));
+		await component.update(await generateResponse(scryfallResults, page, Number.parseInt(component.values[0], 10) - 1));
 		return;
 	}
 
 	switch (component.customId) {
 		case 'jumpleft':
-			void component.update(response(globalInfo, results, 0));
+			await updateResponse(response, scryfallResults, 0, component);
 			break;
 		case 'left':
-			void component.update(response(globalInfo, results, page - 1));
+			await updateResponse(response, scryfallResults, page - 1, component);
 			break;
 		case 'right':
-			void component.update(response(globalInfo, results, page + 1));
+			await updateResponse(response, scryfallResults, page + 1, component);
 			break;
 		case 'jumpright':
-			void component.update(response(globalInfo, results, results.length - 1));
+			await updateResponse(response, scryfallResults, scryfallResults.length - 1, component);
 			break;
 	}
-}
-
-async function search(globalInfo: GlobalChatCommandInfo<'Global'>): Promise<void> {
-	const searchTerm = globalInfo.response.interaction.options.getString('query', true);
-	const searchResponse = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`);
-	if (!searchResponse.ok) {
-		void globalInfo.response.interaction.editReply(
-			responseOptions('error', {
-				title: 'Card Not Found',
-				fields: [
-					{
-						name: `${searchTerm} not found`,
-						value: 'Check your spelling and/or try using a more general search term',
-					},
-				],
-			}),
-		);
-		return;
-	}
-
-	const results = formatResponse((await searchResponse.json()) as ScryfallResponse);
-
-	void globalInfo.response.interaction.editReply(response(globalInfo, results, 0));
 }
 
 export const command: ChatCommand<'Global'> = {
@@ -204,7 +174,27 @@ export const command: ChatCommand<'Global'> = {
 			},
 		],
 	},
-	respond: search,
+	async respond(response) {
+		const searchTerm = response.interaction.options.getString('query', true);
+		const searchResponse = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(searchTerm)}`);
+		if (!searchResponse.ok) {
+			await response.interaction.editReply(
+				responseOptions(EmbedType.Error, 'Card Not Found', {
+					fields: [
+						{
+							name: `${searchTerm} not found`,
+							value: 'Check your spelling and/or try using a more general search term',
+						},
+					],
+				}),
+			);
+			return;
+		}
+
+		const scryfallResults = formatResponse((await searchResponse.json()) as ScryfallResponse);
+
+		await updateResponse(response, scryfallResults, 0);
+	},
 	ephemeral: true,
 	type: 'Global',
 };

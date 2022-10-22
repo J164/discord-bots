@@ -1,20 +1,18 @@
-import type { InteractionReplyOptions } from 'discord.js';
-import type { ChatCommand, GlobalChatCommandInfo, GuildInfo } from '../types/commands.js';
-import { responseOptions } from '../util/builders.js';
-
-function shuffle(globalInfo: GlobalChatCommandInfo<'Guild'>, guildInfo: GuildInfo): InteractionReplyOptions {
-	if (guildInfo.queueManager?.shuffleQueue()) {
-		return responseOptions('success', { title: 'Queue shuffled!' });
-	}
-
-	return responseOptions('error', { title: 'There is nothing to shuffle!' });
-}
+import type { ChatCommand } from '../types/commands.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 
 export const command: ChatCommand<'Guild'> = {
 	data: {
 		name: 'shuffle',
 		description: 'Shuffles the song queue',
 	},
-	respond: shuffle,
+	async respond(response, guildInfo) {
+		if (guildInfo.queueManager?.shuffleQueue()) {
+			await response.interaction.editReply(responseOptions(EmbedType.Success, 'Queue shuffled!'));
+			return;
+		}
+
+		await response.interaction.editReply(responseOptions(EmbedType.Error, 'There is nothing to shuffle!'));
+	},
 	type: 'Guild',
 };

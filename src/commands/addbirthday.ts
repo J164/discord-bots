@@ -1,31 +1,6 @@
-import type { InteractionReplyOptions } from 'discord.js';
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { GlobalChatCommandInfo, ChatCommand } from '../types/commands.js';
-import { responseOptions } from '../util/builders.js';
-
-async function addBirthday(globalInfo: GlobalChatCommandInfo<'Global'>): Promise<InteractionReplyOptions> {
-	const existing = (await globalInfo.database.collection('birthdays').findOne({ id: globalInfo.response.interaction.user.id })) as unknown as {
-		id: string;
-		month: number;
-		day: number;
-	};
-	if (
-		existing &&
-		existing.month === globalInfo.response.interaction.options.getInteger('month') &&
-		existing.day === globalInfo.response.interaction.options.getInteger('day')
-	) {
-		return responseOptions('error', { title: 'Your birthday is already registered!' });
-	}
-
-	await globalInfo.database.collection('birthdays').deleteMany({ id: globalInfo.response.interaction.user.id });
-	await globalInfo.database.collection('birthdays').insertOne({
-		id: globalInfo.response.interaction.user.id,
-		month: globalInfo.response.interaction.options.getInteger('month'),
-		day: globalInfo.response.interaction.options.getInteger('day'),
-	});
-
-	return responseOptions('success', { title: 'Birthday Added!' });
-}
+import type { ChatCommand } from '../types/commands.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 
 export const command: ChatCommand<'Global'> = {
 	data: {
@@ -50,6 +25,25 @@ export const command: ChatCommand<'Global'> = {
 			},
 		],
 	},
-	respond: addBirthday,
+	async respond(response, globalInfo) {
+		const existing = (await globalInfo.database.collection('birthdays').findOne({ id: response.interaction.user.id })) as unknown as {
+			id: string;
+			month: number;
+			day: number;
+		};
+		if (existing && existing.month === response.interaction.options.getInteger('month') && existing.day === response.interaction.options.getInteger('day')) {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Your birthday is already registered!'));
+			return;
+		}
+
+		await globalInfo.database.collection('birthdays').deleteMany({ id: response.interaction.user.id });
+		await globalInfo.database.collection('birthdays').insertOne({
+			id: response.interaction.user.id,
+			month: response.interaction.options.getInteger('month'),
+			day: response.interaction.options.getInteger('day'),
+		});
+
+		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Birthday Added!'));
+	},
 	type: 'Global',
 };

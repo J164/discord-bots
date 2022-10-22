@@ -1,26 +1,40 @@
+import EventEmitter from 'node:events';
 import type { AudioPlayer, VoiceConnection } from '@discordjs/voice';
 import { AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, joinVoiceChannel, VoiceConnectionStatus } from '@discordjs/voice';
 import type { VoiceChannel } from 'discord.js';
 import type { QueueItem, YoutubeStream } from '../types/voice.js';
-import { responseOptions } from '../util/builders.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 import { createStream } from './ytdl.js';
 
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+export declare interface Player {
+	on(event: 'destroyed' | 'audioEnded', listener: () => void): this;
+	once(event: 'destroyed' | 'audioEnded', listener: () => void): this;
+}
+
 /** Represents the voice state of the bot in a guild */
-export class Player {
+export class Player extends EventEmitter {
 	private readonly _player: AudioPlayer;
 	private readonly _voiceConnection: VoiceConnection;
 	private readonly _voiceChannel: VoiceChannel;
 	private _script: YoutubeStream | undefined;
 	private _subscribed: boolean;
 
-	public constructor(voiceChannel: VoiceChannel, callback: () => void) {
+	public constructor(voiceChannel: VoiceChannel) {
+		super();
+
 		this._player = createAudioPlayer();
 		this._voiceChannel = voiceChannel;
 		this._voiceConnection = joinVoiceChannel({
 			channelId: voiceChannel.id,
 			guildId: voiceChannel.guild.id,
 			adapterCreator: voiceChannel.guild.voiceAdapterCreator,
-		}).once(VoiceConnectionStatus.Disconnected, callback);
+		});
+
+		this._voiceConnection.once(VoiceConnectionStatus.Disconnected, () => {
+			this.destroy();
+			this.emit('destroyed');
+		});
 
 		this._script = undefined;
 		this._subscribed = false;
@@ -42,7 +56,7 @@ export class Player {
 		try {
 			await entersState(this._voiceConnection, VoiceConnectionStatus.Ready, 30e3);
 		} catch {
-			void this._voiceChannel.send(responseOptions('error', { title: 'Unable to connect to this channel' })).catch();
+			await this._voiceChannel.send(responseOptions(EmbedType.Error, 'Unable to connect to this channel'));
 			return false;
 		}
 
@@ -55,10 +69,9 @@ export class Player {
 	/**
 	 * Plays the given audio and then executes a callback
 	 * @param audio The audio to play
-	 * @param callback The callback to execute when the audio ends
 	 * @returns A Promise that resolves to whether the audio began playing successfully
 	 */
-	public async play(audio: QueueItem, callback: () => void): Promise<boolean> {
+	public async play(audio: QueueItem): Promise<boolean> {
 		if (this._voiceChannel.members.size <= 1) {
 			return true;
 		}
@@ -73,19 +86,19 @@ export class Player {
 			await entersState(this._player, AudioPlayerStatus.Playing, 30e3);
 		} catch {
 			this._script.kill();
-			void this._voiceChannel.send(responseOptions('error', { title: `Unable to play ${audio.title}` })).catch();
+			await this._voiceChannel.send(responseOptions(EmbedType.Error, `Unable to play ${audio.title}`));
 			return false;
 		}
 
-		this._player.once(AudioPlayerStatus.Idle, () => {
+		this._player.once(AudioPlayerStatus.Idle, async () => {
 			this._script?.kill();
 
 			if (audio?.looping) {
-				void this.play(audio, callback);
+				await this.play(audio);
 				return;
 			}
 
-			callback();
+			this.emit('audioEnded');
 		});
 
 		return true;
@@ -119,6 +132,10 @@ export class Player {
 	 * Stops the audio player and destroys the connection
 	 */
 	public destroy(): void {
+		if (this.destroyed) {
+			return;
+		}
+
 		this._script?.kill();
 		this._player.removeAllListeners();
 		this.stop();

@@ -1,39 +1,6 @@
-import type { InteractionReplyOptions } from 'discord.js';
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { ChatCommand, GlobalChatCommandInfo } from '../types/commands.js';
-import { responseEmbed, responseOptions } from '../util/builders.js';
-
-async function wynncraft(globalInfo: GlobalChatCommandInfo<'Global'>): Promise<InteractionReplyOptions> {
-	const response = await fetch(`https://api.wynncraft.com/v2/player/${globalInfo.response.interaction.options.getString('player', true)}/stats`);
-	if (!response.ok) {
-		return responseOptions('error', { title: "Couldn't find that player!" });
-	}
-
-	const playerData = (await response.json()) as WynncraftResponse;
-	const embedOptions = {
-		title: playerData.data[0].username,
-		fields: [
-			{
-				name: 'Current Status',
-				value: playerData.data[0].meta.location.online ? `Online at: ${playerData.data[0].meta.location.server}` : 'Offline',
-			},
-		],
-		color: playerData.data[0].meta.location.online ? 0x33_cc_33 : 0xff_00_00,
-	};
-	for (let index = 0; index < playerData.data[0].classes.length; index++) {
-		const { playtime } = playerData.data[0].classes[index];
-		const playHours = Math.floor(playtime / 60);
-		const playSecs = playtime % 60;
-		embedOptions.fields.push({
-			name: `Profile ${index + 1}`,
-			value: `Class: ${playerData.data[0].classes[index].name}\nPlaytime: ${playHours < 10 ? `0${playHours}` : playHours}:${
-				playSecs < 10 ? `0${playSecs}` : playSecs
-			}\nCombat Level: ${playerData.data[0].classes[index].professions.combat.level}`,
-		});
-	}
-
-	return { embeds: [responseEmbed('info', embedOptions)] };
-}
+import type { ChatCommand } from '../types/commands.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 
 export const command: ChatCommand<'Global'> = {
 	data: {
@@ -48,6 +15,41 @@ export const command: ChatCommand<'Global'> = {
 			},
 		],
 	},
-	respond: wynncraft,
+	async respond(response) {
+		const wynncraftResponse = await fetch(`https://api.wynncraft.com/v2/player/${response.interaction.options.getString('player', true)}/stats`);
+		if (!wynncraftResponse.ok) {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, "Couldn't find that player!"));
+			return;
+		}
+
+		const playerData = (await wynncraftResponse.json()) as WynncraftResponse;
+
+		await response.interaction.editReply(
+			responseOptions(
+				EmbedType.Info,
+				playerData.data[0].username,
+				{
+					fields: [
+						{
+							name: 'Current Status',
+							value: playerData.data[0].meta.location.online ? `Online at: ${playerData.data[0].meta.location.server}` : 'Offline',
+						},
+						...playerData.data[0].classes.map((profile, index) => {
+							const { playtime, name, professions } = profile;
+							const playHours = Math.floor(playtime / 60);
+							const playMins = playtime % 60;
+							return {
+								name: `Profile ${index + 1}`,
+								value: `Class: ${name}\nPlaytime: ${playHours < 10 ? `0${playHours}` : playHours}:${playMins < 10 ? `0${playMins}` : playMins}\nCombat Level: ${
+									professions.combat.level
+								}`,
+							};
+						}),
+					],
+				},
+				playerData.data[0].meta.location.online ? 0x33_cc_33 : 0xff_00_00,
+			),
+		);
+	},
 	type: 'Global',
 };

@@ -1,6 +1,6 @@
 import type { MessageCreateOptions } from 'discord.js';
 import type { Db } from 'mongodb';
-import { Emojis, responseEmbed } from '../util/builders.js';
+import { EmbedType, Emojis, responseEmbed } from '../util/builders.js';
 
 type MonthNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 type DayNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -184,19 +184,19 @@ async function getQuoteData(): Promise<ZenQuotesResponse[]> {
 /**
  * Generates a daily report based on the date
  * @param date The date to generate a daily report for
- * @param weather The weather report used to generate the report
+ * @param abstractKey API key for Abstract APIs
  * @param database MongoDB database connection object
+ * @param weather The weather report used to generate the report
  * @returns A Promise that resolves to the daily report message
  */
-export async function getDailyReport(date: Date, database: Db, abstractKey: string, weather?: WeatherResponse): Promise<MessageCreateOptions> {
+export async function getDailyReport(date: Date, abstractKey: string, database: Db, weather?: WeatherResponse): Promise<MessageCreateOptions> {
 	const [holiday, quote] = await Promise.all([getHolidayData(abstractKey, date), getQuoteData()]);
 
 	const embeds = [];
 
 	if (weather) {
 		embeds.push(
-			responseEmbed('info', {
-				title: `Daily Report: ${getStringDate(date)}\t${getWeatherEmoji(weather.forecast.forecastday[0].day.condition.code)}`,
+			responseEmbed(EmbedType.Info, `Daily Report: ${getStringDate(date)}\t${getWeatherEmoji(weather.forecast.forecastday[0].day.condition.code)}`, {
 				fields: [
 					{
 						name: `Quote of the Day:`,
@@ -218,9 +218,9 @@ export async function getDailyReport(date: Date, database: Db, abstractKey: stri
 			}),
 		);
 		if (weather.forecast.forecastday[0].day.daily_will_it_rain === 1) {
-			embeds.push(responseEmbed('info', { title: 'Watch out! It may rain today!\t\u2602\uFE0F' }));
+			embeds.push(responseEmbed(EmbedType.Info, 'Watch out! It may rain today!\t\u2602\uFE0F'));
 		} else if (weather.forecast.forecastday[0].day.daily_will_it_snow === 1) {
-			embeds.push(responseEmbed('info', { title: 'Watch out! It may snow today!\t\u2744\uFE0F' }));
+			embeds.push(responseEmbed(EmbedType.Info, 'Watch out! It may snow today!\t\u2744\uFE0F'));
 		}
 	}
 

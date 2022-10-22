@@ -1,18 +1,18 @@
-import type { InteractionReplyOptions, InteractionUpdateOptions } from 'discord.js';
-import { ButtonStyle, ComponentType } from 'discord.js';
-import type { ChatCommand, GlobalChatCommandInfo } from '../types/commands.js';
-import { Emojis, responseEmbed, responseOptions } from '../util/builders.js';
+import type { ButtonBuilder, ButtonInteraction, InteractionUpdateOptions } from 'discord.js';
+import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import type { ChatCommand, GlobalChatCommandResponse } from '../types/commands.js';
+import { EmbedType, Emojis, responseEmbed, responseOptions } from '../util/builders.js';
 
 async function getDeckList(url: string): Promise<InteractionUpdateOptions> {
 	const ids = /^(?:https?:\/\/)?(?:www\.)?deckstats\.net\/decks\/(\d+)\/(\d+)-[\dA-Za-z-]+$/.exec(url);
 	if (!ids || ids.length < 3) {
-		return responseOptions('error', { title: 'Please enter a valid deckstats deck url!' });
+		return responseOptions(EmbedType.Error, 'Please enter a valid deckstats deck url!');
 	}
 
 	const apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${ids[1]}&id=${ids[2]}&response_type=`;
 	const decklist = await fetch(`${apiUrl}list`);
 	if (!decklist.ok) {
-		return responseOptions('error', { title: 'Deck list not found!' });
+		return responseOptions(EmbedType.Error, 'Deck list not found!');
 	}
 
 	return {
@@ -22,23 +22,23 @@ async function getDeckList(url: string): Promise<InteractionUpdateOptions> {
 	};
 }
 
-async function response(
-	globalInfo: GlobalChatCommandInfo<'Global'>,
-	urls: Array<{ url: string }>,
-	index: number,
-): Promise<InteractionUpdateOptions & InteractionReplyOptions> {
+async function updateResponse(response: GlobalChatCommandResponse, urls: Array<{ url: string }>, index: number, component?: ButtonInteraction): Promise<void> {
 	const ids = /^(?:https?:\/\/)?(?:www\.)?deckstats\.net\/decks\/(\d+)\/(\d+)-[\dA-Za-z-]+$/.exec(urls[index].url);
 	if (!ids || ids.length < 3) {
-		return responseOptions('error', { title: 'Please enter a valid deckstats deck url!' });
+		const reply = { embeds: [responseEmbed(EmbedType.Error, 'Please enter a valid deckstats deck url!')], components: [] };
+		await (component ? component.update(reply) : response.interaction.editReply(reply));
+		return;
 	}
 
 	const apiUrl = `https://deckstats.net/api.php?action=get_deck&id_type=saved&owner_id=${ids[1]}&id=${ids[2]}&response_type=`;
-	const response = await fetch(`${apiUrl}json`);
-	if (!response.ok) {
-		return responseOptions('error', { title: 'Deck not found!' });
+	const apiResponse = await fetch(`${apiUrl}json`);
+	if (!apiResponse.ok) {
+		const reply = { embeds: [responseEmbed(EmbedType.Error, 'Deck not found!')], components: [] };
+		await (component ? component.update(reply) : response.interaction.editReply(reply));
+		return;
 	}
 
-	const deck = (await response.json()) as DeckstatsResponse;
+	const deck = (await apiResponse.json()) as DeckstatsResponse;
 	let name: string | undefined;
 	for (const section of deck.sections) {
 		const commander = section.cards.findIndex((card) => card.isCommander);
@@ -56,19 +56,16 @@ async function response(
 		}
 	}
 
-	void prompt(globalInfo, urls, index);
-	return {
+	const reply = {
 		embeds: [
-			responseEmbed('info', {
-				title: deck.name,
+			responseEmbed(EmbedType.Info, deck.name, {
 				image: image ? { url: image } : undefined,
 				fields: [{ name: 'Deckstats URL:', value: urls[index].url }],
 				footer: { text: `${index + 1}/${urls.length}` },
 			}),
 		],
 		components: [
-			{
-				type: ComponentType.ActionRow,
+			new ActionRowBuilder<ButtonBuilder>({
 				components: [
 					{
 						type: ComponentType.Button,
@@ -110,46 +107,44 @@ async function response(
 						disabled: index === urls.length - 1,
 					},
 				],
-			},
+			}),
 		],
 	};
+
+	await (component ? component.update(reply) : response.interaction.editReply(reply));
+	await promptUser(response, urls, index);
 }
 
-async function prompt(globalInfo: GlobalChatCommandInfo<'Global'>, urls: Array<{ url: string }>, index: number): Promise<void> {
+async function promptUser(response: GlobalChatCommandResponse, urls: Array<{ url: string }>, index: number): Promise<void> {
 	let component;
 	try {
-		component = await globalInfo.response.awaitMessageComponent({
-			filter: (b) => b.user.id === globalInfo.response.interaction.user.id,
+		component = await response.awaitMessageComponent({
+			filter: (b) => b.user.id === response.interaction.user.id,
 			time: 300_000,
 			componentType: ComponentType.Button,
 		});
 	} catch {
-		void globalInfo.response.interaction.editReply({ components: [] }).catch();
+		await response.interaction.editReply({ components: [] });
 		return;
 	}
 
 	switch (component.customId) {
 		case 'jumpleft':
-			await component.update(await response(globalInfo, urls, 0));
+			await updateResponse(response, urls, 0);
 			break;
 		case 'left':
-			await component.update(await response(globalInfo, urls, index - 1));
+			await updateResponse(response, urls, index - 1);
 			break;
 		case 'list':
-			void component.update(await getDeckList(urls[index].url));
+			await component.update(await getDeckList(urls[index].url));
 			return;
 		case 'right':
-			await component.update(await response(globalInfo, urls, index + 1));
+			await updateResponse(response, urls, index + 1);
 			break;
 		case 'jumpright':
-			await component.update(await response(globalInfo, urls, urls.length - 1));
+			await updateResponse(response, urls, urls.length - 1);
 			break;
 	}
-}
-
-async function getDeck(globalInfo: GlobalChatCommandInfo<'Global'>): Promise<void> {
-	const urls = (await globalInfo.database.collection('mtg_decks').find({}).toArray()) as unknown as Array<{ url: string }>;
-	void globalInfo.response.interaction.editReply(await response(globalInfo, urls, 0));
 }
 
 export const command: ChatCommand<'Global'> = {
@@ -157,7 +152,10 @@ export const command: ChatCommand<'Global'> = {
 		name: 'decks',
 		description: "Get a deck from Potato's database",
 	},
-	respond: getDeck,
+	async respond(response, globalInfo) {
+		const urls = (await globalInfo.database.collection('mtg_decks').find({}).toArray()) as unknown as Array<{ url: string }>;
+		await updateResponse(response, urls, 0);
+	},
 	ephemeral: true,
 	type: 'Global',
 };

@@ -1,20 +1,18 @@
-import type { InteractionReplyOptions } from 'discord.js';
-import type { ChatCommand, GlobalChatCommandInfo, GuildInfo } from '../types/commands.js';
-import { responseOptions } from '../util/builders.js';
-
-function pause(globalInfo: GlobalChatCommandInfo<'Guild'>, guildInfo: GuildInfo): InteractionReplyOptions {
-	if (guildInfo.queueManager?.pause()) {
-		return responseOptions('success', { title: 'Paused!' });
-	}
-
-	return responseOptions('error', { title: "Sorry, can't do that right now" });
-}
+import type { ChatCommand } from '../types/commands.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 
 export const command: ChatCommand<'Guild'> = {
 	data: {
 		name: 'pause',
 		description: 'Pause the song',
 	},
-	respond: pause,
+	async respond(response, guildInfo) {
+		if (guildInfo.queueManager?.pause()) {
+			await response.interaction.editReply(responseOptions(EmbedType.Success, 'Paused!'));
+			return;
+		}
+
+		await response.interaction.editReply(responseOptions(EmbedType.Error, "Sorry, can't do that right now"));
+	},
 	type: 'Guild',
 };

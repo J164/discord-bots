@@ -1,9 +1,9 @@
 import { setTimeout } from 'node:timers';
 import type { APISelectMenuOption, ThreadChannel, User } from 'discord.js';
 import { ButtonStyle, ComponentType } from 'discord.js';
-import { CardSuit, CardRank } from '../../types/card.js';
+import { CardRank, CardSuit } from '../../types/card.js';
 import type { EuchrePlayer, EuchreTeam, GameInfo } from '../../types/games.js';
-import { responseEmbed, responseOptions } from '../../util/builders.js';
+import { EmbedType, responseEmbed, responseOptions } from '../../util/builders.js';
 import type { Card } from '../../util/card-utils.js';
 import { Deck, multicardMessage } from '../../util/card-utils.js';
 
@@ -45,8 +45,7 @@ export function playEuchre(playerlist: User[], gameChannel: ThreadChannel): void
 
 async function startRound(gameInfo: GameInfo): Promise<void> {
 	await gameInfo.gameChannel.send(
-		responseOptions('info', {
-			title: 'Player Order',
+		responseOptions(EmbedType.Info, 'Player Order', {
 			fields: [
 				{
 					name: `1. ${gameInfo.players[0].user.username}`,
@@ -78,7 +77,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 
 	const sendHand = async (player: EuchrePlayer) => {
 		const channel = await player.user.createDM();
-		await channel.send(await multicardMessage(player.hand, responseEmbed('info', { title: 'Your Hand:' })));
+		await channel.send(await multicardMessage(player.hand, responseEmbed(EmbedType.Info, 'Your Hand:')));
 	};
 
 	await Promise.all(
@@ -87,12 +86,12 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 		}),
 	);
 
-	await gameInfo.gameChannel.send(await multicardMessage([top], responseEmbed('info', { title: 'Top of Stack:' })));
+	await gameInfo.gameChannel.send(await multicardMessage([top], responseEmbed(EmbedType.Info, 'Top of Stack:')));
 
 	const promptThree = async (index: number): Promise<void> => {
 		const dm = await gameInfo.players[index].user.createDM();
 		const message = await dm.send({
-			embeds: [responseEmbed('prompt', { title: 'Would you like to go alone?' })],
+			embeds: [responseEmbed(EmbedType.Prompt, 'Would you like to go alone?')],
 			components: [
 				{
 					components: [
@@ -121,7 +120,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 			});
 		} catch {
 			await message.edit({
-				embeds: [responseEmbed('success', { title: 'Success!' })],
+				embeds: [responseEmbed(EmbedType.Success, 'Success!')],
 				components: [],
 			});
 
@@ -130,7 +129,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 		}
 
 		await component.update({
-			embeds: [responseEmbed('success', { title: 'Success!' })],
+			embeds: [responseEmbed(EmbedType.Success, 'Success!')],
 			components: [],
 		});
 
@@ -145,7 +144,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 	const promptTwo = async (index = 0): Promise<void> => {
 		const messageOptions = await multicardMessage(
 			gameInfo.players[index].hand,
-			responseEmbed('info', { title: index === 3 ? 'Please select trump' : 'Would you like to pass or select trump?' }),
+			responseEmbed(EmbedType.Info, index === 3 ? 'Please select trump' : 'Would you like to pass or select trump?'),
 		);
 		const dm = await gameInfo.players[index].user.createDM();
 		const message = await dm.send({
@@ -199,7 +198,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 			});
 		} catch {
 			await message.edit({
-				embeds: [responseEmbed('success', { title: 'Success!' })],
+				embeds: [responseEmbed(EmbedType.Success, 'Success!')],
 				components: [],
 				files: [],
 			});
@@ -214,7 +213,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 		}
 
 		await component.update({
-			embeds: [responseEmbed('success', { title: 'Success!' })],
+			embeds: [responseEmbed(EmbedType.Success, 'Success!')],
 			components: [],
 			files: [],
 		});
@@ -231,7 +230,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 	const promptReplace = async (index: number): Promise<void> => {
 		const dm = await gameInfo.players[3].user.createDM();
 		const message = await dm.send({
-			...(await multicardMessage(gameInfo.players[3].hand, responseEmbed('info', { title: 'Select a card to replace' }))),
+			...(await multicardMessage(gameInfo.players[3].hand, responseEmbed(EmbedType.Info, 'Select a card to replace'))),
 			components: [
 				{
 					type: ComponentType.ActionRow,
@@ -260,13 +259,13 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 			position = Number.parseInt(component.values[0], 10);
 
 			await component.update({
-				embeds: [responseEmbed('success', { title: 'Success!' })],
+				embeds: [responseEmbed(EmbedType.Success, 'Success!')],
 				components: [],
 				files: [],
 			});
 		} catch {
 			await message.edit({
-				embeds: [responseEmbed('success', { title: 'Success!' })],
+				embeds: [responseEmbed(EmbedType.Success, 'Success!')],
 				components: [],
 				files: [],
 			});
@@ -283,10 +282,13 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 		const dm = await gameInfo.players[index].user.createDM();
 		const message = await dm.send({
 			embeds: [
-				responseEmbed('prompt', {
-					title: index === 3 ? `Would you like to pass or pick it up?` : `Would you like to pass or have ${gameInfo.players[3].user.username} pick it up?`,
-					image: { url: top.image },
-				}),
+				responseEmbed(
+					EmbedType.Prompt,
+					index === 3 ? `Would you like to pass or pick it up?` : `Would you like to pass or have ${gameInfo.players[3].user.username} pick it up?`,
+					{
+						image: { url: top.image },
+					},
+				),
 			],
 			components: [
 				{
@@ -316,7 +318,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 			});
 		} catch {
 			await message.edit({
-				embeds: [responseEmbed('success', { title: 'Success!' })],
+				embeds: [responseEmbed(EmbedType.Success, 'Success!')],
 				components: [],
 			});
 
@@ -328,7 +330,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 		}
 
 		await component.update({
-			embeds: [responseEmbed('success', { title: 'Success!' })],
+			embeds: [responseEmbed(EmbedType.Success, 'Success!')],
 			components: [],
 		});
 
@@ -376,7 +378,7 @@ async function round(options: { gameInfo: GameInfo; leader: number; solo: boolea
 
 	const dm = await options.gameInfo.players[index].user.createDM();
 	const message = await dm.send({
-		...(await multicardMessage(options.gameInfo.players[index].hand, responseEmbed('info', { title: 'Select a card to play' }))),
+		...(await multicardMessage(options.gameInfo.players[index].hand, responseEmbed(EmbedType.Info, 'Select a card to play'))),
 		components: [
 			{
 				type: ComponentType.ActionRow,
@@ -398,7 +400,7 @@ async function round(options: { gameInfo: GameInfo; leader: number; solo: boolea
 		});
 
 		await component.update({
-			embeds: [responseEmbed('success', { title: 'Success!' })],
+			embeds: [responseEmbed(EmbedType.Success, 'Success!')],
 			components: [],
 			files: [],
 		});
@@ -408,7 +410,7 @@ async function round(options: { gameInfo: GameInfo; leader: number; solo: boolea
 		lead ??= playedCard.suit;
 	} catch {
 		await message.edit({
-			embeds: [responseEmbed('success', { title: 'Success!' })],
+			embeds: [responseEmbed(EmbedType.Success, 'Success!')],
 			components: [],
 			files: [],
 		});
@@ -440,8 +442,7 @@ async function score(options: { gameInfo: GameInfo; leader: number; solo: boolea
 	}
 
 	await options.gameInfo.gameChannel.send(
-		responseOptions('info', {
-			title: 'Standings',
+		responseOptions(EmbedType.Info, 'Standings', {
 			fields: [
 				{
 					name: 'Team 1',
@@ -464,8 +465,7 @@ async function score(options: { gameInfo: GameInfo; leader: number; solo: boolea
 
 async function finish(gameInfo: GameInfo, winningTeam: EuchreTeam): Promise<void> {
 	await gameInfo.gameChannel.send(
-		responseOptions('info', {
-			title: `${winningTeam.name} Wins!`,
+		responseOptions(EmbedType.Info, `${winningTeam.name} Wins!`, {
 			fields: [
 				{
 					name: 'Team 1',
@@ -555,8 +555,7 @@ async function determineTrick(options: { gameInfo: GameInfo; leader: number; sol
 
 	options.gameInfo.players[leadingPlayer!].team.tricks++;
 	await options.gameInfo.gameChannel.send(
-		responseOptions('info', {
-			title: 'Standings',
+		responseOptions(EmbedType.Info, 'Standings', {
 			fields: [
 				{
 					name: 'Team 1:',

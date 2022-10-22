@@ -1,26 +1,26 @@
-import type { APIEmbed } from 'discord.js';
+import type { EmbedBuilder } from 'discord.js';
 import type { Db } from 'mongodb';
 import type cron from 'node-cron';
-import { responseEmbed } from '../util/builders.js';
+import { EmbedType, responseEmbed } from '../util/builders.js';
 import { checkUpdates, fetchCourseData } from '../util/irc.js';
 
 /**
  * Compares current grade data with previously stored data and creates an embed reporting any changes
- * @param token IRC authentication token
  * @param database MongoDB database connection object
+ * @param ircToken The session token used to log into IRC
  * @param task Cron task scheduling the grade report task
  * @returns A Promise that resolves to the embed reporting any changes or undefined if there are no changes
  */
-export async function gradeReport(token: string, database: Db, task: cron.ScheduledTask): Promise<APIEmbed | undefined> {
-	const newGrades = await fetchCourseData(token);
+export async function gradeReport(database: Db, ircToken: string, task: cron.ScheduledTask): Promise<EmbedBuilder | undefined> {
+	const newGrades = await fetchCourseData(ircToken);
 	if (!newGrades) {
 		task.stop();
-		return responseEmbed('error', { title: 'Token has been reset!' });
+		return responseEmbed(EmbedType.Error, 'Token has been reset!');
 	}
 
 	const oldGrades = (await database.collection('grades').findOne({ studentId: newGrades.studentId })) as unknown as Grades;
 	if (!oldGrades) {
-		void database.collection('grades').insertOne(newGrades);
+		await database.collection('grades').insertOne(newGrades);
 		return;
 	}
 
@@ -31,12 +31,10 @@ export async function gradeReport(token: string, database: Db, task: cron.Schedu
 	}
 
 	await database.collection('grades').deleteMany({ studentId: newGrades.studentId });
-	void database.collection('grades').insertOne(newGrades);
+	await database.collection('grades').insertOne(newGrades);
 
 	if (diff.termName) {
-		return responseEmbed('info', {
-			title: `New IRC Term! (${diff.termName.oldName} -> ${diff.termName.newName})`,
-		});
+		return responseEmbed(EmbedType.Info, `New IRC Term! (${diff.termName.oldName} -> ${diff.termName.newName})`);
 	}
 
 	const fields = diff.newCourses.map((course) => {
@@ -77,8 +75,7 @@ export async function gradeReport(token: string, database: Db, task: cron.Schedu
 		}
 	}
 
-	return responseEmbed('info', {
-		title: 'IRC Update!',
+	return responseEmbed(EmbedType.Info, 'IRC Update!', {
 		fields: fields.slice(0, 25),
 	});
 }

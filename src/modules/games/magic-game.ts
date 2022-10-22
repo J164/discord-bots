@@ -1,7 +1,7 @@
-import type { APIEmbed, APISelectMenuOption, ButtonInteraction, InteractionUpdateOptions, ThreadChannel, User } from 'discord.js';
+import type { APISelectMenuOption, ButtonInteraction, EmbedBuilder, InteractionUpdateOptions, ThreadChannel, User } from 'discord.js';
 import { ButtonStyle, Collection, ComponentType } from 'discord.js';
 import type { MagicPlayer } from '../../types/games.js';
-import { responseEmbed, responseOptions } from '../../util/builders.js';
+import { EmbedType, responseEmbed, responseOptions } from '../../util/builders.js';
 
 export function playMagic(playerList: User[], life: number, gameChannel: ThreadChannel): void {
 	const playerData = new Collection<string, MagicPlayer>();
@@ -196,7 +196,7 @@ async function heal(playerData: Collection<string, MagicPlayer>, gameChannel: Th
 						}
 
 						await b.update({
-							embeds: [printStandings(playerData), responseEmbed('info', { title: `Current Amount: ${amount}` })],
+							embeds: [printStandings(playerData), responseEmbed(EmbedType.Info, `Current Amount: ${amount}`)],
 						});
 					})
 					.once('end', async (b) => {
@@ -390,7 +390,7 @@ async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: 
 						}
 
 						await b.update({
-							embeds: [printStandings(playerData), responseEmbed('info', { title: `Current Amount: ${amount}` })],
+							embeds: [printStandings(playerData), responseEmbed(EmbedType.Info, `Current Amount: ${amount}`)],
 						});
 					});
 			}),
@@ -434,8 +434,7 @@ async function endGame(playerData: Collection<string, MagicPlayer>, gameChannel:
 	playerData.get(player)!.isAlive = false;
 	if (playerData.filter((user) => user.isAlive).size < 2) {
 		await gameChannel.send(
-			responseOptions('info', {
-				title: `${playerData.filter((player) => player.isAlive)!.first()!.name} Wins!`,
+			responseOptions(EmbedType.Info, `${playerData.filter((player) => player.isAlive)!.first()!.name} Wins!`, {
 				fields: [
 					{
 						name: `${playerData.filter((player) => player.isAlive)!.first()!.name}:`,
@@ -454,18 +453,15 @@ async function endGame(playerData: Collection<string, MagicPlayer>, gameChannel:
 	}
 }
 
-function printStandings(playerData: Collection<string, MagicPlayer>): APIEmbed {
-	const embed = responseEmbed('info', {
-		title: 'Current Standings',
-		fields: [],
-	});
+function printStandings(playerData: Collection<string, MagicPlayer>): EmbedBuilder {
+	const embed = responseEmbed(EmbedType.Info, 'Current Standings');
 	for (const [, player] of playerData) {
 		const value = ['Commander Damage'];
 		for (const [id, damage] of player.commanderDamage) {
 			value.push(`${playerData.get(id)!.name}: ${damage}`);
 		}
 
-		embed.fields?.push({
+		embed.addFields({
 			name: `${player.name}: ${player.isAlive ? `Life Total: ${player.life}\nPoison Counters: ${player.poison}` : 'ELIMINATED'}`,
 			value: value.join('\n'),
 		});

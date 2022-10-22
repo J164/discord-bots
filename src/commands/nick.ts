@@ -1,25 +1,6 @@
-import type { InteractionReplyOptions } from 'discord.js';
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { ChatCommand, GlobalChatCommandInfo } from '../types/commands.js';
-import { responseOptions } from '../util/builders.js';
-
-async function nick(globalInfo: GlobalChatCommandInfo<'Guild'>): Promise<InteractionReplyOptions> {
-	const member = await globalInfo.response.interaction.guild.members.fetch(globalInfo.response.interaction.options.getUser('member', true));
-	if (globalInfo.response.interaction.options.getString('nickname') && globalInfo.response.interaction.options.getString('nickname', true).length > 32) {
-		return responseOptions('error', {
-			title: 'Nicknames must be 32 characters or less',
-		});
-	}
-
-	if (!member.manageable) {
-		return responseOptions('error', {
-			title: "This user's permissions are too powerful to perform this action!",
-		});
-	}
-
-	await member.setNickname(globalInfo.response.interaction.options.getString('nickname'));
-	return responseOptions('success', { title: 'Success!' });
-}
+import type { ChatCommand } from '../types/commands.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 
 export const command: ChatCommand<'Guild'> = {
 	data: {
@@ -40,6 +21,20 @@ export const command: ChatCommand<'Guild'> = {
 			},
 		],
 	},
-	respond: nick,
+	async respond(response) {
+		const member = await response.interaction.guild.members.fetch(response.interaction.options.getUser('member', true));
+		if (response.interaction.options.getString('nickname') && response.interaction.options.getString('nickname', true).length > 32) {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Nicknames must be 32 characters or less'));
+			return;
+		}
+
+		if (!member.manageable) {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, "This user's permissions are too powerful to perform this action!"));
+			return;
+		}
+
+		await member.setNickname(response.interaction.options.getString('nickname'));
+		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Success!'));
+	},
 	type: 'Guild',
 };

@@ -1,9 +1,9 @@
 /**
  * Authenticates with irc, requests, and formats all relevent data
- * @param token Irc login token
+ * @param ircToken The session token to log into IRC
  * @returns A Promise that resolves to the formatted response or undefined if the request failed
  */
-export async function fetchCourseData(token: string): Promise<Grades | undefined> {
+export async function fetchCourseData(ircToken: string): Promise<Grades | undefined> {
 	const authenticateResponse = await fetch('https://irc.d125.org/users/authenticate', {
 		headers: {
 			Accept: 'application/json',
@@ -12,7 +12,7 @@ export async function fetchCourseData(token: string): Promise<Grades | undefined
 			Referer: 'https://irc.d125.org/',
 			'Content-Type': 'application/json',
 			DNT: '1',
-			Cookie: token,
+			Cookie: ircToken,
 		},
 	});
 
@@ -30,7 +30,7 @@ export async function fetchCourseData(token: string): Promise<Grades | undefined
 			Referer: 'https://irc.d125.org/reportcard',
 			'Content-Type': 'application/json',
 			DNT: '1',
-			Cookie: token,
+			Cookie: ircToken,
 		},
 	});
 
@@ -50,7 +50,7 @@ export async function fetchCourseData(token: string): Promise<Grades | undefined
 			Referer: 'https://irc.d125.org/reportcard',
 			'Content-Type': 'application/json',
 			DNT: '1',
-			Cookie: token,
+			Cookie: ircToken,
 		},
 	});
 
@@ -79,7 +79,7 @@ export async function fetchCourseData(token: string): Promise<Grades | undefined
 					Referer: 'https://irc.d125.org/reportcard',
 					'Content-Type': 'application/json',
 					DNT: '1',
-					Cookie: token,
+					Cookie: ircToken,
 				},
 			},
 		);

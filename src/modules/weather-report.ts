@@ -1,7 +1,7 @@
 /**
  * Fetches infomation about the weather for a specific date
  * @param date The date to fetch weather data about
- * @param weatherKey The api key for the Weather API
+ * @param weatherKey The API key for the Weather API
  * @returns A Promise that resolves to the response from the Weather API or undefined if the request failed
  */
 export async function getWeatherReport(date: Date, weatherKey: string): Promise<WeatherResponse | undefined> {

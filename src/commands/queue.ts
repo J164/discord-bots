@@ -1,21 +1,13 @@
-import type { InteractionReplyOptions, InteractionUpdateOptions } from 'discord.js';
-import { ButtonStyle, ComponentType } from 'discord.js';
-import type { ChatCommand, GlobalChatCommandInfo, GuildInfo } from '../types/commands.js';
+import type { ButtonBuilder, ButtonInteraction } from 'discord.js';
+import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import type { ChatCommand, GuildChatCommandResponse } from '../types/commands.js';
 import type { QueueItem } from '../types/voice.js';
-import { Emojis, responseEmbed, responseOptions } from '../util/builders.js';
-import type { QueueManager } from '../voice/queue-manager.js';
+import { EmbedType, Emojis, responseEmbed, responseOptions } from '../util/builders.js';
 
-function response(
-	info: GlobalChatCommandInfo<'Guild'>,
-	queueManager: QueueManager,
-	queue: QueueItem[],
-	page: number,
-): InteractionUpdateOptions & InteractionReplyOptions {
-	void prompt(info, queueManager, queue, page);
-	return {
+async function updateResponse(response: GuildChatCommandResponse, queue: QueueItem[], page: number, component?: ButtonInteraction): Promise<void> {
+	const reply = {
 		embeds: [
-			responseEmbed('info', {
-				title: queueManager.queueLoop ? 'Queue (Looping)' : 'Queue',
+			responseEmbed(EmbedType.Info, 'Queue', {
 				footer: { text: `${page + 1}/${Math.floor(queue.length / 25) + 1}` },
 				fields: queue.slice(page * 25, (page + 1) * 25).map((entry, index) => {
 					return {
@@ -26,8 +18,7 @@ function response(
 			}),
 		],
 		components: [
-			{
-				type: ComponentType.ActionRow,
+			new ActionRowBuilder<ButtonBuilder>({
 				components: [
 					{
 						type: ComponentType.Button,
@@ -62,49 +53,41 @@ function response(
 						disabled: page === Math.floor(queue.length / 25),
 					},
 				],
-			},
+			}),
 		],
 	};
+
+	await (component ? component.update(reply) : response.interaction.editReply(reply));
+	await promptUser(response, queue, page);
 }
 
-async function prompt(info: GlobalChatCommandInfo<'Guild'>, queueManager: QueueManager, queue: QueueItem[], page: number) {
+async function promptUser(response: GuildChatCommandResponse, queue: QueueItem[], page: number) {
 	let component;
 	try {
-		component = await info.response.awaitMessageComponent({
-			filter: (b) => b.user.id === info.response.interaction.user.id,
+		component = await response.awaitMessageComponent({
+			filter: (b) => b.user.id === response.interaction.user.id,
 			time: 300_000,
 			componentType: ComponentType.Button,
 		});
 	} catch {
-		void info.response.interaction.editReply({ components: [] }).catch();
+		await response.interaction.editReply({ components: [] });
 		return;
 	}
 
 	switch (component.customId) {
 		case 'jumpleft':
-			void component.update(response(info, queueManager, queue, 0));
+			await updateResponse(response, queue, 0, component);
 			break;
 		case 'left':
-			void component.update(response(info, queueManager, queue, page - 1));
+			await updateResponse(response, queue, page - 1, component);
 			break;
 		case 'right':
-			void component.update(response(info, queueManager, queue, page + 1));
+			await updateResponse(response, queue, page + 1, component);
 			break;
 		case 'jumpright':
-			void component.update(response(info, queueManager, queue, Math.floor(queue.length / 25)));
+			await updateResponse(response, queue, Math.floor(queue.length / 25), component);
 			break;
 	}
-}
-
-function queue(globalInfo: GlobalChatCommandInfo<'Guild'>, guildInfo: GuildInfo): void {
-	if (!guildInfo.queueManager?.nowPlaying) {
-		void globalInfo.response.interaction.editReply(responseOptions('error', { title: 'There is no queue!' }));
-		return;
-	}
-
-	void globalInfo.response.interaction.editReply(
-		response(globalInfo, guildInfo.queueManager, [guildInfo.queueManager.nowPlaying, ...guildInfo.queueManager.queue], 0),
-	);
 }
 
 export const command: ChatCommand<'Guild'> = {
@@ -112,7 +95,14 @@ export const command: ChatCommand<'Guild'> = {
 		name: 'queue',
 		description: 'Get the song queue',
 	},
-	respond: queue,
+	async respond(response, guildInfo) {
+		if (!guildInfo.queueManager?.nowPlaying) {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, 'There is no queue!'));
+			return;
+		}
+
+		await updateResponse(response, guildInfo.queueManager.queue, 0);
+	},
 	ephemeral: true,
 	type: 'Guild',
 };

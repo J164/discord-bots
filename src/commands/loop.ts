@@ -1,15 +1,6 @@
-import type { InteractionReplyOptions } from 'discord.js';
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { ChatCommand, GlobalChatCommandInfo, GuildInfo } from '../types/commands.js';
-import { responseOptions } from '../util/builders.js';
-
-function loop(globalInfo: GlobalChatCommandInfo<'Guild'>, guildInfo: GuildInfo): InteractionReplyOptions {
-	if (globalInfo.response.interaction.options.getSubcommand() === 'current') {
-		return guildInfo.queueManager?.loopSong() ?? responseOptions('error', { title: 'Nothing is playing!' });
-	}
-
-	return guildInfo.queueManager?.loopQueue() ?? responseOptions('error', { title: 'Nothing is queued!' });
-}
+import type { ChatCommand } from '../types/commands.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 
 export const command: ChatCommand<'Guild'> = {
 	data: {
@@ -28,6 +19,13 @@ export const command: ChatCommand<'Guild'> = {
 			},
 		],
 	},
-	respond: loop,
+	async respond(response, guildInfo) {
+		if (response.interaction.options.getSubcommand() === 'current') {
+			await response.interaction.editReply(guildInfo.queueManager?.loopSong() ?? responseOptions(EmbedType.Error, 'Nothing is playing!'));
+			return;
+		}
+
+		await response.interaction.editReply(guildInfo.queueManager?.loopQueue() ?? responseOptions(EmbedType.Error, 'Nothing is queued!'));
+	},
 	type: 'Guild',
 };

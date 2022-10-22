@@ -1,36 +1,6 @@
-import type { ApplicationCommandOptionChoiceData, InteractionReplyOptions } from 'discord.js';
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { ChatCommand, GlobalAutocompleteInfo, GlobalChatCommandInfo, GuildInfo } from '../types/commands.js';
-import { responseOptions } from '../util/builders.js';
-
-function skipto(globalInfo: GlobalChatCommandInfo<'Guild'>, guildInfo: GuildInfo): InteractionReplyOptions {
-	if (guildInfo.queueManager?.skipTo(globalInfo.response.interaction.options.getInteger('index', true))) {
-		return responseOptions('success', {
-			title: 'Success!',
-		});
-	}
-
-	return responseOptions('error', {
-		title: "Couldn't skip to the song in that position!",
-	});
-}
-
-function suggestions(globalInfo: GlobalAutocompleteInfo, guildInfo: GuildInfo): ApplicationCommandOptionChoiceData[] {
-	const value = Number.parseInt(globalInfo.interaction.options.getFocused(), 10);
-	if (Number.isNaN(value)) return [];
-
-	const items = guildInfo.queueManager?.queue.slice(value > 3 ? value - 3 : 0, value < guildInfo.queueManager.queue.length - 1 ? value + 1 : undefined);
-
-	return (
-		items?.map((item, index) => {
-			const location = value > 3 ? value - 3 + index : index;
-			return {
-				name: `${location}: ${item.title}`,
-				value: location,
-			};
-		}) ?? []
-	);
-}
+import type { ChatCommand } from '../types/commands.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 
 export const command: ChatCommand<'Guild'> = {
 	data: {
@@ -47,7 +17,34 @@ export const command: ChatCommand<'Guild'> = {
 			},
 		],
 	},
-	respond: skipto,
-	autocomplete: suggestions,
+	async respond(response, guildInfo) {
+		if (guildInfo.queueManager?.skipTo(response.interaction.options.getInteger('index', true))) {
+			await response.interaction.editReply(responseOptions(EmbedType.Success, 'Success!'));
+			return;
+		}
+
+		await response.interaction.editReply(responseOptions(EmbedType.Error, "Couldn't skip to the song in that position!"));
+	},
+	async autocomplete(interaction, guildInfo) {
+		const value = Number.parseInt(interaction.options.getFocused(), 10);
+		if (Number.isNaN(value)) {
+			await interaction.respond([]);
+			return;
+		}
+
+		const queue = guildInfo.queueManager?.queue.slice(1) ?? [];
+
+		const items = queue.slice(value > 3 ? value - 3 : 0, value < queue.length - 1 ? value + 1 : undefined);
+
+		await interaction.respond(
+			items?.map((item, index) => {
+				const location = value > 3 ? value - 3 + index : index;
+				return {
+					name: `${location}: ${item.title}`,
+					value: location,
+				};
+			}) ?? [],
+		);
+	},
 	type: 'Guild',
 };

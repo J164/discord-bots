@@ -1,43 +1,8 @@
-import type { InteractionReplyOptions } from 'discord.js';
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import ytpl from 'ytpl';
-import type { ChatCommand, GlobalChatCommandInfo, GuildInfo } from '../types/commands.js';
-import { responseOptions } from '../util/builders.js';
+import type { ChatCommand } from '../types/commands.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 import { QueueManager } from '../voice/queue-manager.js';
-
-async function featured(globalInfo: GlobalChatCommandInfo<'Guild'>, guildInfo: GuildInfo): Promise<InteractionReplyOptions> {
-	const voiceChannel = globalInfo.response.interaction.channel?.isVoiceBased()
-		? globalInfo.response.interaction.channel
-		: globalInfo.response.interaction.member.voice.channel;
-	if (!voiceChannel?.joinable || voiceChannel.type !== ChannelType.GuildVoice) {
-		return responseOptions('error', {
-			title: 'This command can only be used in a voice channel!',
-		});
-	}
-
-	let results;
-	try {
-		results = await ytpl(globalInfo.response.interaction.options.getString('name', true));
-	} catch {
-		return responseOptions('error', {
-			title: 'Something went wrong. Please use /report to report the problem',
-		});
-	}
-
-	const items = results.items.map((item) => {
-		return {
-			url: item.shortUrl,
-			title: item.title,
-			duration: item.duration ?? '',
-			thumbnail: item.bestThumbnail.url ?? '',
-		};
-	});
-	await QueueManager.play(guildInfo, voiceChannel, items, (globalInfo.response.interaction.options.getInteger('position') ?? 0) - 1);
-	return responseOptions('success', {
-		title: `Added playlist "${results.title}" to queue!`,
-		image: { url: results.bestThumbnail.url ?? '' },
-	});
-}
 
 export const command: ChatCommand<'Guild'> = {
 	data: {
@@ -77,7 +42,42 @@ export const command: ChatCommand<'Guild'> = {
 			},
 		],
 	},
-	respond: featured,
+	async respond(response, guildInfo) {
+		const voiceChannel = response.interaction.channel?.isVoiceBased() ? response.interaction.channel : response.interaction.member.voice.channel;
+		if (!voiceChannel?.joinable || voiceChannel.type !== ChannelType.GuildVoice) {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, 'This command can only be used in a voice channel!'));
+			return;
+		}
+
+		let results;
+		try {
+			results = await ytpl(response.interaction.options.getString('name', true));
+		} catch {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Something went wrong. Please use /report to report the problem'));
+			return;
+		}
+
+		const items = results.items.map((item) => {
+			return {
+				url: item.shortUrl,
+				title: item.title,
+				duration: item.duration ?? '',
+				thumbnail: item.bestThumbnail.url ?? '',
+			};
+		});
+
+		await (guildInfo.queueManager ??= new QueueManager(voiceChannel)).addToQueue(
+			voiceChannel,
+			items,
+			(response.interaction.options.getInteger('position') ?? 0) - 1,
+		);
+
+		await response.interaction.editReply(
+			responseOptions(EmbedType.Success, `Added playlist "${results.title}" to queue!`, {
+				image: { url: results.bestThumbnail.url ?? '' },
+			}),
+		);
+	},
 	ephemeral: true,
 	type: 'Guild',
 };

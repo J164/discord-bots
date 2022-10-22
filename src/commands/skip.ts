@@ -1,20 +1,18 @@
-import type { InteractionReplyOptions } from 'discord.js';
-import type { ChatCommand, GlobalChatCommandInfo, GuildInfo } from '../types/commands.js';
-import { responseOptions } from '../util/builders.js';
-
-function skip(globalInfo: GlobalChatCommandInfo<'Guild'>, guildInfo: GuildInfo): InteractionReplyOptions {
-	if (guildInfo.queueManager?.skip()) {
-		return responseOptions('success', { title: 'Skipped' });
-	}
-
-	return responseOptions('error', { title: 'There is nothing to skip!' });
-}
+import type { ChatCommand } from '../types/commands.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 
 export const command: ChatCommand<'Guild'> = {
 	data: {
 		name: 'skip',
 		description: 'Skip the current song',
 	},
-	respond: skip,
+	async respond(response, guildInfo) {
+		if (guildInfo.queueManager?.skip()) {
+			await response.interaction.editReply(responseOptions(EmbedType.Success, 'Skipped'));
+			return;
+		}
+
+		await response.interaction.editReply(responseOptions(EmbedType.Error, 'There is nothing to skip!'));
+	},
 	type: 'Guild',
 };

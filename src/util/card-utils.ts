@@ -1,4 +1,4 @@
-import type { APIEmbed, AttachmentPayload } from 'discord.js';
+import type { AttachmentPayload, EmbedBuilder } from 'discord.js';
 import type { CardCode, RawCard } from '../types/card.js';
 import { CardSuit, CardRank } from '../types/card.js';
 import { mergeImages } from './image-utils.js';
@@ -154,10 +154,10 @@ export class Deck {
  * @param embed The embed to be sent with the merged card image
  * @returns A Promise that resolves to the embed and an attachment payload or just the original embed if the image wasn't found
  */
-export async function multicardMessage(cards: RawCard[], embed: APIEmbed): Promise<{ embeds: APIEmbed[]; files: AttachmentPayload[] }> {
+export async function multicardMessage(cards: RawCard[], embed: EmbedBuilder): Promise<{ embeds: EmbedBuilder[]; files: AttachmentPayload[] }> {
 	if (cards.length === 1) {
 		return {
-			embeds: [{ ...embed, image: { url: cards[0].image } }],
+			embeds: [embed.setImage(cards[0].image)],
 			files: [],
 		};
 	}
@@ -165,7 +165,7 @@ export async function multicardMessage(cards: RawCard[], embed: APIEmbed): Promi
 	const name = Date.now();
 
 	return {
-		embeds: [{ ...embed, image: { url: `attachment://${name}.png` } }],
+		embeds: [embed.setImage(`attachment://${name}.png`)],
 		files: [
 			{
 				attachment: await mergeImages(

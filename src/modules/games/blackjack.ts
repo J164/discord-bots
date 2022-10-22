@@ -1,7 +1,7 @@
-import type { APIEmbed, AttachmentPayload, DMChannel } from 'discord.js';
+import type { AttachmentPayload, DMChannel, EmbedBuilder } from 'discord.js';
 import { ButtonStyle, ComponentType } from 'discord.js';
 import { CardRank } from '../../types/card.js';
-import { responseEmbed } from '../../util/builders.js';
+import { EmbedType, responseEmbed } from '../../util/builders.js';
 import type { Card } from '../../util/card-utils.js';
 import { Deck, multicardMessage } from '../../util/card-utils.js';
 
@@ -59,25 +59,28 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
 	await prompt();
 
 	const finish = finishGame(player, dealer);
-	const standings = await printStandings(player, dealer, true);
 
+	let embed;
 	switch (finish) {
 		case 'Bust':
-			standings.embeds.unshift(responseEmbed('info', { title: 'Bust! (You went over 21)' }));
+			embed = responseEmbed(EmbedType.Info, 'Bust! (You went over 21)');
 			break;
 		case 'Push':
-			standings.embeds.unshift(responseEmbed('info', { title: 'Push! (You tied with the dealer)' }));
+			embed = responseEmbed(EmbedType.Info, 'Push! (You tied with the dealer)');
 			break;
 		case 'Blackjack':
-			standings.embeds.unshift(responseEmbed('info', { title: 'Blackjack!' }));
+			embed = responseEmbed(EmbedType.Info, 'Blackjack!');
 			break;
 		case 'Win':
-			standings.embeds.unshift(responseEmbed('info', { title: 'Win!' }));
+			embed = responseEmbed(EmbedType.Info, 'Win!');
 			break;
 		case 'Lose':
-			standings.embeds.unshift(responseEmbed('info', { title: 'Lose!' }));
+			embed = responseEmbed(EmbedType.Info, 'Lose!');
 			break;
 	}
+
+	const standings = await printStandings(player, dealer, true);
+	standings.embeds.unshift(embed);
 
 	const message = await channel.send({
 		embeds: [...standings.embeds],
@@ -154,18 +157,16 @@ function hit(player: Card[]): number {
 	return score;
 }
 
-async function printStandings(player: Card[], dealer: Card[], gameEnd?: boolean): Promise<{ embeds: APIEmbed[]; files: AttachmentPayload[] }> {
+async function printStandings(player: Card[], dealer: Card[], gameEnd?: boolean): Promise<{ embeds: EmbedBuilder[]; files: AttachmentPayload[] }> {
 	const { embeds: playerEmbeds, files: playerFiles } = await multicardMessage(
 		player,
-		responseEmbed('info', {
-			title: 'Player',
+		responseEmbed(EmbedType.Info, 'Player', {
 			fields: [{ name: 'Value:', value: scoreHand(player).toString(), inline: true }],
 		}),
 	);
 	const { embeds: dealerEmbeds, files: dealerFiles } = await multicardMessage(
 		gameEnd ? dealer : [dealer[0], { image: 'https://deckofcardsapi.com/static/img/back.png' }],
-		responseEmbed('info', {
-			title: 'Dealer',
+		responseEmbed(EmbedType.Info, 'Dealer', {
 			fields: [
 				{
 					name: 'Value:',

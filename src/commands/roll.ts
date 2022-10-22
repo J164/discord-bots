@@ -1,20 +1,6 @@
-import type { InteractionReplyOptions } from 'discord.js';
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { ChatCommand, GlobalChatCommandInfo } from '../types/commands.js';
-import { responseOptions } from '../util/builders.js';
-
-function roll(globalInfo: GlobalChatCommandInfo<'Global'>): InteractionReplyOptions {
-	const dice = globalInfo.response.interaction.options.getInteger('sides') ?? 6;
-	return responseOptions('info', {
-		title: `${dice}-sided die result`,
-		fields: [
-			{
-				name: `${Math.floor(Math.random() * (dice - 1) + 1)}`,
-				value: `The chance of getting this result is about ${(100 / dice).toPrecision(4)}%`,
-			},
-		],
-	});
-}
+import type { ChatCommand } from '../types/commands.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 
 export const command: ChatCommand<'Global'> = {
 	data: {
@@ -30,6 +16,18 @@ export const command: ChatCommand<'Global'> = {
 			},
 		],
 	},
-	respond: roll,
+	async respond(response) {
+		const dice = response.interaction.options.getInteger('sides') ?? 6;
+		await response.interaction.editReply(
+			responseOptions(EmbedType.Info, `${dice}-sided die result`, {
+				fields: [
+					{
+						name: `${Math.floor(Math.random() * (dice - 1) + 1)}`,
+						value: `The chance of getting this result is about ${(100 / dice).toPrecision(4)}%`,
+					},
+				],
+			}),
+		);
+	},
 	type: 'Global',
 };

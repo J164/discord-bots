@@ -1,31 +1,7 @@
-import type { InteractionReplyOptions } from 'discord.js';
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { ChatCommand, GlobalChatCommandInfo } from '../types/commands.js';
-import { responseOptions } from '../util/builders.js';
-import { logger } from '../util/logger.js';
+import type { ChatCommand } from '../types/commands.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 import { download } from '../voice/ytdl.js';
-
-async function downloadVideo(globalInfo: GlobalChatCommandInfo<'Global'>): Promise<InteractionReplyOptions> {
-	if (
-		!/^((http|https):\/\/)?(www\.)?([\d.A-Za-z]{2,256}\.[a-z]{2,6})(\/[\w#%&+./:=?@\\~-]*)?$/.test(
-			globalInfo.response.interaction.options.getString('url', true),
-		)
-	) {
-		return responseOptions('error', { title: 'Not a valid url!' });
-	}
-
-	void globalInfo.response.interaction.editReply(responseOptions('info', { title: 'Downloading...' }));
-	try {
-		await download(globalInfo.response.interaction.options.getString('url', true), {
-			outtmpl: `${globalInfo.downloadDirectory}/%(title)s.%(ext)s`,
-			format: globalInfo.response.interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best',
-		});
-		return responseOptions('success', { title: 'Download Successful!' });
-	} catch (error) {
-		logger.error(error, `Chat Command Interaction #${globalInfo.response.interaction.id}) threw an error when downloading`);
-		return responseOptions('error', { title: 'Download Failed!' });
-	}
-}
 
 export const command: ChatCommand<'Global'> = {
 	data: {
@@ -46,6 +22,18 @@ export const command: ChatCommand<'Global'> = {
 			},
 		],
 	},
-	respond: downloadVideo,
+	async respond(response, globalInfo) {
+		if (!/^((http|https):\/\/)?(www\.)?([\d.A-Za-z]{2,256}\.[a-z]{2,6})(\/[\w#%&+./:=?@\\~-]*)?$/.test(response.interaction.options.getString('url', true))) {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Not a valid url!'));
+			return;
+		}
+
+		await response.interaction.editReply(responseOptions(EmbedType.Info, 'Downloading...'));
+		await download(response.interaction.options.getString('url', true), {
+			outtmpl: `${globalInfo.downloadDirectory}/%(title)s.%(ext)s`,
+			format: response.interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best',
+		});
+		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Download Successful!'));
+	},
 	type: 'Global',
 };

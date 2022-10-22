@@ -1,4 +1,5 @@
-import type { APIEmbed } from 'discord.js';
+import type { APIEmbed, ColorResolvable } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 
 /** Enum representing commonly used emojis */
 export const enum Emojis {
@@ -20,41 +21,51 @@ export const enum PotatoColors {
 	QuestionOrange = 0xff_a5_00,
 }
 
+/** Enum representing common embed types */
+export const enum EmbedType {
+	Info,
+	Error,
+	Success,
+	Prompt,
+}
+
 /**
  * Formats an embed based on its type
  * @param type Which type of formatting to use
+ * @param title Optional title of the embed
  * @param options The embed to be formated
+ * @param color Optional color of the embed
  * @returns The formated embed
  */
-export function responseEmbed(type: 'info' | 'error' | 'success' | 'prompt', options: APIEmbed): APIEmbed {
+export function responseEmbed(type: EmbedType, title?: string, options?: Omit<APIEmbed, 'title' | 'color'>, color?: ColorResolvable): EmbedBuilder {
+	const embed = new EmbedBuilder(options);
+
 	switch (type) {
-		case 'info':
-			options.color ??= PotatoColors.DefaultBlue;
-			options.title = `${Emojis.Document}\t${options.title ?? ''}`;
+		case EmbedType.Info:
+			embed.setColor(color ?? PotatoColors.DefaultBlue).setTitle(`${Emojis.Document}\t${title ?? ''}`);
 			break;
-		case 'error':
-			options.color ??= PotatoColors.ErrorRed;
-			options.title = `${Emojis.RedX}\t${options.title ?? ''}`;
+		case EmbedType.Error:
+			embed.setColor(color ?? PotatoColors.ErrorRed).setTitle(`${Emojis.RedX}\t${title ?? ''}`);
 			break;
-		case 'success':
-			options.color ??= PotatoColors.SuccessGreen;
-			options.title = `${Emojis.GreenCheckMark}\t${options.title ?? ''}`;
+		case EmbedType.Success:
+			embed.setColor(color ?? PotatoColors.SuccessGreen).setTitle(`${Emojis.GreenCheckMark}\t${title ?? ''}`);
 			break;
-		case 'prompt':
-			options.color ??= PotatoColors.QuestionOrange;
-			options.title = `${Emojis.QuestionMark}\t${options.title ?? ''}`;
+		case EmbedType.Prompt:
+			embed.setColor(color ?? PotatoColors.QuestionOrange).setTitle(`${Emojis.QuestionMark}\t${title ?? ''}`);
 			break;
 	}
 
-	return options;
+	return embed;
 }
 
 /**
  * Formats an embed based on its type and wraps it as a message
  * @param type Which type of formatting to use
+ * @param title Optional title of the embed
  * @param options The embed to be formated
+ * @param color Optional color of the embed
  * @returns The formated embed wrapped as a message
  */
-export function responseOptions(type: 'info' | 'error' | 'success' | 'prompt', options: APIEmbed) {
-	return { embeds: [responseEmbed(type, options)] };
+export function responseOptions(type: EmbedType, title?: string, options?: APIEmbed, color?: ColorResolvable) {
+	return { embeds: [responseEmbed(type, title, options, color)] };
 }

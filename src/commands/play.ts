@@ -1,10 +1,10 @@
-import type { ApplicationCommandOptionChoiceData, InteractionReplyOptions } from 'discord.js';
+import type { InteractionReplyOptions } from 'discord.js';
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import ytpl from 'ytpl';
 import ytsr from 'ytsr';
-import type { ChatCommand, GlobalAutocompleteInfo, GlobalChatCommandInfo, GuildInfo } from '../types/commands.js';
+import type { ChatCommand } from '../types/commands.js';
 import type { QueueItem } from '../types/voice.js';
-import { responseOptions } from '../util/builders.js';
+import { EmbedType, responseOptions } from '../util/builders.js';
 import { QueueManager } from '../voice/queue-manager.js';
 import { resolve } from '../voice/ytdl.js';
 
@@ -74,8 +74,7 @@ async function spotify(link: string, spotifyToken: string): Promise<AudioData<bo
 
 	return {
 		songs,
-		response: responseOptions('success', {
-			title: `Added "${result.name}" to queue!`,
+		response: responseOptions(EmbedType.Success, `Added "${result.name}" to queue!`, {
 			fields: [
 				{
 					name: 'URL:',
@@ -105,8 +104,7 @@ async function youtubePlaylist(link: string): Promise<AudioData<boolean>> {
 				thumbnail: bestThumbnail.url ?? '',
 			};
 		}),
-		response: responseOptions('success', {
-			title: `Added playlist "${result.title}" to queue!`,
+		response: responseOptions(EmbedType.Success, `Added playlist "${result.title}" to queue!`, {
 			fields: [{ name: 'URL:', value: link }],
 			image: { url: result.bestThumbnail.url ?? '' },
 		}),
@@ -135,8 +133,7 @@ async function youtube(link: string): Promise<AudioData<boolean>> {
 				thumbnail: result.thumbnail,
 			},
 		],
-		response: responseOptions('success', {
-			title: `Added "${result.title}" to queue!`,
+		response: responseOptions(EmbedType.Success, `Added "${result.title}" to queue!`, {
 			fields: [{ name: 'URL:', value: result.webpage_url }],
 			image: { url: result.thumbnail },
 		}),
@@ -169,72 +166,12 @@ async function misc(link: string): Promise<AudioData<boolean>> {
 				thumbnail: bestThumbnail.url ?? '',
 			},
 		],
-		response: responseOptions('success', {
-			title: `Added "${title}" to queue!`,
+		response: responseOptions(EmbedType.Success, `Added "${title}" to queue!`, {
 			fields: [{ name: 'URL:', value: url }],
 			image: { url: bestThumbnail.url ?? '' },
 		}),
 		success: true,
 	};
-}
-
-async function play(globalInfo: GlobalChatCommandInfo<'Guild'>, guildInfo: GuildInfo): Promise<InteractionReplyOptions> {
-	const voiceChannel = globalInfo.response.interaction.channel?.isVoiceBased()
-		? globalInfo.response.interaction.channel
-		: globalInfo.response.interaction.member.voice.channel;
-	if (!voiceChannel?.joinable || voiceChannel.type !== ChannelType.GuildVoice) {
-		return responseOptions('error', { title: 'This command can only be used in a voice channel!' });
-	}
-
-	void globalInfo.response.interaction.editReply(responseOptions('info', { title: 'Boiling potatoes...' }));
-
-	const link = globalInfo.response.interaction.options.getString('name', true).trim();
-
-	let parsed: AudioData<boolean>;
-	if (/^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=?]+)$/.test(link)) {
-		parsed = await spotify(link, globalInfo.spotifyToken);
-	} else if (/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/playlist\?list=([A-Za-z\d-_&=?]+)$/.test(link)) {
-		parsed = await youtubePlaylist(link);
-	} else if (/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(link)) {
-		parsed = await youtube(link);
-	} else {
-		parsed = await misc(link);
-	}
-
-	if (!parsed.success) {
-		return responseOptions('error', { title: 'Song not found' });
-	}
-
-	await QueueManager.play(guildInfo, voiceChannel, parsed.songs, (globalInfo.response.interaction.options.getInteger('position') ?? 0) - 1);
-	return parsed.response;
-}
-
-async function search(globalInfo: GlobalAutocompleteInfo): Promise<ApplicationCommandOptionChoiceData[]> {
-	const value = globalInfo.interaction.options.getFocused();
-	if (
-		value.length < 3 ||
-		/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(value) ||
-		/^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=?]+)$/.test(value)
-	) {
-		return [];
-	}
-
-	const filterMap = await ytsr.getFilters(value);
-	const filter = filterMap.get('Type')?.get('Video')?.url;
-	if (!filter) {
-		return [];
-	}
-
-	const results = await ytsr(filter, {
-		limit: 4,
-	});
-	const options = (results.items as ytsr.Video[]).map((result) => {
-		return {
-			name: result.title,
-			value: result.url,
-		};
-	});
-	return options;
 }
 
 export const command: ChatCommand<'Guild'> = {
@@ -258,8 +195,70 @@ export const command: ChatCommand<'Guild'> = {
 			},
 		],
 	},
-	respond: play,
-	autocomplete: search,
+	async respond(response, guildInfo, globalInfo) {
+		const voiceChannel = response.interaction.channel?.isVoiceBased() ? response.interaction.channel : response.interaction.member.voice.channel;
+		if (!voiceChannel?.joinable || voiceChannel.type !== ChannelType.GuildVoice) {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, 'This command can only be used in a voice channel!'));
+			return;
+		}
+
+		await response.interaction.editReply(responseOptions(EmbedType.Info, 'Boiling potatoes...'));
+
+		const link = response.interaction.options.getString('name', true).trim();
+
+		let parsed: AudioData<boolean>;
+		if (/^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=?]+)$/.test(link)) {
+			parsed = await spotify(link, globalInfo.spotifyToken);
+		} else if (/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/playlist\?list=([A-Za-z\d-_&=?]+)$/.test(link)) {
+			parsed = await youtubePlaylist(link);
+		} else if (/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(link)) {
+			parsed = await youtube(link);
+		} else {
+			parsed = await misc(link);
+		}
+
+		if (!parsed.success) {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Song not found'));
+			return;
+		}
+
+		await (guildInfo.queueManager ??= new QueueManager(voiceChannel)).addToQueue(
+			voiceChannel,
+			parsed.songs,
+			(response.interaction.options.getInteger('position') ?? 0) - 1,
+		);
+
+		await response.interaction.editReply(parsed.response);
+	},
+	async autocomplete(interaction) {
+		const value = interaction.options.getFocused();
+		if (
+			value.length < 3 ||
+			/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(value) ||
+			/^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=?]+)$/.test(value)
+		) {
+			await interaction.respond([]);
+			return;
+		}
+
+		const filterMap = await ytsr.getFilters(value);
+		const filter = filterMap.get('Type')?.get('Video')?.url;
+		if (!filter) {
+			await interaction.respond([]);
+			return;
+		}
+
+		const results = await ytsr(filter, {
+			limit: 4,
+		});
+		const options = (results.items as ytsr.Video[]).map((result) => {
+			return {
+				name: result.title,
+				value: result.url,
+			};
+		});
+		await interaction.respond(options);
+	},
 	ephemeral: true,
 	type: 'Guild',
 };
