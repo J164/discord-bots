@@ -1,0 +1,64 @@
+{
+  "name": "discordbots",
+  "version": "1.0.0",
+  "description": "",
+  "author": "J164",
+  "license": "MIT",
+  "private": true,
+  "homepage": "https://github.com/J164/DiscordBots",
+  "repository": "github:J164/DiscordBots",
+  "bugs": "https://github.com/J164/DiscordBots/issues",
+  "engines": {
+    "node": ">=18.2.0"
+  },
+  "type": "module",
+  "dependencies": {
+    "@discordjs/opus": "0.8.0",
+    "@discordjs/voice": "0.11.0",
+    "@types/node": "18.0.6",
+    "discord-api-types": "0.36.3",
+    "discord.js": "14.0.3",
+    "fuse.js": "6.6.2",
+    "pino": "8.3.0",
+    "pino-pretty": "8.1.0",
+    "sodium-native": "3.3.0",
+    "typescript": "4.7.4"
+  },
+  "devDependencies": {
+    "@discordjs/rest": "1.0.0",
+    "@typescript-eslint/eslint-plugin": "5.30.7",
+    "@typescript-eslint/parser": "5.30.7",
+    "ava": "4.3.1",
+    "c8": "7.12.0",
+    "eslint": "8.20.0",
+    "eslint-plugin-unicorn": "42.0.0",
+    "prettier": "2.7.1"
+  },
+  "optionalDependencies": {
+    "bufferutil": "4.0.6",
+    "erlpack": "github:discord/erlpack",
+    "utf-8-validate": "5.0.9",
+    "zlib-sync": "0.1.7"
+  },
+  "ava": {
+    "workerThreads": false,
+    "files": [
+      "dist/test/**/*.test.js"
+    ],
+    "nodeArguments": [
+      "--experimental-json-modules"
+    ]
+  },
+  "c8": {
+    "src": "src/",
+    "all": true
+  },
+  "scripts": {
+    "lint": "eslint ./ --ext .ts && npx prettier --check .",
+    "fix": "eslint ./ --ext .ts --fix",
+    "build": "tsc",
+    "test": "c8 ava",
+    "prettier": "npx prettier --write .",
+    "deploy": "node dist/src/deploy.js"
+  }
+}

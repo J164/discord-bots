@@ -1,0 +1,26 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - run: npm i
+      - run: npm run build
+      - run: npm run deploy --crystal_id=${{ secrets.CRYSTAL_ID }} --crystal_token=${{ secrets.CRYSTAL_TOKEN }} --swear_id=${{ secrets.SWEAR_ID }} --swear_token=${{ secrets.SWEAR_TOKEN }} --yeet_id=${{ secrets.YEET_ID }} --yeet_token=${{ secrets.YEET_TOKEN }}
