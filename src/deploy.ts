@@ -1,35 +1,67 @@
+import { readdir } from 'node:fs/promises';
+import { env } from 'node:process';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v10';
-import { readdirSync } from 'node:fs';
-import { env } from 'node:process';
-import { ChatCommand } from './bot-client.js';
+import type { CrystalChatCommand } from './types/bot-types/crystal.js';
+import type { PotatoChatCommand } from './types/bot-types/potato.js';
+import type { SwearChatCommand } from './types/bot-types/swear.js';
+import type { YeetChatCommand } from './types/bot-types/yeet.js';
 
-const crystalCommandData = await Promise.all(
-  readdirSync('./dist/src/commands/crystal')
-    .filter((file) => file.endsWith('.js'))
-    .map(async (command) => {
-      return ((await import(`./commands/crystal/${command}`)) as { command: ChatCommand<'Global' | 'Guild'> }).command.data;
-    }),
-);
+if (!env.npm_config_argv) {
+	throw new Error('Please run this file with yarn using the script in package.json');
+}
 
-const swearCommandData = await Promise.all(
-  readdirSync('./dist/src/commands/swear')
-    .filter((file) => file.endsWith('.js'))
-    .map(async (command) => {
-      return ((await import(`./commands/swear/${command}`)) as { command: ChatCommand<'Global' | 'Guild'> }).command.data;
-    }),
-);
+const npmConfig = JSON.parse(env.npm_config_argv) as { original: string[] };
+if (npmConfig.original.length < 8) {
+	throw new Error('Missing Credentials');
+}
 
-const yeetCommandData = await Promise.all(
-  readdirSync('./dist/src/commands/yeet')
-    .filter((file) => file.endsWith('.js'))
-    .map(async (command) => {
-      return ((await import(`./commands/yeet/${command}`)) as { command: ChatCommand<'Global' | 'Guild'> }).command.data;
-    }),
-);
+const commandData = await Promise.all([
+	(async () => {
+		const files = await readdir('./dist/src/commands/crystal');
+		return Promise.all(
+			files
+				.filter((file) => file.endsWith('.js'))
+				.map(async (command) => {
+					return ((await import(`./commands/crystal/${command}`)) as { command: CrystalChatCommand<'Global' | 'Guild'> }).command.data;
+				}),
+		);
+	})(),
+	(async () => {
+		const files = await readdir('./dist/src/commands/potato');
+		return Promise.all(
+			files
+				.filter((file) => file.endsWith('.js'))
+				.map(async (command) => {
+					return ((await import(`./commands/potato/${command}`)) as { command: PotatoChatCommand<'Global' | 'Guild'> }).command.data;
+				}),
+		);
+	})(),
+	(async () => {
+		const files = await readdir('./dist/src/commands/swear');
+		return Promise.all(
+			files
+				.filter((file) => file.endsWith('.js'))
+				.map(async (command) => {
+					return ((await import(`./commands/swear/${command}`)) as { command: SwearChatCommand<'Global' | 'Guild'> }).command.data;
+				}),
+		);
+	})(),
+	(async () => {
+		const files = await readdir('./dist/src/commands/yeet');
+		return Promise.all(
+			files
+				.filter((file) => file.endsWith('.js'))
+				.map(async (command) => {
+					return ((await import(`./commands/yeet/${command}`)) as { command: YeetChatCommand<'Global' | 'Guild'> }).command.data;
+				}),
+		);
+	})(),
+]);
 
 await Promise.all([
-  new REST({ version: '10' }).setToken(env.npm_config_crystal_token!).put(Routes.applicationCommands(env.npm_config_crystal_id!), { body: crystalCommandData }),
-  new REST({ version: '10' }).setToken(env.npm_config_swear_token!).put(Routes.applicationCommands(env.npm_config_swear_id!), { body: swearCommandData }),
-  new REST({ version: '10' }).setToken(env.npm_config_yeet_token!).put(Routes.applicationCommands(env.npm_config_yeet_id!), { body: yeetCommandData }),
+	new REST({ version: '10' }).setToken(npmConfig.original[3]).put(Routes.applicationCommands(npmConfig.original[2]), { body: commandData[0] }),
+	new REST({ version: '10' }).setToken(npmConfig.original[5]).put(Routes.applicationCommands(npmConfig.original[4]), { body: commandData[1] }),
+	new REST({ version: '10' }).setToken(npmConfig.original[7]).put(Routes.applicationCommands(npmConfig.original[6]), { body: commandData[2] }),
+	new REST({ version: '10' }).setToken(npmConfig.original[9]).put(Routes.applicationCommands(npmConfig.original[8]), { body: commandData[3] }),
 ]);

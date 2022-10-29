@@ -1,6 +1,0 @@
-.vscode
-.env
-node_modules
-dist
-logs
-*.config.cjs

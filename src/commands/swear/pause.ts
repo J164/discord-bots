@@ -1,19 +1,20 @@
-import { InteractionReplyOptions } from 'discord.js';
-import { ChatCommand, GuildChatCommandInfo } from '../../bot-client.js';
-import { responseOptions } from '../../utils/builders.js';
+import type { InteractionReplyOptions } from 'discord.js';
+import type { SwearChatCommand } from '../../types/bot-types/swear.js';
+import { EmbedType, responseOptions } from '../../util/builders.js';
 
 function pause(info: GuildChatCommandInfo): InteractionReplyOptions {
-  if (info.voiceManager!.pause()) {
-    return responseOptions('success', { title: 'Paused!' });
-  }
-  return responseOptions('error', { title: 'Nothing is playing' });
+	if (info.voiceManager!.pause()) {
+		return responseOptions(EmbedType.Success, 'Paused!');
+	}
+
+	return responseOptions(EmbedType.Error, 'Nothing is playing');
 }
 
-export const command: ChatCommand<'Guild'> = {
-  data: {
-    name: 'pause',
-    description: 'Pause the song',
-  },
-  respond: pause,
-  type: 'Guild',
+export const command: SwearChatCommand<'Guild'> = {
+	data: {
+		name: 'pause',
+		description: 'Pause the song',
+	},
+	respond: pause,
+	type: 'Guild',
 };

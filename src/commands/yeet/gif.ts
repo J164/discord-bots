@@ -1,25 +1,22 @@
-import { InteractionReplyOptions } from 'discord.js';
-import { ChatCommand } from '../../bot-client.js';
-import config from '../../config.json' assert { type: 'json' };
+import type { YeetChatCommand } from '../../types/bot-types/yeet.js';
+import { EmbedType, responseOptions } from '../../util/builders.js';
 
-interface TenorResponse {
-  readonly results: readonly {
-    readonly itemurl: string;
-  }[];
-}
+export const command: YeetChatCommand<'Global'> = {
+	data: {
+		name: 'gif',
+		description: 'Get a gif related to YEET',
+	},
+	async respond(response, globalInfo) {
+		const request = await fetch(`https://g.tenor.com/v1/search?q=yeet&key=${globalInfo.tenorKey}&limit=50&contentfilter=medium`);
+		if (!request.ok) {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, "Couldn't find a gif"));
+			return;
+		}
 
-async function gif(): Promise<InteractionReplyOptions> {
-  const gifs = (await (await fetch(`https://g.tenor.com/v1/search?q=yeet&key=${config.TENORKEY}&limit=50&contentfilter=medium`)).json()) as TenorResponse;
-  return {
-    content: gifs.results[Math.floor(Math.random() * gifs.results.length)].itemurl,
-  };
-}
-
-export const command: ChatCommand<'Global'> = {
-  data: {
-    name: 'gif',
-    description: 'Get a gif related to YEET',
-  },
-  respond: gif,
-  type: 'Global',
+		const gifs = (await request.json()) as TenorResponse;
+		await response.interaction.editReply({
+			content: gifs.results[Math.floor(Math.random() * gifs.results.length)].itemurl,
+		});
+	},
+	type: 'Global',
 };

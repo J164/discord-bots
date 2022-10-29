@@ -1,17 +1,17 @@
-import { InteractionReplyOptions } from 'discord.js';
-import { ChatCommand, GuildChatCommandInfo } from '../../bot-client.js';
-import { responseOptions } from '../../utils/builders.js';
+import type { InteractionReplyOptions } from 'discord.js';
+import type { SwearChatCommand } from '../../types/bot-types/swear.js';
+import { EmbedType, responseOptions } from '../../util/builders.js';
 
 function stop(info: GuildChatCommandInfo): InteractionReplyOptions {
-  info.voiceManager!.reset();
-  return responseOptions('success', { title: 'Success' });
+	info.voiceManager!.reset();
+	return responseOptions(EmbedType.Success, 'Success');
 }
 
-export const command: ChatCommand<'Guild'> = {
-  data: {
-    name: 'stop',
-    description: 'Stop the song',
-  },
-  respond: stop,
-  type: 'Guild',
+export const command: SwearChatCommand<'Guild'> = {
+	data: {
+		name: 'stop',
+		description: 'Stop the song',
+	},
+	respond: stop,
+	type: 'Guild',
 };

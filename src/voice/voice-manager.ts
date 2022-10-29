@@ -12,7 +12,7 @@ import {
 import { VoiceChannel } from 'discord.js';
 import { createReadStream } from 'node:fs';
 import { setTimeout } from 'node:timers/promises';
-import { responseOptions } from '../utils/builders.js';
+import { responseOptions } from '../util/builders.js';
 
 export class VoiceManager {
   private _voiceConnection: VoiceConnection | null;
