@@ -1,9 +1,9 @@
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { ChatCommand } from '../types/commands.js';
+import type { PotatoChatCommand } from '../types/potato.js';
 import { EmbedType, responseOptions } from '../util/builders.js';
 import { download } from '../voice/ytdl.js';
 
-export const command: ChatCommand<'Global'> = {
+export const command: PotatoChatCommand<'Global'> = {
 	data: {
 		name: 'download',
 		description: 'Download a video off of Youtube',

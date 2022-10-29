@@ -1,8 +1,8 @@
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { ChatCommand } from '../types/commands.js';
+import type { PotatoChatCommand } from '../types/potato.js';
 import { EmbedType, responseOptions } from '../util/builders.js';
 
-export const command: ChatCommand<'Guild'> = {
+export const command: PotatoChatCommand<'Guild'> = {
 	data: {
 		name: 'skipto',
 		description: 'Pulls the selected song to the top of the queue and skips the current song',

@@ -1,4 +1,4 @@
-import type { ChatCommand } from '../types/commands.js';
+import type { PotatoChatCommand } from '../types/potato.js';
 import { EmbedType, responseEmbed, responseOptions } from '../util/builders.js';
 import { fetchCourseData } from '../util/irc.js';
 
@@ -17,7 +17,7 @@ function buildScoreMap(standards: Standard[]): string {
 	return string.join('\n') || 'No scores yet!';
 }
 
-export const command: ChatCommand<'Global'> = {
+export const command: PotatoChatCommand<'Global'> = {
 	data: {
 		name: 'grades',
 		description: 'Fetch your grades from IRC',

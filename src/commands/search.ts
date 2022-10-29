@@ -1,6 +1,7 @@
 import type { ButtonInteraction, InteractionUpdateOptions, MessageActionRowComponentBuilder, SelectMenuBuilder } from 'discord.js';
 import { ActionRowBuilder, ApplicationCommandOptionType, ButtonStyle, ComponentType } from 'discord.js';
-import type { ChatCommand, GlobalChatCommandResponse } from '../types/commands.js';
+import type { GlobalChatCommandResponse } from '../types/client.js';
+import type { PotatoChatCommand } from '../types/potato.js';
 import { EmbedType, Emojis, responseEmbed, responseOptions } from '../util/builders.js';
 import { mergeImages } from '../util/image-utils.js';
 
@@ -161,7 +162,7 @@ async function promptUser(response: GlobalChatCommandResponse, scryfallResults: 
 	}
 }
 
-export const command: ChatCommand<'Global'> = {
+export const command: PotatoChatCommand<'Global'> = {
 	data: {
 		name: 'search',
 		description: 'Search for Magic cards',

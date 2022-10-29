@@ -1,6 +1,7 @@
 import type { ButtonBuilder, ButtonInteraction, InteractionUpdateOptions } from 'discord.js';
 import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
-import type { ChatCommand, GlobalChatCommandResponse } from '../types/commands.js';
+import type { GlobalChatCommandResponse } from '../types/client.js';
+import type { PotatoChatCommand } from '../types/potato.js';
 import { EmbedType, Emojis, responseEmbed, responseOptions } from '../util/builders.js';
 
 async function getDeckList(url: string): Promise<InteractionUpdateOptions> {
@@ -147,7 +148,7 @@ async function promptUser(response: GlobalChatCommandResponse, urls: Array<{ url
 	}
 }
 
-export const command: ChatCommand<'Global'> = {
+export const command: PotatoChatCommand<'Global'> = {
 	data: {
 		name: 'decks',
 		description: "Get a deck from Potato's database",

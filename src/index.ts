@@ -1,9 +1,12 @@
 import { env } from 'node:process';
 import { ActivityType, GatewayIntentBits, Partials } from 'discord.js';
 import { config } from 'dotenv';
+import { pino } from 'pino';
 import { PotatoClient } from './potato-client.js';
 
 config();
+
+const logger = pino();
 
 const client = new PotatoClient(
 	{
@@ -19,6 +22,7 @@ const client = new PotatoClient(
 		},
 	},
 	{
+		logger: logger.child({ name: 'Potato Bot' }),
 		abstractKey: env.ABSTRACT_KEY ?? '',
 		admin: env.ADMIN ?? '',
 		announcementChannel: env.ANNOUNCEMENT_CHANNEL ?? '',

@@ -2,7 +2,7 @@ import { readdir } from 'node:fs/promises';
 import { env } from 'node:process';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v10';
-import type { ChatCommand } from './types/commands.js';
+import type { PotatoChatCommand } from './types/potato.js';
 
 if (!env.npm_config_argv) {
 	throw new Error('Please run this file with yarn using the script in package.json');
@@ -18,7 +18,7 @@ const commandData = await Promise.all(
 	commandFiles
 		.filter((file) => file.endsWith('.js'))
 		.map(async (command) => {
-			return ((await import(`./commands/${command}`)) as { command: ChatCommand<'Global' | 'Guild'> }).command.data;
+			return ((await import(`./commands/${command}`)) as { command: PotatoChatCommand<'Global' | 'Guild'> }).command.data;
 		}),
 );
 

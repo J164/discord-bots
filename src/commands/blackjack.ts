@@ -1,8 +1,8 @@
 import { playBlackjack } from '../modules/games/blackjack.js';
-import type { ChatCommand } from '../types/commands.js';
+import type { PotatoChatCommand } from '../types/potato.js';
 import { EmbedType, responseOptions } from '../util/builders.js';
 
-export const command: ChatCommand<'Global'> = {
+export const command: PotatoChatCommand<'Global'> = {
 	data: {
 		name: 'blackjack',
 		description: 'Play Blackjack',

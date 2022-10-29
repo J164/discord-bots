@@ -2,7 +2,7 @@ import type { InteractionReplyOptions } from 'discord.js';
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import ytpl from 'ytpl';
 import ytsr from 'ytsr';
-import type { ChatCommand } from '../types/commands.js';
+import type { PotatoChatCommand } from '../types/potato.js';
 import type { QueueItem } from '../types/voice.js';
 import { EmbedType, responseOptions } from '../util/builders.js';
 import { QueueManager } from '../voice/queue-manager.js';
@@ -174,7 +174,7 @@ async function misc(link: string): Promise<AudioData<boolean>> {
 	};
 }
 
-export const command: ChatCommand<'Guild'> = {
+export const command: PotatoChatCommand<'Guild'> = {
 	data: {
 		name: 'play',
 		description: 'Play a song',

@@ -1,10 +1,10 @@
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import ytpl from 'ytpl';
-import type { ChatCommand } from '../types/commands.js';
+import type { PotatoChatCommand } from '../types/potato.js';
 import { EmbedType, responseOptions } from '../util/builders.js';
 import { QueueManager } from '../voice/queue-manager.js';
 
-export const command: ChatCommand<'Guild'> = {
+export const command: PotatoChatCommand<'Guild'> = {
 	data: {
 		name: 'featured',
 		description: 'Play a song from the list of featured playlists',

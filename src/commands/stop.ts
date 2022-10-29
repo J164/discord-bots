@@ -1,7 +1,7 @@
-import type { ChatCommand } from '../types/commands.js';
+import type { PotatoChatCommand } from '../types/potato.js';
 import { EmbedType, responseOptions } from '../util/builders.js';
 
-export const command: ChatCommand<'Guild'> = {
+export const command: PotatoChatCommand<'Guild'> = {
 	data: {
 		name: 'stop',
 		description: 'Disconnects Potato Bot from voice',

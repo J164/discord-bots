@@ -1,8 +1,8 @@
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { ChatCommand } from '../types/commands.js';
+import type { PotatoChatCommand } from '../types/potato.js';
 import { EmbedType, responseOptions } from '../util/builders.js';
 
-export const command: ChatCommand<'Guild'> = {
+export const command: PotatoChatCommand<'Guild'> = {
 	data: {
 		name: 'loop',
 		description: 'Loop the current song or queue',

@@ -1,6 +1,7 @@
 import type { ButtonBuilder, ButtonInteraction } from 'discord.js';
 import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
-import type { ChatCommand, GuildChatCommandResponse } from '../types/commands.js';
+import type { GuildChatCommandResponse } from '../types/client.js';
+import type { PotatoChatCommand } from '../types/potato.js';
 import type { QueueItem } from '../types/voice.js';
 import { EmbedType, Emojis, responseEmbed, responseOptions } from '../util/builders.js';
 
@@ -90,7 +91,7 @@ async function promptUser(response: GuildChatCommandResponse, queue: QueueItem[]
 	}
 }
 
-export const command: ChatCommand<'Guild'> = {
+export const command: PotatoChatCommand<'Guild'> = {
 	data: {
 		name: 'queue',
 		description: 'Get the song queue',
