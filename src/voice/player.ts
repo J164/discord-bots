@@ -2,9 +2,7 @@ import EventEmitter from 'node:events';
 import type { AudioPlayer, VoiceConnection } from '@discordjs/voice';
 import { AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, joinVoiceChannel, VoiceConnectionStatus } from '@discordjs/voice';
 import type { VoiceChannel } from 'discord.js';
-import type { QueueItem, YoutubeStream } from '../types/voice.js';
-import { EmbedType, responseOptions } from '../util/builders.js';
-import { createStream } from './ytdl.js';
+import type { Audio } from '../types/voice.js';
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export declare interface Player {
@@ -17,7 +15,6 @@ export class Player extends EventEmitter {
 	private readonly _player: AudioPlayer;
 	private readonly _voiceConnection: VoiceConnection;
 	private readonly _voiceChannel: VoiceChannel;
-	private _script: YoutubeStream | undefined;
 	private _subscribed: boolean;
 
 	public constructor(voiceChannel: VoiceChannel) {
@@ -36,8 +33,11 @@ export class Player extends EventEmitter {
 			this.emit('destroyed');
 		});
 
-		this._script = undefined;
 		this._subscribed = false;
+	}
+
+	public get voiceChannel(): VoiceChannel {
+		return this._voiceChannel;
 	}
 
 	public get destroyed(): boolean {
@@ -56,7 +56,6 @@ export class Player extends EventEmitter {
 		try {
 			await entersState(this._voiceConnection, VoiceConnectionStatus.Ready, 30e3);
 		} catch {
-			await this._voiceChannel.send(responseOptions(EmbedType.Error, 'Unable to connect to this channel'));
 			return false;
 		}
 
@@ -71,28 +70,21 @@ export class Player extends EventEmitter {
 	 * @param audio The audio to play
 	 * @returns A Promise that resolves to whether the audio began playing successfully
 	 */
-	public async play(audio: QueueItem): Promise<boolean> {
+	public async play(audio: Audio): Promise<boolean> {
 		if (this._voiceChannel.members.size <= 1) {
 			return true;
 		}
 
-		this._script = createStream(audio.url, {
-			format: 'bestaudio[acodec=opus]/bestaudio',
-		});
-		const { type, stream } = await demuxProbe(this._script.stdout);
+		const { type, stream } = await demuxProbe(audio.stream);
 		this._player.play(createAudioResource(stream, { inputType: type }));
 
 		try {
 			await entersState(this._player, AudioPlayerStatus.Playing, 30e3);
 		} catch {
-			this._script.kill();
-			await this._voiceChannel.send(responseOptions(EmbedType.Error, `Unable to play ${audio.title}`));
 			return false;
 		}
 
 		this._player.once(AudioPlayerStatus.Idle, async () => {
-			this._script?.kill();
-
 			if (audio?.looping) {
 				await this.play(audio);
 				return;
@@ -136,7 +128,6 @@ export class Player extends EventEmitter {
 			return;
 		}
 
-		this._script?.kill();
 		this._player.removeAllListeners();
 		this.stop();
 		this._subscribed = false;

@@ -1,8 +1,14 @@
 import type { ChildProcessByStdio } from 'node:child_process';
 import type { Readable } from 'node:stream';
 
+/** Object representing audio that can be played by the Player */
+type Audio = {
+	readonly stream: Readable;
+	looping?: boolean;
+};
+
 /** Object representing an item in the queue */
-export type QueueItem = {
+type QueueItem = {
 	readonly url: string;
 	readonly title: string;
 	readonly thumbnail: string;
@@ -11,4 +17,4 @@ export type QueueItem = {
 };
 
 /** A ChildProcess with a stdout stream outputting audio from YouTube */
-export type YoutubeStream = ChildProcessByStdio<null, Readable, null>; // eslint-disable-line @typescript-eslint/ban-types
+type YoutubeStream = ChildProcessByStdio<null, Readable, null>; // eslint-disable-line @typescript-eslint/ban-types

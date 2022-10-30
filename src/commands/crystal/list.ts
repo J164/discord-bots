@@ -1,8 +1,9 @@
 import { readdirSync } from 'node:fs';
-import type { EmbedBuilder, InteractionReplyOptions, InteractionUpdateOptions } from 'discord.js';
-import { ApplicationCommandOptionType, ButtonStyle, ComponentType } from 'discord.js';
+import type { ButtonBuilder, ButtonInteraction, EmbedBuilder } from 'discord.js';
+import { ActionRowBuilder, ApplicationCommandOptionType, ButtonStyle, ComponentType } from 'discord.js';
 import { EmbedType, responseEmbed } from '../../util/builders.js';
 import type { CrystalChatCommand } from '../../types/bot-types/crystal.js';
+import type { GlobalChatCommandResponse } from '../../types/client.js';
 
 function songEmbed(songs: string[], index: number): EmbedBuilder {
 	const embed = responseEmbed(EmbedType.Info, 'Naruto Songs', {
@@ -20,13 +21,11 @@ function songEmbed(songs: string[], index: number): EmbedBuilder {
 	return embed;
 }
 
-function response(info: GlobalChatCommandInfo, songs: string[], index: number): InteractionUpdateOptions & InteractionReplyOptions {
-	void prompt(info, songs, index);
-	return {
+async function updateResponse(response: GlobalChatCommandResponse, songs: string[], index = 0, component?: ButtonInteraction): Promise<void> {
+	const reply = {
 		embeds: [songEmbed(songs, index)],
 		components: [
-			{
-				type: ComponentType.ActionRow,
+			new ActionRowBuilder<ButtonBuilder>({
 				components: [
 					{
 						type: ComponentType.Button,
@@ -61,45 +60,41 @@ function response(info: GlobalChatCommandInfo, songs: string[], index: number): 
 						disabled: index === Math.ceil(songs.length / 25) - 1,
 					},
 				],
-			},
+			}),
 		],
 	};
+
+	await (component ? component.update(reply) : response.interaction.editReply(reply));
+	await promptUser(response, songs, index);
 }
 
-async function prompt(info: GlobalChatCommandInfo, songs: string[], index: number): Promise<void> {
+async function promptUser(response: GlobalChatCommandResponse, songs: string[], index: number): Promise<void> {
 	let component;
 	try {
-		component = await info.response.awaitMessageComponent({
-			filter: (b) => b.user.id === info.response.interaction.user.id,
+		component = await response.awaitMessageComponent({
+			filter: (b) => b.user.id === response.interaction.user.id,
 			time: 300_000,
 			componentType: ComponentType.Button,
 		});
 	} catch {
-		void info.response.interaction.editReply({ components: [] }).catch();
+		await response.interaction.editReply({ components: [] });
 		return;
 	}
 
 	switch (component.customId) {
 		case 'list-doublearrowleft':
-			void component.update(response(info, songs, 0));
+			await updateResponse(response, songs, 0, component);
 			break;
 		case 'list-arrowleft':
-			void component.update(response(info, songs, index - 1));
+			await updateResponse(response, songs, index - 1, component);
 			break;
 		case 'list-arrowright':
-			void component.update(response(info, songs, index + 1));
+			await updateResponse(response, songs, index + 1, component);
 			break;
 		case 'list-doublearrowright':
-			void component.update(response(info, songs, songs.length - 1));
+			await updateResponse(response, songs, songs.length - 1, component);
 			break;
 	}
-}
-
-function list(info: GlobalChatCommandInfo): void {
-	const songs = readdirSync(`${config.DATA}/music_files/${info.response.interaction.options.getSubcommand()}_ost`).map((value) => {
-		return value.split('.').slice(0, -1).join('.');
-	});
-	void info.response.interaction.editReply(response(info, songs, 0));
 }
 
 export const command: CrystalChatCommand<'Global'> = {
@@ -129,7 +124,13 @@ export const command: CrystalChatCommand<'Global'> = {
 			},
 		],
 	},
-	respond: list,
+	async respond(response, globalInfo) {
+		const songs = readdirSync(`${globalInfo.ostDirectory}/${response.interaction.options.getSubcommand()}_ost`).map((value) => {
+			return value.split('.').slice(0, -1).join('.');
+		});
+
+		await updateResponse(response, songs);
+	},
 	ephemeral: true,
 	type: 'Global',
 };

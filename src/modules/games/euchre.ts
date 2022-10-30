@@ -1,5 +1,5 @@
 import { setTimeout } from 'node:timers';
-import type { APISelectMenuOption, ThreadChannel, User } from 'discord.js';
+import type { APISelectMenuOption, ButtonInteraction, SelectMenuInteraction, ThreadChannel, User } from 'discord.js';
 import { ButtonStyle, ComponentType } from 'discord.js';
 import { CardRank, CardSuit } from '../../types/card.js';
 import type { EuchrePlayer, EuchreTeam, GameInfo } from '../../types/games.js';
@@ -193,9 +193,9 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 		});
 		let component;
 		try {
-			component = await message.awaitMessageComponent({
+			component = (await message.awaitMessageComponent({
 				time: 300_000,
-			});
+			})) as ButtonInteraction | SelectMenuInteraction;
 		} catch {
 			await message.edit({
 				embeds: [responseEmbed(EmbedType.Success, 'Success!')],

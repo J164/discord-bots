@@ -1,4 +1,11 @@
-import type { ButtonInteraction, InteractionUpdateOptions, MessageActionRowComponentBuilder, SelectMenuBuilder } from 'discord.js';
+import type {
+	ButtonInteraction,
+	InteractionUpdateOptions,
+	MessageActionRowComponentBuilder,
+	MessageComponentInteraction,
+	SelectMenuBuilder,
+	SelectMenuInteraction,
+} from 'discord.js';
 import { ActionRowBuilder, ApplicationCommandOptionType, ButtonStyle, ComponentType } from 'discord.js';
 import type { GlobalChatCommandResponse } from '../../types/client.js';
 import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
@@ -132,10 +139,10 @@ async function updateResponse(response: GlobalChatCommandResponse, results: Scry
 async function promptUser(response: GlobalChatCommandResponse, scryfallResults: ScryfallMagicCard[][], page: number): Promise<void> {
 	let component;
 	try {
-		component = await response.awaitMessageComponent({
-			filter: (b) => b.user.id === response.interaction.user.id,
+		component = (await response.awaitMessageComponent({
+			filter: (b) => (b as MessageComponentInteraction).user.id === response.interaction.user.id,
 			time: 300_000,
-		});
+		})) as SelectMenuInteraction | ButtonInteraction;
 	} catch {
 		await response.interaction.editReply({ components: [] });
 		return;

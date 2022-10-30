@@ -1,14 +1,16 @@
 import type { InteractionReplyOptions, VoiceChannel } from 'discord.js';
-import type { QueueItem } from '../types/voice.js';
+import type { QueueItem, YoutubeStream } from '../types/voice.js';
 import { EmbedType, responseOptions } from '../util/builders.js';
 import { Player } from './player.js';
+import { createStream } from './ytdl.js';
 
 /** Represents the audio queue for a guild */
 export class QueueManager {
 	private _player: Player;
 	private _queue: QueueItem[];
-	private _nowPlaying: QueueItem | undefined;
+	private _nowPlaying?: QueueItem;
 	private _queueLoop: boolean;
+	private _script?: YoutubeStream;
 
 	public constructor(voiceChannel: VoiceChannel) {
 		this._player = this._createPlayer(voiceChannel);
@@ -16,6 +18,7 @@ export class QueueManager {
 		this._queue = [];
 		this._nowPlaying = undefined;
 		this._queueLoop = false;
+		this._script = undefined;
 	}
 
 	public get queue(): QueueItem[] {
@@ -163,6 +166,8 @@ export class QueueManager {
 
 	/** Resets the QueueManager to its original state */
 	public reset(): void {
+		this._script?.kill();
+		this._script = undefined;
 		this._queue = [];
 		this._player.destroy();
 		this._nowPlaying = undefined;
@@ -194,7 +199,11 @@ export class QueueManager {
 			this._player = this._createPlayer(voiceChannel);
 		}
 
-		await this._player.subscribe();
+		if (!(await this._player.subscribe())) {
+			await this._player.voiceChannel.send(responseOptions(EmbedType.Error, 'Unable to connect to this channel'));
+			return;
+		}
+
 		await this._play();
 	}
 
@@ -212,9 +221,14 @@ export class QueueManager {
 			}
 		}
 
-		const success = await this._player.play(this._nowPlaying);
+		this._script = createStream(this._nowPlaying.url, {
+			format: 'bestaudio[acodec=opus]/bestaudio',
+		});
+		const success = await this._player.play({ stream: this._script.stdout, looping: this._nowPlaying.looping });
 
 		this._player.once('audioEnded', async () => {
+			this._script?.kill();
+
 			if (this._queueLoop && this._nowPlaying) {
 				this._queue.push(this._nowPlaying);
 			}
@@ -223,7 +237,9 @@ export class QueueManager {
 		});
 
 		if (!success) {
+			this._script.kill();
 			this._nowPlaying.looping = false;
+			await this._player.voiceChannel.send(responseOptions(EmbedType.Error, `Unable to play audio`));
 			await this._play();
 		}
 	}

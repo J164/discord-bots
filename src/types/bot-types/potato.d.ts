@@ -31,7 +31,7 @@ type GlobalInfo = {
 
 /** Guild-specific info used to respond to interactions recieved by Potato Bot */
 type GuildInfo = {
-	queueManager: QueueManager | undefined;
+	queueManager?: QueueManager;
 };
 
 /** Shorthand for a ChatCommand with Potato Bot global and guild info */

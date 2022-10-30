@@ -1,45 +1,9 @@
-import { readdirSync } from 'node:fs';
-import type { ApplicationCommandOptionChoiceData, InteractionReplyOptions } from 'discord.js';
+import { createReadStream, readdirSync } from 'node:fs';
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import Fuse from 'fuse.js';
 import type { CrystalChatCommand } from '../../types/bot-types/crystal.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
-
-async function play(info: GuildChatCommandInfo): Promise<InteractionReplyOptions> {
-	const voiceChannel = info.response.interaction.channel?.isVoiceBased() ? info.response.interaction.channel : info.response.interaction.member.voice.channel;
-	if (!voiceChannel?.joinable || voiceChannel.type !== ChannelType.GuildVoice) {
-		return responseOptions(EmbedType.Error, 'This command can only be used while in a visable voice channel!');
-	}
-
-	const path = `${config.DATA}/music_files/${info.response.interaction.options.getSubcommand()}_ost`;
-
-	const songs = readdirSync(path).map((value) => {
-		return value.split('.').slice(0, -1).join('.');
-	});
-
-	const results = new Fuse(songs).search(info.response.interaction.options.getString('name', true));
-
-	await info.voiceManager!.play(voiceChannel, `${path}/${results[0].item}.webm`, info.response.interaction.options.getBoolean('loop') ?? false);
-	return responseOptions(EmbedType.Success, 'Now Playing!');
-}
-
-function search(info: GuildAutocompleteInfo): ApplicationCommandOptionChoiceData[] {
-	if (info.interaction.options.getFocused().length < 3) {
-		return [];
-	}
-
-	const path = `${config.DATA}/music_files/${info.interaction.options.getSubcommand(true)}_ost`;
-	const songs = readdirSync(path).map((value) => {
-		return value.split('.').slice(0, -1).join('.');
-	});
-	const results = new Fuse(songs).search(info.interaction.options.getFocused());
-	return results.slice(0, 25).map((result) => {
-		return {
-			name: result.item,
-			value: result.item,
-		};
-	});
-}
+import { Player } from '../../voice/player.js';
 
 export const command: CrystalChatCommand<'Guild'> = {
 	data: {
@@ -148,7 +112,49 @@ export const command: CrystalChatCommand<'Guild'> = {
 			},
 		],
 	},
-	respond: play,
-	autocomplete: search,
+	async respond(response, guildInfo, globalInfo) {
+		const voiceChannel = response.interaction.channel?.isVoiceBased() ? response.interaction.channel : response.interaction.member.voice.channel;
+		if (!voiceChannel?.joinable || voiceChannel.type !== ChannelType.GuildVoice) {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, 'This command can only be used while in a visable voice channel!'));
+			return;
+		}
+
+		const path = `${globalInfo.ostDirectory}/${response.interaction.options.getSubcommand()}_ost`;
+
+		const songs = readdirSync(path).map((value) => {
+			return value.split('.').slice(0, -1).join('.');
+		});
+
+		const results = new Fuse(songs).search(response.interaction.options.getString('name', true));
+
+		await (guildInfo.player?.voiceChannel.id === voiceChannel.id ? guildInfo.player : (guildInfo.player = new Player(voiceChannel))).subscribe();
+		await guildInfo.player.play({
+			stream: createReadStream(`${path}/${results[0].item}.webm`),
+			looping: response.interaction.options.getBoolean('loop') ?? false,
+		});
+		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Now Playing!'));
+	},
+	async autocomplete(interaction, guildInfo, globalInfo) {
+		if (interaction.options.getFocused().length < 3) {
+			await interaction.respond([]);
+			return;
+		}
+
+		const path = `${globalInfo.ostDirectory}/${interaction.options.getSubcommand(true)}_ost`;
+		const songs = readdirSync(path).map((value) => {
+			return value.split('.').slice(0, -1).join('.');
+		});
+
+		const results = new Fuse(songs).search(interaction.options.getFocused());
+
+		await interaction.respond(
+			results.slice(0, 25).map((result) => {
+				return {
+					name: result.item,
+					value: result.item,
+				};
+			}),
+		);
+	},
 	type: 'Guild',
 };

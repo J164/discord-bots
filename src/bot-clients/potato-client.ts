@@ -1,5 +1,6 @@
 import { readdir } from 'node:fs/promises';
-import type { ClientOptions, TextChannel } from 'discord.js';
+import type { TextChannel } from 'discord.js';
+import { ActivityType, GatewayIntentBits, Partials } from 'discord.js';
 import { MongoClient } from 'mongodb';
 import cron from 'node-cron';
 import type { Logger } from 'pino';
@@ -9,13 +10,27 @@ import { getDailyReport } from '../modules/daily-report.js';
 import { gradeReport } from '../modules/grade-report.js';
 import { getWeatherReport } from '../modules/weather-report.js';
 
-/** Class representing the client for PotatoBot */
+/** Class representing the client for Potato Bot */
 export class PotatoClient extends BotClient<GlobalInfo, GuildInfo, Config> {
 	private readonly _databaseClient: MongoClient;
 	private _weather?: WeatherResponse;
 
-	public constructor(options: ClientOptions, config: Config, defaultGuildInfo: () => GuildInfo) {
-		super(options, config, defaultGuildInfo);
+	public constructor(config: Config, status?: string) {
+		super(
+			{
+				intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
+				partials: [Partials.Channel],
+				presence: {
+					activities: [
+						{
+							name: status,
+							type: ActivityType.Playing,
+						},
+					],
+				},
+			},
+			config,
+		);
 		this._databaseClient = new MongoClient(this.config.mongodbUrl);
 		this.subscribeReadyListener();
 	}
@@ -66,14 +81,14 @@ export class PotatoClient extends BotClient<GlobalInfo, GuildInfo, Config> {
 				this._weather = await getWeatherReport(new Date(), this.config.weatherKey);
 			})(),
 			(async () => {
-				const commands = await readdir('./dist/commands');
+				const commands = await readdir('./dist/commands/potato');
 				return Promise.all(
 					commands.map((file) => {
 						if (!file.endsWith('.js')) {
 							return;
 						}
 
-						return this.importCommand(`./commands/${file}`);
+						return this.importCommand(`./commands/potato/${file}`);
 					}),
 				);
 			})(),
@@ -89,5 +104,9 @@ export class PotatoClient extends BotClient<GlobalInfo, GuildInfo, Config> {
 			ircToken: this.config.ircToken,
 			weather: this._weather,
 		};
+	}
+
+	protected getDefaultGuildInfo(): GuildInfo {
+		return {};
 	}
 }

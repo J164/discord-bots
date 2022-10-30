@@ -9,7 +9,7 @@ export abstract class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo ext
 	private readonly _commands: Record<string, ChatCommand<CommandType, GlobalInfo, GuildInfo>>;
 	private readonly _guildInfo: Record<string, GuildInfo | undefined>;
 
-	public constructor(options: ClientOptions, protected readonly config: Config, private readonly _defaultGuildInfo: () => GuildInfo) {
+	public constructor(options: ClientOptions, protected readonly config: Config) {
 		super(options);
 
 		const missingOptions = [];
@@ -54,6 +54,8 @@ export abstract class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo ext
 	 * @param logger A logger child for the interaction being responded to
 	 */
 	protected abstract getGlobalInfo(logger: Logger): GlobalInfo;
+
+	protected abstract getDefaultGuildInfo(): GuildInfo;
 
 	/** Subscribes a listener for the interactionCreate event */
 	private _subscribeInteractionListener(): void {
@@ -115,7 +117,7 @@ export abstract class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo ext
 			try {
 				await command.respond(
 					interactionResponse as ChatCommandResponse<'cached'>,
-					(this._guildInfo[interaction.guildId] ??= this._defaultGuildInfo()),
+					(this._guildInfo[interaction.guildId] ??= this.getDefaultGuildInfo()),
 					globalData,
 				);
 			} catch (error) {
@@ -166,7 +168,7 @@ export abstract class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo ext
 			}
 
 			try {
-				await command.autocomplete(interaction, (this._guildInfo[interaction.guildId] ??= this._defaultGuildInfo()), globalData);
+				await command.autocomplete(interaction, (this._guildInfo[interaction.guildId] ??= this.getDefaultGuildInfo()), globalData);
 			} catch (error) {
 				this.config.logger.info({ options: interaction.options.data }, `(${interaction.id}) /${interaction.commandName}`);
 				this.config.logger.error(error, `Chat Command Autocomplete #${interaction.id} threw an error`);
