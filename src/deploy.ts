@@ -1,5 +1,7 @@
 import { readdir } from 'node:fs/promises';
 import { env } from 'node:process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v10';
 import type { CrystalChatCommand } from './types/bot-types/crystal.js';
@@ -16,9 +18,11 @@ if (npmConfig.original.length < 8) {
 	throw new Error('Missing Credentials');
 }
 
+const COMMAND_DIR = path.dirname(fileURLToPath(import.meta.url));
+
 const commandData = await Promise.all([
 	(async () => {
-		const files = await readdir('./dist/src/commands/crystal');
+		const files = await readdir(`${COMMAND_DIR}/crystal`);
 		return Promise.all(
 			files
 				.filter((file) => file.endsWith('.js'))
@@ -28,7 +32,7 @@ const commandData = await Promise.all([
 		);
 	})(),
 	(async () => {
-		const files = await readdir('./dist/src/commands/potato');
+		const files = await readdir(`${COMMAND_DIR}/potato`);
 		return Promise.all(
 			files
 				.filter((file) => file.endsWith('.js'))
@@ -38,7 +42,7 @@ const commandData = await Promise.all([
 		);
 	})(),
 	(async () => {
-		const files = await readdir('./dist/src/commands/swear');
+		const files = await readdir(`${COMMAND_DIR}/swear`);
 		return Promise.all(
 			files
 				.filter((file) => file.endsWith('.js'))
@@ -48,7 +52,7 @@ const commandData = await Promise.all([
 		);
 	})(),
 	(async () => {
-		const files = await readdir('./dist/src/commands/yeet');
+		const files = await readdir(`${COMMAND_DIR}/yeet`);
 		return Promise.all(
 			files
 				.filter((file) => file.endsWith('.js'))

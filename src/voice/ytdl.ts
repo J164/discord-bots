@@ -1,5 +1,9 @@
 import { exec, spawn } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { YoutubeStream } from '../types/voice.js';
+
+const SCRIPT_DIR = `${path.dirname(fileURLToPath(import.meta.url))}/../scripts`;
 
 /**
  * Creates a download stream using yt-dlp
@@ -8,7 +12,7 @@ import type { YoutubeStream } from '../types/voice.js';
  * @returns the child process with the download stream
  */
 export function createStream(url: string, options: { format: string }): YoutubeStream {
-	return spawn('python3', ['-u', `./scripts/yt-stream.py`, url, JSON.stringify(options)], {
+	return spawn('python3', ['-u', `${SCRIPT_DIR}/yt-stream.py`, url, JSON.stringify(options)], {
 		stdio: ['ignore', 'pipe', 'ignore'],
 	});
 }
@@ -21,7 +25,7 @@ export function createStream(url: string, options: { format: string }): YoutubeS
  */
 export async function resolve(url: string): Promise<YoutubeResolveResult> {
 	return new Promise((resolve, reject) => {
-		exec(`python3 -u ./scripts/yt-resolve.py "${url}"`, (error, stdout) => {
+		exec(`python3 -u ${SCRIPT_DIR}/yt-resolve.py "${url}"`, (error, stdout) => {
 			if (error) {
 				reject(error);
 				return;
@@ -41,7 +45,7 @@ export async function resolve(url: string): Promise<YoutubeResolveResult> {
  */
 export async function download(url: string, options: { outtmpl: string; format: string }): Promise<void> {
 	return new Promise((resolve, reject) => {
-		exec(`python3 -u ./scripts/yt-download.py "${url}" "${JSON.stringify(options).replaceAll('"', '\\"')}"`, (error) => {
+		exec(`python3 -u ${SCRIPT_DIR}/yt-download.py "${url}" "${JSON.stringify(options).replaceAll('"', '\\"')}"`, (error) => {
 			if (error) {
 				reject(error);
 				return;

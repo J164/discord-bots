@@ -183,13 +183,13 @@ async function getQuoteData(): Promise<ZenQuotesResponse[]> {
 
 /**
  * Generates a daily report based on the date
- * @param date The date to generate a daily report for
  * @param abstractKey API key for Abstract APIs
  * @param database MongoDB database connection object
  * @param weather The weather report used to generate the report
  * @returns A Promise that resolves to the daily report message
  */
-export async function getDailyReport(date: Date, abstractKey: string, database: Db, weather?: WeatherResponse): Promise<MessageCreateOptions> {
+export async function getDailyReport(abstractKey: string, database: Db, weather?: WeatherResponse): Promise<MessageCreateOptions> {
+	const date = new Date();
 	const [holiday, quote] = await Promise.all([getHolidayData(abstractKey, date), getQuoteData()]);
 
 	const embeds = [];
