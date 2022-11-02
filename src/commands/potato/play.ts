@@ -4,6 +4,7 @@ import ytpl from 'ytpl';
 import ytsr from 'ytsr';
 import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
 import type { QueueItem } from '../../types/voice.js';
+import { AudioTypes } from '../../types/voice.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { QueueManager } from '../../voice/queue-manager.js';
 import { resolve } from '../../voice/ytdl.js';
@@ -63,6 +64,7 @@ async function spotify(link: string, spotifyToken: string): Promise<AudioData<bo
 			title,
 			duration: duration ?? '',
 			thumbnail: bestThumbnail.url ?? '',
+			type: AudioTypes.YouTube,
 		});
 	};
 
@@ -102,6 +104,7 @@ async function youtubePlaylist(link: string): Promise<AudioData<boolean>> {
 				title,
 				duration: duration ?? '',
 				thumbnail: bestThumbnail.url ?? '',
+				type: AudioTypes.YouTube,
 			};
 		}),
 		response: responseOptions(EmbedType.Success, `Added playlist "${result.title}" to queue!`, {
@@ -131,6 +134,7 @@ async function youtube(link: string): Promise<AudioData<boolean>> {
 				title: result.title,
 				duration: `${hour > 0 ? (hour < 10 ? `0${hour}:` : `${hour}:`) : ''}${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec}`,
 				thumbnail: result.thumbnail,
+				type: AudioTypes.YouTube,
 			},
 		],
 		response: responseOptions(EmbedType.Success, `Added "${result.title}" to queue!`, {
@@ -164,6 +168,7 @@ async function misc(link: string): Promise<AudioData<boolean>> {
 				title,
 				duration: duration ?? '',
 				thumbnail: bestThumbnail.url ?? '',
+				type: AudioTypes.YouTube,
 			},
 		],
 		response: responseOptions(EmbedType.Success, `Added "${title}" to queue!`, {

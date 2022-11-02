@@ -1,6 +1,7 @@
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import ytpl from 'ytpl';
 import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
+import { AudioTypes } from '../../types/voice.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { QueueManager } from '../../voice/queue-manager.js';
 
@@ -63,6 +64,7 @@ export const command: PotatoChatCommand<'Guild'> = {
 				title: item.title,
 				duration: item.duration ?? '',
 				thumbnail: item.bestThumbnail.url ?? '',
+				type: AudioTypes.YouTube,
 			};
 		});
 

@@ -1,25 +1,27 @@
-import EventEmitter from 'node:events';
+/* eslint-disable @typescript-eslint/no-empty-function */
+import type { Readable } from 'node:stream';
+import { createReadStream } from 'node:fs';
 import type { AudioPlayer, VoiceConnection } from '@discordjs/voice';
 import { AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, joinVoiceChannel, VoiceConnectionStatus } from '@discordjs/voice';
 import type { VoiceChannel } from 'discord.js';
-import type { Audio } from '../types/voice.js';
-
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
-export declare interface Player {
-	on(event: 'destroyed' | 'audioEnded', listener: () => void): this;
-	once(event: 'destroyed' | 'audioEnded', listener: () => void): this;
-}
+import type { Audio, YoutubeStream } from '../types/voice.js';
+import { AudioTypes } from '../types/voice.js';
+import { createStream } from './ytdl.js';
 
 /** Represents the voice state of the bot in a guild */
-export class Player extends EventEmitter {
+export class Player {
 	private readonly _player: AudioPlayer;
 	private readonly _voiceConnection: VoiceConnection;
 	private readonly _voiceChannel: VoiceChannel;
 	private _subscribed: boolean;
+	private _script?: YoutubeStream;
 
-	public constructor(voiceChannel: VoiceChannel) {
-		super();
-
+	/**
+	 * Connects to a voice cahnnel and creates a Player to manage it
+	 * @param voiceChannel Voice channel to connect to
+	 * @param callback Callback to be executed when the voice connection is destroyed
+	 */
+	public constructor(voiceChannel: VoiceChannel, callback = () => {}) {
 		this._player = createAudioPlayer();
 		this._voiceChannel = voiceChannel;
 		this._voiceConnection = joinVoiceChannel({
@@ -30,7 +32,7 @@ export class Player extends EventEmitter {
 
 		this._voiceConnection.once(VoiceConnectionStatus.Disconnected, () => {
 			this.destroy();
-			this.emit('destroyed');
+			callback();
 		});
 
 		this._subscribed = false;
@@ -68,14 +70,15 @@ export class Player extends EventEmitter {
 	/**
 	 * Plays the given audio and then executes a callback
 	 * @param audio The audio to play
+	 * @param callback Callback to be executed when the audio finishes playing
 	 * @returns A Promise that resolves to whether the audio began playing successfully
 	 */
-	public async play(audio: Audio): Promise<boolean> {
+	public async play(audio: Audio, callback = () => {}): Promise<boolean> {
 		if (this._voiceChannel.members.size <= 1) {
 			return true;
 		}
 
-		const { type, stream } = await demuxProbe(audio.stream);
+		const { type, stream } = await demuxProbe(this._resolveAudio(audio));
 		this._player.play(createAudioResource(stream, { inputType: type }));
 
 		try {
@@ -85,12 +88,14 @@ export class Player extends EventEmitter {
 		}
 
 		this._player.once(AudioPlayerStatus.Idle, async () => {
-			if (audio?.looping) {
-				await this.play(audio);
+			this._script?.kill();
+
+			if (audio.looping) {
+				await this.play(audio, callback);
 				return;
 			}
 
-			this.emit('audioEnded');
+			callback();
 		});
 
 		return true;
@@ -128,10 +133,28 @@ export class Player extends EventEmitter {
 			return;
 		}
 
+		this._script?.kill();
 		this._player.removeAllListeners();
 		this.stop();
 		this._subscribed = false;
 		this._voiceConnection.removeAllListeners();
 		this._voiceConnection.destroy();
+	}
+
+	/**
+	 * Resolves an audio path to a stream
+	 * @param audio The audio object to resolve
+	 * @returns A Readable stream
+	 */
+	private _resolveAudio(audio: Audio): Readable {
+		switch (audio.type) {
+			case AudioTypes.YouTube:
+				this._script = createStream(audio.url, {
+					format: 'bestaudio[acodec=opus]/bestaudio',
+				});
+				return this._script.stdout;
+			case AudioTypes.Local:
+				return createReadStream(audio.url);
+		}
 	}
 }

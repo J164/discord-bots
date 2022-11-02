@@ -1,9 +1,10 @@
-import { createReadStream, readdirSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import Fuse from 'fuse.js';
 import type { CrystalChatCommand } from '../../types/bot-types/crystal.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { Player } from '../../voice/player.js';
+import { AudioTypes } from '../../types/voice.js';
 
 export const command: CrystalChatCommand<'Guild'> = {
 	data: {
@@ -128,10 +129,7 @@ export const command: CrystalChatCommand<'Guild'> = {
 		const results = new Fuse(songs).search(response.interaction.options.getString('name', true));
 
 		await (guildInfo.player?.voiceChannel.id === voiceChannel.id ? guildInfo.player : (guildInfo.player = new Player(voiceChannel))).subscribe();
-		await guildInfo.player.play({
-			stream: createReadStream(`${path}/${results[0].item}.webm`),
-			looping: response.interaction.options.getBoolean('loop') ?? false,
-		});
+		await guildInfo.player.play({ type: AudioTypes.Local, url: `${path}/${results[0].item}.webm` });
 		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Now Playing!'));
 	},
 	async autocomplete(interaction, guildInfo, globalInfo) {

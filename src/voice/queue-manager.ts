@@ -1,8 +1,7 @@
 import type { InteractionReplyOptions, VoiceChannel } from 'discord.js';
-import type { QueueItem, YoutubeStream } from '../types/voice.js';
+import type { QueueItem } from '../types/voice.js';
 import { EmbedType, responseOptions } from '../util/builders.js';
 import { Player } from './player.js';
-import { createStream } from './ytdl.js';
 
 /** Represents the audio queue for a guild */
 export class QueueManager {
@@ -10,15 +9,15 @@ export class QueueManager {
 	private _queue: QueueItem[];
 	private _nowPlaying?: QueueItem;
 	private _queueLoop: boolean;
-	private _script?: YoutubeStream;
 
 	public constructor(voiceChannel: VoiceChannel) {
-		this._player = this._createPlayer(voiceChannel);
+		this._player = new Player(voiceChannel, () => {
+			this.reset();
+		});
 
 		this._queue = [];
 		this._nowPlaying = undefined;
 		this._queueLoop = false;
-		this._script = undefined;
 	}
 
 	public get queue(): QueueItem[] {
@@ -166,23 +165,10 @@ export class QueueManager {
 
 	/** Resets the QueueManager to its original state */
 	public reset(): void {
-		this._script?.kill();
-		this._script = undefined;
 		this._queue = [];
 		this._player.destroy();
 		this._nowPlaying = undefined;
 		this._queueLoop = false;
-	}
-
-	/**
-	 * Creates a Player and subscribes to the "destroyed" event
-	 * @param voiceChannel The VoiceChannel to connect to
-	 * @returns The Player
-	 */
-	private _createPlayer(voiceChannel: VoiceChannel): Player {
-		return new Player(voiceChannel).once('destroyed', () => {
-			this.reset();
-		});
 	}
 
 	/**
@@ -196,7 +182,9 @@ export class QueueManager {
 		}
 
 		if (this._player.destroyed) {
-			this._player = this._createPlayer(voiceChannel);
+			this._player = new Player(voiceChannel, () => {
+				this.reset();
+			});
 		}
 
 		if (!(await this._player.subscribe())) {
@@ -212,23 +200,14 @@ export class QueueManager {
 	 * @returns A void Promise that resolves when when the audio has started playing
 	 */
 	private async _play(): Promise<void> {
-		if (!this._nowPlaying?.looping) {
-			this._nowPlaying = this._queue.shift();
+		this._nowPlaying = this._queue.shift();
 
-			if (!this._nowPlaying) {
-				this.reset();
-				return;
-			}
+		if (!this._nowPlaying) {
+			this.reset();
+			return;
 		}
 
-		this._script = createStream(this._nowPlaying.url, {
-			format: 'bestaudio[acodec=opus]/bestaudio',
-		});
-		const success = await this._player.play({ stream: this._script.stdout, looping: this._nowPlaying.looping });
-
-		this._player.once('audioEnded', async () => {
-			this._script?.kill();
-
+		const success = await this._player.play(this._nowPlaying, async () => {
 			if (this._queueLoop && this._nowPlaying) {
 				this._queue.push(this._nowPlaying);
 			}
@@ -237,8 +216,6 @@ export class QueueManager {
 		});
 
 		if (!success) {
-			this._script.kill();
-			this._nowPlaying.looping = false;
 			await this._player.voiceChannel.send(responseOptions(EmbedType.Error, `Unable to play audio`));
 			await this._play();
 		}
