@@ -1,2 +1,6 @@
+# Install Node.js packages
 yarn install --immutable --production
-sudo python3 -m pip install -r requirements.txt
+
+# Install yt-dlp
+sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+sudo chmod a+rx /usr/local/bin/yt-dlp

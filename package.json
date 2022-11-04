@@ -2,7 +2,7 @@
   "name": "discord-bots",
   "version": "1.0.0",
   "description": "Discord bot suite with a variety of useful features",
-  "author": "J164 <43323130+J164@users.noreply.github.com>",
+  "author": "J164 <j164e3@gmail.com>",
   "license": "MIT",
   "homepage": "https://github.com/J164/discord-bots",
   "repository": "github:J164/discord-bots",
@@ -18,7 +18,7 @@
     "fuse.js": "6.6.2",
     "mongodb": "4.11.0",
     "node-cron": "3.0.2",
-    "sharp": "0.31.1",
+    "sharp": "0.31.2",
     "sodium-native": "3.4.1",
     "ytpl": "2.3.0",
     "ytsr": "3.8.0"
@@ -28,7 +28,6 @@
     "@types/node": "18.11.9",
     "@types/node-cron": "3.0.5",
     "@types/sharp": "0.31.0",
-    "copyfiles": "2.4.1",
     "discord-api-types": "0.37.16",
     "dotenv": "16.0.3",
     "pino": "8.7.0",
@@ -44,7 +43,7 @@
   },
   "scripts": {
     "lint": "xo",
-    "build": "rimraf dist/ && tsc && copyfiles -u 1 scripts/**/*.py dist/scripts",
+    "build": "rimraf dist/ && tsc",
     "deploy": "node dist/deploy.js"
   },
   "xo": {

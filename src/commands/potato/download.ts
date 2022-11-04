@@ -30,7 +30,7 @@ export const command: PotatoChatCommand<'Global'> = {
 
 		await response.interaction.editReply(responseOptions(EmbedType.Info, 'Downloading...'));
 		await download(response.interaction.options.getString('url', true), {
-			outtmpl: `${globalInfo.downloadDirectory}/%(title)s.%(ext)s`,
+			output: `${globalInfo.downloadDirectory}/%(title)s.%(ext)s`,
 			format: response.interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best',
 		});
 		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Download Successful!'));

@@ -126,7 +126,8 @@ export const command: CrystalChatCommand<'Guild'> = {
 			return value.split('.').slice(0, -1).join('.');
 		});
 
-		const results = new Fuse(songs).search(response.interaction.options.getString('name', true));
+		//const results = new Fuse(songs).search(response.interaction.options.getString('name', true));
+		const results = [{ item: 'TEMP' }];
 
 		await (guildInfo.player?.voiceChannel.id === voiceChannel.id ? guildInfo.player : (guildInfo.player = new Player(voiceChannel))).subscribe();
 		await guildInfo.player.play({ type: AudioTypes.Local, url: `${path}/${results[0].item}.webm` });
@@ -143,7 +144,8 @@ export const command: CrystalChatCommand<'Guild'> = {
 			return value.split('.').slice(0, -1).join('.');
 		});
 
-		const results = new Fuse(songs).search(interaction.options.getFocused());
+		//const results = new Fuse(songs).search(interaction.options.getFocused());
+		const results = [{ item: 'TEMP' }];
 
 		await interaction.respond(
 			results.slice(0, 25).map((result) => {

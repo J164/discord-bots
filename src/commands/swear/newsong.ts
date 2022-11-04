@@ -32,7 +32,7 @@ export const command: SwearChatCommand<'Global'> = {
 		const songs = readdirSync(globalInfo.songDirectory);
 		try {
 			await download(response.interaction.options.getString('url', true), {
-				outtmpl: `${globalInfo.songDirectory}/${songs.length + 1}.%(ext)s`,
+				output: `${globalInfo.songDirectory}/${songs.length + 1}.%(ext)s`,
 				format: 'bestaudio[ext=webm][acodec=opus]',
 			});
 			await response.interaction.editReply(responseOptions(EmbedType.Success, 'Success!'));

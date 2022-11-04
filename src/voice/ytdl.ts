@@ -1,18 +1,17 @@
 import { exec, spawn } from 'node:child_process';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { YoutubeStream } from '../types/voice.js';
 
-const SCRIPT_DIR = `${path.dirname(fileURLToPath(import.meta.url))}/../scripts`;
+const PRINT_FORMAT =
+	'{\\"title\\":\\"%(title)s\\", \\"webpage_url\\":\\"%(webpage_url)s\\", \\"thumbnail\\":\\"%(thumbnail)s\\", \\"duration\\":\\"%(duration)s\\"}';
 
 /**
  * Creates a download stream using yt-dlp
- * @param url the url to stream form
+ * @param url the url to stream from
  * @param options yt-dlp options for the stream
  * @returns the child process with the download stream
  */
 export function createStream(url: string, options: { format: string }): YoutubeStream {
-	return spawn('python3', ['-u', `${SCRIPT_DIR}/yt-stream.py`, url, JSON.stringify(options)], {
+	return spawn('yt-dlp', [url, '--format', options.format, '--output', '-', '--no-progress', '--quiet'], {
 		stdio: ['ignore', 'pipe', 'ignore'],
 	});
 }
@@ -25,7 +24,7 @@ export function createStream(url: string, options: { format: string }): YoutubeS
  */
 export async function resolve(url: string): Promise<YoutubeResolveResult> {
 	return new Promise((resolve, reject) => {
-		exec(`python3 -u ${SCRIPT_DIR}/yt-resolve.py "${url}"`, (error, stdout) => {
+		exec(`yt-dlp "${url}" --print "${PRINT_FORMAT}" --no-progress --quiet`, (error, stdout) => {
 			if (error) {
 				reject(error);
 				return;
@@ -43,9 +42,9 @@ export async function resolve(url: string): Promise<YoutubeResolveResult> {
  * @returns A void Promise that resolves when the download is complete
  * @throws The Promise is rejected if the download fails
  */
-export async function download(url: string, options: { outtmpl: string; format: string }): Promise<void> {
+export async function download(url: string, options: { output: string; format: string }): Promise<void> {
 	return new Promise((resolve, reject) => {
-		exec(`python3 -u ${SCRIPT_DIR}/yt-download.py "${url}" "${JSON.stringify(options).replaceAll('"', '\\"')}"`, (error) => {
+		exec(`yt-dlp "${url}" --output "${options.output}" --format "${options.format}"`, (error) => {
 			if (error) {
 				reject(error);
 				return;

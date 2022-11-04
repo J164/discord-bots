@@ -27,6 +27,7 @@ export class Player {
 		this._voiceConnection = joinVoiceChannel({
 			channelId: voiceChannel.id,
 			guildId: voiceChannel.guild.id,
+			// @ts-ignore
 			adapterCreator: voiceChannel.guild.voiceAdapterCreator,
 		});
 
