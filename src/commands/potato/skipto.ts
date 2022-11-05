@@ -1,6 +1,7 @@
 import { ApplicationCommandOptionType } from 'discord.js';
 import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
+import { search } from '../../util/search.js';
 
 export const command: PotatoChatCommand<'Guild'> = {
 	data: {
@@ -8,17 +9,53 @@ export const command: PotatoChatCommand<'Guild'> = {
 		description: 'Pulls the selected song to the top of the queue and skips the current song',
 		options: [
 			{
-				name: 'index',
-				description: 'The position of the song to skip to',
-				type: ApplicationCommandOptionType.Integer,
-				minValue: 1,
-				required: true,
-				autocomplete: true,
+				name: 'position',
+				description: 'Skip to a song based on its position in the queue',
+				type: ApplicationCommandOptionType.Subcommand,
+				options: [
+					{
+						name: 'index',
+						description: 'The position of the song to skip to',
+						type: ApplicationCommandOptionType.Integer,
+						minValue: 1,
+						required: true,
+					},
+				],
+			},
+			{
+				name: 'name',
+				description: 'Skip to the first instance of a song based on its name',
+				type: ApplicationCommandOptionType.Subcommand,
+				options: [
+					{
+						name: 'title',
+						description: 'The name of the song to skip to',
+						type: ApplicationCommandOptionType.String,
+						required: true,
+						autocomplete: true,
+					},
+				],
 			},
 		],
 	},
 	async respond(response, guildInfo) {
-		if (guildInfo.queueManager?.skipTo(response.interaction.options.getInteger('index', true))) {
+		const queue = guildInfo.queueManager?.queue.slice(1) ?? [];
+		if (queue?.length === 0) {
+			await response.interaction.editReply(responseOptions(EmbedType.Error, 'The queue is empty!'));
+			return;
+		}
+
+		if (
+			guildInfo.queueManager?.skipTo(
+				response.interaction.options.getInteger('index') ??
+					search(
+						queue.map((item) => {
+							return item.title;
+						}),
+						response.interaction.options.getString('title', true),
+					)[0].index,
+			)
+		) {
 			await response.interaction.editReply(responseOptions(EmbedType.Success, 'Success!'));
 			return;
 		}
@@ -26,24 +63,26 @@ export const command: PotatoChatCommand<'Guild'> = {
 		await response.interaction.editReply(responseOptions(EmbedType.Error, "Couldn't skip to the song in that position!"));
 	},
 	async autocomplete(interaction, guildInfo) {
-		const value = Number.parseInt(interaction.options.getFocused(), 10);
-		if (Number.isNaN(value)) {
+		const value = interaction.options.getFocused();
+		if (value.length < 3) {
 			await interaction.respond([]);
 			return;
 		}
 
 		const queue = guildInfo.queueManager?.queue.slice(1) ?? [];
 
-		const items = queue.slice(value > 3 ? value - 3 : 0, value < queue.length - 1 ? value + 1 : undefined);
-
 		await interaction.respond(
-			items?.map((item, index) => {
-				const location = value > 3 ? value - 3 + index : index;
+			search(
+				queue.map((item) => {
+					return item.title;
+				}),
+				value,
+			).map((result) => {
 				return {
-					name: `${location}: ${item.title}`,
-					value: location,
+					name: result.item,
+					value: result.item,
 				};
-			}) ?? [],
+			}),
 		);
 	},
 	type: 'Guild',
