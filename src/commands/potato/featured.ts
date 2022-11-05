@@ -1,9 +1,8 @@
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
-import ytpl from 'ytpl';
 import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
-import { AudioTypes } from '../../types/voice.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { QueueManager } from '../../voice/queue-manager.js';
+import { resolvePlaylist } from '../../voice/ytdl.js';
 
 export const command: PotatoChatCommand<'Guild'> = {
 	data: {
@@ -50,33 +49,23 @@ export const command: PotatoChatCommand<'Guild'> = {
 			return;
 		}
 
-		let results;
+		let playlist;
 		try {
-			results = await ytpl(response.interaction.options.getString('name', true));
+			playlist = await resolvePlaylist(response.interaction.options.getString('name', true));
 		} catch {
 			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Something went wrong. Please use /report to report the problem'));
 			return;
 		}
 
-		const items = results.items.map((item) => {
-			return {
-				url: item.shortUrl,
-				title: item.title,
-				duration: item.duration ?? '',
-				thumbnail: item.bestThumbnail.url ?? '',
-				type: AudioTypes.YouTube,
-			};
-		});
-
 		await (guildInfo.queueManager ??= new QueueManager(voiceChannel)).addToQueue(
 			voiceChannel,
-			items,
+			playlist.results,
 			(response.interaction.options.getInteger('position') ?? 0) - 1,
 		);
 
 		await response.interaction.editReply(
-			responseOptions(EmbedType.Success, `Added playlist "${results.title}" to queue!`, {
-				image: { url: results.bestThumbnail.url ?? '' },
+			responseOptions(EmbedType.Success, `Added playlist "${playlist.playlistTitle}" to queue!`, {
+				image: { url: playlist.results[0].thumbnail },
 			}),
 		);
 	},

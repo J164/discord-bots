@@ -1,5 +1,6 @@
 import type { MessageCreateOptions } from 'discord.js';
 import type { Db } from 'mongodb';
+import type { HolidayResponse, ZenQuotesResponse, WeatherResponse } from '../types/api.js';
 import { EmbedType, Emojis, responseEmbed } from '../util/builders.js';
 
 type MonthNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;

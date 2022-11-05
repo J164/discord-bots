@@ -11,6 +11,7 @@ import type { GlobalChatCommandResponse } from '../../types/client.js';
 import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { EmbedType, Emojis, responseEmbed, responseOptions } from '../../util/builders.js';
 import { mergeImages } from '../../util/image-utils.js';
+import type { ScryfallResponse, ScryfallMagicCard } from '../../types/api.js';
 
 function formatResponse(response: ScryfallResponse): ScryfallMagicCard[][] {
 	const cards: ScryfallMagicCard[][] = [];

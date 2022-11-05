@@ -1,3 +1,4 @@
+import type { TenorResponse } from '../../types/api.js';
 import type { YeetChatCommand } from '../../types/bot-types/yeet.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 

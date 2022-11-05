@@ -11,6 +11,7 @@ import type { Config, GlobalInfo, GuildInfo } from '../types/bot-types/potato.js
 import { getDailyReport } from '../modules/daily-report.js';
 import { gradeReport } from '../modules/grade-report.js';
 import { getWeatherReport } from '../modules/weather-report.js';
+import type { WeatherResponse } from '../types/api.js';
 
 const COMMAND_DIR = `${path.dirname(fileURLToPath(import.meta.url))}/../commands/potato`;
 

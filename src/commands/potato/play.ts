@@ -1,13 +1,11 @@
 import type { InteractionReplyOptions } from 'discord.js';
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
-import ytpl from 'ytpl';
-import ytsr from 'ytsr';
+import type { SpotifyResponse } from '../../types/api.js';
 import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
 import type { QueueItem } from '../../types/voice.js';
-import { AudioTypes } from '../../types/voice.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { QueueManager } from '../../voice/queue-manager.js';
-import { resolve } from '../../voice/ytdl.js';
+import { resolve, resolvePlaylist, search } from '../../voice/ytdl.js';
 
 type AudioData<T extends boolean> = T extends true ? { success: true; response: InteractionReplyOptions; songs: QueueItem[] } : { success: false };
 
@@ -43,36 +41,16 @@ async function spotify(link: string, spotifyToken: string): Promise<AudioData<bo
 
 	const result = (await resultResponse.json()) as SpotifyResponse;
 
-	const songs: QueueItem[] = [];
-	const search = async (track: SpotifyTrack) => {
-		const filterMap = await ytsr.getFilters(`${track.name} ${track.artists[0].name}`);
-		const filter = filterMap.get('Type')?.get('Video')?.url;
-		if (!filter) {
-			return;
-		}
-
-		const { results, items } = await ytsr(filter, {
-			limit: 1,
-		});
-		if (results < 1) {
-			return;
-		}
-
-		const { url, title, duration, bestThumbnail } = items[0] as ytsr.Video;
-		songs.push({
-			url,
-			title,
-			duration: duration ?? '',
-			thumbnail: bestThumbnail.url ?? '',
-			type: AudioTypes.YouTube,
-		});
-	};
-
-	await Promise.all(
-		result.tracks.items.map(async (song) => {
-			return search(song.track);
-		}),
-	);
+	let songs;
+	try {
+		songs = await search(
+			result.tracks.items.map((song) => {
+				return `${song.track.name} ${song.track.artists[0].name}`;
+			}),
+		);
+	} catch {
+		return { success: false };
+	}
 
 	return {
 		songs,
@@ -90,90 +68,54 @@ async function spotify(link: string, spotifyToken: string): Promise<AudioData<bo
 }
 
 async function youtubePlaylist(link: string): Promise<AudioData<boolean>> {
-	let result;
+	let playlist;
 	try {
-		result = await ytpl(link);
+		playlist = await resolvePlaylist(link);
 	} catch {
 		return { success: false };
 	}
 
 	return {
-		songs: result.items.map(({ shortUrl, title, duration, bestThumbnail }) => {
-			return {
-				url: shortUrl,
-				title,
-				duration: duration ?? '',
-				thumbnail: bestThumbnail.url ?? '',
-				type: AudioTypes.YouTube,
-			};
-		}),
-		response: responseOptions(EmbedType.Success, `Added playlist "${result.title}" to queue!`, {
+		songs: playlist.results,
+		response: responseOptions(EmbedType.Success, `Added playlist "${playlist.playlistTitle}" to queue!`, {
 			fields: [{ name: 'URL:', value: link }],
-			image: { url: result.bestThumbnail.url ?? '' },
+			image: { url: playlist.results[0].thumbnail },
 		}),
 		success: true,
 	};
 }
 
 async function youtube(link: string): Promise<AudioData<boolean>> {
-	let result;
+	let songs;
 	try {
-		result = await resolve(link);
+		songs = await resolve(link);
 	} catch {
 		return { success: false };
 	}
 
-	const hour = Math.floor(result.duration / 3600);
-	const min = Math.floor((result.duration % 3600) / 60);
-	const sec = result.duration % 60;
-
 	return {
-		songs: [
-			{
-				url: result.webpage_url,
-				title: result.title,
-				duration: `${hour > 0 ? (hour < 10 ? `0${hour}:` : `${hour}:`) : ''}${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec}`,
-				thumbnail: result.thumbnail,
-				type: AudioTypes.YouTube,
-			},
-		],
-		response: responseOptions(EmbedType.Success, `Added "${result.title}" to queue!`, {
-			fields: [{ name: 'URL:', value: result.webpage_url }],
-			image: { url: result.thumbnail },
+		songs,
+		response: responseOptions(EmbedType.Success, `Added "${songs[0].title}" to queue!`, {
+			fields: [{ name: 'URL:', value: songs[0].url }],
+			image: { url: songs[0].thumbnail },
 		}),
 		success: true,
 	};
 }
 
 async function misc(link: string): Promise<AudioData<boolean>> {
-	const filterMap = await ytsr.getFilters(link);
-	const filter = filterMap.get('Type')?.get('Video')?.url;
-	if (!filter) {
+	let songs;
+	try {
+		songs = await search([link]);
+	} catch {
 		return { success: false };
 	}
-
-	const term = await ytsr(filter, {
-		limit: 1,
-	});
-	if (term.results < 1) {
-		return { success: false };
-	}
-
-	const { url, title, duration, bestThumbnail } = term.items[0] as ytsr.Video;
 
 	return {
-		songs: [
-			{
-				url,
-				title,
-				duration: duration ?? '',
-				thumbnail: bestThumbnail.url ?? '',
-				type: AudioTypes.YouTube,
-			},
-		],
-		response: responseOptions(EmbedType.Success, `Added "${title}" to queue!`, {
-			fields: [{ name: 'URL:', value: url }],
-			image: { url: bestThumbnail.url ?? '' },
+		songs,
+		response: responseOptions(EmbedType.Success, `Added "${songs[0].title}" to queue!`, {
+			fields: [{ name: 'URL:', value: songs[0].url }],
+			image: { url: songs[0].thumbnail },
 		}),
 		success: true,
 	};
@@ -189,7 +131,6 @@ export const command: PotatoChatCommand<'Guild'> = {
 				description: 'The URL or title of the song',
 				type: ApplicationCommandOptionType.String,
 				required: true,
-				autocomplete: true,
 			},
 			{
 				name: 'position',
@@ -234,35 +175,6 @@ export const command: PotatoChatCommand<'Guild'> = {
 		);
 
 		await response.interaction.editReply(parsed.response);
-	},
-	async autocomplete(interaction) {
-		const value = interaction.options.getFocused();
-		if (
-			value.length < 3 ||
-			/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(value) ||
-			/^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=?]+)$/.test(value)
-		) {
-			await interaction.respond([]);
-			return;
-		}
-
-		const filterMap = await ytsr.getFilters(value);
-		const filter = filterMap.get('Type')?.get('Video')?.url;
-		if (!filter) {
-			await interaction.respond([]);
-			return;
-		}
-
-		const results = await ytsr(filter, {
-			limit: 4,
-		});
-		const options = (results.items as ytsr.Video[]).map((result) => {
-			return {
-				name: result.title,
-				value: result.url,
-			};
-		});
-		await interaction.respond(options);
 	},
 	ephemeral: true,
 	type: 'Guild',

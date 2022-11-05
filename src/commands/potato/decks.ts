@@ -3,6 +3,7 @@ import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import type { GlobalChatCommandResponse } from '../../types/client.js';
 import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { EmbedType, Emojis, responseEmbed, responseOptions } from '../../util/builders.js';
+import type { DeckstatsResponse, ScryfallResponse } from '../../types/api.js';
 
 async function getDeckList(url: string): Promise<InteractionUpdateOptions> {
 	const ids = /^(?:https?:\/\/)?(?:www\.)?deckstats\.net\/decks\/(\d+)\/(\d+)-[\dA-Za-z-]+$/.exec(url);
