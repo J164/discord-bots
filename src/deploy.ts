@@ -14,11 +14,11 @@ if (!env.npm_config_argv) {
 }
 
 const npmConfig = JSON.parse(env.npm_config_argv) as { original: string[] };
-if (npmConfig.original.length < 8) {
+if (npmConfig.original.length < 10) {
 	throw new Error('Missing Credentials');
 }
 
-const COMMAND_DIR = path.dirname(fileURLToPath(import.meta.url));
+const COMMAND_DIR = `${path.dirname(fileURLToPath(import.meta.url))}/commands`;
 
 const commandData = await Promise.all([
 	(async () => {
