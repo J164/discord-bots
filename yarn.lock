@@ -952,7 +952,7 @@
   dependencies:
     "@types/node" "*"
 
-"@typescript-eslint/eslint-plugin@*":
+"@typescript-eslint/eslint-plugin@^5.35.1":
   version "5.42.0"
   resolved "https://registry.yarnpkg.com/@typescript-eslint/eslint-plugin/-/eslint-plugin-5.42.0.tgz#36a8c0c379870127059889a9cc7e05c260d2aaa5"
   integrity sha512-5TJh2AgL6+wpL8H/GTSjNb4WrjKoR2rqvFxR/DDTqYNk6uXn8BJMEcncLSpMbf/XV1aS0jAjYwn98uvVCiAywQ==
@@ -967,7 +967,7 @@
     semver "^7.3.7"
     tsutils "^3.21.0"
 
-"@typescript-eslint/parser@*":
+"@typescript-eslint/parser@^5.35.1":
   version "5.42.0"
   resolved "https://registry.yarnpkg.com/@typescript-eslint/parser/-/parser-5.42.0.tgz#be0ffbe279e1320e3d15e2ef0ad19262f59e9240"
   integrity sha512-Ixh9qrOTDRctFg3yIwrLkgf33AHyEIn6lhyf5cCfwwiGtkWhNpVKlEZApi3inGQR/barWnY7qY8FbGKBO7p3JA==
@@ -1507,10 +1507,10 @@ dir-glob@^3.0.1:
   dependencies:
     path-type "^4.0.0"
 
-discord-api-types@0.37.16, discord-api-types@^0.37.12:
-  version "0.37.16"
-  resolved "https://registry.yarnpkg.com/discord-api-types/-/discord-api-types-0.37.16.tgz#3cc5fb56d34d12f57f20f81708ac0963b24c3e96"
-  integrity sha512-H0FDY6+ww4YZe1+L+2ERWU3KsVSInWLvK0TeImhiTi49DXff8sFLnqqnEiEdMEhwFlkQMUIe4xL5Py046s+Ksg==
+discord-api-types@0.37.17, discord-api-types@^0.37.12:
+  version "0.37.17"
+  resolved "https://registry.yarnpkg.com/discord-api-types/-/discord-api-types-0.37.17.tgz#314e4225fdff31b08b83ba5104d46564bc02303c"
+  integrity sha512-5ZIw1VtkmToBy8ziketjHkZnW1FoLevyXdK/TslNFLozijug2RnB3MyBNtSGzML1c72koU3neeGkvFZ8OiU0tQ==
 
 discord.js@14.6.0:
   version "14.6.0"
@@ -1657,7 +1657,7 @@ eslint-config-prettier@^8.5.0:
   resolved "https://registry.yarnpkg.com/eslint-config-prettier/-/eslint-config-prettier-8.5.0.tgz#5a81680ec934beca02c7b1a61cf8ca34b66feab1"
   integrity sha512-obmWKLUNCnhtQRKc+tmnYuQl0pFU1ibYJQ5BGhTVB08bHe9wC8qUeG7c08dj9XX+AuPj1YSGSQIHl1pnDHZR0Q==
 
-eslint-config-xo-typescript@*:
+eslint-config-xo-typescript@^0.53.0:
   version "0.53.0"
   resolved "https://registry.yarnpkg.com/eslint-config-xo-typescript/-/eslint-config-xo-typescript-0.53.0.tgz#702be21ea0dfcb124903c5f723d023b1fdeb0da2"
   integrity sha512-IJ1n70egMPTou/41HoGGFbLf/2WCsVW5lSUxOSklrR8T1221fMRPVJxIVZ3evr8R+N5wR6uzg/0uzSymwWA5Bg==
