@@ -28,9 +28,10 @@ type EuchrePlayer = {
 // Magic Game
 
 type MagicPlayer = {
+	readonly id: string;
 	readonly name: string;
 	life: number;
 	poison: number;
 	isAlive: boolean;
-	readonly commanderDamage: Map<string, number>;
+	readonly commanderDamage: number[];
 };

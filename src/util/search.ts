@@ -1,3 +1,9 @@
+/**
+ * Compares items to the filter and returns an array sorted from closest to filter to furthest
+ * @param items Items to search
+ * @param filter Filter to search by
+ * @returns An array of the items from most similar to the filter to least
+ */
 export function search(items: string[], filter: string): Array<{ item: string; score: number; index: number }> {
 	const cleanItems = items.map((item) => {
 		return item.trim().toLowerCase();
@@ -12,27 +18,26 @@ export function search(items: string[], filter: string): Array<{ item: string; s
 			}
 
 			let score = 0;
-
 			for (let f = 0; f < cleanFilter.length; f++) {
-				let matchLength = 0;
-				let currentMatchLength = 0;
 				let filterIndex = f;
-				let itemIndex = -1;
+				let bestMatchLength = 0;
+				let currentMatchLength = 0;
+				let currentItemIndex = -1;
 				let bestItemIndex = -1;
 
 				// eslint-disable-next-line unicorn/no-for-loop
 				for (let i = 0; i < item.length; i++) {
 					if (item[i] === cleanFilter[filterIndex] && filterIndex < cleanFilter.length) {
 						if (currentMatchLength === 0) {
-							itemIndex = i;
+							currentItemIndex = i;
 						}
 
 						currentMatchLength++;
 						filterIndex++;
 					} else if (currentMatchLength > 0) {
-						if (matchLength < currentMatchLength) {
-							matchLength = currentMatchLength;
-							bestItemIndex = itemIndex;
+						if (bestMatchLength < currentMatchLength) {
+							bestMatchLength = currentMatchLength;
+							bestItemIndex = currentItemIndex;
 						}
 
 						currentMatchLength = 0;
@@ -40,13 +45,13 @@ export function search(items: string[], filter: string): Array<{ item: string; s
 					}
 				}
 
-				if (matchLength < currentMatchLength || (matchLength === currentMatchLength && bestItemIndex !== 0)) {
-					matchLength = currentMatchLength;
-					bestItemIndex = itemIndex;
+				if (bestMatchLength < currentMatchLength || (bestMatchLength === currentMatchLength && bestItemIndex !== 0)) {
+					bestMatchLength = currentMatchLength;
+					bestItemIndex = currentItemIndex;
 				}
 
-				score += calculateScore(bestItemIndex, matchLength, item.length);
-				f += matchLength > 0 ? matchLength : 0;
+				score += ((bestItemIndex === 0 ? 2 : 0) + (bestItemIndex + bestMatchLength === item.length ? 1 : 0) + bestMatchLength) * bestMatchLength;
+				f += bestMatchLength > 0 ? bestMatchLength - 1 : 0;
 			}
 
 			return {
@@ -58,8 +63,4 @@ export function search(items: string[], filter: string): Array<{ item: string; s
 		.sort((a, b) => {
 			return b.score - a.score;
 		});
-}
-
-function calculateScore(itemIndex: number, matchLength: number, itemLength: number): number {
-	return ((itemIndex === 0 ? 2 : 0) + (itemIndex + matchLength === itemLength ? 1 : 0) + matchLength) * matchLength;
 }

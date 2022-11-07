@@ -55,6 +55,10 @@ export abstract class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo ext
 	 */
 	protected abstract getGlobalInfo(logger: Logger): GlobalInfo;
 
+	/**
+	 * Generates the default guild info for a new guild
+	 * @returns The default guild info
+	 */
 	protected abstract getDefaultGuildInfo(): GuildInfo;
 
 	/** Subscribes a listener for the interactionCreate event */

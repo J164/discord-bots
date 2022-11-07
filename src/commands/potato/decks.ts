@@ -139,7 +139,7 @@ async function promptUser(response: GlobalChatCommandResponse, urls: Array<{ url
 			break;
 		case 'list':
 			await component.update(await getDeckList(urls[index].url));
-			return;
+			break;
 		case 'right':
 			await updateResponse(response, urls, index + 1);
 			break;

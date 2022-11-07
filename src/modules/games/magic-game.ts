@@ -1,24 +1,9 @@
-import type { APISelectMenuOption, ButtonInteraction, EmbedBuilder, InteractionUpdateOptions, ThreadChannel, User } from 'discord.js';
-import { ButtonStyle, Collection, ComponentType } from 'discord.js';
+import type { APISelectMenuOption, ButtonInteraction, EmbedBuilder, InteractionUpdateOptions, ThreadChannel } from 'discord.js';
+import { ButtonStyle, ComponentType } from 'discord.js';
 import type { MagicPlayer } from '../../types/games.js';
 import { EmbedType, responseEmbed, responseOptions } from '../../util/builders.js';
 
-export function playMagic(playerList: User[], life: number, gameChannel: ThreadChannel): void {
-	const playerData = new Collection<string, MagicPlayer>();
-	for (const player of playerList) {
-		playerData.set(player.id, {
-			name: player.username,
-			life,
-			poison: 0,
-			isAlive: true,
-			commanderDamage: new Map<string, number>(),
-		});
-	}
-
-	void listen(playerData, gameChannel);
-}
-
-async function listen(playerData: Collection<string, MagicPlayer>, gameChannel: ThreadChannel): Promise<void> {
+export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadChannel): Promise<void> {
 	const message = await gameChannel.send({
 		embeds: [printStandings(playerData)],
 		components: [
@@ -48,30 +33,28 @@ async function listen(playerData: Collection<string, MagicPlayer>, gameChannel: 
 		],
 	});
 
-	let component;
-	try {
-		component = await message.awaitMessageComponent({
-			componentType: ComponentType.Button,
-			time: 300_000,
-		});
-	} catch {
-		await message.edit({ components: [] }).catch();
-		void gameChannel.setArchived(true).catch();
-		return;
-	}
+	const component = await message.awaitMessageComponent({
+		componentType: ComponentType.Button,
+		time: 300_000,
+	});
 
 	await component.update({ components: [] });
 
 	switch (component.customId) {
 		case 'damage':
 			await prompt(playerData, gameChannel, component);
-			return;
+			break;
 		case 'heal':
 			await heal(playerData, gameChannel, component);
-			return;
+			break;
 		case 'end':
 			await component.update({ embeds: [printStandings(playerData)] });
-			void gameChannel.setArchived(true).catch();
+			try {
+				await gameChannel.setArchived(true);
+			} catch {
+				// Thread deleted
+			}
+
 			break;
 	}
 }
@@ -134,10 +117,10 @@ function healPrompt(players: APISelectMenuOption[], playerResponse: boolean, amo
 	};
 }
 
-async function heal(playerData: Collection<string, MagicPlayer>, gameChannel: ThreadChannel, interaction: ButtonInteraction): Promise<void> {
+async function heal(playerData: MagicPlayer[], gameChannel: ThreadChannel, interaction: ButtonInteraction): Promise<void> {
 	const players: APISelectMenuOption[] = [];
-	for (const [id, player] of playerData) {
-		players.push({ label: player.name, value: id });
+	for (const [index, player] of playerData.entries()) {
+		players.push({ label: player.name, value: index.toString() });
 	}
 
 	let playerResponse = false;
@@ -146,24 +129,15 @@ async function heal(playerData: Collection<string, MagicPlayer>, gameChannel: Th
 	let responses: [string, number];
 	try {
 		responses = (await Promise.all([
-			new Promise((resolve, reject) => {
-				response
-					.awaitMessageComponent({
-						componentType: ComponentType.SelectMenu,
-						time: 300_000,
-					})
-					.then(
-						(component) => {
-							playerResponse = true;
-							void component.update(healPrompt(players, playerResponse, amountResponse)).then(() => {
-								resolve(component.values[0]);
-							});
-						},
-						() => {
-							reject();
-						},
-					);
-			}),
+			(async () => {
+				const component = await response.awaitMessageComponent({
+					componentType: ComponentType.SelectMenu,
+					time: 300_000,
+				});
+				playerResponse = true;
+				await component.update(healPrompt(players, playerResponse, amountResponse));
+				return component.values[0];
+			})(),
 			new Promise((resolve, reject) => {
 				let amount = 0;
 				const collector = response
@@ -213,12 +187,12 @@ async function heal(playerData: Collection<string, MagicPlayer>, gameChannel: Th
 			}),
 		])) as [string, number];
 	} catch {
-		void listen(playerData, gameChannel);
+		await playMagic(playerData, gameChannel);
 		return;
 	}
 
-	playerData.get(responses[0])!.life += responses[1];
-	void listen(playerData, gameChannel);
+	playerData[Number.parseInt(responses[0], 10)].life += responses[1];
+	await playMagic(playerData, gameChannel);
 }
 
 function damagePrompt(players: APISelectMenuOption[], playerResponse: boolean, modifierResponse: boolean, amountResponse: boolean): InteractionUpdateOptions {
@@ -307,57 +281,42 @@ function damagePrompt(players: APISelectMenuOption[], playerResponse: boolean, m
 	};
 }
 
-async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: ThreadChannel, interaction: ButtonInteraction): Promise<void> {
+async function prompt(playerData: MagicPlayer[], gameChannel: ThreadChannel, interaction: ButtonInteraction): Promise<void> {
 	const players: APISelectMenuOption[] = [];
-	for (const [id, player] of playerData) {
-		players.push({ label: player.name, value: id });
+	for (const [index, player] of playerData.entries()) {
+		players.push({ label: player.name, value: index.toString() });
 	}
 
 	let playerResponse = false;
 	let modifierResponse = false;
 	let amountResponse = false;
 	const response = await interaction.update(damagePrompt(players, playerResponse, modifierResponse, amountResponse));
-	let responses: [string[], string[], number];
+	let responses: [{ target: string; selector: string }, string[], number];
 	try {
 		responses = (await Promise.all([
-			new Promise((resolve, reject) => {
-				response
-					.awaitMessageComponent({
-						filter: (s) => s.customId === 'player_select',
-						componentType: ComponentType.SelectMenu,
-						time: 300_000,
-					})
-					.then(
-						(component) => {
-							playerResponse = true;
-							void component.update(damagePrompt(players, playerResponse, modifierResponse, amountResponse)).then(() => {
-								resolve([component.values[0], component.user.id]);
-							});
-						},
-						() => {
-							reject();
-						},
-					);
-			}),
-			new Promise((resolve, reject) => {
-				response
-					.awaitMessageComponent({
-						filter: (s) => s.customId === 'modifiers',
-						componentType: ComponentType.SelectMenu,
-						time: 300_000,
-					})
-					.then(
-						(component) => {
-							modifierResponse = true;
-							void component.update(damagePrompt(players, playerResponse, modifierResponse, amountResponse)).then(() => {
-								resolve(component.values);
-							});
-						},
-						() => {
-							reject();
-						},
-					);
-			}),
+			(async () => {
+				const component = await response.awaitMessageComponent({
+					filter: (s) => s.customId === 'player_select',
+					componentType: ComponentType.SelectMenu,
+					time: 300_000,
+				});
+				playerResponse = true;
+				await component.update(damagePrompt(players, playerResponse, modifierResponse, amountResponse));
+				return {
+					target: component.values[0],
+					selector: component.user.id,
+				};
+			})(),
+			(async () => {
+				const component = await response.awaitMessageComponent({
+					filter: (s) => s.customId === 'modifiers',
+					componentType: ComponentType.SelectMenu,
+					time: 300_000,
+				});
+				modifierResponse = true;
+				await component.update(damagePrompt(players, playerResponse, modifierResponse, amountResponse));
+				return component.values;
+			})(),
 			new Promise((resolve) => {
 				let amount = 0;
 				const collector = response
@@ -394,13 +353,13 @@ async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: 
 						});
 					});
 			}),
-		])) as [string[], string[], number];
+		])) as [{ target: string; selector: string }, string[], number];
 	} catch {
-		void listen(playerData, gameChannel);
+		await playMagic(playerData, gameChannel);
 		return;
 	}
 
-	const target = playerData.get(responses[0][0])!;
+	const target = playerData[Number.parseInt(responses[0].target, 10)];
 	target.life -= responses[2];
 	for (const value of responses[1]) {
 		if (value === 'poison') {
@@ -409,63 +368,66 @@ async function prompt(playerData: Collection<string, MagicPlayer>, gameChannel: 
 		}
 
 		if (value === 'commander') {
-			target.commanderDamage.set(responses[0][1], (target.commanderDamage.get(responses[0][1]) ?? 0) + responses[2]);
+			target.commanderDamage[Number.parseInt(responses[0].target, 10)] += responses[2];
 		}
 	}
 
-	void checkStatus(playerData, gameChannel, responses[0][0]);
+	await checkStatus(playerData, gameChannel, target);
 }
 
-async function checkStatus(playerData: Collection<string, MagicPlayer>, gameChannel: ThreadChannel, player: string): Promise<void> {
-	if (playerData.get(player)!.life < 1 || playerData.get(player)!.poison >= 10) {
+async function checkStatus(playerData: MagicPlayer[], gameChannel: ThreadChannel, player: MagicPlayer): Promise<void> {
+	if (player.life < 1 || player.poison >= 10) {
 		return endGame(playerData, gameChannel, player);
 	}
 
-	for (const [, commander] of playerData.get(player)!.commanderDamage) {
+	for (const commander of player.commanderDamage) {
 		if (commander >= 21) {
 			return endGame(playerData, gameChannel, player);
 		}
 	}
 
-	void listen(playerData, gameChannel);
+	await playMagic(playerData, gameChannel);
 }
 
-async function endGame(playerData: Collection<string, MagicPlayer>, gameChannel: ThreadChannel, player: string): Promise<void> {
-	playerData.get(player)!.isAlive = false;
-	if (playerData.filter((user) => user.isAlive).size < 2) {
+async function endGame(playerData: MagicPlayer[], gameChannel: ThreadChannel, player: MagicPlayer): Promise<void> {
+	player.isAlive = false;
+	const alivePlayers = playerData.filter((user) => user.isAlive);
+	if (alivePlayers.length < 2) {
+		const alivePlayer = alivePlayers[0];
+
 		await gameChannel.send(
-			responseOptions(EmbedType.Info, `${playerData.filter((player) => player.isAlive)!.first()!.name} Wins!`, {
+			responseOptions(EmbedType.Info, `${alivePlayer.name} Wins!`, {
 				fields: [
 					{
-						name: `${playerData.filter((player) => player.isAlive)!.first()!.name}:`,
-						value: `Life Total: ${playerData.filter((player) => player.isAlive)!.first()!.life}\nPoison Counters: ${
-							playerData.filter((player) => player.isAlive)!.first()!.poison
-						}`,
+						name: `${alivePlayer.name}:`,
+						value: `Life Total: ${alivePlayer.life}\nPoison Counters: ${alivePlayer.poison}`,
 					},
 				],
 			}),
 		);
 		try {
-			void gameChannel.setArchived(true);
+			await gameChannel.setArchived(true);
 		} catch {
 			/* Thread deleted */
 		}
 	}
 }
 
-function printStandings(playerData: Collection<string, MagicPlayer>): EmbedBuilder {
+function printStandings(playerData: MagicPlayer[]): EmbedBuilder {
 	const embed = responseEmbed(EmbedType.Info, 'Current Standings');
-	for (const [, player] of playerData) {
-		const value = ['Commander Damage'];
-		for (const [id, damage] of player.commanderDamage) {
-			value.push(`${playerData.get(id)!.name}: ${damage}`);
-		}
+	embed.addFields(
+		playerData.map((player) => {
+			const value = ['Commander Damage'];
+			for (const [index, damage] of player.commanderDamage.entries()) {
+				value.push(`${playerData[index].name}: ${damage}`);
+			}
 
-		embed.addFields({
-			name: `${player.name}: ${player.isAlive ? `Life Total: ${player.life}\nPoison Counters: ${player.poison}` : 'ELIMINATED'}`,
-			value: value.join('\n'),
-		});
-	}
+			return {
+				name: `${player.name}: ${player.isAlive ? `Life Total: ${player.life}\nPoison Counters: ${player.poison}` : 'ELIMINATED'}`,
+				value: value.join('\n'),
+			};
+		}),
+	);
 
 	return embed;
 }

@@ -54,24 +54,33 @@ export const command: PotatoChatCommand<'Guild'> = {
 			return;
 		}
 
-		const playerlist = [response.interaction.options.getUser('player1', true), response.interaction.options.getUser('player2', true)];
+		const playerList = [response.interaction.options.getUser('player1', true), response.interaction.options.getUser('player2', true)];
 		for (let index = 3; index <= 4; index++) {
 			if (response.interaction.options.getUser(`player${index}`)) {
-				playerlist.push(response.interaction.options.getUser(`player${index}`, true));
+				playerList.push(response.interaction.options.getUser(`player${index}`, true));
 			} else {
 				break;
 			}
 		}
 
-		playMagic(
-			playerlist,
-			response.interaction.options.getInteger('life') ?? 20,
+		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Starting game!'));
+
+		await playMagic(
+			playerList.map((user) => {
+				return {
+					id: user.id,
+					name: user.username,
+					life: response.interaction.options.getInteger('life') ?? 20,
+					poison: 0,
+					isAlive: true,
+					commanderDamage: [0, 0, 0, 0],
+				};
+			}),
 			await channel.threads.create({
 				name: response.interaction.options.getString('name') ?? 'Magic',
 				autoArchiveDuration: 60,
 			}),
 		);
-		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Success!'));
 	},
 	type: 'Guild',
 };
