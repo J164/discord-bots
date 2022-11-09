@@ -32,7 +32,7 @@ export class SwearClient extends BotClient<GlobalInfo, GuildInfo, Config> {
 					return;
 				}
 
-				return this.importCommand(`./commands/swear/${file}`);
+				return this.importCommand(`../commands/swear/${file}`);
 			}),
 		);
 	}

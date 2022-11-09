@@ -93,7 +93,7 @@ export class PotatoClient extends BotClient<GlobalInfo, GuildInfo, Config> {
 							return;
 						}
 
-						return this.importCommand(`./commands/potato/${file}`);
+						return this.importCommand(`../commands/potato/${file}`);
 					}),
 				);
 			})(),

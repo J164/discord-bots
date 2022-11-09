@@ -48,7 +48,7 @@ const swearClient = new SwearClient(
 
 const yeetClient = new YeetClient(
 	{
-		logger: logger.child({ name: 'Crystal Bot' }),
+		logger: logger.child({ name: 'Yeet Bot' }),
 		tenorKey: env.TENOR_KEY ?? '',
 	},
 	env.YEET_STATUS,

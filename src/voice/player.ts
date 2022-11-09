@@ -27,6 +27,7 @@ export class Player {
 		this._voiceConnection = joinVoiceChannel({
 			channelId: voiceChannel.id,
 			guildId: voiceChannel.guild.id,
+			// @ts-expect-error api types mismatch
 			adapterCreator: voiceChannel.guild.voiceAdapterCreator,
 		});
 

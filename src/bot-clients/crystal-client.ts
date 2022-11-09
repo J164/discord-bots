@@ -32,7 +32,7 @@ export class CrystalClient extends BotClient<GlobalInfo, GuildInfo, Config> {
 					return;
 				}
 
-				return this.importCommand(`./commands/crystal/${file}`);
+				return this.importCommand(`../commands/crystal/${file}`);
 			}),
 		);
 	}
