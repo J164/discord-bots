@@ -22,13 +22,11 @@ const potatoClient = new PotatoClient(
 	{
 		logger: logger.child({ name: 'Potato Bot' }),
 		abstractKey: env.ABSTRACT_KEY ?? '',
-		admin: env.ADMIN ?? '',
 		announcementChannel: env.ANNOUNCEMENT_CHANNEL ?? '',
 		announcementTime: env.ANNOUNCEMENT_TIME ?? '',
 		databaseName: env.DATABASE_NAME ?? '',
 		downloadDirectory: env.DOWNLOAD_DIRECTORY ?? '',
 		gradeUpdateInterval: env.GRADE_UPDATE_INTERVAL ?? '',
-		ircToken: env.IRC_TOKEN ?? '',
 		mongodbUrl: env.MONGODB_URL ?? '',
 		spotifyToken: env.SPOTIFY_TOKEN ?? '',
 		weatherKey: env.WEATHER_KEY ?? '',

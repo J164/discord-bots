@@ -162,7 +162,6 @@ type YoutubePlaylistResolveResult = {
 // Tenor API
 
 /** Data returned from a Tenor search */
-
 type TenorResponse = {
 	readonly results: ReadonlyArray<{
 		readonly itemurl: string;

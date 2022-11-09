@@ -11,12 +11,10 @@ type Config = {
 	readonly announcementChannel: string;
 	readonly databaseName: string;
 	readonly gradeUpdateInterval: string;
-	readonly admin: string;
 	readonly weatherKey: string;
 	readonly abstractKey: string;
 	readonly downloadDirectory: string;
 	readonly spotifyToken: string;
-	readonly ircToken: string;
 };
 
 /** Global bot info used to respond to interactions recieved by Potato Bot */
@@ -25,7 +23,6 @@ type GlobalInfo = {
 	readonly logger: Logger;
 	readonly downloadDirectory: string;
 	readonly spotifyToken: string;
-	readonly ircToken: string;
 	readonly weather?: WeatherResponse;
 };
 
