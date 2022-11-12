@@ -1,23 +1,7 @@
-import { ActionRowBuilder, ApplicationCommandOptionType, ButtonStyle, ComponentType } from 'discord.js';
-import type { ButtonBuilder } from 'discord.js';
+import { ApplicationCommandOptionType } from 'discord.js';
 import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
-import { responseOptions, responseEmbed, Emojis, EmbedType, messageOptions } from '../../util/builders.js';
+import { responseOptions, responseEmbed, EmbedType, messageOptions } from '../../util/builders.js';
 import { fetchCourseData } from '../../util/irc.js';
-
-function buildScoreMap(standards: Standard[]): string {
-	const string = [];
-	for (const standard of standards) {
-		if (standard.isHomeworkStandard) {
-			continue;
-		}
-
-		string.push(
-			`**${standard.proficiencyScore}** - "${standard.name}"\n${standard.proficiency.exceedsCount} - ${standard.proficiency.meetsCount} - ${standard.proficiency.approachingCount} - ${standard.proficiency.developingCount}`,
-		);
-	}
-
-	return string.join('\n') || 'No scores yet!';
-}
 
 export const command: PotatoChatCommand<'Global'> = {
 	data: {
@@ -41,82 +25,7 @@ export const command: PotatoChatCommand<'Global'> = {
 			return;
 		}
 
-		let dm;
-		try {
-			dm = await response.interaction.user.createDM();
-		} catch {
-			await response.interaction.editReply(responseOptions(EmbedType.Error, "Couldn't send a DM! Make sure your privacy settings allow Potato Bot to DM you."));
-			return;
-		}
-
-		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Check your DMs for further instructions'));
-
-		const question = await dm.send(
-			messageOptions({
-				embeds: [
-					responseEmbed(
-						EmbedType.Prompt,
-						'Does this look correct? (Some courses may not show up, only select no if nothing shows up and you know you have a projected grade in at least one class)',
-					),
-					...courseData.courses.map((course) => {
-						return responseEmbed(course.isFinal ? EmbedType.Success : EmbedType.Info, course.name, {
-							fields: [
-								{
-									name: course.isFinal ? 'Final Grade' : 'Projected Grade',
-									value: course.projectedGrade || course.weeklyGrowth || 'No projected grade yet!',
-								},
-								{
-									name: 'Weekly Growth',
-									value: course.weeklyGrowth || 'No weekly growth right now!',
-								},
-								{
-									name: 'Score Ratios (exceeds - meets - approaching - developing)',
-									value: buildScoreMap(course.standards),
-								},
-							],
-						});
-					}),
-				],
-				components: [
-					new ActionRowBuilder<ButtonBuilder>({
-						components: [
-							{
-								type: ComponentType.Button,
-								customId: 'yes',
-								emoji: Emojis.GreenCheckMark,
-								label: 'Yes',
-								style: ButtonStyle.Primary,
-							},
-							{
-								type: ComponentType.Button,
-								customId: 'no',
-								emoji: Emojis.RedX,
-								label: 'No',
-								style: ButtonStyle.Secondary,
-							},
-						],
-					}),
-				],
-			}),
-		);
-
-		let component;
-		try {
-			component = await question.awaitMessageComponent({
-				time: 300_000,
-				componentType: ComponentType.Button,
-			});
-		} catch {
-			await question.edit(messageOptions({ embeds: [responseEmbed(EmbedType.Error, 'Request Timed Out!')], components: [] }));
-			return;
-		}
-
-		if (component.customId !== 'yes') {
-			await component.update(messageOptions({ embeds: [responseEmbed(EmbedType.Error, 'PLACEHOLDER')], components: [] }));
-		}
-
 		const gradeCollection = globalInfo.database.collection<IrcUser>('grades');
-
 		const user = await gradeCollection.findOne({ discordId: response.interaction.user.id });
 
 		if (user) {
@@ -138,7 +47,7 @@ export const command: PotatoChatCommand<'Global'> = {
 			});
 		}
 
-		await component.update(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Setup successful!')], components: [] }));
+		await response.interaction.editReply(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Setup successful!')] }));
 	},
 	ephemeral: true,
 	type: 'Global',
