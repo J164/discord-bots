@@ -1,6 +1,6 @@
 import type { TenorResponse } from '../../types/api.js';
 import type { YeetChatCommand } from '../../types/bot-types/yeet.js';
-import { EmbedType, responseOptions } from '../../util/builders.js';
+import { EmbedType, messageOptions, responseOptions } from '../../util/builders.js';
 
 export const command: YeetChatCommand<'Global'> = {
 	data: {
@@ -15,9 +15,11 @@ export const command: YeetChatCommand<'Global'> = {
 		}
 
 		const gifs = (await request.json()) as TenorResponse;
-		await response.interaction.editReply({
-			content: gifs.results[Math.floor(Math.random() * gifs.results.length)].itemurl,
-		});
+		await response.interaction.editReply(
+			messageOptions({
+				content: gifs.results[Math.floor(Math.random() * gifs.results.length)].itemurl,
+			}),
+		);
 	},
 	type: 'Global',
 };

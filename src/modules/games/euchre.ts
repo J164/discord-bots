@@ -1,9 +1,9 @@
 import { setTimeout } from 'node:timers';
-import type { APISelectMenuOption, ButtonInteraction, SelectMenuInteraction, ThreadChannel, User } from 'discord.js';
-import { ButtonStyle, ComponentType } from 'discord.js';
+import type { APISelectMenuOption, ButtonBuilder, ButtonInteraction, SelectMenuInteraction, ThreadChannel, User, SelectMenuBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import { CardRank, CardSuit } from '../../types/card.js';
 import type { EuchrePlayer, EuchreTeam, GameInfo } from '../../types/games.js';
-import { EmbedType, responseEmbed, responseOptions } from '../../util/builders.js';
+import { EmbedType, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
 import type { Card } from '../../util/card-utils.js';
 import { Deck, multicardMessage } from '../../util/card-utils.js';
 
@@ -77,7 +77,8 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 
 	const sendHand = async (player: EuchrePlayer) => {
 		const channel = await player.user.createDM();
-		await channel.send(await multicardMessage(player.hand, responseEmbed(EmbedType.Info, 'Your Hand:')));
+		const { embeds, files } = await multicardMessage(player.hand, responseEmbed(EmbedType.Info, 'Your Hand:'));
+		await channel.send(messageOptions({ embeds, files, components: [] }));
 	};
 
 	await Promise.all(
@@ -86,32 +87,34 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 		}),
 	);
 
-	await gameInfo.gameChannel.send(await multicardMessage([top], responseEmbed(EmbedType.Info, 'Top of Stack:')));
+	const { embeds, files } = await multicardMessage([top], responseEmbed(EmbedType.Info, 'Top of Stack:'));
+	await gameInfo.gameChannel.send(messageOptions({ embeds, files, components: [] }));
 
 	const promptThree = async (index: number): Promise<void> => {
 		const dm = await gameInfo.players[index].user.createDM();
-		const message = await dm.send({
-			embeds: [responseEmbed(EmbedType.Prompt, 'Would you like to go alone?')],
-			components: [
-				{
-					components: [
-						{
-							type: ComponentType.Button,
-							customId: 'yes',
-							label: 'Yes',
-							style: ButtonStyle.Primary,
-						},
-						{
-							type: ComponentType.Button,
-							customId: 'no',
-							label: 'No',
-							style: ButtonStyle.Secondary,
-						},
-					],
-					type: ComponentType.ActionRow,
-				},
-			],
-		});
+		const message = await dm.send(
+			messageOptions({
+				embeds: [responseEmbed(EmbedType.Prompt, 'Would you like to go alone?')],
+				components: [
+					new ActionRowBuilder<ButtonBuilder>({
+						components: [
+							{
+								type: ComponentType.Button,
+								customId: 'yes',
+								label: 'Yes',
+								style: ButtonStyle.Primary,
+							},
+							{
+								type: ComponentType.Button,
+								customId: 'no',
+								label: 'No',
+								style: ButtonStyle.Secondary,
+							},
+						],
+					}),
+				],
+			}),
+		);
 		let component;
 		try {
 			component = await message.awaitMessageComponent({
@@ -119,19 +122,13 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 				time: 300_000,
 			});
 		} catch {
-			await message.edit({
-				embeds: [responseEmbed(EmbedType.Success, 'Success!')],
-				components: [],
-			});
+			await message.edit(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [] }));
 
 			gameInfo.players.find((player) => player.team === gameInfo.players[index].team && !player.user.equals(gameInfo.players[index].user))!.out = true;
 			return round({ gameInfo, leader: index, solo: true });
 		}
 
-		await component.update({
-			embeds: [responseEmbed(EmbedType.Success, 'Success!')],
-			components: [],
-		});
+		await component.update(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [] }));
 
 		if (component.customId === 'yes') {
 			gameInfo.players.find((player) => player.team === gameInfo.players[index].team && !player.user.equals(gameInfo.players[index].user))!.out = true;
@@ -142,66 +139,64 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 	};
 
 	const promptTwo = async (index = 0): Promise<void> => {
-		const messageOptions = await multicardMessage(
+		const { embeds, files } = await multicardMessage(
 			gameInfo.players[index].hand,
 			responseEmbed(EmbedType.Info, index === 3 ? 'Please select trump' : 'Would you like to pass or select trump?'),
 		);
 		const dm = await gameInfo.players[index].user.createDM();
-		const message = await dm.send({
-			...messageOptions,
-			components: [
-				{
-					type: ComponentType.ActionRow,
-					components: [
-						{
-							type: ComponentType.SelectMenu,
-							customId: 'suit',
-							placeholder: 'Select a Suit',
-							options: [
-								{
-									label: 'Spades',
-									value: '1',
-									emoji: '\u2660\uFE0F',
-								},
-								{
-									label: 'Clubs',
-									value: '2',
-									emoji: '\u2663\uFE0F',
-								},
-								{
-									label: 'Hearts',
-									value: '3',
-									emoji: '\u2665\uFE0F',
-								},
-								{
-									label: 'Diamonds',
-									value: '4',
-									emoji: '\u2666\uFE0F',
-								},
-							],
-						},
-						{
-							type: ComponentType.Button,
-							customId: 'pass',
-							label: 'Pass',
-							style: ButtonStyle.Secondary,
-							disabled: index === 3,
-						},
-					],
-				},
-			],
-		});
+		const message = await dm.send(
+			messageOptions({
+				embeds,
+				files,
+				components: [
+					new ActionRowBuilder<SelectMenuBuilder>({
+						components: [
+							{
+								type: ComponentType.SelectMenu,
+								customId: 'suit',
+								placeholder: 'Select a Suit',
+								options: [
+									{
+										label: 'Spades',
+										value: '1',
+										emoji: '\u2660\uFE0F',
+									},
+									{
+										label: 'Clubs',
+										value: '2',
+										emoji: '\u2663\uFE0F',
+									},
+									{
+										label: 'Hearts',
+										value: '3',
+										emoji: '\u2665\uFE0F',
+									},
+									{
+										label: 'Diamonds',
+										value: '4',
+										emoji: '\u2666\uFE0F',
+									},
+								],
+							},
+							{
+								type: ComponentType.Button,
+								customId: 'pass',
+								label: 'Pass',
+								style: ButtonStyle.Secondary,
+								disabled: index === 3,
+							},
+						],
+					}),
+				],
+			}),
+		);
 		let component;
 		try {
 			component = (await message.awaitMessageComponent({
 				time: 300_000,
 			})) as ButtonInteraction | SelectMenuInteraction;
 		} catch {
-			await message.edit({
-				embeds: [responseEmbed(EmbedType.Success, 'Success!')],
-				components: [],
-				files: [],
-			});
+			await message.edit(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [], files: [] }));
 
 			if (index === 3) {
 				gameInfo.trump = 0 as CardSuit;
@@ -212,11 +207,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 			return promptTwo(index + 1);
 		}
 
-		await component.update({
-			embeds: [responseEmbed(EmbedType.Success, 'Success!')],
-			components: [],
-			files: [],
-		});
+		await component.update(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [], files: [] }));
 
 		if (component.isSelectMenu()) {
 			gameInfo.trump = Number.parseInt(component.values[0], 10) as CardSuit;
@@ -229,27 +220,30 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 
 	const promptReplace = async (index: number): Promise<void> => {
 		const dm = await gameInfo.players[3].user.createDM();
-		const message = await dm.send({
-			...(await multicardMessage(gameInfo.players[3].hand, responseEmbed(EmbedType.Info, 'Select a card to replace'))),
-			components: [
-				{
-					type: ComponentType.ActionRow,
-					components: [
-						{
-							type: ComponentType.SelectMenu,
-							customId: 'replace',
-							placeholder: 'Select a Card',
-							options: gameInfo.players[3].hand.map((card, index) => {
-								return {
-									label: `${card.rankName} of ${card.suitName}`,
-									value: index.toString(),
-								};
-							}),
-						},
-					],
-				},
-			],
-		});
+		const { embeds, files } = await multicardMessage(gameInfo.players[3].hand, responseEmbed(EmbedType.Info, 'Select a card to replace'));
+		const message = await dm.send(
+			messageOptions({
+				embeds,
+				files,
+				components: [
+					new ActionRowBuilder<SelectMenuBuilder>({
+						components: [
+							{
+								type: ComponentType.SelectMenu,
+								customId: 'replace',
+								placeholder: 'Select a Card',
+								options: gameInfo.players[3].hand.map((card, index) => {
+									return {
+										label: `${card.rankName} of ${card.suitName}`,
+										value: index.toString(),
+									};
+								}),
+							},
+						],
+					}),
+				],
+			}),
+		);
 		let position;
 		try {
 			const component = await message.awaitMessageComponent({
@@ -258,18 +252,9 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 			});
 			position = Number.parseInt(component.values[0], 10);
 
-			await component.update({
-				embeds: [responseEmbed(EmbedType.Success, 'Success!')],
-				components: [],
-				files: [],
-			});
+			await component.update(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [], files: [] }));
 		} catch {
-			await message.edit({
-				embeds: [responseEmbed(EmbedType.Success, 'Success!')],
-				components: [],
-				files: [],
-			});
-
+			await message.edit(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [], files: [] }));
 			position = 0;
 		}
 
@@ -280,36 +265,38 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 
 	const promptOne = async (index = 0): Promise<void> => {
 		const dm = await gameInfo.players[index].user.createDM();
-		const message = await dm.send({
-			embeds: [
-				responseEmbed(
-					EmbedType.Prompt,
-					index === 3 ? `Would you like to pass or pick it up?` : `Would you like to pass or have ${gameInfo.players[3].user.username} pick it up?`,
-					{
-						image: { url: top.image },
-					},
-				),
-			],
-			components: [
-				{
-					type: ComponentType.ActionRow,
-					components: [
+		const message = await dm.send(
+			messageOptions({
+				embeds: [
+					responseEmbed(
+						EmbedType.Prompt,
+						index === 3 ? `Would you like to pass or pick it up?` : `Would you like to pass or have ${gameInfo.players[3].user.username} pick it up?`,
 						{
-							type: ComponentType.Button,
-							customId: 'pickup',
-							label: 'Pick It Up',
-							style: ButtonStyle.Primary,
+							image: { url: top.image },
 						},
-						{
-							type: ComponentType.Button,
-							customId: 'pass',
-							label: 'Pass',
-							style: ButtonStyle.Primary,
-						},
-					],
-				},
-			],
-		});
+					),
+				],
+				components: [
+					new ActionRowBuilder<ButtonBuilder>({
+						type: ComponentType.ActionRow,
+						components: [
+							{
+								type: ComponentType.Button,
+								customId: 'pickup',
+								label: 'Pick It Up',
+								style: ButtonStyle.Primary,
+							},
+							{
+								type: ComponentType.Button,
+								customId: 'pass',
+								label: 'Pass',
+								style: ButtonStyle.Primary,
+							},
+						],
+					}),
+				],
+			}),
+		);
 		let component;
 		try {
 			component = await message.awaitMessageComponent({
@@ -317,10 +304,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 				time: 300_000,
 			});
 		} catch {
-			await message.edit({
-				embeds: [responseEmbed(EmbedType.Success, 'Success!')],
-				components: [],
-			});
+			await message.edit(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [] }));
 
 			if (index === 3) {
 				return promptTwo();
@@ -329,10 +313,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 			return promptOne(index + 1);
 		}
 
-		await component.update({
-			embeds: [responseEmbed(EmbedType.Success, 'Success!')],
-			components: [],
-		});
+		await component.update(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [] }));
 
 		if (component.customId === 'pass') {
 			if (index === 3) {
@@ -377,43 +358,38 @@ async function round(options: { gameInfo: GameInfo; leader: number; solo: boolea
 	}
 
 	const dm = await options.gameInfo.players[index].user.createDM();
-	const message = await dm.send({
-		...(await multicardMessage(options.gameInfo.players[index].hand, responseEmbed(EmbedType.Info, 'Select a card to play'))),
-		components: [
-			{
-				type: ComponentType.ActionRow,
-				components: [
-					{
-						type: ComponentType.SelectMenu,
-						customId: 'play',
-						placeholder: 'Select a Card',
-						options: legalPlays,
-					},
-				],
-			},
-		],
-	});
+	const { embeds, files } = await multicardMessage(options.gameInfo.players[index].hand, responseEmbed(EmbedType.Info, 'Select a card to play'));
+	const message = await dm.send(
+		messageOptions({
+			embeds,
+			files,
+			components: [
+				new ActionRowBuilder<SelectMenuBuilder>({
+					components: [
+						{
+							type: ComponentType.SelectMenu,
+							customId: 'play',
+							placeholder: 'Select a Card',
+							options: legalPlays,
+						},
+					],
+				}),
+			],
+		}),
+	);
 	try {
 		const component = await message.awaitMessageComponent({
 			componentType: ComponentType.SelectMenu,
 			time: 300_000,
 		});
 
-		await component.update({
-			embeds: [responseEmbed(EmbedType.Success, 'Success!')],
-			components: [],
-			files: [],
-		});
+		await component.update(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [], files: [] }));
 
 		const playedCard = options.gameInfo.players[index].hand.splice(Number.parseInt(component.values[0], 10))[0];
 		table.push(playedCard);
 		lead ??= playedCard.suit;
 	} catch {
-		await message.edit({
-			embeds: [responseEmbed(EmbedType.Success, 'Success!')],
-			components: [],
-			files: [],
-		});
+		await message.edit(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [], files: [] }));
 
 		const playedCard = options.gameInfo.players[index].hand.splice(Number.parseInt(legalPlays[0].value, 10))[0];
 		table.push(playedCard);

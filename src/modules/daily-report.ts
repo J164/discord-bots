@@ -1,7 +1,7 @@
 import type { MessageCreateOptions } from 'discord.js';
 import type { Db } from 'mongodb';
 import type { HolidayResponse, ZenQuotesResponse, WeatherResponse } from '../types/api.js';
-import { EmbedType, Emojis, responseEmbed } from '../util/builders.js';
+import { EmbedType, Emojis, messageOptions, responseEmbed } from '../util/builders.js';
 
 type MonthNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 type DayNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -231,9 +231,9 @@ export async function getDailyReport(abstractKey: string, database: Db, weather?
 		day: number;
 	};
 	if (birthday) {
-		embeds.push({ title: '\uD83C\uDF89\tHave an amazing birthday!', color: 0x99_00_ff });
-		return { embeds, content: `\uD83C\uDF89\tHappy Birthday <@${birthday.id}>!!!\t\uD83C\uDF89` };
+		embeds.push(responseEmbed(EmbedType.None, '\uD83C\uDF89\tHave an amazing birthday!', {}, 0x99_00_ff));
+		return messageOptions({ embeds, components: [], content: `\uD83C\uDF89\tHappy Birthday <@${birthday.id}>!!!\t\uD83C\uDF89` });
 	}
 
-	return { embeds };
+	return messageOptions({ embeds });
 }

@@ -1,7 +1,7 @@
-import type { AttachmentPayload, DMChannel, EmbedBuilder } from 'discord.js';
-import { ButtonStyle, ComponentType } from 'discord.js';
+import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import type { AttachmentPayload, ButtonBuilder, DMChannel, EmbedBuilder } from 'discord.js';
 import { CardRank } from '../../types/card.js';
-import { EmbedType, responseEmbed } from '../../util/builders.js';
+import { EmbedType, messageOptions, responseEmbed } from '../../util/builders.js';
 import type { Card } from '../../util/card-utils.js';
 import { Deck, multicardMessage } from '../../util/card-utils.js';
 
@@ -11,29 +11,33 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
 	const dealer = Deck.randomCards(2, {});
 	const player = Deck.randomCards(2, {});
 
+	const { embeds, files } = await printStandings(player, dealer);
+
 	const prompt = async () => {
-		const message = await channel.send({
-			...(await printStandings(player, dealer)),
-			components: [
-				{
-					type: ComponentType.ActionRow,
-					components: [
-						{
-							type: ComponentType.Button,
-							customId: 'hit',
-							style: ButtonStyle.Primary,
-							label: 'Hit',
-						},
-						{
-							type: ComponentType.Button,
-							customId: 'stand',
-							style: ButtonStyle.Secondary,
-							label: 'Stand',
-						},
-					],
-				},
-			],
-		});
+		const message = await channel.send(
+			messageOptions({
+				embeds,
+				files,
+				components: [
+					new ActionRowBuilder<ButtonBuilder>({
+						components: [
+							{
+								type: ComponentType.Button,
+								customId: 'hit',
+								style: ButtonStyle.Primary,
+								label: 'Hit',
+							},
+							{
+								type: ComponentType.Button,
+								customId: 'stand',
+								style: ButtonStyle.Secondary,
+								label: 'Stand',
+							},
+						],
+					}),
+				],
+			}),
+		);
 		let component;
 		try {
 			component = await message.awaitMessageComponent({
@@ -41,11 +45,11 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
 				time: 300_000,
 			});
 		} catch {
-			void message.edit({ components: [] }).catch();
+			await message.edit(messageOptions({ components: [] }));
 			return;
 		}
 
-		await component.update({ components: [] });
+		await component.update(messageOptions({ components: [] }));
 
 		if (component.customId === 'hit') {
 			if (hit(player) === -1) {
@@ -82,29 +86,30 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
 	const standings = await printStandings(player, dealer, true);
 	standings.embeds.unshift(embed);
 
-	const message = await channel.send({
-		embeds: [...standings.embeds],
-		files: standings.files,
-		components: [
-			{
-				type: ComponentType.ActionRow,
-				components: [
-					{
-						type: ComponentType.Button,
-						customId: 'continue',
-						label: 'Play Again?',
-						style: ButtonStyle.Primary,
-					},
-					{
-						type: ComponentType.Button,
-						customId: 'end',
-						label: 'Cash Out',
-						style: ButtonStyle.Secondary,
-					},
-				],
-			},
-		],
-	});
+	const message = await channel.send(
+		messageOptions({
+			embeds: [...standings.embeds],
+			components: [
+				new ActionRowBuilder<ButtonBuilder>({
+					components: [
+						{
+							type: ComponentType.Button,
+							customId: 'continue',
+							label: 'Play Again?',
+							style: ButtonStyle.Primary,
+						},
+						{
+							type: ComponentType.Button,
+							customId: 'end',
+							label: 'Cash Out',
+							style: ButtonStyle.Secondary,
+						},
+					],
+				}),
+			],
+			files: standings.files,
+		}),
+	);
 
 	let component;
 	try {

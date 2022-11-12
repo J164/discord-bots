@@ -9,7 +9,7 @@ import type {
 import { ActionRowBuilder, ApplicationCommandOptionType, ButtonStyle, ComponentType } from 'discord.js';
 import type { GlobalChatCommandResponse } from '../../types/client.js';
 import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
-import { EmbedType, Emojis, responseEmbed, responseOptions } from '../../util/builders.js';
+import { EmbedType, Emojis, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
 import { mergeImages } from '../../util/image-utils.js';
 import type { ScryfallResponse, ScryfallMagicCard } from '../../types/api.js';
 
@@ -32,7 +32,7 @@ function formatResponse(response: ScryfallResponse): ScryfallMagicCard[][] {
 async function generateResponse(results: ScryfallMagicCard[][], r: number, index: number): Promise<InteractionUpdateOptions> {
 	const card = results[r][index];
 	if (card.card_faces) {
-		return {
+		return messageOptions({
 			embeds: [
 				responseEmbed(EmbedType.Info, card.name, {
 					footer: {
@@ -41,17 +41,17 @@ async function generateResponse(results: ScryfallMagicCard[][], r: number, index
 					image: { url: 'attachment://card.png' },
 				}),
 			],
+			components: [],
 			files: [
 				{
 					attachment: await mergeImages([card.card_faces[0].image_uris.large, card.card_faces[1].image_uris.large], 2),
 					name: 'card.png',
 				},
 			],
-			components: [],
-		};
+		});
 	}
 
-	return {
+	return messageOptions({
 		embeds: [
 			responseEmbed(EmbedType.Info, card.name, {
 				footer: {
@@ -61,11 +61,11 @@ async function generateResponse(results: ScryfallMagicCard[][], r: number, index
 			}),
 		],
 		components: [],
-	};
+	});
 }
 
 async function updateResponse(response: GlobalChatCommandResponse, results: ScryfallMagicCard[][], page: number, component?: ButtonInteraction): Promise<void> {
-	const reply = {
+	const reply = messageOptions({
 		embeds: [
 			responseEmbed(EmbedType.Info, 'Results', {
 				footer: { text: `${page + 1}/${results.length}` },
@@ -131,7 +131,7 @@ async function updateResponse(response: GlobalChatCommandResponse, results: Scry
 				],
 			}),
 		],
-	};
+	});
 
 	await (component ? component.update(reply) : response.interaction.editReply(reply));
 	await promptUser(response, results, page);
@@ -145,7 +145,7 @@ async function promptUser(response: GlobalChatCommandResponse, scryfallResults: 
 			time: 300_000,
 		})) as SelectMenuInteraction | ButtonInteraction;
 	} catch {
-		await response.interaction.editReply({ components: [] });
+		await response.interaction.editReply(messageOptions({ components: [] }));
 		return;
 	}
 

@@ -1,5 +1,6 @@
 import { ApplicationCommandOptionType } from 'discord.js';
 import type { YeetChatCommand } from '../../types/bot-types/yeet.js';
+import { messageOptions } from '../../util/builders.js';
 
 export const command: YeetChatCommand<'Global'> = {
 	data: {
@@ -17,9 +18,11 @@ export const command: YeetChatCommand<'Global'> = {
 		],
 	},
 	async respond(response) {
-		await response.interaction.editReply({
-			content: `Y${'E'.repeat(response.interaction.options.getInteger('power') ?? 2)}T!`,
-		});
+		await response.interaction.editReply(
+			messageOptions({
+				content: `Y${'E'.repeat(response.interaction.options.getInteger('power') ?? 2)}T!`,
+			}),
+		);
 	},
 	type: 'Global',
 };

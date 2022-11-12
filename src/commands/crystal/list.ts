@@ -1,7 +1,7 @@
 import { readdirSync } from 'node:fs';
 import type { ButtonBuilder, ButtonInteraction, EmbedBuilder } from 'discord.js';
 import { ActionRowBuilder, ApplicationCommandOptionType, ButtonStyle, ComponentType } from 'discord.js';
-import { EmbedType, responseEmbed } from '../../util/builders.js';
+import { EmbedType, messageOptions, responseEmbed } from '../../util/builders.js';
 import type { CrystalChatCommand } from '../../types/bot-types/crystal.js';
 import type { GlobalChatCommandResponse } from '../../types/client.js';
 
@@ -22,7 +22,7 @@ function songEmbed(songs: string[], index: number): EmbedBuilder {
 }
 
 async function updateResponse(response: GlobalChatCommandResponse, songs: string[], index = 0, component?: ButtonInteraction): Promise<void> {
-	const reply = {
+	const reply = messageOptions({
 		embeds: [songEmbed(songs, index)],
 		components: [
 			new ActionRowBuilder<ButtonBuilder>({
@@ -62,7 +62,7 @@ async function updateResponse(response: GlobalChatCommandResponse, songs: string
 				],
 			}),
 		],
-	};
+	});
 
 	await (component ? component.update(reply) : response.interaction.editReply(reply));
 	await promptUser(response, songs, index);
@@ -77,7 +77,7 @@ async function promptUser(response: GlobalChatCommandResponse, songs: string[], 
 			componentType: ComponentType.Button,
 		});
 	} catch {
-		await response.interaction.editReply({ components: [] });
+		await response.interaction.editReply(messageOptions({ components: [] }));
 		return;
 	}
 

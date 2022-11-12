@@ -1,6 +1,6 @@
 import type { UserManager } from 'discord.js';
 import type { Db } from 'mongodb';
-import { EmbedType, responseOptions } from '../util/builders.js';
+import { EmbedType, messageOptions, responseEmbed, responseOptions } from '../util/builders.js';
 import { checkUpdates, fetchCourseData } from '../util/irc.js';
 
 /**
@@ -11,7 +11,7 @@ import { checkUpdates, fetchCourseData } from '../util/irc.js';
  */
 export async function gradeReport(database: Db, userObjects: UserManager): Promise<void> {
 	const collection = database.collection<IrcUser>('grades');
-	const users = (await collection.indexes()) as IrcUser[];
+	const users = await collection.find().toArray();
 
 	await Promise.allSettled(
 		users.map(async (user): Promise<void> => {
@@ -37,49 +37,54 @@ export async function gradeReport(database: Db, userObjects: UserManager): Promi
 				return;
 			}
 
-			const fields = diff.newCourses.map((course) => {
-				return {
-					name: `${course.name} was added to IRC`,
-					value: `Your current grade in this class is ${course.projectedGrade || 'not yet calculated'}`,
-				};
-			});
-
-			for (const course of diff.courses) {
-				if (course.isFinal) {
-					fields.push({
-						name: `${course.name} - Grade Finalized!`,
-						value: `${course.projectedGrade?.oldGrade ?? 'unknown'} -> ${course.projectedGrade?.newGrade ?? 'unknown'}`,
+			const embeds = [
+				responseEmbed(EmbedType.Info, 'IRC Update!'),
+				...diff.newCourses.map((course) => {
+					return responseEmbed(EmbedType.Info, `${course.name} was added to IRC`, {
+						fields: [
+							{
+								name: 'Projected Grade:',
+								value: course.projectedGrade || 'not yet calculated',
+							},
+							{
+								name: 'Standards:',
+								value: course.standards
+									.map((standard) => {
+										return `${standard.name}: ${standard.proficiencyScore}`;
+									})
+									.join('\n'),
+							},
+						],
 					});
-					continue;
-				}
-
-				if (course.projectedGrade) {
-					fields.push({
-						name: `${course.name} - ${course.projectedGrade.oldGrade} -> ${course.projectedGrade.newGrade}`,
-						value:
-							course.standardScore.length > 0
-								? `${course.standardScore[0].standard}: ${course.standardScore[0].oldScore} -> ${course.standardScore[0].newScore}`
-								: 'Check IRC for more info about this change',
-					});
-					continue;
-				}
-
-				if (course.newAssignments.length > 0) {
-					fields.push({
-						name: `You got a ${course.newAssignments[0].score} on assignment "${course.newAssignments[0].name}" in ${course.name}`,
-						value:
-							course.newAssignments.length > 1
-								? `There were also ${course.newAssignments.length - 1} more assignments added to this class! (Check IRC for details)`
-								: "That's all for now in this class!",
-					});
-				}
-			}
-
-			await dm.send(
-				responseOptions(EmbedType.Info, 'IRC Update!', {
-					fields: fields.slice(0, 25),
 				}),
-			);
+				...diff.courses.map((course) => {
+					if (course.isFinal) {
+						return responseEmbed(
+							EmbedType.Info,
+							`${course.name} - Grade Finalized (${course.projectedGrade?.oldGrade ?? 'unknown'} -> ${course.projectedGrade?.newGrade ?? 'unknown'})`,
+						);
+					}
+
+					if (course.projectedGrade) {
+						return responseEmbed(EmbedType.Info, `${course.name} - ${course.projectedGrade.oldGrade} -> ${course.projectedGrade.newGrade}`, {
+							fields: course.standardScore.map((score) => {
+								return { name: `${score.standard}: `, value: `${score.oldScore} -> ${score.newScore}` };
+							}),
+						});
+					}
+
+					return responseEmbed(EmbedType.Info, `New assignments in ${course.name}`, {
+						fields: course.newAssignments.map((assignment) => {
+							return {
+								name: `You got a ${assignment.score} on assignment "${assignment.name}"`,
+								value: assignment.comments ? `Teacher Comments: "${assignment.comments}"` : 'No teacher comments on this assignment',
+							};
+						}),
+					});
+				}),
+			];
+
+			await dm.send(messageOptions({ embeds }));
 		}),
 	);
 }

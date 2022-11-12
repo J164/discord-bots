@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ApplicationCommandOptionType, ButtonStyle, ComponentType } from 'discord.js';
 import type { ButtonBuilder } from 'discord.js';
 import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
-import { responseOptions, responseEmbed, Emojis, EmbedType } from '../../util/builders.js';
+import { responseOptions, responseEmbed, Emojis, EmbedType, messageOptions } from '../../util/builders.js';
 import { fetchCourseData } from '../../util/irc.js';
 
 function buildScoreMap(standards: Standard[]): string {
@@ -26,7 +26,7 @@ export const command: PotatoChatCommand<'Global'> = {
 		options: [
 			{
 				name: 'session_token',
-				description: 'Check out the guide at PLACEHOLDER to see how to aquire this',
+				description: 'Use /irchelp to see how to aquire this',
 				type: ApplicationCommandOptionType.String,
 				required: true,
 			},
@@ -37,9 +37,7 @@ export const command: PotatoChatCommand<'Global'> = {
 
 		const courseData = await fetchCourseData(token);
 		if (!courseData) {
-			await response.interaction.editReply(
-				responseOptions(EmbedType.Error, 'Those credentials seem to be invalid. Check out the guide at PLACEHOLDER to see how to aquire them.'),
-			);
+			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Those credentials seem to be invalid. Use /irchelp to see how to aquire them.'));
 			return;
 		}
 
@@ -53,14 +51,14 @@ export const command: PotatoChatCommand<'Global'> = {
 
 		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Check your DMs for further instructions'));
 
-		const question = await dm.send({
-			embeds: [
-				responseEmbed(
-					EmbedType.Prompt,
-					'Does this look correct? (Some courses may not show up, only select no if nothing shows up and you know you have a projected grade in at least one class)',
-				),
-				...courseData.courses
-					.map((course) => {
+		const question = await dm.send(
+			messageOptions({
+				embeds: [
+					responseEmbed(
+						EmbedType.Prompt,
+						'Does this look correct? (Some courses may not show up, only select no if nothing shows up and you know you have a projected grade in at least one class)',
+					),
+					...courseData.courses.map((course) => {
 						return responseEmbed(course.isFinal ? EmbedType.Success : EmbedType.Info, course.name, {
 							fields: [
 								{
@@ -77,30 +75,30 @@ export const command: PotatoChatCommand<'Global'> = {
 								},
 							],
 						});
-					})
-					.slice(0, 8),
-			],
-			components: [
-				new ActionRowBuilder<ButtonBuilder>({
-					components: [
-						{
-							type: ComponentType.Button,
-							customId: 'yes',
-							emoji: Emojis.GreenCheckMark,
-							label: 'Yes',
-							style: ButtonStyle.Primary,
-						},
-						{
-							type: ComponentType.Button,
-							customId: 'no',
-							emoji: Emojis.RedX,
-							label: 'No',
-							style: ButtonStyle.Secondary,
-						},
-					],
-				}),
-			],
-		});
+					}),
+				],
+				components: [
+					new ActionRowBuilder<ButtonBuilder>({
+						components: [
+							{
+								type: ComponentType.Button,
+								customId: 'yes',
+								emoji: Emojis.GreenCheckMark,
+								label: 'Yes',
+								style: ButtonStyle.Primary,
+							},
+							{
+								type: ComponentType.Button,
+								customId: 'no',
+								emoji: Emojis.RedX,
+								label: 'No',
+								style: ButtonStyle.Secondary,
+							},
+						],
+					}),
+				],
+			}),
+		);
 
 		let component;
 		try {
@@ -109,12 +107,12 @@ export const command: PotatoChatCommand<'Global'> = {
 				componentType: ComponentType.Button,
 			});
 		} catch {
-			await question.edit({ embeds: [responseEmbed(EmbedType.Error, 'Request Timed Out!')], components: [] });
+			await question.edit(messageOptions({ embeds: [responseEmbed(EmbedType.Error, 'Request Timed Out!')], components: [] }));
 			return;
 		}
 
 		if (component.customId !== 'yes') {
-			await question.edit({ embeds: [responseEmbed(EmbedType.Error, 'PLACEHOLDER')], components: [] });
+			await component.update(messageOptions({ embeds: [responseEmbed(EmbedType.Error, 'PLACEHOLDER')], components: [] }));
 		}
 
 		const gradeCollection = globalInfo.database.collection<IrcUser>('grades');
@@ -140,7 +138,7 @@ export const command: PotatoChatCommand<'Global'> = {
 			});
 		}
 
-		await question.edit(responseOptions(EmbedType.Success, 'Setup successful!'));
+		await component.update(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Setup successful!')], components: [] }));
 	},
 	ephemeral: true,
 	type: 'Global',

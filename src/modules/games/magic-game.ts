@@ -1,44 +1,53 @@
-import type { APISelectMenuOption, ButtonInteraction, EmbedBuilder, InteractionUpdateOptions, ThreadChannel } from 'discord.js';
-import { ButtonStyle, ComponentType } from 'discord.js';
+import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import type {
+	APISelectMenuOption,
+	ButtonBuilder,
+	ButtonInteraction,
+	EmbedBuilder,
+	InteractionUpdateOptions,
+	SelectMenuBuilder,
+	ThreadChannel,
+} from 'discord.js';
 import type { MagicPlayer } from '../../types/games.js';
-import { EmbedType, responseEmbed, responseOptions } from '../../util/builders.js';
+import { EmbedType, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
 
 export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadChannel): Promise<void> {
-	const message = await gameChannel.send({
-		embeds: [printStandings(playerData)],
-		components: [
-			{
-				type: ComponentType.ActionRow,
-				components: [
-					{
-						type: ComponentType.Button,
-						label: 'Damage',
-						customId: 'damage',
-						style: ButtonStyle.Primary,
-					},
-					{
-						type: ComponentType.Button,
-						label: 'Heal',
-						customId: 'heal',
-						style: ButtonStyle.Secondary,
-					},
-					{
-						type: ComponentType.Button,
-						label: 'End',
-						customId: 'end',
-						style: ButtonStyle.Danger,
-					},
-				],
-			},
-		],
-	});
+	const message = await gameChannel.send(
+		messageOptions({
+			embeds: [printStandings(playerData)],
+			components: [
+				new ActionRowBuilder<ButtonBuilder>({
+					components: [
+						{
+							type: ComponentType.Button,
+							label: 'Damage',
+							customId: 'damage',
+							style: ButtonStyle.Primary,
+						},
+						{
+							type: ComponentType.Button,
+							label: 'Heal',
+							customId: 'heal',
+							style: ButtonStyle.Secondary,
+						},
+						{
+							type: ComponentType.Button,
+							label: 'End',
+							customId: 'end',
+							style: ButtonStyle.Danger,
+						},
+					],
+				}),
+			],
+		}),
+	);
 
 	const component = await message.awaitMessageComponent({
 		componentType: ComponentType.Button,
 		time: 300_000,
 	});
 
-	await component.update({ components: [] });
+	await component.update(messageOptions({ components: [] }));
 
 	switch (component.customId) {
 		case 'damage':
@@ -48,7 +57,7 @@ export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadCh
 			await heal(playerData, gameChannel, component);
 			break;
 		case 'end':
-			await component.update({ embeds: [printStandings(playerData)] });
+			await component.update(messageOptions({ embeds: [printStandings(playerData)] }));
 			try {
 				await gameChannel.setArchived(true);
 			} catch {
@@ -60,10 +69,9 @@ export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadCh
 }
 
 function healPrompt(players: APISelectMenuOption[], playerResponse: boolean, amountResponse: boolean): InteractionUpdateOptions {
-	return {
+	return messageOptions({
 		components: [
-			{
-				type: ComponentType.ActionRow,
+			new ActionRowBuilder<SelectMenuBuilder>({
 				components: [
 					{
 						type: ComponentType.SelectMenu,
@@ -72,9 +80,8 @@ function healPrompt(players: APISelectMenuOption[], playerResponse: boolean, amo
 						disabled: playerResponse,
 					},
 				],
-			},
-			{
-				type: ComponentType.ActionRow,
+			}),
+			new ActionRowBuilder<ButtonBuilder>({
 				components: [
 					{
 						type: ComponentType.Button,
@@ -112,9 +119,9 @@ function healPrompt(players: APISelectMenuOption[], playerResponse: boolean, amo
 						disabled: amountResponse,
 					},
 				],
-			},
+			}),
 		],
-	};
+	});
 }
 
 async function heal(playerData: MagicPlayer[], gameChannel: ThreadChannel, interaction: ButtonInteraction): Promise<void> {
@@ -169,9 +176,7 @@ async function heal(playerData: MagicPlayer[], gameChannel: ThreadChannel, inter
 								break;
 						}
 
-						await b.update({
-							embeds: [printStandings(playerData), responseEmbed(EmbedType.Info, `Current Amount: ${amount}`)],
-						});
+						await b.update(messageOptions({ embeds: [printStandings(playerData), responseEmbed(EmbedType.Info, `Current Amount: ${amount}`)] }));
 					})
 					.once('end', async (b) => {
 						const interaction = b.at(0);
@@ -196,10 +201,9 @@ async function heal(playerData: MagicPlayer[], gameChannel: ThreadChannel, inter
 }
 
 function damagePrompt(players: APISelectMenuOption[], playerResponse: boolean, modifierResponse: boolean, amountResponse: boolean): InteractionUpdateOptions {
-	return {
+	return messageOptions({
 		components: [
-			{
-				type: ComponentType.ActionRow,
+			new ActionRowBuilder<SelectMenuBuilder>({
 				components: [
 					{
 						type: ComponentType.SelectMenu,
@@ -208,9 +212,8 @@ function damagePrompt(players: APISelectMenuOption[], playerResponse: boolean, m
 						disabled: playerResponse,
 					},
 				],
-			},
-			{
-				type: ComponentType.ActionRow,
+			}),
+			new ActionRowBuilder<SelectMenuBuilder>({
 				components: [
 					{
 						type: ComponentType.SelectMenu,
@@ -236,9 +239,8 @@ function damagePrompt(players: APISelectMenuOption[], playerResponse: boolean, m
 						disabled: modifierResponse,
 					},
 				],
-			},
-			{
-				type: ComponentType.ActionRow,
+			}),
+			new ActionRowBuilder<ButtonBuilder>({
 				components: [
 					{
 						type: ComponentType.Button,
@@ -276,9 +278,9 @@ function damagePrompt(players: APISelectMenuOption[], playerResponse: boolean, m
 						disabled: amountResponse,
 					},
 				],
-			},
+			}),
 		],
-	};
+	});
 }
 
 async function prompt(playerData: MagicPlayer[], gameChannel: ThreadChannel, interaction: ButtonInteraction): Promise<void> {
@@ -348,9 +350,7 @@ async function prompt(playerData: MagicPlayer[], gameChannel: ThreadChannel, int
 								break;
 						}
 
-						await b.update({
-							embeds: [printStandings(playerData), responseEmbed(EmbedType.Info, `Current Amount: ${amount}`)],
-						});
+						await b.update(messageOptions({ embeds: [printStandings(playerData), responseEmbed(EmbedType.Info, `Current Amount: ${amount}`)] }));
 					});
 			}),
 		])) as [{ target: string; selector: string }, string[], number];
