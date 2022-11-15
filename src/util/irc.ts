@@ -68,67 +68,63 @@ export async function fetchCourseData(ircToken: string): Promise<Grades | undefi
 	});
 
 	const courses: Course[] = [];
-	const getCourses = async (course: IrcManifestEntry) => {
-		const response = await fetch(
-			`https://irc.d125.org/student/gradebookbystudent?sid=${course.sectionId}&pid=${authenticate.personId}&isEBR=${course.ebrFlag ? 'true' : 'false'}`,
-			{
-				headers: {
-					Accept: 'application/json',
-					'Accept-Language': 'en-US,en;q=0.5',
-					'Accept-Encoding': 'gzip, deflate, br',
-					Referer: 'https://irc.d125.org/reportcard',
-					'Content-Type': 'application/json',
-					DNT: '1',
-					Cookie: ircToken,
-				},
-			},
-		);
-
-		if (!response.ok) {
-			return;
-		}
-
-		const courseData = (await response.json()) as IrcCourse;
-
-		if (courseData.assessment.weeklyGrowth === null) {
-			return;
-		}
-
-		courses.push({
-			name: course.courseName,
-			projectedGrade: courseData.assessment.projectedGrade,
-			weeklyGrowth: courseData.assessment.weeklyGrowth,
-			standards: courseData.assessment.standards.map((standard) => {
-				return {
-					name: standard.standardName,
-					proficiencyScore: standard.proficiency.proficiencyScore,
-					proficiency: {
-						exceedsCount: standard.proficiency.exceedsCount,
-						meetsCount: standard.proficiency.meetsCount,
-						approachingCount: standard.proficiency.approachingCount,
-						developingCount: standard.proficiency.developingCount,
-					},
-					isHomeworkStandard: standard.isHomeworkStandard,
-					assignments: standard.assignments.map((assignment) => {
-						return {
-							name: assignment.activityName,
-							score: assignment.score,
-							assigned: !assignment.isNotAssigned,
-							active: assignment.standardEventActive === 1,
-							isHomework: assignment.isHomework,
-							isMissing: assignment.isMissing,
-							comments: assignment.comments,
-						};
-					}),
-				};
-			}),
-			isFinal: courseData.assessment.isFinal,
-		});
-	};
-
 	await Promise.all(
 		manifest.map(async (course) => {
-			return getCourses(course);
+			const response = await fetch(
+				`https://irc.d125.org/student/gradebookbystudent?sid=${course.sectionId}&pid=${authenticate.personId}&isEBR=${course.ebrFlag ? 'true' : 'false'}`,
+				{
+					headers: {
+						Accept: 'application/json',
+						'Accept-Language': 'en-US,en;q=0.5',
+						'Accept-Encoding': 'gzip, deflate, br',
+						Referer: 'https://irc.d125.org/reportcard',
+						'Content-Type': 'application/json',
+						DNT: '1',
+						Cookie: ircToken,
+					},
+				},
+			);
+
+			if (!response.ok) {
+				return;
+			}
+
+			const courseData = (await response.json()) as IrcCourse;
+
+			if (courseData.assessment.weeklyGrowth === null) {
+				return;
+			}
+
+			courses.push({
+				name: course.courseName,
+				projectedGrade: courseData.assessment.projectedGrade,
+				weeklyGrowth: courseData.assessment.weeklyGrowth,
+				standards: courseData.assessment.standards.map((standard) => {
+					return {
+						name: standard.standardName,
+						proficiencyScore: standard.proficiency.proficiencyScore,
+						proficiency: {
+							exceedsCount: standard.proficiency.exceedsCount,
+							meetsCount: standard.proficiency.meetsCount,
+							approachingCount: standard.proficiency.approachingCount,
+							developingCount: standard.proficiency.developingCount,
+						},
+						isHomeworkStandard: standard.isHomeworkStandard,
+						assignments: standard.assignments.map((assignment) => {
+							return {
+								name: assignment.activityName,
+								score: assignment.score,
+								assigned: !assignment.isNotAssigned,
+								active: assignment.standardEventActive === 1,
+								isHomework: assignment.isHomework,
+								isMissing: assignment.isMissing,
+								comments: assignment.comments,
+							};
+						}),
+					};
+				}),
+				isFinal: courseData.assessment.isFinal,
+			});
 		}),
 	);
 

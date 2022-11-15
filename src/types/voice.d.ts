@@ -2,7 +2,6 @@ import type { ChildProcessByStdio } from 'node:child_process';
 import type { Readable } from 'node:stream';
 
 /** Valid audio types */
-
 export const enum AudioTypes {
 	Local = 'local',
 	YouTube = 'youtube',

@@ -1,4 +1,4 @@
-import type { APIEmbed, ColorResolvable } from 'discord.js';
+import type { ActionRowBuilder, APIEmbed, BaseMessageOptions, ColorResolvable, MessageActionRowComponentBuilder } from 'discord.js';
 import { EmbedBuilder } from 'discord.js';
 
 /** Enum representing commonly used emojis */
@@ -27,6 +27,7 @@ export const enum EmbedType {
 	Error,
 	Success,
 	Prompt,
+	None,
 }
 
 /**
@@ -38,6 +39,8 @@ export const enum EmbedType {
  * @returns The formated embed
  */
 export function responseEmbed(type: EmbedType, title?: string, options?: Omit<APIEmbed, 'title' | 'color'>, color?: ColorResolvable): EmbedBuilder {
+	options?.fields?.splice(25);
+
 	const embed = new EmbedBuilder(options);
 
 	switch (type) {
@@ -53,6 +56,12 @@ export function responseEmbed(type: EmbedType, title?: string, options?: Omit<AP
 		case EmbedType.Prompt:
 			embed.setColor(color ?? BotColors.QuestionOrange).setTitle(`${Emojis.QuestionMark}\t${title ?? ''}`);
 			break;
+		default:
+			if (color) {
+				embed.setColor(color);
+			}
+
+			embed.setTitle(title ?? '');
 	}
 
 	return embed;
@@ -66,6 +75,20 @@ export function responseEmbed(type: EmbedType, title?: string, options?: Omit<AP
  * @param color Optional color of the embed
  * @returns The formated embed wrapped as a message
  */
-export function responseOptions(type: EmbedType, title?: string, options?: APIEmbed, color?: ColorResolvable) {
+export function responseOptions(type: EmbedType, title?: string, options?: APIEmbed, color?: ColorResolvable): BaseMessageOptions {
 	return { embeds: [responseEmbed(type, title, options, color)] };
+}
+
+/**
+ * Sanitizes a message to ensure it adheres to the API spec
+ * @param options The message to sanitize
+ * @returns The sanitized message
+ */
+export function messageOptions(
+	options: BaseMessageOptions & { embeds?: EmbedBuilder[]; components?: Array<ActionRowBuilder<MessageActionRowComponentBuilder>> },
+): BaseMessageOptions {
+	options.embeds?.splice(10);
+	options.components?.splice(5);
+
+	return options;
 }

@@ -146,7 +146,7 @@ export const command: CrystalChatCommand<'Guild'> = {
 		const results = search(songs, interaction.options.getFocused());
 
 		await interaction.respond(
-			results.slice(0, 25).map((result) => {
+			results.slice(0, 24).map((result) => {
 				return {
 					name: result.item,
 					value: result.item,

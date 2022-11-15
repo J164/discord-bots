@@ -3,10 +3,10 @@ import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import type { GuildChatCommandResponse } from '../../types/client.js';
 import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
 import type { QueueItem } from '../../types/voice.js';
-import { EmbedType, Emojis, responseEmbed, responseOptions } from '../../util/builders.js';
+import { EmbedType, Emojis, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
 
 async function updateResponse(response: GuildChatCommandResponse, queue: QueueItem[], page: number, component?: ButtonInteraction): Promise<void> {
-	const reply = {
+	const reply = messageOptions({
 		embeds: [
 			responseEmbed(EmbedType.Info, 'Queue', {
 				footer: { text: `${page + 1}/${Math.floor(queue.length / 25) + 1}` },
@@ -56,7 +56,7 @@ async function updateResponse(response: GuildChatCommandResponse, queue: QueueIt
 				],
 			}),
 		],
-	};
+	});
 
 	await (component ? component.update(reply) : response.interaction.editReply(reply));
 	await promptUser(response, queue, page);
@@ -71,7 +71,7 @@ async function promptUser(response: GuildChatCommandResponse, queue: QueueItem[]
 			componentType: ComponentType.Button,
 		});
 	} catch {
-		await response.interaction.editReply({ components: [] });
+		await response.interaction.editReply(messageOptions({ components: [] }));
 		return;
 	}
 
