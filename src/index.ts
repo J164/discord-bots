@@ -21,4 +21,9 @@ class BotProcess {
 	}
 }
 
-const bots = [new BotProcess('./bots/crystal.js'), new BotProcess('./bots/potato.js'), new BotProcess('./bots/swear.js'), new BotProcess('./bots/yeet.js')];
+const bots = [
+	new BotProcess('./dist/bots/crystal.js'),
+	new BotProcess('./dist/bots/potato.js'),
+	new BotProcess('./dist/bots/swear.js'),
+	new BotProcess('./dist/bots/yeet.js'),
+];
