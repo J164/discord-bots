@@ -1,4 +1,4 @@
-import type { WeatherResponse } from '../types/api.js';
+import { type WeatherResponse } from '../types/api.js';
 
 /**
  * Fetches infomation about the weather for a specific date

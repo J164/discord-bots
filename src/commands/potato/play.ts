@@ -1,8 +1,7 @@
-import type { InteractionReplyOptions } from 'discord.js';
-import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
-import type { SpotifyResponse } from '../../types/api.js';
-import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
-import type { QueueItem } from '../../types/voice.js';
+import { type InteractionReplyOptions, ApplicationCommandOptionType, ChannelType } from 'discord.js';
+import { type SpotifyResponse } from '../../types/api.js';
+import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
+import { type QueueItem } from '../../types/voice.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { QueueManager } from '../../voice/queue-manager.js';
 import { resolve, resolvePlaylist, search } from '../../voice/ytdl.js';

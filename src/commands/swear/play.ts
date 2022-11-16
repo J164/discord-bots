@@ -1,7 +1,7 @@
 import { readdirSync } from 'node:fs';
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
-import type { SwearChatCommand } from '../../types/bot-types/swear.js';
+import { type SwearChatCommand } from '../../types/bot-types/swear.js';
 import { Player } from '../../voice/player.js';
 import { AudioTypes } from '../../types/voice.js';
 

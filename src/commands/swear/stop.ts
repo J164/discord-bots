@@ -1,4 +1,4 @@
-import type { SwearChatCommand } from '../../types/bot-types/swear.js';
+import { type SwearChatCommand } from '../../types/bot-types/swear.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 
 export const command: SwearChatCommand<'Guild'> = {

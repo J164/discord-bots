@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
+import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { responseOptions, responseEmbed, EmbedType, messageOptions } from '../../util/builders.js';
 import { fetchCourseData } from '../../util/irc.js';
 

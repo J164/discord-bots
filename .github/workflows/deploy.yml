@@ -21,6 +21,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - run: yarn install --immutable --ignore-optional
-      - run: yarn run build
-      - run: yarn run deploy ${{ secrets.CRYSTAL_ID }} ${{ secrets.CRYSTAL_TOKEN }}  ${{ secrets.POTATO_ID }} ${{ secrets.POTATO_TOKEN }} ${{ secrets.SWEAR_ID }} ${{ secrets.SWEAR_TOKEN }} ${{ secrets.YEET_ID }} ${{ secrets.YEET_TOKEN }}
+      - run: npm ci --omit=optional
+      - run: npm run build
+      - run: npm run deploy --crystal_id=${{ secrets.CRYSTAL_ID }} --crystal_token=${{ secrets.CRYSTAL_TOKEN }} --potato_id=${{ secrets.POTATO_ID }} --potato_token=${{ secrets.POTATO_TOKEN }} --swear_id=${{ secrets.SWEAR_ID }} --swear_token=${{ secrets.SWEAR_TOKEN }} --yeet_id=${{ secrets.YEET_ID }} --yeet_token=${{ secrets.YEET_TOKEN }}

@@ -1,5 +1,5 @@
-import type { UserManager } from 'discord.js';
-import type { Db } from 'mongodb';
+import { type UserManager } from 'discord.js';
+import { type Db } from 'mongodb';
 import { EmbedType, messageOptions, responseEmbed, responseOptions } from '../util/builders.js';
 import { checkUpdates, fetchCourseData } from '../util/irc.js';
 

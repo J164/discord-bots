@@ -1,6 +1,6 @@
-// Scryfall API (https://scryfall.com/docs/api)
+import { type AudioTypes } from './voice.js';
 
-import type { AudioTypes } from './voice.js';
+// Scryfall API (https://scryfall.com/docs/api)
 
 /** Response data from Scryfall */
 type ScryfallResponse = {

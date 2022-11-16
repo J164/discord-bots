@@ -1,5 +1,11 @@
-import type { ActionRowBuilder, APIEmbed, BaseMessageOptions, ColorResolvable, MessageActionRowComponentBuilder } from 'discord.js';
-import { EmbedBuilder } from 'discord.js';
+import {
+	type ActionRowBuilder,
+	type APIEmbed,
+	type BaseMessageOptions,
+	type ColorResolvable,
+	type MessageActionRowComponentBuilder,
+	EmbedBuilder,
+} from 'discord.js';
 
 /** Enum representing commonly used emojis */
 export const enum Emojis {
@@ -44,24 +50,33 @@ export function responseEmbed(type: EmbedType, title?: string, options?: Omit<AP
 	const embed = new EmbedBuilder(options);
 
 	switch (type) {
-		case EmbedType.Info:
+		case EmbedType.Info: {
 			embed.setColor(color ?? BotColors.DefaultBlue).setTitle(`${Emojis.Document}\t${title ?? ''}`);
 			break;
-		case EmbedType.Error:
+		}
+
+		case EmbedType.Error: {
 			embed.setColor(color ?? BotColors.ErrorRed).setTitle(`${Emojis.RedX}\t${title ?? ''}`);
 			break;
-		case EmbedType.Success:
+		}
+
+		case EmbedType.Success: {
 			embed.setColor(color ?? BotColors.SuccessGreen).setTitle(`${Emojis.GreenCheckMark}\t${title ?? ''}`);
 			break;
-		case EmbedType.Prompt:
+		}
+
+		case EmbedType.Prompt: {
 			embed.setColor(color ?? BotColors.QuestionOrange).setTitle(`${Emojis.QuestionMark}\t${title ?? ''}`);
 			break;
-		default:
+		}
+
+		default: {
 			if (color) {
 				embed.setColor(color);
 			}
 
 			embed.setTitle(title ?? '');
+		}
 	}
 
 	return embed;

@@ -1,5 +1,5 @@
-import type { Logger } from 'pino';
-import type { ChatCommand, CommandType } from '../client.js';
+import { type Logger } from 'pino';
+import { type ChatCommand, type CommandType } from '../client.js';
 
 /** Config options for Yeet Bot */
 type Config = {

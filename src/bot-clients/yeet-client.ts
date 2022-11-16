@@ -1,12 +1,8 @@
 import { readdir } from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { GatewayIntentBits, Partials, ActivityType } from 'discord.js';
-import type { Logger } from 'pino';
-import type { Config, GlobalInfo, GuildInfo } from '../types/bot-types/yeet.js';
+import { type Logger } from 'pino';
+import { type Config, type GlobalInfo, type GuildInfo } from '../types/bot-types/yeet.js';
 import { BotClient } from '../util/bot-client.js';
-
-const COMMAND_DIR = `${path.dirname(fileURLToPath(import.meta.url))}/../commands/yeet`;
 
 /** Class representing the client for Yeet Bot */
 export class YeetClient extends BotClient<GlobalInfo, GuildInfo, Config> {
@@ -25,7 +21,7 @@ export class YeetClient extends BotClient<GlobalInfo, GuildInfo, Config> {
 	}
 
 	protected async startupTasks(): Promise<void> {
-		const commands = await readdir(COMMAND_DIR);
+		const commands = await readdir('./commands/yeet');
 		await Promise.all(
 			commands.map((file) => {
 				if (!file.endsWith('.js')) {

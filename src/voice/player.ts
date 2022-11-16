@@ -1,11 +1,19 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import type { Readable } from 'node:stream';
+import { type Readable } from 'node:stream';
 import { createReadStream } from 'node:fs';
-import type { AudioPlayer, VoiceConnection } from '@discordjs/voice';
-import { AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, joinVoiceChannel, VoiceConnectionStatus } from '@discordjs/voice';
-import type { VoiceChannel } from 'discord.js';
-import type { Audio, YoutubeStream } from '../types/voice.js';
-import { AudioTypes } from '../types/voice.js';
+import {
+	type AudioPlayer,
+	type VoiceConnection,
+	AudioPlayerStatus,
+	createAudioPlayer,
+	createAudioResource,
+	demuxProbe,
+	entersState,
+	joinVoiceChannel,
+	VoiceConnectionStatus,
+} from '@discordjs/voice';
+import { type VoiceChannel } from 'discord.js';
+import { type Audio, type YoutubeStream, AudioTypes } from '../types/voice.js';
 import { createStream } from './ytdl.js';
 
 /** Represents the voice state of the bot in a guild */
@@ -17,7 +25,7 @@ export class Player {
 	private _script?: YoutubeStream;
 
 	/**
-	 * Connects to a voice cahnnel and creates a Player to manage it
+	 * Connects to a voice channel and creates a Player to manage it
 	 * @param voiceChannel Voice channel to connect to
 	 * @param callback Callback to be executed when the voice connection is destroyed
 	 */
@@ -149,13 +157,16 @@ export class Player {
 	 */
 	private _resolveAudio(audio: Audio): Readable {
 		switch (audio.type) {
-			case AudioTypes.YouTube:
+			case AudioTypes.YouTube: {
 				this._script = createStream(audio.url, {
 					format: 'bestaudio[acodec=opus]/bestaudio',
 				});
 				return this._script.stdout;
-			case AudioTypes.Local:
+			}
+
+			case AudioTypes.Local: {
 				return createReadStream(audio.url);
+			}
 		}
 	}
 }

@@ -1,6 +1,6 @@
-import type { MessageCreateOptions } from 'discord.js';
-import type { Db } from 'mongodb';
-import type { HolidayResponse, ZenQuotesResponse, WeatherResponse } from '../types/api.js';
+import { type MessageCreateOptions } from 'discord.js';
+import { type Db } from 'mongodb';
+import { type HolidayResponse, type ZenQuotesResponse, type WeatherResponse } from '../types/api.js';
 import { EmbedType, Emojis, messageOptions, responseEmbed } from '../util/builders.js';
 
 type MonthNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
@@ -17,66 +17,102 @@ function getStringDate(date: Date): string {
 	let month: string;
 	let weekDay: string;
 	switch (date.getMonth() as MonthNumber) {
-		case 0:
+		case 0: {
 			month = 'January';
 			break;
-		case 1:
+		}
+
+		case 1: {
 			month = 'February';
 			break;
-		case 2:
+		}
+
+		case 2: {
 			month = 'March';
 			break;
-		case 3:
+		}
+
+		case 3: {
 			month = 'April';
 			break;
-		case 4:
+		}
+
+		case 4: {
 			month = 'May';
 			break;
-		case 5:
+		}
+
+		case 5: {
 			month = 'June';
 			break;
-		case 6:
+		}
+
+		case 6: {
 			month = 'July';
 			break;
-		case 7:
+		}
+
+		case 7: {
 			month = 'August';
 			break;
-		case 8:
+		}
+
+		case 8: {
 			month = 'September';
 			break;
-		case 9:
+		}
+
+		case 9: {
 			month = 'October';
 			break;
-		case 10:
+		}
+
+		case 10: {
 			month = 'November';
 			break;
-		case 11:
+		}
+
+		case 11: {
 			month = 'December';
 			break;
+		}
 	}
 
 	switch (date.getDay() as DayNumber) {
-		case 0:
+		case 0: {
 			weekDay = 'Sunday';
 			break;
-		case 1:
+		}
+
+		case 1: {
 			weekDay = 'Monday';
 			break;
-		case 2:
+		}
+
+		case 2: {
 			weekDay = 'Tuesday';
 			break;
-		case 3:
+		}
+
+		case 3: {
 			weekDay = 'Wednesday';
 			break;
-		case 4:
+		}
+
+		case 4: {
 			weekDay = 'Thursday';
 			break;
-		case 5:
+		}
+
+		case 5: {
 			weekDay = 'Friday';
 			break;
-		case 6:
+		}
+
+		case 6: {
 			weekDay = 'Saturday';
 			break;
+		}
 	}
 
 	return `${weekDay}, ${month} ${day}, ${year}`;
@@ -90,17 +126,25 @@ function getStringDate(date: Date): string {
 // eslint-disable-next-line complexity
 function getWeatherEmoji(weatherCode: number): string {
 	switch (weatherCode) {
-		case 1000:
+		case 1000: {
 			return '\u2600';
-		case 1003:
+		}
+
+		case 1003: {
 			return '\u26C5';
+		}
+
 		case 1006:
-		case 1009:
+		case 1009: {
 			return '\u2601';
+		}
+
 		case 1030:
 		case 1135:
-		case 1147:
+		case 1147: {
 			return '\uD83C\uDF2B\uFE0F';
+		}
+
 		case 1063:
 		case 1072:
 		case 1150:
@@ -117,8 +161,10 @@ function getWeatherEmoji(weatherCode: number): string {
 		case 1201:
 		case 1240:
 		case 1243:
-		case 1246:
+		case 1246: {
 			return '\uD83C\uDF27\uFE0F';
+		}
+
 		case 1066:
 		case 1114:
 		case 1117:
@@ -137,16 +183,21 @@ function getWeatherEmoji(weatherCode: number): string {
 		case 1249:
 		case 1252:
 		case 1261:
-		case 1264:
+		case 1264: {
 			return '\uD83C\uDF28\uFE0F';
+		}
+
 		case 1087:
 		case 1273:
 		case 1276:
 		case 1279:
-		case 1282:
+		case 1282: {
 			return '\uD83C\uDF29\uFE0F';
-		default:
+		}
+
+		default: {
 			return Emojis.QuestionMark;
+		}
 	}
 }
 

@@ -1,7 +1,6 @@
-import type { AutocompleteInteraction, CacheType, ChatInputCommandInteraction, ClientOptions } from 'discord.js';
-import { Client, InteractionType } from 'discord.js';
-import type { Logger } from 'pino';
-import type { BaseConfig, BaseGlobalInfo, BaseGuildInfo, ChatCommand, ChatCommandResponse, CommandType } from '../types/client.js';
+import { type AutocompleteInteraction, type CacheType, type ChatInputCommandInteraction, type ClientOptions, Client, InteractionType } from 'discord.js';
+import { type Logger } from 'pino';
+import { type BaseConfig, type BaseGlobalInfo, type BaseGuildInfo, type ChatCommand, type ChatCommandResponse, type CommandType } from '../types/client.js';
 import { EmbedType, responseOptions } from './builders.js';
 
 /** Class representing a client for a Discord bot */
@@ -65,18 +64,23 @@ export abstract class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo ext
 	private _subscribeInteractionListener(): void {
 		this.on('interactionCreate', (interaction) => {
 			switch (interaction.type) {
-				case InteractionType.ApplicationCommandAutocomplete:
+				case InteractionType.ApplicationCommandAutocomplete: {
 					void this._autocompleteChatCommand(interaction);
 					break;
-				case InteractionType.ApplicationCommand:
+				}
+
+				case InteractionType.ApplicationCommand: {
 					if (interaction.isChatInputCommand()) {
 						void this._chatCommand(interaction);
 						break;
 					}
 
 					break;
-				default:
+				}
+
+				default: {
 					break;
+				}
 			}
 		});
 	}

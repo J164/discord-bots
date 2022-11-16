@@ -1,5 +1,4 @@
-import type { ChildProcess } from 'node:child_process';
-import { fork } from 'node:child_process';
+import { type ChildProcess, fork } from 'node:child_process';
 import { setTimeout } from 'node:timers/promises';
 
 class BotProcess {

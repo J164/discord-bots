@@ -1,17 +1,20 @@
-import type {
-	ButtonInteraction,
-	InteractionUpdateOptions,
-	MessageActionRowComponentBuilder,
-	MessageComponentInteraction,
-	SelectMenuBuilder,
-	SelectMenuInteraction,
+import {
+	type ButtonInteraction,
+	type InteractionUpdateOptions,
+	type MessageActionRowComponentBuilder,
+	type MessageComponentInteraction,
+	type SelectMenuBuilder,
+	type SelectMenuInteraction,
+	ActionRowBuilder,
+	ApplicationCommandOptionType,
+	ButtonStyle,
+	ComponentType,
 } from 'discord.js';
-import { ActionRowBuilder, ApplicationCommandOptionType, ButtonStyle, ComponentType } from 'discord.js';
-import type { GlobalChatCommandResponse } from '../../types/client.js';
-import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
+import { type GlobalChatCommandResponse } from '../../types/client.js';
+import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { EmbedType, Emojis, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
 import { mergeImages } from '../../util/image-utils.js';
-import type { ScryfallResponse, ScryfallMagicCard } from '../../types/api.js';
+import { type ScryfallResponse, type ScryfallMagicCard } from '../../types/api.js';
 
 function formatResponse(response: ScryfallResponse): ScryfallMagicCard[][] {
 	const cards: ScryfallMagicCard[][] = [];
@@ -155,18 +158,25 @@ async function promptUser(response: GlobalChatCommandResponse, scryfallResults: 
 	}
 
 	switch (component.customId) {
-		case 'jumpleft':
+		case 'jumpleft': {
 			await updateResponse(response, scryfallResults, 0, component);
 			break;
-		case 'left':
+		}
+
+		case 'left': {
 			await updateResponse(response, scryfallResults, page - 1, component);
 			break;
-		case 'right':
+		}
+
+		case 'right': {
 			await updateResponse(response, scryfallResults, page + 1, component);
 			break;
-		case 'jumpright':
+		}
+
+		case 'jumpright': {
 			await updateResponse(response, scryfallResults, scryfallResults.length - 1, component);
 			break;
+		}
 	}
 }
 

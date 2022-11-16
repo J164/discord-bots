@@ -1,7 +1,6 @@
 import { exec, spawn } from 'node:child_process';
-import type { YoutubeResolveResult, YoutubeAudioData, YoutubePlaylistResolveResult } from '../types/api.js';
-import type { YoutubeStream } from '../types/voice.js';
-import { AudioTypes } from '../types/voice.js';
+import { type YoutubeResolveResult, type YoutubeAudioData, type YoutubePlaylistResolveResult } from '../types/api.js';
+import { type YoutubeStream, AudioTypes } from '../types/voice.js';
 
 const PRINT_FORMAT = '%(title)s;%(webpage_url)s;%(thumbnails)s;%(duration)s';
 const PLAYLIST_PRINT_FORMAT = `${PRINT_FORMAT};%(playlist_title)s`;

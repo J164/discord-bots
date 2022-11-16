@@ -1,14 +1,16 @@
-import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
-import type {
-	APISelectMenuOption,
-	ButtonBuilder,
-	ButtonInteraction,
-	EmbedBuilder,
-	InteractionUpdateOptions,
-	SelectMenuBuilder,
-	ThreadChannel,
+import {
+	ActionRowBuilder,
+	ButtonStyle,
+	ComponentType,
+	type APISelectMenuOption,
+	type ButtonBuilder,
+	type ButtonInteraction,
+	type EmbedBuilder,
+	type InteractionUpdateOptions,
+	type SelectMenuBuilder,
+	type ThreadChannel,
 } from 'discord.js';
-import type { MagicPlayer } from '../../types/games.js';
+import { type MagicPlayer } from '../../types/games.js';
 import { EmbedType, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
 
 export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadChannel): Promise<void> {
@@ -50,13 +52,17 @@ export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadCh
 	await component.update(messageOptions({ components: [] }));
 
 	switch (component.customId) {
-		case 'damage':
+		case 'damage': {
 			await prompt(playerData, gameChannel, component);
 			break;
-		case 'heal':
+		}
+
+		case 'heal': {
 			await heal(playerData, gameChannel, component);
 			break;
-		case 'end':
+		}
+
+		case 'end': {
 			await component.update(messageOptions({ embeds: [printStandings(playerData)] }));
 			try {
 				await gameChannel.setArchived(true);
@@ -65,6 +71,7 @@ export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadCh
 			}
 
 			break;
+		}
 	}
 }
 
@@ -162,18 +169,25 @@ async function heal(playerData: MagicPlayer[], gameChannel: ThreadChannel, inter
 						}
 
 						switch (b.customId.split('_')[1]) {
-							case '1':
+							case '1': {
 								amount++;
 								break;
-							case '2':
+							}
+
+							case '2': {
 								amount += 2;
 								break;
-							case '5':
+							}
+
+							case '5': {
 								amount += 5;
 								break;
-							case '10':
+							}
+
+							case '10': {
 								amount += 10;
 								break;
+							}
 						}
 
 						await b.update(messageOptions({ embeds: [printStandings(playerData), responseEmbed(EmbedType.Info, `Current Amount: ${amount}`)] }));
@@ -336,18 +350,25 @@ async function prompt(playerData: MagicPlayer[], gameChannel: ThreadChannel, int
 						}
 
 						switch (b.customId.split('_')[1]) {
-							case '1':
+							case '1': {
 								amount++;
 								break;
-							case '2':
+							}
+
+							case '2': {
 								amount += 2;
 								break;
-							case '5':
+							}
+
+							case '5': {
 								amount += 5;
 								break;
-							case '10':
+							}
+
+							case '10': {
 								amount += 10;
 								break;
+							}
 						}
 
 						await b.update(messageOptions({ embeds: [printStandings(playerData), responseEmbed(EmbedType.Info, `Current Amount: ${amount}`)] }));

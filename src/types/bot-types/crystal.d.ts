@@ -1,6 +1,6 @@
-import type { Logger } from 'pino';
-import type { Player } from '../../voice/player.js';
-import type { ChatCommand, CommandType } from '../client.js';
+import { type Logger } from 'pino';
+import { type Player } from '../../voice/player.js';
+import { type ChatCommand, type CommandType } from '../client.js';
 
 /** Config options for Potato Bot */
 type Config = {

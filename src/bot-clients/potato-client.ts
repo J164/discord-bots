@@ -1,19 +1,14 @@
 import { readdir } from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import type { TextChannel } from 'discord.js';
-import { ActivityType, GatewayIntentBits, Partials } from 'discord.js';
+import { type TextChannel, ActivityType, GatewayIntentBits, Partials } from 'discord.js';
 import { MongoClient } from 'mongodb';
 import cron from 'node-cron';
-import type { Logger } from 'pino';
+import { type Logger } from 'pino';
 import { BotClient } from '../util/bot-client.js';
-import type { Config, GlobalInfo, GuildInfo } from '../types/bot-types/potato.js';
+import { type Config, type GlobalInfo, type GuildInfo } from '../types/bot-types/potato.js';
 import { getDailyReport } from '../modules/daily-report.js';
 import { gradeReport } from '../modules/grade-report.js';
 import { getWeatherReport } from '../modules/weather-report.js';
-import type { WeatherResponse } from '../types/api.js';
-
-const COMMAND_DIR = `${path.dirname(fileURLToPath(import.meta.url))}/../commands/potato`;
+import { type WeatherResponse } from '../types/api.js';
 
 /** Class representing the client for Potato Bot */
 export class PotatoClient extends BotClient<GlobalInfo, GuildInfo, Config> {
@@ -74,7 +69,7 @@ export class PotatoClient extends BotClient<GlobalInfo, GuildInfo, Config> {
 				this._weather = await getWeatherReport(this.config.weatherKey);
 			})(),
 			(async () => {
-				const commands = await readdir(COMMAND_DIR);
+				const commands = await readdir('./commands/potato');
 				return Promise.all(
 					commands.map((file) => {
 						if (!file.endsWith('.js')) {

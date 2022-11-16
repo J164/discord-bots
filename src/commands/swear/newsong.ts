@@ -2,7 +2,7 @@ import { readdirSync } from 'node:fs';
 import { ApplicationCommandOptionType } from 'discord.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { download } from '../../voice/ytdl.js';
-import type { SwearChatCommand } from '../../types/bot-types/swear.js';
+import { type SwearChatCommand } from '../../types/bot-types/swear.js';
 
 export const command: SwearChatCommand<'Global'> = {
 	data: {

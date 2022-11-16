@@ -1,5 +1,5 @@
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
+import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 
 export const command: PotatoChatCommand<'Global'> = {

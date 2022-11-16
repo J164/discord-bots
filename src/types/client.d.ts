@@ -1,5 +1,11 @@
-import type { AutocompleteInteraction, CacheType, ChatInputApplicationCommandData, ChatInputCommandInteraction, InteractionResponse } from 'discord.js';
-import type { Logger } from 'pino';
+import {
+	type AutocompleteInteraction,
+	type CacheType,
+	type ChatInputApplicationCommandData,
+	type ChatInputCommandInteraction,
+	type InteractionResponse,
+} from 'discord.js';
+import { type Logger } from 'pino';
 
 /** Responds to a chat command with global scope */
 type GlobalChatCommandResponseFunction<GlobalInfo> = (response: GlobalChatCommandResponse, globalInfo: GlobalInfo) => Promise<void>;

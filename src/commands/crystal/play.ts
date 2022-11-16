@@ -1,6 +1,6 @@
 import { readdirSync } from 'node:fs';
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
-import type { CrystalChatCommand } from '../../types/bot-types/crystal.js';
+import { type CrystalChatCommand } from '../../types/bot-types/crystal.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { Player } from '../../voice/player.js';
 import { AudioTypes } from '../../types/voice.js';

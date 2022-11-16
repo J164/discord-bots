@@ -1,5 +1,5 @@
-import type { InteractionReplyOptions, VoiceChannel } from 'discord.js';
-import type { QueueItem } from '../types/voice.js';
+import { type InteractionReplyOptions, type VoiceChannel } from 'discord.js';
+import { type QueueItem } from '../types/voice.js';
 import { EmbedType, responseOptions } from '../util/builders.js';
 import { Player } from './player.js';
 

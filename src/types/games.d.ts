@@ -1,6 +1,6 @@
-import type { ThreadChannel, User } from 'discord.js';
-import type { Card } from '../util/card-utils.js';
-import type { CardSuit } from './card.js';
+import { type ThreadChannel, type User } from 'discord.js';
+import { type Card } from '../util/card-utils.js';
+import { type CardSuit } from './card.js';
 
 // Euchre
 
