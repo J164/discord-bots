@@ -7,9 +7,8 @@ const swearClient = new SwearClient(
 		logger: pino({ name: 'Swear Bot' }),
 		admin: env.ADMIN ?? '',
 		swear: env.SWEAR ?? '',
-		songDirectory: env.SONG_DIRECTORY ?? '',
 	},
-	env.SWEAR_STATUS,
+	env.SWEAR_STATUS ?? '',
 );
 
 await swearClient.login(env.SWEAR_TOKEN);

@@ -9,13 +9,12 @@ const potatoClient = new PotatoClient(
 		announcementChannel: env.ANNOUNCEMENT_CHANNEL ?? '',
 		announcementTime: env.ANNOUNCEMENT_TIME ?? '',
 		databaseName: env.DATABASE_NAME ?? '',
-		downloadDirectory: env.DOWNLOAD_DIRECTORY ?? '',
 		gradeUpdateInterval: env.GRADE_UPDATE_INTERVAL ?? '',
 		mongodbUrl: env.MONGODB_URL ?? '',
 		spotifyToken: env.SPOTIFY_TOKEN ?? '',
 		weatherKey: env.WEATHER_KEY ?? '',
 	},
-	env.POTATO_STATUS,
+	env.POTATO_STATUS ?? '',
 );
 
 await potatoClient.login(env.POTATO_TOKEN);

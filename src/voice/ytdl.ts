@@ -3,8 +3,8 @@ import type { YoutubeResolveResult, YoutubeAudioData, YoutubePlaylistResolveResu
 import type { YoutubeStream } from '../types/voice.js';
 import { AudioTypes } from '../types/voice.js';
 
-const PRINT_FORMAT = '\\"title\\":\\"%(title)s\\",\\"url\\":\\"%(webpage_url)s\\",\\"thumbnails\\":\\"%(thumbnails)s\\",\\"duration\\":\\"%(duration)s\\"';
-const PLAYLIST_PRINT_FORMAT = `${PRINT_FORMAT},\\"playlistTitle\\":\\"%(playlist_title)s\\"`;
+const PRINT_FORMAT = '%(title)s;%(webpage_url)s;%(thumbnails)s;%(duration)s';
+const PLAYLIST_PRINT_FORMAT = `${PRINT_FORMAT};%(playlist_title)s`;
 
 /**
  * Parses Youtube audio data
@@ -59,7 +59,18 @@ export async function resolve(url: string): Promise<YoutubeAudioData[]> {
 				return;
 			}
 
-			resolve(parseResolvedData([JSON.parse(stdout) as YoutubeResolveResult]));
+			const data = stdout.split(';');
+
+			resolve(
+				parseResolvedData([
+					{
+						title: data[0],
+						url: data[1],
+						thumbnails: data[2],
+						duration: data[3],
+					},
+				]),
+			);
 		});
 	});
 }
@@ -72,7 +83,7 @@ export async function resolve(url: string): Promise<YoutubeAudioData[]> {
  */
 export async function resolvePlaylist(url: string): Promise<YoutubePlaylistResolveResult> {
 	return new Promise((resolve, reject) => {
-		exec(`yt-dlp "${url}" --flat-playlist --print "{${PLAYLIST_PRINT_FORMAT}}" --quiet`, (error, stdout) => {
+		exec(`yt-dlp "${url}" --flat-playlist --print "${PLAYLIST_PRINT_FORMAT}" --quiet`, (error, stdout) => {
 			if (error) {
 				reject(error);
 				return;
@@ -82,7 +93,15 @@ export async function resolvePlaylist(url: string): Promise<YoutubePlaylistResol
 				.trim()
 				.split('\n')
 				.map((result) => {
-					return JSON.parse(result) as YoutubeResolveResult & { playlistTitle: string };
+					const data = result.split(';');
+
+					return {
+						title: data[0],
+						url: data[1],
+						thumbnails: data[2],
+						duration: data[3],
+						playlistTitle: data[4],
+					};
 				});
 
 			if (results.length === 0) {
@@ -132,7 +151,7 @@ export async function search(terms: string[]): Promise<YoutubeAudioData[]> {
 			})
 			.join(' ');
 
-		exec(`yt-dlp ${searchDirectives} --print "{${PRINT_FORMAT}}" --quiet`, (error, stdout) => {
+		exec(`yt-dlp ${searchDirectives} --print "${PRINT_FORMAT}" --quiet`, (error, stdout) => {
 			if (error) {
 				reject(error);
 				return;
@@ -142,7 +161,14 @@ export async function search(terms: string[]): Promise<YoutubeAudioData[]> {
 				.trim()
 				.split('\n')
 				.map((result) => {
-					return JSON.parse(result) as YoutubeResolveResult;
+					const data = result.split(';');
+
+					return {
+						title: data[0],
+						url: data[1],
+						thumbnails: data[2],
+						duration: data[3],
+					};
 				});
 
 			if (results.length === 0) {

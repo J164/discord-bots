@@ -1,13 +1,18 @@
 {
   "compilerOptions": {
-    "module": "NodeNext",
-    "target": "ESNext",
-    "moduleResolution": "NodeNext",
-    "outDir": "dist",
+    // Type Checking
+    "exactOptionalPropertyTypes": true,
     "strict": true,
+
+    // Modules
+    "module": "NodeNext",
+
+    // Emit
+    "outDir": "dist",
     "sourceMap": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true
+
+    // Language and Environment
+    "target": "ESNext",
   },
   "include": ["src/**/*.ts"]
 }

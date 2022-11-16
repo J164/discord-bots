@@ -10,7 +10,7 @@ const COMMAND_DIR = `${path.dirname(fileURLToPath(import.meta.url))}/../commands
 
 /** Class representing the client for Crystal Bot */
 export class CrystalClient extends BotClient<GlobalInfo, GuildInfo, Config> {
-	public constructor(config: Config, status?: string) {
+	public constructor(config: Config, status: string) {
 		super(
 			{
 				intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
@@ -40,7 +40,6 @@ export class CrystalClient extends BotClient<GlobalInfo, GuildInfo, Config> {
 	protected getGlobalInfo(logger: Logger): GlobalInfo {
 		return {
 			logger,
-			ostDirectory: this.config.ostDirectory,
 		};
 	}
 

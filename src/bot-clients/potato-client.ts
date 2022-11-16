@@ -18,9 +18,9 @@ const COMMAND_DIR = `${path.dirname(fileURLToPath(import.meta.url))}/../commands
 /** Class representing the client for Potato Bot */
 export class PotatoClient extends BotClient<GlobalInfo, GuildInfo, Config> {
 	private readonly _databaseClient: MongoClient;
-	private _weather?: WeatherResponse;
+	private _weather: WeatherResponse | undefined;
 
-	public constructor(config: Config, status?: string) {
+	public constructor(config: Config, status: string) {
 		super(
 			{
 				intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
@@ -92,7 +92,6 @@ export class PotatoClient extends BotClient<GlobalInfo, GuildInfo, Config> {
 		return {
 			logger,
 			database: this._databaseClient.db(this.config.databaseName),
-			downloadDirectory: this.config.downloadDirectory,
 			spotifyToken: this.config.spotifyToken,
 			weather: this._weather,
 		};

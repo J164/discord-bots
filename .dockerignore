@@ -1,6 +1,0 @@
-.git*
-.vscode/
-node_modules/
-src/
-.prettierrc.json
-tsconfig.json

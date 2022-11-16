@@ -7,7 +7,7 @@ import { Player } from './player.js';
 export class QueueManager {
 	private _player: Player;
 	private _queue: QueueItem[];
-	private _nowPlaying?: QueueItem;
+	private _nowPlaying: QueueItem | undefined;
 	private _queueLoop: boolean;
 
 	public constructor(voiceChannel: VoiceChannel) {

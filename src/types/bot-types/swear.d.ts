@@ -7,13 +7,11 @@ type Config = {
 	readonly logger: Logger;
 	readonly admin: string;
 	readonly swear: string;
-	readonly songDirectory: string;
 };
 
 /** Global bot info used to respond to interactions recieved by Potato Bot */
 type GlobalInfo = {
 	readonly logger: Logger;
-	readonly songDirectory: string;
 	readonly admin: string;
 	readonly swear: string;
 };

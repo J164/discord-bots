@@ -5,13 +5,11 @@ import type { ChatCommand, CommandType } from '../client.js';
 /** Config options for Potato Bot */
 type Config = {
 	readonly logger: Logger;
-	readonly ostDirectory: string;
 };
 
 /** Global bot info used to respond to interactions recieved by Potato Bot */
 type GlobalInfo = {
 	readonly logger: Logger;
-	readonly ostDirectory: string;
 };
 
 /** Guild-specific info used to respond to interactions recieved by Potato Bot */

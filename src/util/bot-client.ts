@@ -100,7 +100,7 @@ export abstract class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo ext
 			return;
 		}
 
-		const interactionResponse = (await interaction.deferReply({ ephemeral: command.ephemeral })) as ChatCommandResponse<CacheType>;
+		const interactionResponse = (await interaction.deferReply({ ephemeral: command.ephemeral ?? false })) as ChatCommandResponse<CacheType>;
 
 		this.config.logger.info({ options: interaction.options.data }, `(${interaction.id}) /${interaction.commandName}`);
 
