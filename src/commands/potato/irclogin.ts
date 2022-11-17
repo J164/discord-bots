@@ -10,7 +10,7 @@ export const command: PotatoChatCommand<'Global'> = {
 		options: [
 			{
 				name: 'session_token',
-				description: 'Use /irchelp to see how to aquire this',
+				description: 'Use ```/irchelp``` to see how to aquire this',
 				type: ApplicationCommandOptionType.String,
 				required: true,
 			},
@@ -21,7 +21,9 @@ export const command: PotatoChatCommand<'Global'> = {
 
 		const courseData = await fetchCourseData(token);
 		if (!courseData) {
-			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Those credentials seem to be invalid. Use /irchelp to see how to aquire them.'));
+			await response.interaction.editReply(
+				responseOptions(EmbedType.Error, 'Those credentials seem to be invalid. Use ```/irchelp``` to see how to aquire them.'),
+			);
 			return;
 		}
 

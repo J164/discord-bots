@@ -23,8 +23,8 @@ export const command: PotatoChatCommand<'Guild'> = {
 									icon_url: 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png',
 							  }
 							: {
-									// TODO: test and split loop command
-									text: 'Use ```/loopqueue``` to loop',
+									// TODO: test triple backticks
+									text: 'Use ```/loopcurrent``` to loop',
 							  },
 				  })
 				: responseOptions(EmbedType.Error, 'Nothing has played yet!'),
