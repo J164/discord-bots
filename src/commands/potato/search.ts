@@ -60,7 +60,7 @@ async function generateResponse(results: ScryfallMagicCard[][], r: number, index
 				footer: {
 					text: `Price ($): ${card.prices.usd ?? 'unknown (not for sale)'}`,
 				},
-				image: { url: card.image_uris?.large ?? '' }, // TODO: test if empty strings are allowed here
+				image: { url: card.image_uris?.large ?? '' },
 			}),
 		],
 		components: [],

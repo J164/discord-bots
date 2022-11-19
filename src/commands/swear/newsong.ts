@@ -1,4 +1,5 @@
 import { readdirSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
 import { ApplicationCommandOptionType } from 'discord.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { download } from '../../voice/ytdl.js';
@@ -29,12 +30,15 @@ export const command: SwearChatCommand<'Global'> = {
 		}
 
 		await response.interaction.editReply(responseOptions(EmbedType.Info, 'Downloading...'));
-		const songs = readdirSync(globalInfo.songDirectory);
+		const songs = readdirSync('./swear_songs');
 		try {
-			await download(response.interaction.options.getString('url', true), {
-				output: `${globalInfo.songDirectory}/${songs.length + 1}.%(ext)s`,
+			const { metadataPromise, dataPromise } = download(response.interaction.options.getString('url', true), {
 				format: 'bestaudio[ext=webm][acodec=opus]',
 			});
+
+			const metadata = await metadataPromise;
+			await writeFile(`./swear_songs/${songs.length + 1}.${metadata.ext}`, await dataPromise);
+
 			await response.interaction.editReply(responseOptions(EmbedType.Success, 'Success!'));
 		} catch (error) {
 			globalInfo.logger.error(error, `Chat Command Interaction #${response.interaction.id}) threw an error when downloading`);

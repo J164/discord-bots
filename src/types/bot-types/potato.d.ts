@@ -15,6 +15,7 @@ type Config = {
 	readonly weatherKey: string;
 	readonly abstractKey: string;
 	readonly spotifyToken: string;
+	readonly dropboxToken: string;
 };
 
 /** Global bot info used to respond to interactions recieved by Potato Bot */
@@ -22,6 +23,7 @@ type GlobalInfo = {
 	readonly database: Db;
 	readonly logger: Logger;
 	readonly spotifyToken: string;
+	readonly dropboxToken: string;
 	readonly weather: WeatherResponse | undefined;
 };
 

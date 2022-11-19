@@ -88,6 +88,7 @@ export class PotatoClient extends BotClient<GlobalInfo, GuildInfo, Config> {
 			logger,
 			database: this._databaseClient.db(this.config.databaseName),
 			spotifyToken: this.config.spotifyToken,
+			dropboxToken: this.config.dropboxToken,
 			weather: this._weather,
 		};
 	}

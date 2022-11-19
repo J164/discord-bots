@@ -138,8 +138,8 @@ export const command: CrystalChatCommand<'Global'> = {
 			},
 		],
 	},
-	async respond(response, globalInfo) {
-		const songs = readdirSync(`${globalInfo.ostDirectory}/${response.interaction.options.getSubcommand()}_ost`).map((value) => {
+	async respond(response) {
+		const songs = readdirSync(`./music_files/ost/${response.interaction.options.getSubcommand()}_ost`).map((value) => {
 			return value.split('.').slice(0, -1).join('.');
 		});
 

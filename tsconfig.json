@@ -14,5 +14,5 @@
     // Language and Environment
     "target": "ESNext",
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/commands/potato/download.ts.WIP"]
 }

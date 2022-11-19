@@ -1,5 +1,6 @@
 import { exec, spawn } from 'node:child_process';
-import { type YoutubeResolveResult, type YoutubeAudioData, type YoutubePlaylistResolveResult } from '../types/api.js';
+import { Buffer } from 'node:buffer';
+import { type YoutubeResolveResult, type YoutubeAudioData, type YoutubePlaylistResolveResult, type YoutubeMetadata } from '../types/api.js';
 import { type YoutubeStream, AudioTypes } from '../types/voice.js';
 
 const PRINT_FORMAT = '%(title)s;%(webpage_url)s;%(thumbnails)s;%(duration)s';
@@ -120,20 +121,41 @@ export async function resolvePlaylist(url: string): Promise<YoutubePlaylistResol
  * Downloads a video to the operating system
  * @param url The url to download from
  * @param options Yt-dlp options for the download
- * @returns A void Promise that resolves when the download is complete
+ * @returns A Promise that resolves to the downloaded file
  * @throws The Promise is rejected if the download fails
  */
-export async function download(url: string, options: { output: string; format: string }): Promise<void> {
-	return new Promise((resolve, reject) => {
-		exec(`yt-dlp "${url}" --output "${options.output}" --format "${options.format}"`, (error) => {
-			if (error) {
-				reject(error);
-				return;
-			}
+export function download(url: string, options: { format: string }): { metadataPromise: Promise<YoutubeMetadata>; dataPromise: Promise<Buffer> } {
+	const process = createStream(url, options);
 
-			resolve();
-		});
+	const data: Buffer[] = [];
+	process.stdout.on('data', (chunk: Buffer) => {
+		data.push(chunk);
 	});
+
+	return {
+		metadataPromise: new Promise<YoutubeMetadata>((resolve, reject) => {
+			exec(`yt-dlp ${url} --print "%(id)s;%(ext)s" --quiet`, (error, stdout) => {
+				if (error) {
+					reject(error);
+					return;
+				}
+
+				const metadata = stdout.split(';');
+
+				resolve({ id: metadata[0], ext: metadata[1] });
+			});
+		}),
+		dataPromise: new Promise<Buffer>((resolve, reject) => {
+			process.once('exit', (exitCode) => {
+				if (exitCode !== 0) {
+					reject();
+					return;
+				}
+
+				resolve(Buffer.concat(data));
+			});
+		}),
+	};
 }
 
 /**

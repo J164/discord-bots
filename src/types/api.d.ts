@@ -146,6 +146,7 @@ type YoutubeResolveResult = {
 	readonly duration: string;
 };
 
+/** Metadata about a YouTube video */
 type YoutubeAudioData = {
 	readonly url: string;
 	readonly title: string;
@@ -154,9 +155,16 @@ type YoutubeAudioData = {
 	readonly type: AudioTypes.YouTube;
 };
 
+/** Data returned from yt-dlp about a YouTube playlist */
 type YoutubePlaylistResolveResult = {
 	readonly results: YoutubeAudioData[];
 	readonly playlistTitle: string;
+};
+
+/** Metadata from downloading a Youtube video */
+type YoutubeMetadata = {
+	id: string;
+	ext: string;
 };
 
 // Tenor API

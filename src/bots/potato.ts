@@ -13,6 +13,7 @@ const potatoClient = new PotatoClient(
 		mongodbUrl: env.MONGODB_URL ?? '',
 		spotifyToken: env.SPOTIFY_TOKEN ?? '',
 		weatherKey: env.WEATHER_KEY ?? '',
+		dropboxToken: env.DROPBOX_TOKEN ?? '',
 	},
 	env.POTATO_STATUS ?? '',
 );

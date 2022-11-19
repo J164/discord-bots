@@ -113,14 +113,14 @@ export const command: CrystalChatCommand<'Guild'> = {
 			},
 		],
 	},
-	async respond(response, guildInfo, globalInfo) {
+	async respond(response, guildInfo) {
 		const voiceChannel = response.interaction.channel?.isVoiceBased() ? response.interaction.channel : response.interaction.member.voice.channel;
 		if (!voiceChannel?.joinable || voiceChannel.type !== ChannelType.GuildVoice) {
 			await response.interaction.editReply(responseOptions(EmbedType.Error, 'This command can only be used while in a visable voice channel!'));
 			return;
 		}
 
-		const path = `${globalInfo.ostDirectory}/${response.interaction.options.getSubcommand()}_ost`;
+		const path = `./music_files/ost/${response.interaction.options.getSubcommand()}_ost`;
 
 		const songs = readdirSync(path).map((value) => {
 			return value.split('.').slice(0, -1).join('.');
@@ -132,13 +132,13 @@ export const command: CrystalChatCommand<'Guild'> = {
 		await guildInfo.player.play({ type: AudioTypes.Local, url: `${path}/${results[0].item}.webm` });
 		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Now Playing!'));
 	},
-	async autocomplete(interaction, guildInfo, globalInfo) {
+	async autocomplete(interaction) {
 		if (interaction.options.getFocused().length < 3) {
 			await interaction.respond([]);
 			return;
 		}
 
-		const path = `${globalInfo.ostDirectory}/${interaction.options.getSubcommand(true)}_ost`;
+		const path = `./music_files/ost/${interaction.options.getSubcommand(true)}_ost`;
 		const songs = readdirSync(path).map((value) => {
 			return value.split('.').slice(0, -1).join('.');
 		});
