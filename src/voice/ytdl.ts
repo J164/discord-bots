@@ -2,7 +2,7 @@ import { exec, spawn } from 'node:child_process';
 import { Buffer } from 'node:buffer';
 import { type YoutubeStream } from '../types/voice.js';
 
-const VIDEO_TEMPLATE = '%(title)s;%(webpage_url)s;%(thumbnail.0.url)s;%(duration)s;%(playlist_title)s';
+const VIDEO_TEMPLATE = '%(title)s;%(webpage_url)s;%(thumbnails.0.url)s;%(duration)s;%(playlist_title)s';
 const FORMAT_TEMPLATE = '%(id)s;%(ext)s';
 
 /**
