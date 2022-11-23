@@ -1,17 +1,10 @@
 import { type ChildProcessByStdio } from 'node:child_process';
 import { type Readable } from 'node:stream';
 
-/** Valid audio types */
-export const enum AudioTypes {
-	Local = 'local',
-	YouTube = 'youtube',
-}
-
 /** Object representing audio that can be played by the Player */
 type Audio = {
 	looping?: boolean;
 	readonly url: string;
-	readonly type: AudioTypes;
 };
 
 /** Object representing an item in the queue */

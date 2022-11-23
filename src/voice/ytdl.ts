@@ -1,118 +1,112 @@
 import { exec, spawn } from 'node:child_process';
 import { Buffer } from 'node:buffer';
-import { type YoutubeResolveResult, type YoutubeAudioData, type YoutubePlaylistResolveResult, type YoutubeMetadata } from '../types/api.js';
-import { type YoutubeStream, AudioTypes } from '../types/voice.js';
+import { type YoutubeStream } from '../types/voice.js';
 
-const PRINT_FORMAT = '%(title)s;%(webpage_url)s;%(thumbnails)s;%(duration)s';
-const PLAYLIST_PRINT_FORMAT = `${PRINT_FORMAT};%(playlist_title)s`;
+const VIDEO_TEMPLATE = '%(title)s;%(webpage_url)s;%(thumbnail.0.url)s;%(duration)s;%(playlist_title)s';
+const FORMAT_TEMPLATE = '%(id)s;%(ext)s';
+
+/**
+ * Parses YouTube metadata
+ * @param data The data to parse
+ * @returns parsed YouTube Metadata
+ */
+function parseResolvedFormat(data: string): YoutubeMetadata {
+	const [id, ext] = data.trim().split(';');
+
+	return { id, ext };
+}
 
 /**
  * Parses Youtube audio data
- * @param data the data to parse
- * @returns parsed Youtube audio data
+ * @param data The data to parse
+ * @returns Parsed Youtube audio data
  */
-function parseResolvedData(data: YoutubeResolveResult[]): YoutubeAudioData[] {
-	return data.map((item) => {
-		const { url, title, duration, thumbnails } = item;
+function parseResolvedVideo(data: string): YoutubeAudioData[] {
+	return data
+		.trim()
+		.split('\n')
+		.map((result) => {
+			const [title, url, thumbnail, duration, playlistTitle] = result.trim().split(';');
 
-		const durationNumber = Number.parseInt(duration, 10);
+			const durationNumber = Number.parseInt(duration, 10);
 
-		const hour = Math.floor(durationNumber / 3600);
-		const min = Math.floor((durationNumber % 3600) / 60);
-		const sec = durationNumber % 60;
+			const hour = Math.floor(durationNumber / 3600);
+			const min = Math.floor((durationNumber % 3600) / 60);
+			const sec = durationNumber % 60;
 
-		const thumbnailsArray = JSON.parse(thumbnails.replaceAll("'", '"')) as Array<{ url: string }>;
-
-		return {
-			url,
-			title,
-			duration: `${hour > 0 ? (hour < 10 ? `0${hour}:` : `${hour}:`) : ''}${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec}`,
-			thumbnail: thumbnailsArray[0].url,
-			type: AudioTypes.YouTube,
-		};
-	});
+			return {
+				url,
+				title,
+				duration: `${hour > 0 ? (hour < 10 ? `0${hour}:` : `${hour}:`) : ''}${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec}`,
+				thumbnail,
+				playlistTitle,
+			};
+		});
 }
 
 /**
- * Creates a download stream using yt-dlp
- * @param url the url to stream from
- * @param options yt-dlp options for the stream
- * @returns the child process with the download stream
- */
-export function createStream(url: string, options: { format: string }): YoutubeStream {
-	return spawn('yt-dlp', [url, '--format', options.format, '--output', '-', '--quiet'], {
-		stdio: ['ignore', 'pipe', 'ignore'],
-	});
-}
-
-/**
- * Fetches information about a YouTube video
- * @param url The video url
+ * Fetches information about a YouTube video or playlist
+ * @param url The YouTube url
  * @returns A Promise that resolves to the fetched information
- * @throws The Promise is rejected if the fetch fails
+ * @throws Promise is rejected if yt-dlp fails
  */
-export async function resolve(url: string): Promise<YoutubeAudioData[]> {
+export async function resolve(url: string, playlist?: boolean): Promise<YoutubeAudioData[]> {
 	return new Promise((resolve, reject) => {
-		exec(`yt-dlp "${url}" --no-playlist --print "{${PRINT_FORMAT}}" --quiet`, (error, stdout) => {
+		exec(`yt-dlp "${url}" ${playlist ? '--flat-playlist' : '--no-playlist'} --print "${VIDEO_TEMPLATE}" --quiet`, (error, stdout) => {
 			if (error) {
-				reject(error);
+				reject();
 				return;
 			}
 
-			const data = stdout.split(';');
-
-			resolve(
-				parseResolvedData([
-					{
-						title: data[0],
-						url: data[1],
-						thumbnails: data[2],
-						duration: data[3],
-					},
-				]),
-			);
+			resolve(parseResolvedVideo(stdout));
 		});
 	});
 }
 
 /**
- * Fetches information about a YouTube playlist
- * @param url The playlsit url
- * @returns A Promise that resolves to the fetched information
- * @throws The Promise is rejected if the fetch fails
+ * Searches Youtube for videos matching the search terms
+ * @param terms The search terms to use
+ * @returns A Promise that resolves to information about the fetched videos
+ * @throws Promise is rejected if yt-dlp fails
  */
-export async function resolvePlaylist(url: string): Promise<YoutubePlaylistResolveResult> {
+export async function search(terms: string[]): Promise<YoutubeAudioData[]> {
+	const searchDirectives = terms
+		.map((term) => {
+			return `"ytsearch:${term}"`;
+		})
+		.join(' ');
+
+	return resolve(searchDirectives);
+}
+
+/**
+ * Creates a download stream using yt-dlp
+ * @param url The url to stream from
+ * @param format The YouTube format to use
+ * @returns The child process with the download stream
+ */
+export function createStream(url: string, format: string): YoutubeStream {
+	return spawn('yt-dlp', [url, '--format', format, '--output', '-', '--quiet'], {
+		stdio: ['ignore', 'pipe', 'ignore'],
+	});
+}
+
+/**
+ * Fetches metadata for what would be downloaded from a YouTube url
+ * @param url The YouTube url
+ * @param format The video format to use
+ * @returns A Promise that resolves to the metadata
+ * @throws Promise is rejected if yt-dlp fails
+ */
+export async function selectFormat(url: string, format: string): Promise<YoutubeMetadata> {
 	return new Promise((resolve, reject) => {
-		exec(`yt-dlp "${url}" --flat-playlist --print "${PLAYLIST_PRINT_FORMAT}" --quiet`, (error, stdout) => {
+		exec(`yt-dlp ${url} --format "${format}" --print "${FORMAT_TEMPLATE}" --quiet`, (error, stdout) => {
 			if (error) {
-				reject(error);
-				return;
-			}
-
-			const results = stdout
-				.trim()
-				.split('\n')
-				.map((result) => {
-					const data = result.split(';');
-
-					return {
-						title: data[0],
-						url: data[1],
-						thumbnails: data[2],
-						duration: data[3],
-						playlistTitle: data[4],
-					};
-				});
-
-			if (results.length === 0) {
 				reject();
 				return;
 			}
 
-			resolve({
-				results: parseResolvedData(results),
-				playlistTitle: results[0].playlistTitle,
-			});
+			resolve(parseResolvedFormat(stdout));
 		});
 	});
 }
@@ -120,84 +114,26 @@ export async function resolvePlaylist(url: string): Promise<YoutubePlaylistResol
 /**
  * Downloads a video to the operating system
  * @param url The url to download from
- * @param options Yt-dlp options for the download
- * @returns A Promise that resolves to the downloaded file
- * @throws The Promise is rejected if the download fails
+ * @param format The YouTube format to use
+ * @returns A Promise that resolves to the downloaded buffer
+ * @throws Promise is rejected if yt-dlp fails
  */
-export function download(url: string, options: { format: string }): { metadataPromise: Promise<YoutubeMetadata>; dataPromise: Promise<Buffer> } {
-	const process = createStream(url, options);
+export async function download(url: string, format: string): Promise<Buffer> {
+	const process = createStream(url, format);
 
 	const data: Buffer[] = [];
 	process.stdout.on('data', (chunk: Buffer) => {
 		data.push(chunk);
 	});
 
-	return {
-		metadataPromise: new Promise<YoutubeMetadata>((resolve, reject) => {
-			exec(`yt-dlp ${url} --print "%(id)s;%(ext)s" --quiet`, (error, stdout) => {
-				if (error) {
-					reject(error);
-					return;
-				}
-
-				const metadata = stdout.split(';');
-
-				resolve({ id: metadata[0], ext: metadata[1] });
-			});
-		}),
-		dataPromise: new Promise<Buffer>((resolve, reject) => {
-			process.once('exit', (exitCode) => {
-				if (exitCode !== 0) {
-					reject();
-					return;
-				}
-
-				resolve(Buffer.concat(data));
-			});
-		}),
-	};
-}
-
-/**
- * Searches Youtube for videos matching the search terms
- * @param terms The search terms to use
- * @returns A Promise that resolves to information about the fetched videos
- * @throws The Promise is rejected if the search or fetch fails
- */
-export async function search(terms: string[]): Promise<YoutubeAudioData[]> {
 	return new Promise((resolve, reject) => {
-		const searchDirectives = terms
-			.map((term) => {
-				return `"ytsearch:${term}"`;
-			})
-			.join(' ');
-
-		exec(`yt-dlp ${searchDirectives} --print "${PRINT_FORMAT}" --quiet`, (error, stdout) => {
-			if (error) {
-				reject(error);
-				return;
-			}
-
-			const results = stdout
-				.trim()
-				.split('\n')
-				.map((result) => {
-					const data = result.split(';');
-
-					return {
-						title: data[0],
-						url: data[1],
-						thumbnails: data[2],
-						duration: data[3],
-					};
-				});
-
-			if (results.length === 0) {
+		process.once('exit', (exitCode) => {
+			if (exitCode !== 0) {
 				reject();
 				return;
 			}
 
-			resolve(parseResolvedData(results));
+			resolve(Buffer.concat(data));
 		});
 	});
 }

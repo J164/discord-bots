@@ -13,7 +13,8 @@ import {
 	VoiceConnectionStatus,
 } from '@discordjs/voice';
 import { type VoiceChannel } from 'discord.js';
-import { type Audio, type YoutubeStream, AudioTypes } from '../types/voice.js';
+import { type Audio, type YoutubeStream } from '../types/voice.js';
+import { YOUTUBE_VIDEO_URL_PATTERN } from '../util/regex.js';
 import { createStream } from './ytdl.js';
 
 /** Represents the voice state of the bot in a guild */
@@ -156,17 +157,11 @@ export class Player {
 	 * @returns A Readable stream
 	 */
 	private _resolveAudio(audio: Audio): Readable {
-		switch (audio.type) {
-			case AudioTypes.YouTube: {
-				this._script = createStream(audio.url, {
-					format: 'bestaudio[acodec=opus]/bestaudio',
-				});
-				return this._script.stdout;
-			}
-
-			case AudioTypes.Local: {
-				return createReadStream(audio.url);
-			}
+		if (YOUTUBE_VIDEO_URL_PATTERN.test(audio.url)) {
+			this._script = createStream(audio.url, 'bestaudio[acodec=opus]/bestaudio');
+			return this._script.stdout;
 		}
+
+		return createReadStream(audio.url);
 	}
 }

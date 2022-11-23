@@ -2,7 +2,7 @@ import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { QueueManager } from '../../voice/queue-manager.js';
-import { resolvePlaylist } from '../../voice/ytdl.js';
+import { resolve } from '../../voice/ytdl.js';
 
 export const command: PotatoChatCommand<'Guild'> = {
 	data: {
@@ -49,23 +49,17 @@ export const command: PotatoChatCommand<'Guild'> = {
 			return;
 		}
 
-		let playlist;
-		try {
-			playlist = await resolvePlaylist(response.interaction.options.getString('name', true));
-		} catch {
-			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Something went wrong. Please use /report to report the problem'));
-			return;
-		}
+		const playlist = await resolve(response.interaction.options.getString('name', true), true);
 
 		await (guildInfo.queueManager ??= new QueueManager(voiceChannel)).addToQueue(
 			voiceChannel,
-			playlist.results,
+			playlist,
 			(response.interaction.options.getInteger('position') ?? 0) - 1,
 		);
 
 		await response.interaction.editReply(
-			responseOptions(EmbedType.Success, `Added playlist "${playlist.playlistTitle}" to queue!`, {
-				image: { url: playlist.results[0].thumbnail },
+			responseOptions(EmbedType.Success, `Added playlist "${playlist[0].playlistTitle}" to queue!`, {
+				image: { url: playlist[0].thumbnail },
 			}),
 		);
 	},

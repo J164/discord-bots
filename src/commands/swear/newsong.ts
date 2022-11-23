@@ -2,8 +2,9 @@ import { readdirSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { ApplicationCommandOptionType } from 'discord.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
-import { download } from '../../voice/ytdl.js';
+import { download, selectFormat } from '../../voice/ytdl.js';
 import { type SwearChatCommand } from '../../types/bot-types/swear.js';
+import { URL_PATTERN } from '../../util/regex.js';
 
 export const command: SwearChatCommand<'Global'> = {
 	data: {
@@ -24,26 +25,23 @@ export const command: SwearChatCommand<'Global'> = {
 			return;
 		}
 
-		if (!/^((http|https):\/\/)?(www\.)?([\d.A-Za-z]{2,256}\.[a-z]{2,6})(\/[\w#%&+./:=?@\\~-]*)?$/.test(response.interaction.options.getString('url', true))) {
+		if (!URL_PATTERN.test(response.interaction.options.getString('url', true))) {
 			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Not a valid url!'));
 			return;
 		}
 
 		await response.interaction.editReply(responseOptions(EmbedType.Info, 'Downloading...'));
 		const songs = readdirSync('./swear_songs');
-		try {
-			const { metadataPromise, dataPromise } = download(response.interaction.options.getString('url', true), {
-				format: 'bestaudio[ext=webm][acodec=opus]',
-			});
 
-			const metadata = await metadataPromise;
-			await writeFile(`./swear_songs/${songs.length + 1}.${metadata.ext}`, await dataPromise);
+		const url = response.interaction.options.getString('url', true);
+		const format = 'bestaudio[ext=webm][acodec=opus]';
 
-			await response.interaction.editReply(responseOptions(EmbedType.Success, 'Success!'));
-		} catch (error) {
-			globalInfo.logger.error(error, `Chat Command Interaction #${response.interaction.id}) threw an error when downloading`);
-			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Download Failed!'));
-		}
+		const metadata = await selectFormat(url, format);
+		const data = await download(url, format);
+
+		await writeFile(`./swear_songs/${songs.length + 1}.${metadata.ext}`, data);
+
+		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Success!'));
 	},
 	type: 'Global',
 };

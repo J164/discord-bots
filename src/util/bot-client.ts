@@ -129,6 +129,7 @@ export abstract class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo ext
 					globalData,
 				);
 			} catch (error) {
+				await interaction.editReply(responseOptions(EmbedType.Error, 'Something went wrong'));
 				this.config.logger.error(error, `Chat Command Interaction #${interaction.id} threw an error`);
 			}
 
@@ -138,6 +139,7 @@ export abstract class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo ext
 		try {
 			await command.respond(interactionResponse, globalData);
 		} catch (error) {
+			await interaction.editReply(responseOptions(EmbedType.Error, 'Something went wrong'));
 			this.config.logger.error(error, `Chat Command Interaction #${interaction.id} threw an error`);
 		}
 	}

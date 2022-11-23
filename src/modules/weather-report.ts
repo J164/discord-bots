@@ -1,5 +1,3 @@
-import { type WeatherResponse } from '../types/api.js';
-
 /**
  * Fetches infomation about the weather for a specific date
  * @param weatherKey The API key for the Weather API

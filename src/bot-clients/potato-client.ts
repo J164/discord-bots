@@ -8,7 +8,6 @@ import { type Config, type GlobalInfo, type GuildInfo } from '../types/bot-types
 import { getDailyReport } from '../modules/daily-report.js';
 import { gradeReport } from '../modules/grade-report.js';
 import { getWeatherReport } from '../modules/weather-report.js';
-import { type WeatherResponse } from '../types/api.js';
 
 /** Class representing the client for Potato Bot */
 export class PotatoClient extends BotClient<GlobalInfo, GuildInfo, Config> {

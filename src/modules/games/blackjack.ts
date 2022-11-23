@@ -125,14 +125,14 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
 			time: 300_000,
 		});
 	} catch {
-		void message.edit({ components: [] }).catch();
+		await message.edit({ components: [] });
 		return;
 	}
 
 	await component.update({ components: [] });
 
 	if (component.customId === 'continue') {
-		void playBlackjack(channel);
+		await playBlackjack(channel);
 	}
 }
 

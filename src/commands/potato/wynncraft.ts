@@ -1,5 +1,4 @@
 import { ApplicationCommandOptionType } from 'discord.js';
-import { type WynncraftResponse } from '../../types/api.js';
 import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 

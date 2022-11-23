@@ -3,7 +3,6 @@ import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import { type CrystalChatCommand } from '../../types/bot-types/crystal.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { Player } from '../../voice/player.js';
-import { AudioTypes } from '../../types/voice.js';
 import { search } from '../../util/search.js';
 
 export const command: CrystalChatCommand<'Guild'> = {
@@ -129,7 +128,7 @@ export const command: CrystalChatCommand<'Guild'> = {
 		const results = search(songs, response.interaction.options.getString('name', true));
 
 		await (guildInfo.player?.voiceChannel.id === voiceChannel.id ? guildInfo.player : (guildInfo.player = new Player(voiceChannel))).subscribe();
-		await guildInfo.player.play({ type: AudioTypes.Local, url: `${path}/${results[0].item}.webm` });
+		await guildInfo.player.play({ url: `${path}/${results[0].item}.webm` });
 		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Now Playing!'));
 	},
 	async autocomplete(interaction) {

@@ -1,7 +1,6 @@
 import { type Db } from 'mongodb';
 import { type Logger } from 'pino';
 import { type QueueManager } from '../../voice/queue-manager.js';
-import { type WeatherResponse } from '../api.js';
 import { type ChatCommand, type CommandType } from '../client.js';
 
 /** Config options for Potato Bot */
