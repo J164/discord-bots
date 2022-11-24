@@ -3,4 +3,5 @@ type IrcUser = {
 	discordId: string;
 	token: string;
 	grades: Grades;
+	tokenReset: boolean;
 };

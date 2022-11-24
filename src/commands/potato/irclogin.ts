@@ -37,6 +37,7 @@ export const command: PotatoChatCommand<'Global'> = {
 					discordId: response.interaction.user.id,
 					grades: courseData,
 					token,
+					tokenReset: false,
 				},
 			);
 		} else {
@@ -44,6 +45,7 @@ export const command: PotatoChatCommand<'Global'> = {
 				discordId: response.interaction.user.id,
 				grades: courseData,
 				token,
+				tokenReset: false,
 			});
 		}
 

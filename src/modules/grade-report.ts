@@ -15,11 +15,16 @@ export async function gradeReport(database: Db, userObjects: UserManager): Promi
 
 	await Promise.allSettled(
 		users.map(async (user): Promise<void> => {
+			if (user.tokenReset) {
+				return;
+			}
+
 			const userObject = await userObjects.fetch(user.discordId);
 			const dm = await userObject.createDM();
 
 			const newGrades = await fetchCourseData(user.token);
 			if (!newGrades) {
+				await collection.replaceOne({ discordId: user.discordId }, { discordId: user.discordId, grades: user.grades, token: user.token, tokenReset: true });
 				await dm.send(responseOptions(EmbedType.Error, 'Token has been reset!'));
 				return;
 			}
@@ -30,7 +35,10 @@ export async function gradeReport(database: Db, userObjects: UserManager): Promi
 				return;
 			}
 
-			await collection.replaceOne({ discordId: user.discordId }, { discordId: user.discordId, grades: newGrades, token: user.token });
+			await collection.replaceOne(
+				{ discordId: user.discordId },
+				{ discordId: user.discordId, grades: newGrades, token: user.token, tokenReset: user.tokenReset },
+			);
 
 			if (diff.termName) {
 				await dm.send(responseOptions(EmbedType.Info, `New IRC Term! (${diff.termName.oldName} -> ${diff.termName.newName})`));
