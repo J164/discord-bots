@@ -275,11 +275,7 @@ export async function getDailyReport(abstractKey: string, database: Db, weather?
 		}
 	}
 
-	const birthday = (await database.collection('birthdays').findOne({ month: date.getMonth() + 1, day: date.getDate() })) as unknown as {
-		id: string;
-		month: number;
-		day: number;
-	};
+	const birthday = await database.collection<Birthday>('birthdays').findOne({ month: date.getMonth() + 1, day: date.getDate() });
 	if (birthday) {
 		embeds.push(responseEmbed(EmbedType.None, '\uD83C\uDF89\tHave an amazing birthday!', {}, 0x99_00_ff));
 		return messageOptions({ embeds, components: [], content: `\uD83C\uDF89\tHappy Birthday <@${birthday.id}>!!!\t\uD83C\uDF89` });
