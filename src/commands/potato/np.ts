@@ -17,7 +17,7 @@ export const command: PotatoChatCommand<'Guild'> = {
 							},
 						],
 						image: { url: guildInfo.queueManager.nowPlaying.thumbnail },
-						footer: guildInfo.queueManager.nowPlaying.looping
+						footer: guildInfo.queueManager.nowPlaying.audio.looping
 							? {
 									text: 'Looping',
 									icon_url: 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png',

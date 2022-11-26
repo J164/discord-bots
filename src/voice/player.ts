@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { type Readable } from 'node:stream';
-import { createReadStream } from 'node:fs';
 import {
 	type AudioPlayer,
 	type VoiceConnection,
@@ -13,9 +11,7 @@ import {
 	VoiceConnectionStatus,
 } from '@discordjs/voice';
 import { type VoiceChannel } from 'discord.js';
-import { type Audio, type YoutubeStream } from '../types/voice.js';
-import { YOUTUBE_VIDEO_URL_PATTERN } from '../util/regex.js';
-import { createStream } from './ytdl.js';
+import { type Audio } from '../types/voice.js';
 
 /** Represents the voice state of the bot in a guild */
 export class Player {
@@ -23,7 +19,7 @@ export class Player {
 	private readonly _voiceConnection: VoiceConnection;
 	private readonly _voiceChannel: VoiceChannel;
 	private _subscribed: boolean;
-	private _script?: YoutubeStream;
+	private _nowPlaying?: Audio;
 
 	/**
 	 * Connects to a voice channel and creates a Player to manage it
@@ -88,7 +84,9 @@ export class Player {
 			return true;
 		}
 
-		const { type, stream } = await demuxProbe(this._resolveAudio(audio));
+		this._nowPlaying = audio;
+
+		const { type, stream } = await demuxProbe(this._nowPlaying.resolve());
 		this._player.play(createAudioResource(stream, { inputType: type }));
 
 		try {
@@ -98,7 +96,7 @@ export class Player {
 		}
 
 		this._player.once(AudioPlayerStatus.Idle, async () => {
-			this._script?.kill();
+			this._nowPlaying?.destroy();
 
 			if (audio.looping) {
 				await this.play(audio, callback);
@@ -143,25 +141,11 @@ export class Player {
 			return;
 		}
 
-		this._script?.kill();
+		this._nowPlaying?.destroy();
 		this._player.removeAllListeners();
 		this.stop();
 		this._subscribed = false;
 		this._voiceConnection.removeAllListeners();
 		this._voiceConnection.destroy();
-	}
-
-	/**
-	 * Resolves an audio path to a stream
-	 * @param audio The audio object to resolve
-	 * @returns A Readable stream
-	 */
-	private _resolveAudio(audio: Audio): Readable {
-		if (YOUTUBE_VIDEO_URL_PATTERN.test(audio.url)) {
-			this._script = createStream(audio.url, 'bestaudio[acodec=opus]/bestaudio');
-			return this._script.stdout;
-		}
-
-		return createReadStream(audio.url);
 	}
 }

@@ -3,6 +3,7 @@ import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { type SwearChatCommand } from '../../types/bot-types/swear.js';
 import { Player } from '../../voice/player.js';
+import { LocalAudio } from '../../voice/audio-resource.js';
 
 export const command: SwearChatCommand<'Guild'> = {
 	data: {
@@ -28,13 +29,15 @@ export const command: SwearChatCommand<'Guild'> = {
 		const songs = readdirSync('./swear_songs');
 
 		await (guildInfo.player?.voiceChannel.id === voiceChannel.id ? guildInfo.player : (guildInfo.player = new Player(voiceChannel))).subscribe();
-		await guildInfo.player.play({
-			url: `./swear_songs/${
-				response.interaction.options.getInteger('number') && response.interaction.options.getInteger('number', true) <= songs.length
-					? `${response.interaction.options.getInteger('number', true)}.webm`
-					: `${Math.floor(Math.random() * songs.length) + 1}.webm`
-			}`,
-		});
+		await guildInfo.player.play(
+			new LocalAudio(
+				`./swear_songs/${
+					response.interaction.options.getInteger('number') && response.interaction.options.getInteger('number', true) <= songs.length
+						? `${response.interaction.options.getInteger('number', true)}.webm`
+						: `${Math.floor(Math.random() * songs.length) + 1}.webm`
+				}`,
+			),
+		);
 
 		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Now Playing!'));
 	},

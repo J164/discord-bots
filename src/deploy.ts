@@ -1,7 +1,7 @@
 import { readdir } from 'node:fs/promises';
 import { env } from 'node:process';
 import { REST } from '@discordjs/rest';
-import { Routes } from 'discord-api-types/v10';
+import { Routes } from 'discord.js';
 import { type BaseGlobalInfo, type BaseGuildInfo, type CommandType, type ChatCommand } from './types/client.js';
 
 async function getCommands(botName: string) {

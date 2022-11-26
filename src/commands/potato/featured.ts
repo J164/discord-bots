@@ -1,6 +1,7 @@
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
+import { YoutubeAudio } from '../../voice/audio-resource.js';
 import { QueueManager } from '../../voice/queue-manager.js';
 import { resolve } from '../../voice/ytdl.js';
 
@@ -53,7 +54,15 @@ export const command: PotatoChatCommand<'Guild'> = {
 
 		await (guildInfo.queueManager ??= new QueueManager(voiceChannel)).addToQueue(
 			voiceChannel,
-			playlist,
+			playlist.map((song) => {
+				return {
+					audio: new YoutubeAudio(song.url),
+					url: song.url,
+					duration: song.duration,
+					thumbnail: song.thumbnail,
+					title: song.title,
+				};
+			}),
 			(response.interaction.options.getInteger('position') ?? 0) - 1,
 		);
 

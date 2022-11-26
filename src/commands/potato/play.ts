@@ -1,12 +1,12 @@
 import { type InteractionReplyOptions, ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
-import { type QueueItem } from '../../types/voice.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { SPOTFIY_PLAYLIST_URL_PATTERN, YOUTUBE_PLAYLIST_URL_PATTERN, YOUTUBE_VIDEO_URL_PATTERN } from '../../util/regex.js';
+import { YoutubeAudio } from '../../voice/audio-resource.js';
 import { QueueManager } from '../../voice/queue-manager.js';
 import { resolve, search } from '../../voice/ytdl.js';
 
-type AudioData = { response: InteractionReplyOptions; songs: QueueItem[] };
+type AudioData = { response: InteractionReplyOptions; songs: YoutubeAudioData[] };
 
 async function spotify(link: string, spotifyToken: string): Promise<AudioData | undefined> {
 	const authorizationRequest = await fetch('https://accounts.spotify.com/api/token', {
@@ -145,7 +145,15 @@ export const command: PotatoChatCommand<'Guild'> = {
 
 		await (guildInfo.queueManager ??= new QueueManager(voiceChannel)).addToQueue(
 			voiceChannel,
-			songs.songs,
+			songs.songs.map((song) => {
+				return {
+					audio: new YoutubeAudio(song.url),
+					url: song.url,
+					duration: song.duration,
+					thumbnail: song.thumbnail,
+					title: song.title,
+				};
+			}),
 			(response.interaction.options.getInteger('position') ?? 0) - 1,
 		);
 
