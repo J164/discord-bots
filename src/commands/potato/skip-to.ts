@@ -5,7 +5,7 @@ import { search } from '../../util/search.js';
 
 export const command: PotatoChatCommand<'Guild'> = {
 	data: {
-		name: 'skipto',
+		name: 'skip-to',
 		description: 'Pulls the selected song to the top of the queue and skips the current song',
 		options: [
 			{

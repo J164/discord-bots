@@ -4,7 +4,7 @@ import { EmbedType, responseOptions } from '../../util/builders.js';
 
 export const command: PotatoChatCommand<'Global'> = {
 	data: {
-		name: 'addbirthday',
+		name: 'add-birthday',
 		description: 'Add your birthday to get a special message!',
 		options: [
 			{

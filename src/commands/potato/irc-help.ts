@@ -3,7 +3,7 @@ import { EmbedType, responseOptions } from '../../util/builders.js';
 
 export const command: PotatoChatCommand<'Global'> = {
 	data: {
-		name: 'irchelp',
+		name: 'irc-help',
 		description: 'Get help with setting up IRC notifications',
 	},
 	async respond(response) {

@@ -3,7 +3,7 @@ import { EmbedType, responseOptions } from '../../util/builders.js';
 
 export const command: PotatoChatCommand<'Guild'> = {
 	data: {
-		name: 'np',
+		name: 'now-playing',
 		description: 'Get information on the song currently playing',
 	},
 	async respond(response, guildInfo) {

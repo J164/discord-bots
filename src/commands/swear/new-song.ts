@@ -8,7 +8,7 @@ import { URL_PATTERN } from '../../util/regex.js';
 
 export const command: SwearChatCommand<'Global'> = {
 	data: {
-		name: 'newsong',
+		name: 'new-song',
 		description: "Add a new song to Swear Bot's library",
 		options: [
 			{

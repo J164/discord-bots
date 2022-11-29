@@ -5,7 +5,7 @@ import { fetchCourseData } from '../../util/irc.js';
 
 export const command: PotatoChatCommand<'Global'> = {
 	data: {
-		name: 'irclogin',
+		name: 'irc-login',
 		description: 'Log in to IRC to recieve grade updates',
 		options: [
 			{

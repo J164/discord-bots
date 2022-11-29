@@ -3,13 +3,13 @@ import {
 	type APISelectMenuOption,
 	type ButtonBuilder,
 	type ButtonInteraction,
-	type SelectMenuInteraction,
 	type ThreadChannel,
 	type User,
-	type SelectMenuBuilder,
 	ActionRowBuilder,
 	ButtonStyle,
 	ComponentType,
+	type StringSelectMenuBuilder,
+	type StringSelectMenuInteraction,
 } from 'discord.js';
 import { CardRank, CardSuit } from '../../types/card.js';
 import { type EuchrePlayer, type EuchreTeam, type GameInfo } from '../../types/games.js';
@@ -158,10 +158,10 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 				embeds,
 				files,
 				components: [
-					new ActionRowBuilder<SelectMenuBuilder>({
+					new ActionRowBuilder<StringSelectMenuBuilder>({
 						components: [
 							{
-								type: ComponentType.SelectMenu,
+								type: ComponentType.StringSelect,
 								customId: 'suit',
 								placeholder: 'Select a Suit',
 								options: [
@@ -203,7 +203,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 		try {
 			component = (await message.awaitMessageComponent({
 				time: 300_000,
-			})) as ButtonInteraction | SelectMenuInteraction;
+			})) as ButtonInteraction | StringSelectMenuInteraction;
 		} catch {
 			await message.edit(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [], files: [] }));
 
@@ -235,10 +235,10 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 				embeds,
 				files,
 				components: [
-					new ActionRowBuilder<SelectMenuBuilder>({
+					new ActionRowBuilder<StringSelectMenuBuilder>({
 						components: [
 							{
-								type: ComponentType.SelectMenu,
+								type: ComponentType.StringSelect,
 								customId: 'replace',
 								placeholder: 'Select a Card',
 								options: gameInfo.players[3].hand.map((card, index) => {
@@ -373,10 +373,10 @@ async function round(options: { gameInfo: GameInfo; leader: number; solo: boolea
 			embeds,
 			files,
 			components: [
-				new ActionRowBuilder<SelectMenuBuilder>({
+				new ActionRowBuilder<StringSelectMenuBuilder>({
 					components: [
 						{
-							type: ComponentType.SelectMenu,
+							type: ComponentType.StringSelect,
 							customId: 'play',
 							placeholder: 'Select a Card',
 							options: legalPlays,

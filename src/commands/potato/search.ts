@@ -3,12 +3,12 @@ import {
 	type InteractionUpdateOptions,
 	type MessageActionRowComponentBuilder,
 	type MessageComponentInteraction,
-	type SelectMenuBuilder,
-	type SelectMenuInteraction,
 	ActionRowBuilder,
 	ApplicationCommandOptionType,
 	ButtonStyle,
 	ComponentType,
+	type StringSelectMenuBuilder,
+	type StringSelectMenuInteraction,
 } from 'discord.js';
 import { type GlobalChatCommandResponse } from '../../types/client.js';
 import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
@@ -80,10 +80,10 @@ async function updateResponse(response: GlobalChatCommandResponse, results: Scry
 			}),
 		],
 		components: [
-			new ActionRowBuilder<SelectMenuBuilder>({
+			new ActionRowBuilder<StringSelectMenuBuilder>({
 				components: [
 					{
-						type: ComponentType.SelectMenu,
+						type: ComponentType.StringSelect,
 						customId: 'options',
 						placeholder: 'Select a Card',
 						options: results[page].map((value, index) => {
@@ -145,13 +145,13 @@ async function promptUser(response: GlobalChatCommandResponse, scryfallResults: 
 		component = (await response.awaitMessageComponent({
 			filter: (b) => (b as MessageComponentInteraction).user.id === response.interaction.user.id,
 			time: 300_000,
-		})) as SelectMenuInteraction | ButtonInteraction;
+		})) as StringSelectMenuInteraction | ButtonInteraction;
 	} catch {
 		await response.interaction.editReply(messageOptions({ components: [] }));
 		return;
 	}
 
-	if (component.isSelectMenu()) {
+	if (component.isStringSelectMenu()) {
 		await component.update(await generateResponse(scryfallResults, page, Number.parseInt(component.values[0], 10) - 1));
 		return;
 	}

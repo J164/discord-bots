@@ -2,12 +2,12 @@ import {
 	ActionRowBuilder,
 	ButtonStyle,
 	ComponentType,
+	type StringSelectMenuBuilder,
 	type APISelectMenuOption,
 	type ButtonBuilder,
 	type ButtonInteraction,
 	type EmbedBuilder,
 	type InteractionUpdateOptions,
-	type SelectMenuBuilder,
 	type ThreadChannel,
 } from 'discord.js';
 import { type MagicPlayer } from '../../types/games.js';
@@ -78,10 +78,10 @@ export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadCh
 function healPrompt(players: APISelectMenuOption[], playerResponse: boolean, amountResponse: boolean): InteractionUpdateOptions {
 	return messageOptions({
 		components: [
-			new ActionRowBuilder<SelectMenuBuilder>({
+			new ActionRowBuilder<StringSelectMenuBuilder>({
 				components: [
 					{
-						type: ComponentType.SelectMenu,
+						type: ComponentType.StringSelect,
 						customId: 'player_select',
 						options: players,
 						disabled: playerResponse,
@@ -217,20 +217,20 @@ async function heal(playerData: MagicPlayer[], gameChannel: ThreadChannel, inter
 function damagePrompt(players: APISelectMenuOption[], playerResponse: boolean, modifierResponse: boolean, amountResponse: boolean): InteractionUpdateOptions {
 	return messageOptions({
 		components: [
-			new ActionRowBuilder<SelectMenuBuilder>({
+			new ActionRowBuilder<StringSelectMenuBuilder>({
 				components: [
 					{
-						type: ComponentType.SelectMenu,
+						type: ComponentType.StringSelect,
 						customId: 'player_select',
 						options: players,
 						disabled: playerResponse,
 					},
 				],
 			}),
-			new ActionRowBuilder<SelectMenuBuilder>({
+			new ActionRowBuilder<StringSelectMenuBuilder>({
 				components: [
 					{
-						type: ComponentType.SelectMenu,
+						type: ComponentType.StringSelect,
 						customId: 'modifiers',
 						maxValues: 2,
 						options: [
