@@ -1,14 +1,16 @@
-import { exec, spawn } from 'node:child_process';
-import { Buffer } from 'node:buffer';
+import { execFile, spawn } from 'node:child_process';
+import { type Buffer } from 'node:buffer';
 import { type YoutubeStream } from '../types/voice.js';
 
 const VIDEO_TEMPLATE = '%(title)s;%(webpage_url)s;%(thumbnails.0.url)s;%(duration)s;%(playlist_title)s';
 const FORMAT_TEMPLATE = '%(id)s;%(ext)s';
 
+const MAX_DOWNLOAD_SIZE = 1024 * 1024 * 200;
+
 /**
  * Parses YouTube metadata
  * @param data The data to parse
- * @returns parsed YouTube Metadata
+ * @returns parsed YouTube metadata
  */
 function parseResolvedFormat(data: string): YoutubeMetadata {
 	const [id, ext] = data.trim().split(';');
@@ -45,6 +47,18 @@ function parseResolvedVideo(data: string): YoutubeAudioData[] {
 }
 
 /**
+ * Creates a download stream using yt-dlp
+ * @param url The url to stream from
+ * @param format The YouTube format to use
+ * @returns The child process with the download stream
+ */
+export function createStream(url: string, format: string): YoutubeStream {
+	return spawn('yt-dlp', [url, '--format', format, '--output', '-', '--quiet'], {
+		stdio: ['ignore', 'pipe', 'ignore'],
+	});
+}
+
+/**
  * Fetches information about a YouTube video or playlist
  * @param url The YouTube url
  * @returns A Promise that resolves to the fetched information
@@ -52,9 +66,9 @@ function parseResolvedVideo(data: string): YoutubeAudioData[] {
  */
 export async function resolve(url: string, playlist?: boolean): Promise<YoutubeAudioData[]> {
 	return new Promise((resolve, reject) => {
-		exec(`yt-dlp "${url}" ${playlist ? '--flat-playlist' : '--no-playlist'} --print "${VIDEO_TEMPLATE}" --quiet`, (error, stdout) => {
+		execFile(`yt-dlp "${url}" ${playlist ? '--flat-playlist' : '--no-playlist'} --print "${VIDEO_TEMPLATE}" --quiet`, (error, stdout) => {
 			if (error) {
-				reject();
+				reject(error);
 				return;
 			}
 
@@ -80,18 +94,6 @@ export async function search(terms: string[]): Promise<YoutubeAudioData[]> {
 }
 
 /**
- * Creates a download stream using yt-dlp
- * @param url The url to stream from
- * @param format The YouTube format to use
- * @returns The child process with the download stream
- */
-export function createStream(url: string, format: string): YoutubeStream {
-	return spawn('yt-dlp', [url, '--format', format, '--output', '-', '--quiet'], {
-		stdio: ['ignore', 'pipe', 'ignore'],
-	});
-}
-
-/**
  * Fetches metadata for what would be downloaded from a YouTube url
  * @param url The YouTube url
  * @param format The video format to use
@@ -100,9 +102,9 @@ export function createStream(url: string, format: string): YoutubeStream {
  */
 export async function selectFormat(url: string, format: string): Promise<YoutubeMetadata> {
 	return new Promise((resolve, reject) => {
-		exec(`yt-dlp ${url} --format "${format}" --print "${FORMAT_TEMPLATE}" --quiet`, (error, stdout) => {
+		execFile(`yt-dlp "${url}" --format "${format}" --print "${FORMAT_TEMPLATE}" --quiet`, (error, stdout) => {
 			if (error) {
-				reject();
+				reject(error);
 				return;
 			}
 
@@ -112,28 +114,21 @@ export async function selectFormat(url: string, format: string): Promise<Youtube
 }
 
 /**
- * Downloads a video to the operating system
+ * Downloads a video to a buffer
  * @param url The url to download from
  * @param format The YouTube format to use
  * @returns A Promise that resolves to the downloaded buffer
- * @throws Promise is rejected if yt-dlp fails
+ * @throws Promise is rejected if download fails
  */
 export async function download(url: string, format: string): Promise<Buffer> {
-	const process = createStream(url, format);
-
-	const data: Buffer[] = [];
-	process.stdout.on('data', (chunk: Buffer) => {
-		data.push(chunk);
-	});
-
 	return new Promise((resolve, reject) => {
-		process.once('exit', (exitCode) => {
-			if (exitCode !== 0) {
-				reject();
+		execFile(`yt-dlp "${url}" --format "${format}" --output "-" --quiet`, { encoding: 'buffer', maxBuffer: MAX_DOWNLOAD_SIZE }, (error, stdout) => {
+			if (error) {
+				reject(error);
 				return;
 			}
 
-			resolve(Buffer.concat(data));
+			resolve(stdout);
 		});
 	});
 }
