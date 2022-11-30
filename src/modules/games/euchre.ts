@@ -218,7 +218,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 
 		await component.update(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [], files: [] }));
 
-		if (component.isSelectMenu()) {
+		if (component.isStringSelectMenu()) {
 			gameInfo.trump = Number.parseInt(component.values[0], 10) as CardSuit;
 			void promptThree(index);
 			return;
@@ -256,7 +256,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 		let position;
 		try {
 			const component = await message.awaitMessageComponent({
-				componentType: ComponentType.SelectMenu,
+				componentType: ComponentType.StringSelect,
 				time: 300_000,
 			});
 			position = Number.parseInt(component.values[0], 10);
@@ -388,7 +388,7 @@ async function round(options: { gameInfo: GameInfo; leader: number; solo: boolea
 	);
 	try {
 		const component = await message.awaitMessageComponent({
-			componentType: ComponentType.SelectMenu,
+			componentType: ComponentType.StringSelect,
 			time: 300_000,
 		});
 

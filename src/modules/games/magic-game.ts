@@ -142,17 +142,17 @@ async function heal(playerData: MagicPlayer[], gameChannel: ThreadChannel, inter
 	const response = await interaction.update(healPrompt(players, playerResponse, amountResponse));
 	let responses: [string, number];
 	try {
-		responses = (await Promise.all([
+		responses = await Promise.all([
 			(async () => {
 				const component = await response.awaitMessageComponent({
-					componentType: ComponentType.SelectMenu,
+					componentType: ComponentType.StringSelect,
 					time: 300_000,
 				});
 				playerResponse = true;
 				await component.update(healPrompt(players, playerResponse, amountResponse));
 				return component.values[0];
 			})(),
-			new Promise((resolve, reject) => {
+			new Promise<number>((resolve, reject) => {
 				let amount = 0;
 				const collector = response
 					.createMessageComponentCollector({
@@ -204,7 +204,7 @@ async function heal(playerData: MagicPlayer[], gameChannel: ThreadChannel, inter
 						resolve(Number.parseInt(interaction.customId.split('-')[2], 10));
 					});
 			}),
-		])) as [string, number];
+		]);
 	} catch {
 		await playMagic(playerData, gameChannel);
 		return;
@@ -309,11 +309,11 @@ async function prompt(playerData: MagicPlayer[], gameChannel: ThreadChannel, int
 	const response = await interaction.update(damagePrompt(players, playerResponse, modifierResponse, amountResponse));
 	let responses: [{ target: string; selector: string }, string[], number];
 	try {
-		responses = (await Promise.all([
+		responses = await Promise.all([
 			(async () => {
 				const component = await response.awaitMessageComponent({
 					filter: (s) => s.customId === 'player_select',
-					componentType: ComponentType.SelectMenu,
+					componentType: ComponentType.StringSelect,
 					time: 300_000,
 				});
 				playerResponse = true;
@@ -326,14 +326,14 @@ async function prompt(playerData: MagicPlayer[], gameChannel: ThreadChannel, int
 			(async () => {
 				const component = await response.awaitMessageComponent({
 					filter: (s) => s.customId === 'modifiers',
-					componentType: ComponentType.SelectMenu,
+					componentType: ComponentType.StringSelect,
 					time: 300_000,
 				});
 				modifierResponse = true;
 				await component.update(damagePrompt(players, playerResponse, modifierResponse, amountResponse));
 				return component.values;
 			})(),
-			new Promise((resolve) => {
+			new Promise<number>((resolve) => {
 				let amount = 0;
 				const collector = response
 					.createMessageComponentCollector({
@@ -374,7 +374,7 @@ async function prompt(playerData: MagicPlayer[], gameChannel: ThreadChannel, int
 						await b.update(messageOptions({ embeds: [printStandings(playerData), responseEmbed(EmbedType.Info, `Current Amount: ${amount}`)] }));
 					});
 			}),
-		])) as [{ target: string; selector: string }, string[], number];
+		]);
 	} catch {
 		await playMagic(playerData, gameChannel);
 		return;
