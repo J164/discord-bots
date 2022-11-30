@@ -54,11 +54,6 @@ type ChatCommand<T extends CommandType, GlobalInfo, GuildInfo> = (T extends 'Glo
 	readonly allowedUsers?: string[];
 };
 
-/** Essential config properties */
-type BaseConfig = {
-	readonly logger: Logger;
-};
-
 /** Essential global info properties */
 type BaseGlobalInfo = {
 	readonly logger: Logger;

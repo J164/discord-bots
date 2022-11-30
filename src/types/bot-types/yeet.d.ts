@@ -1,12 +1,6 @@
 import { type Logger } from 'pino';
 import { type ChatCommand, type CommandType } from '../client.js';
 
-/** Config options for Yeet Bot */
-type Config = {
-	readonly logger: Logger;
-	readonly tenorKey: string;
-};
-
 /** Global bot info used to respond to interactions recieved by Yeet Bot */
 type GlobalInfo = {
 	readonly logger: Logger;

@@ -1,13 +1,36 @@
 import { env } from 'node:process';
+import { GatewayIntentBits, Partials, ActivityType } from 'discord.js';
 import { pino } from 'pino';
-import { YeetClient } from '../bot-clients/yeet-client.js';
+import { type GlobalInfo, type GuildInfo } from '../types/bot-types/yeet.js';
+import { BotClient, verifyConfig } from '../util/bot-client.js';
 
-const yeetClient = new YeetClient(
+const logger = pino({ name: 'Yeet Bot' });
+
+const config = {
+	tenorKey: env.TENOR_KEY ?? '',
+};
+
+verifyConfig(config);
+
+const yeetClient = new BotClient<GlobalInfo, GuildInfo>(
 	{
-		logger: pino({ name: 'Yeet Bot' }),
-		tenorKey: env.TENOR_KEY ?? '',
+		intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+		partials: [Partials.Channel],
+		presence: {
+			activities: [{ name: env.YEET_STATUS ?? '', type: ActivityType.Playing }],
+		},
 	},
-	env.YEET_STATUS ?? '',
+	'yeet',
+	logger,
+	(logger) => {
+		return {
+			logger,
+			tenorKey: config.tenorKey,
+		};
+	},
+	() => {
+		return {};
+	},
 );
 
 await yeetClient.login(env.YEET_TOKEN);

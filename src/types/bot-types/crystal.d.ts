@@ -2,11 +2,6 @@ import { type Logger } from 'pino';
 import { type Player } from '../../voice/player.js';
 import { type ChatCommand, type CommandType } from '../client.js';
 
-/** Config options for Potato Bot */
-type Config = {
-	readonly logger: Logger;
-};
-
 /** Global bot info used to respond to interactions recieved by Potato Bot */
 type GlobalInfo = {
 	readonly logger: Logger;
