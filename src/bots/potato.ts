@@ -23,7 +23,6 @@ const config = {
 	spotifyToken: env.SPOTIFY_TOKEN ?? '',
 	weatherKey: env.WEATHER_KEY ?? '',
 	dropboxToken: env.DROPBOX_TOKEN ?? '',
-	dropboxBasePath: env.DROPBOX_BASE_PATH ?? '',
 };
 
 verifyConfig(config);
@@ -49,7 +48,6 @@ const potatoClient = new BotClient<GlobalInfo, GuildInfo>(
 			database: databaseClient.db(config.databaseName),
 			spotifyToken: config.spotifyToken,
 			dropboxToken: config.dropboxToken,
-			dropboxBasePath: config.dropboxBasePath,
 			weather,
 		};
 	},

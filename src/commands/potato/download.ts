@@ -37,18 +37,18 @@ export const command: PotatoChatCommand<'Global'> = {
 		const format = response.interaction.options.getBoolean('dev') ? 'bestaudio[ext=webm][acodec=opus]/bestaudio' : 'best';
 
 		const { id, ext } = await selectFormat(url, format);
-		const path = `${globalInfo.dropboxBasePath}/video_downloads`;
 		const fileName = `${id}.${ext}`;
 
 		const dropbox = new Dropbox({ accessToken: globalInfo.dropboxToken });
 
-		if (!(await fileExists(dropbox, fileName, path))) {
+		// FIXME: access tokens for dropbox are meant to be temporary and fileExists function does not work ('invalid_argument' on api call)
+		if (!(await fileExists(dropbox, fileName, 'downloads'))) {
 			const data = await download(url, format);
 
-			await uploadFile(dropbox, data, `${path}/${fileName}`);
+			await uploadFile(dropbox, data, `downloads/${fileName}`);
 		}
 
-		await response.interaction.editReply(responseOptions(EmbedType.Success, `Download Successful! (<${await shareFile(dropbox, `${path}/${fileName}`)}>)`));
+		await response.interaction.editReply(responseOptions(EmbedType.Success, `Download Successful! (<${await shareFile(dropbox, `downloads/${fileName}`)}>)`));
 	},
 	type: 'Global',
 };

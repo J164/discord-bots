@@ -9,7 +9,6 @@ type GlobalInfo = {
 	readonly logger: Logger;
 	readonly spotifyToken: string;
 	readonly dropboxToken: string;
-	readonly dropboxBasePath: string;
 	readonly weather: WeatherResponse | undefined;
 };
 
