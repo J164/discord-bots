@@ -8,7 +8,6 @@ type GlobalInfo = {
 	readonly database: Db;
 	readonly logger: Logger;
 	readonly spotifyToken: string;
-	readonly dropboxToken: string;
 	readonly weather: WeatherResponse | undefined;
 };
 

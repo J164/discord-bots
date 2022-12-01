@@ -22,7 +22,6 @@ const config = {
 	mongodbUrl: env.MONGODB_URL ?? '',
 	spotifyToken: env.SPOTIFY_TOKEN ?? '',
 	weatherKey: env.WEATHER_KEY ?? '',
-	dropboxToken: env.DROPBOX_TOKEN ?? '',
 };
 
 verifyConfig(config);
@@ -47,7 +46,6 @@ const potatoClient = new BotClient<GlobalInfo, GuildInfo>(
 			logger,
 			database: databaseClient.db(config.databaseName),
 			spotifyToken: config.spotifyToken,
-			dropboxToken: config.dropboxToken,
 			weather,
 		};
 	},
