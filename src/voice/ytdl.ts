@@ -66,7 +66,7 @@ export function createStream(url: string, format: string): YoutubeStream {
  */
 export async function resolve(url: string, playlist?: boolean): Promise<YoutubeAudioData[]> {
 	return new Promise((resolve, reject) => {
-		execFile(`yt-dlp "${url}" ${playlist ? '--flat-playlist' : '--no-playlist'} --print "${VIDEO_TEMPLATE}" --quiet`, (error, stdout) => {
+		execFile('yt-dlp', [url, playlist ? '--flat-playlist' : '--no-playlist', '--print', VIDEO_TEMPLATE, '--quiet'], (error, stdout) => {
 			if (error) {
 				reject(error);
 				return;
@@ -86,7 +86,7 @@ export async function resolve(url: string, playlist?: boolean): Promise<YoutubeA
 export async function search(terms: string[]): Promise<YoutubeAudioData[]> {
 	const searchDirectives = terms
 		.map((term) => {
-			return `"ytsearch:${term}"`;
+			return `ytsearch:${term}`;
 		})
 		.join(' ');
 
@@ -102,7 +102,7 @@ export async function search(terms: string[]): Promise<YoutubeAudioData[]> {
  */
 export async function selectFormat(url: string, format: string): Promise<YoutubeMetadata> {
 	return new Promise((resolve, reject) => {
-		execFile(`yt-dlp "${url}" --format "${format}" --print "${FORMAT_TEMPLATE}" --quiet`, (error, stdout) => {
+		execFile('yt-dlp', [url, '--format', format, '--print', FORMAT_TEMPLATE, '--quiet'], (error, stdout) => {
 			if (error) {
 				reject(error);
 				return;
@@ -122,7 +122,7 @@ export async function selectFormat(url: string, format: string): Promise<Youtube
  */
 export async function download(url: string, format: string): Promise<Buffer> {
 	return new Promise((resolve, reject) => {
-		execFile(`yt-dlp "${url}" --format "${format}" --output "-" --quiet`, { encoding: 'buffer', maxBuffer: MAX_DOWNLOAD_SIZE }, (error, stdout) => {
+		execFile('yt-dlp', [url, '--format', format, '--output', '-', '--quiet'], { encoding: 'buffer', maxBuffer: MAX_DOWNLOAD_SIZE }, (error, stdout) => {
 			if (error) {
 				reject(error);
 				return;
