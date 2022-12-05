@@ -19,11 +19,10 @@ export const command: PotatoChatCommand<'Guild'> = {
 						image: { url: guildInfo.queueManager.nowPlaying.thumbnail },
 						footer: guildInfo.queueManager.nowPlaying.audio.looping
 							? {
-									text: 'Looping',
-									icon_url: 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png',
+									text: '\uD83D\uDD01\tLooping',
 							  }
 							: {
-									text: 'Use "/loopcurrent" to loop',
+									text: 'Use "/loop-current" to loop',
 							  },
 				  })
 				: responseOptions(EmbedType.Error, 'Nothing has played yet!'),

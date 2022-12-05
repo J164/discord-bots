@@ -129,7 +129,7 @@ export const command: CrystalChatCommand<'Guild'> = {
 		const results = search(songs, response.interaction.options.getString('name', true));
 
 		await (guildInfo.player?.voiceChannel.id === voiceChannel.id ? guildInfo.player : (guildInfo.player = new Player(voiceChannel))).subscribe();
-		await guildInfo.player.play(new LocalAudio(`${path}/${results[0].item}.webm`));
+		await guildInfo.player.play(new LocalAudio(`${path}/${results[0].item}.webm`, response.interaction.options.getBoolean('loop') ?? false));
 		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Now Playing!'));
 	},
 	async autocomplete(interaction) {

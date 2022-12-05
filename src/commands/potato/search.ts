@@ -38,7 +38,7 @@ async function generateResponse(results: ScryfallMagicCard[][], r: number, index
 			embeds: [
 				responseEmbed(EmbedType.Info, card.name, {
 					footer: {
-						text: `Price ($): ${card.prices.usd ?? 'unknown (not for sale)'}`,
+						text: card.prices.usd ? `Price: $${card.prices.usd}` : 'Price Unknown',
 					},
 					image: { url: 'attachment://card.png' },
 				}),

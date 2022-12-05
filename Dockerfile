@@ -1,4 +1,4 @@
-FROM node:hydrogen
+FROM arm64v8/node:hydrogen
 
 ENV NODE_ENV=production
 WORKDIR /app
