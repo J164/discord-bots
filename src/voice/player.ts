@@ -1,12 +1,17 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import type { Readable } from 'node:stream';
-import { createReadStream } from 'node:fs';
-import type { AudioPlayer, VoiceConnection } from '@discordjs/voice';
-import { AudioPlayerStatus, createAudioPlayer, createAudioResource, demuxProbe, entersState, joinVoiceChannel, VoiceConnectionStatus } from '@discordjs/voice';
-import type { VoiceChannel } from 'discord.js';
-import type { Audio, YoutubeStream } from '../types/voice.js';
-import { AudioTypes } from '../types/voice.js';
-import { createStream } from './ytdl.js';
+import {
+	type AudioPlayer,
+	type VoiceConnection,
+	AudioPlayerStatus,
+	createAudioPlayer,
+	createAudioResource,
+	demuxProbe,
+	entersState,
+	joinVoiceChannel,
+	VoiceConnectionStatus,
+} from '@discordjs/voice';
+import { type VoiceChannel } from 'discord.js';
+import { type Audio } from '../types/voice.js';
 
 /** Represents the voice state of the bot in a guild */
 export class Player {
@@ -14,10 +19,10 @@ export class Player {
 	private readonly _voiceConnection: VoiceConnection;
 	private readonly _voiceChannel: VoiceChannel;
 	private _subscribed: boolean;
-	private _script?: YoutubeStream;
+	private _nowPlaying?: Audio;
 
 	/**
-	 * Connects to a voice cahnnel and creates a Player to manage it
+	 * Connects to a voice channel and creates a Player to manage it
 	 * @param voiceChannel Voice channel to connect to
 	 * @param callback Callback to be executed when the voice connection is destroyed
 	 */
@@ -27,7 +32,6 @@ export class Player {
 		this._voiceConnection = joinVoiceChannel({
 			channelId: voiceChannel.id,
 			guildId: voiceChannel.guild.id,
-			// @ts-expect-error api types mismatch
 			adapterCreator: voiceChannel.guild.voiceAdapterCreator,
 		});
 
@@ -79,7 +83,9 @@ export class Player {
 			return true;
 		}
 
-		const { type, stream } = await demuxProbe(this._resolveAudio(audio));
+		this._nowPlaying = audio;
+
+		const { type, stream } = await demuxProbe(this._nowPlaying.resolve());
 		this._player.play(createAudioResource(stream, { inputType: type }));
 
 		try {
@@ -89,7 +95,7 @@ export class Player {
 		}
 
 		this._player.once(AudioPlayerStatus.Idle, async () => {
-			this._script?.kill();
+			this._nowPlaying?.destroy();
 
 			if (audio.looping) {
 				await this.play(audio, callback);
@@ -134,28 +140,11 @@ export class Player {
 			return;
 		}
 
-		this._script?.kill();
+		this._nowPlaying?.destroy();
 		this._player.removeAllListeners();
 		this.stop();
 		this._subscribed = false;
 		this._voiceConnection.removeAllListeners();
 		this._voiceConnection.destroy();
-	}
-
-	/**
-	 * Resolves an audio path to a stream
-	 * @param audio The audio object to resolve
-	 * @returns A Readable stream
-	 */
-	private _resolveAudio(audio: Audio): Readable {
-		switch (audio.type) {
-			case AudioTypes.YouTube:
-				this._script = createStream(audio.url, {
-					format: 'bestaudio[acodec=opus]/bestaudio',
-				});
-				return this._script.stdout;
-			case AudioTypes.Local:
-				return createReadStream(audio.url);
-		}
 	}
 }

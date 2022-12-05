@@ -29,9 +29,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - run: yarn install --immutable --ignore-optional
+      - run: npm install --omit=optional
       - run: sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
       - run: sudo chmod a+rx /usr/local/bin/yt-dlp
 
-      - run: yarn run lint
-      - run: yarn run build
+      - run: npm run build
+      - run: npm run lint

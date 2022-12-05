@@ -1,17 +1,19 @@
-import type {
-	ButtonInteraction,
-	InteractionUpdateOptions,
-	MessageActionRowComponentBuilder,
-	MessageComponentInteraction,
-	SelectMenuBuilder,
-	SelectMenuInteraction,
+import {
+	type ButtonInteraction,
+	type InteractionUpdateOptions,
+	type MessageActionRowComponentBuilder,
+	type MessageComponentInteraction,
+	ActionRowBuilder,
+	ApplicationCommandOptionType,
+	ButtonStyle,
+	ComponentType,
+	type StringSelectMenuBuilder,
+	type StringSelectMenuInteraction,
 } from 'discord.js';
-import { ActionRowBuilder, ApplicationCommandOptionType, ButtonStyle, ComponentType } from 'discord.js';
-import type { GlobalChatCommandResponse } from '../../types/client.js';
-import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
+import { type GlobalChatCommandResponse } from '../../types/client.js';
+import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { EmbedType, Emojis, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
 import { mergeImages } from '../../util/image-utils.js';
-import type { ScryfallResponse, ScryfallMagicCard } from '../../types/api.js';
 
 function formatResponse(response: ScryfallResponse): ScryfallMagicCard[][] {
 	const cards: ScryfallMagicCard[][] = [];
@@ -36,7 +38,7 @@ async function generateResponse(results: ScryfallMagicCard[][], r: number, index
 			embeds: [
 				responseEmbed(EmbedType.Info, card.name, {
 					footer: {
-						text: `Price ($): ${card.prices.usd ?? 'unknown (not for sale)'}`,
+						text: card.prices.usd ? `Price: $${card.prices.usd}` : 'Price Unknown',
 					},
 					image: { url: 'attachment://card.png' },
 				}),
@@ -57,7 +59,7 @@ async function generateResponse(results: ScryfallMagicCard[][], r: number, index
 				footer: {
 					text: `Price ($): ${card.prices.usd ?? 'unknown (not for sale)'}`,
 				},
-				image: card.image_uris?.large ? { url: card.image_uris.large } : undefined,
+				image: { url: card.image_uris?.large ?? '' },
 			}),
 		],
 		components: [],
@@ -78,10 +80,10 @@ async function updateResponse(response: GlobalChatCommandResponse, results: Scry
 			}),
 		],
 		components: [
-			new ActionRowBuilder<SelectMenuBuilder>({
+			new ActionRowBuilder<StringSelectMenuBuilder>({
 				components: [
 					{
-						type: ComponentType.SelectMenu,
+						type: ComponentType.StringSelect,
 						customId: 'options',
 						placeholder: 'Select a Card',
 						options: results[page].map((value, index) => {
@@ -143,30 +145,37 @@ async function promptUser(response: GlobalChatCommandResponse, scryfallResults: 
 		component = (await response.awaitMessageComponent({
 			filter: (b) => (b as MessageComponentInteraction).user.id === response.interaction.user.id,
 			time: 300_000,
-		})) as SelectMenuInteraction | ButtonInteraction;
+		})) as StringSelectMenuInteraction | ButtonInteraction;
 	} catch {
 		await response.interaction.editReply(messageOptions({ components: [] }));
 		return;
 	}
 
-	if (component.isSelectMenu()) {
+	if (component.isStringSelectMenu()) {
 		await component.update(await generateResponse(scryfallResults, page, Number.parseInt(component.values[0], 10) - 1));
 		return;
 	}
 
 	switch (component.customId) {
-		case 'jumpleft':
+		case 'jumpleft': {
 			await updateResponse(response, scryfallResults, 0, component);
 			break;
-		case 'left':
+		}
+
+		case 'left': {
 			await updateResponse(response, scryfallResults, page - 1, component);
 			break;
-		case 'right':
+		}
+
+		case 'right': {
 			await updateResponse(response, scryfallResults, page + 1, component);
 			break;
-		case 'jumpright':
+		}
+
+		case 'jumpright': {
 			await updateResponse(response, scryfallResults, scryfallResults.length - 1, component);
 			break;
+		}
 	}
 }
 

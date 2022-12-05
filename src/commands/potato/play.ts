@@ -1,15 +1,14 @@
-import type { InteractionReplyOptions } from 'discord.js';
-import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
-import type { SpotifyResponse } from '../../types/api.js';
-import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
-import type { QueueItem } from '../../types/voice.js';
+import { type InteractionReplyOptions, ApplicationCommandOptionType, ChannelType } from 'discord.js';
+import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
+import { SPOTFIY_PLAYLIST_URL_PATTERN, YOUTUBE_PLAYLIST_URL_PATTERN, YOUTUBE_VIDEO_URL_PATTERN } from '../../util/regex.js';
+import { YoutubeAudio } from '../../voice/audio-resource.js';
 import { QueueManager } from '../../voice/queue-manager.js';
-import { resolve, resolvePlaylist, search } from '../../voice/ytdl.js';
+import { resolve, search } from '../../voice/ytdl.js';
 
-type AudioData<T extends boolean> = T extends true ? { success: true; response: InteractionReplyOptions; songs: QueueItem[] } : { success: false };
+type AudioData = { response: InteractionReplyOptions; songs: YoutubeAudioData[] };
 
-async function spotify(link: string, spotifyToken: string): Promise<AudioData<boolean>> {
+async function spotify(link: string, spotifyToken: string): Promise<AudioData | undefined> {
 	const authorizationRequest = await fetch('https://accounts.spotify.com/api/token', {
 		method: 'POST',
 		headers: {
@@ -20,14 +19,14 @@ async function spotify(link: string, spotifyToken: string): Promise<AudioData<bo
 	});
 
 	if (!authorizationRequest.ok) {
-		return { success: false };
+		return;
 	}
 
 	const { access_token } = (await authorizationRequest.json()) as { access_token: string };
 
-	const playlistId = /^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_]+)$/.exec(link);
+	const playlistId = SPOTFIY_PLAYLIST_URL_PATTERN.exec(link);
 	if (!playlistId || playlistId.length < 2) {
-		return { success: false };
+		return;
 	}
 
 	const resultResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId[1]}`, {
@@ -36,21 +35,16 @@ async function spotify(link: string, spotifyToken: string): Promise<AudioData<bo
 	});
 
 	if (!resultResponse.ok) {
-		return { success: false };
+		return;
 	}
 
 	const result = (await resultResponse.json()) as SpotifyResponse;
 
-	let songs;
-	try {
-		songs = await search(
-			result.tracks.items.map((song) => {
-				return `${song.track.name} ${song.track.artists[0].name}`;
-			}),
-		);
-	} catch {
-		return { success: false };
-	}
+	const songs = await search(
+		result.tracks.items.map((song) => {
+			return `${song.track.name} ${song.track.artists[0].name}`;
+		}),
+	);
 
 	return {
 		songs,
@@ -63,35 +57,23 @@ async function spotify(link: string, spotifyToken: string): Promise<AudioData<bo
 			],
 			image: { url: result.images[0].url },
 		}),
-		success: true,
 	};
 }
 
-async function youtubePlaylist(link: string): Promise<AudioData<boolean>> {
-	let playlist;
-	try {
-		playlist = await resolvePlaylist(link);
-	} catch {
-		return { success: false };
-	}
+async function youtubePlaylist(link: string): Promise<AudioData> {
+	const playlist = await resolve(link, true);
 
 	return {
-		songs: playlist.results,
-		response: responseOptions(EmbedType.Success, `Added playlist "${playlist.playlistTitle}" to queue!`, {
+		songs: playlist,
+		response: responseOptions(EmbedType.Success, `Added playlist "${playlist[0].playlistTitle}" to queue!`, {
 			fields: [{ name: 'URL:', value: link }],
-			image: { url: playlist.results[0].thumbnail },
+			image: { url: playlist[0].thumbnail },
 		}),
-		success: true,
 	};
 }
 
-async function youtube(link: string): Promise<AudioData<boolean>> {
-	let songs;
-	try {
-		songs = await resolve(link);
-	} catch {
-		return { success: false };
-	}
+async function youtube(link: string): Promise<AudioData> {
+	const songs = await resolve(link);
 
 	return {
 		songs,
@@ -99,17 +81,11 @@ async function youtube(link: string): Promise<AudioData<boolean>> {
 			fields: [{ name: 'URL:', value: songs[0].url }],
 			image: { url: songs[0].thumbnail },
 		}),
-		success: true,
 	};
 }
 
-async function misc(link: string): Promise<AudioData<boolean>> {
-	let songs;
-	try {
-		songs = await search([link]);
-	} catch {
-		return { success: false };
-	}
+async function misc(link: string): Promise<AudioData> {
+	const songs = await search([link]);
 
 	return {
 		songs,
@@ -117,7 +93,6 @@ async function misc(link: string): Promise<AudioData<boolean>> {
 			fields: [{ name: 'URL:', value: songs[0].url }],
 			image: { url: songs[0].thumbnail },
 		}),
-		success: true,
 	};
 }
 
@@ -152,29 +127,37 @@ export const command: PotatoChatCommand<'Guild'> = {
 
 		const link = response.interaction.options.getString('name', true).trim();
 
-		let parsed: AudioData<boolean>;
-		if (/^(?:https?:\/\/)?(?:www\.)?open\.spotify\.com\/playlist\/([A-Za-z\d-_&=?]+)$/.test(link)) {
-			parsed = await spotify(link, globalInfo.spotifyToken);
-		} else if (/^(?:https?:\/\/)?(?:www\.)?youtube\.com\/playlist\?list=([A-Za-z\d-_&=?]+)$/.test(link)) {
-			parsed = await youtubePlaylist(link);
-		} else if (/^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtu\.be\/)([A-Za-z\d-_&=?]+)$/.test(link)) {
-			parsed = await youtube(link);
+		let songs;
+		if (SPOTFIY_PLAYLIST_URL_PATTERN.test(link)) {
+			songs = await spotify(link, globalInfo.spotifyToken);
+		} else if (YOUTUBE_PLAYLIST_URL_PATTERN.test(link)) {
+			songs = await youtubePlaylist(link);
+		} else if (YOUTUBE_VIDEO_URL_PATTERN.test(link)) {
+			songs = await youtube(link);
 		} else {
-			parsed = await misc(link);
+			songs = await misc(link);
 		}
 
-		if (!parsed.success) {
+		if (!songs) {
 			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Song not found'));
 			return;
 		}
 
 		await (guildInfo.queueManager ??= new QueueManager(voiceChannel)).addToQueue(
 			voiceChannel,
-			parsed.songs,
+			songs.songs.map((song) => {
+				return {
+					audio: new YoutubeAudio(song.url),
+					url: song.url,
+					duration: song.duration,
+					thumbnail: song.thumbnail,
+					title: song.title,
+				};
+			}),
 			(response.interaction.options.getInteger('position') ?? 0) - 1,
 		);
 
-		await response.interaction.editReply(parsed.response);
+		await response.interaction.editReply(songs.response);
 	},
 	ephemeral: true,
 	type: 'Guild',

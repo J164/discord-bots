@@ -1,9 +1,7 @@
-import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
-import type { AttachmentPayload, ButtonBuilder, DMChannel, EmbedBuilder } from 'discord.js';
+import { ActionRowBuilder, ButtonStyle, ComponentType, type AttachmentPayload, type ButtonBuilder, type DMChannel, type EmbedBuilder } from 'discord.js';
 import { CardRank } from '../../types/card.js';
 import { EmbedType, messageOptions, responseEmbed } from '../../util/builders.js';
-import type { Card } from '../../util/card-utils.js';
-import { Deck, multicardMessage } from '../../util/card-utils.js';
+import { type Card, Deck, multicardMessage } from '../../util/card-utils.js';
 
 type Result = 'Bust' | 'Push' | 'Blackjack' | 'Win' | 'Lose';
 
@@ -66,21 +64,30 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
 
 	let embed;
 	switch (finish) {
-		case 'Bust':
+		case 'Bust': {
 			embed = responseEmbed(EmbedType.Info, 'Bust! (You went over 21)');
 			break;
-		case 'Push':
+		}
+
+		case 'Push': {
 			embed = responseEmbed(EmbedType.Info, 'Push! (You tied with the dealer)');
 			break;
-		case 'Blackjack':
+		}
+
+		case 'Blackjack': {
 			embed = responseEmbed(EmbedType.Info, 'Blackjack!');
 			break;
-		case 'Win':
+		}
+
+		case 'Win': {
 			embed = responseEmbed(EmbedType.Info, 'Win!');
 			break;
-		case 'Lose':
+		}
+
+		case 'Lose': {
 			embed = responseEmbed(EmbedType.Info, 'Lose!');
 			break;
+		}
 	}
 
 	const standings = await printStandings(player, dealer, true);
@@ -118,14 +125,14 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
 			time: 300_000,
 		});
 	} catch {
-		void message.edit({ components: [] }).catch();
+		await message.edit({ components: [] });
 		return;
 	}
 
 	await component.update({ components: [] });
 
 	if (component.customId === 'continue') {
-		void playBlackjack(channel);
+		await playBlackjack(channel);
 	}
 }
 

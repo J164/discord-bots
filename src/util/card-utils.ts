@@ -1,6 +1,5 @@
-import type { AttachmentPayload, EmbedBuilder } from 'discord.js';
-import type { CardCode, RawCard } from '../types/card.js';
-import { CardSuit, CardRank } from '../types/card.js';
+import { type AttachmentPayload, type EmbedBuilder } from 'discord.js';
+import { type CardCode, type RawCard, CardSuit, CardRank } from '../types/card.js';
 import { mergeImages } from './image-utils.js';
 
 /**
@@ -18,45 +17,77 @@ export class Card implements RawCard {
 
 	public get suitName(): string {
 		switch (this.suit) {
-			case CardSuit.Spades:
+			case CardSuit.Spades: {
 				return 'spades';
-			case CardSuit.Clubs:
+			}
+
+			case CardSuit.Clubs: {
 				return 'clubs';
-			case CardSuit.Hearts:
+			}
+
+			case CardSuit.Hearts: {
 				return 'hearts';
-			case CardSuit.Diamonds:
+			}
+
+			case CardSuit.Diamonds: {
 				return 'diamonds';
+			}
 		}
 	}
 
 	public get rankName(): string {
 		switch (this.rank) {
-			case CardRank.Ace:
+			case CardRank.Ace: {
 				return 'ace';
-			case CardRank.Two:
+			}
+
+			case CardRank.Two: {
 				return 'two';
-			case CardRank.Three:
+			}
+
+			case CardRank.Three: {
 				return 'three';
-			case CardRank.Four:
+			}
+
+			case CardRank.Four: {
 				return 'four';
-			case CardRank.Five:
+			}
+
+			case CardRank.Five: {
 				return 'five';
-			case CardRank.Six:
+			}
+
+			case CardRank.Six: {
 				return 'six';
-			case CardRank.Seven:
+			}
+
+			case CardRank.Seven: {
 				return 'seven';
-			case CardRank.Eight:
+			}
+
+			case CardRank.Eight: {
 				return 'eight';
-			case CardRank.Nine:
+			}
+
+			case CardRank.Nine: {
 				return 'nine';
-			case CardRank.Ten:
+			}
+
+			case CardRank.Ten: {
 				return 'ten';
-			case CardRank.Jack:
+			}
+
+			case CardRank.Jack: {
 				return 'jack';
-			case CardRank.Queen:
+			}
+
+			case CardRank.Queen: {
 				return 'queen';
-			case CardRank.King:
+			}
+
+			case CardRank.King: {
 				return 'king';
+			}
 		}
 	}
 

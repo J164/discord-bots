@@ -1,60 +1,23 @@
-import { env } from 'node:process';
-import { config } from 'dotenv';
-import { pino } from 'pino';
-import { PotatoClient } from './bot-clients/potato-client.js';
-import { CrystalClient } from './bot-clients/crystal-client.js';
-import { SwearClient } from './bot-clients/swear-client.js';
-import { YeetClient } from './bot-clients/yeet-client.js';
+import { type ChildProcess, fork } from 'node:child_process';
+import { setTimeout } from 'node:timers/promises';
 
-config();
+class BotProcess {
+	private readonly _spawnFile: string;
+	private _process: ChildProcess;
 
-const logger = pino();
+	public constructor(spawnFile: string) {
+		this._spawnFile = spawnFile;
+		this._process = fork(spawnFile);
 
-const crystalClient = new CrystalClient(
-	{
-		logger: logger.child({ name: 'Crystal Bot' }),
-		ostDirectory: env.OST_DIRECTORY ?? '',
-	},
-	env.CRYSTAL_STATUS,
-);
+		this._prepareProcess();
+	}
 
-const potatoClient = new PotatoClient(
-	{
-		logger: logger.child({ name: 'Potato Bot' }),
-		abstractKey: env.ABSTRACT_KEY ?? '',
-		announcementChannel: env.ANNOUNCEMENT_CHANNEL ?? '',
-		announcementTime: env.ANNOUNCEMENT_TIME ?? '',
-		databaseName: env.DATABASE_NAME ?? '',
-		downloadDirectory: env.DOWNLOAD_DIRECTORY ?? '',
-		gradeUpdateInterval: env.GRADE_UPDATE_INTERVAL ?? '',
-		mongodbUrl: env.MONGODB_URL ?? '',
-		spotifyToken: env.SPOTIFY_TOKEN ?? '',
-		weatherKey: env.WEATHER_KEY ?? '',
-	},
-	env.POTATO_STATUS,
-);
+	private _prepareProcess() {
+		this._process.once('exit', async () => {
+			await setTimeout(30_000);
+			this._process = fork(this._spawnFile);
+		});
+	}
+}
 
-const swearClient = new SwearClient(
-	{
-		logger: logger.child({ name: 'Swear Bot' }),
-		admin: env.ADMIN ?? '',
-		swear: env.SWEAR ?? '',
-		songDirectory: env.SONG_DIRECTORY ?? '',
-	},
-	env.SWEAR_STATUS,
-);
-
-const yeetClient = new YeetClient(
-	{
-		logger: logger.child({ name: 'Yeet Bot' }),
-		tenorKey: env.TENOR_KEY ?? '',
-	},
-	env.YEET_STATUS,
-);
-
-await Promise.all([
-	crystalClient.login(env.CRYSTAL_TOKEN),
-	potatoClient.login(env.POTATO_TOKEN),
-	swearClient.login(env.SWEAR_TOKEN),
-	yeetClient.login(env.YEET_TOKEN),
-]);
+const bots = [new BotProcess('./bots/crystal.js'), new BotProcess('./bots/potato.js'), new BotProcess('./bots/swear.js'), new BotProcess('./bots/yeet.js')];

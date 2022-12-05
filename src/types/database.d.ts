@@ -1,7 +1,14 @@
-/** Type for Documents in the "Grades" collection */
+/** Type for Documents in the "grades" collection */
 type IrcUser = {
-	discordId: string;
-	token: string;
-	grades: Grades;
-	tokenReset: boolean;
+	readonly discordId: string;
+	readonly token: string;
+	readonly grades: Grades;
+	readonly tokenReset: boolean;
+};
+
+/** Type for Documents in the "birthdays" collection */
+type Birthday = {
+	readonly id: string;
+	readonly month: number;
+	readonly day: number;
 };

@@ -1,119 +1,78 @@
-import { exec, spawn } from 'node:child_process';
-import type { YoutubeResolveResult, YoutubeAudioData, YoutubePlaylistResolveResult } from '../types/api.js';
-import type { YoutubeStream } from '../types/voice.js';
-import { AudioTypes } from '../types/voice.js';
+import { execFile, spawn } from 'node:child_process';
+import { type Buffer } from 'node:buffer';
+import { type YoutubeStream } from '../types/voice.js';
 
-const PRINT_FORMAT = '\\"title\\":\\"%(title)s\\",\\"url\\":\\"%(webpage_url)s\\",\\"thumbnails\\":\\"%(thumbnails)s\\",\\"duration\\":\\"%(duration)s\\"';
-const PLAYLIST_PRINT_FORMAT = `${PRINT_FORMAT},\\"playlistTitle\\":\\"%(playlist_title)s\\"`;
+const VIDEO_TEMPLATE = '%(title)s;%(webpage_url)s;%(thumbnails.0.url)s;%(duration)s;%(playlist_title)s';
+const FORMAT_TEMPLATE = '%(id)s;%(ext)s';
+
+const MAX_DOWNLOAD_SIZE = 1024 * 1024 * 200;
+
+/**
+ * Parses YouTube metadata
+ * @param data The data to parse
+ * @returns parsed YouTube metadata
+ */
+function parseResolvedFormat(data: string): YoutubeMetadata {
+	const [id, ext] = data.trim().split(';');
+
+	return { id, ext };
+}
 
 /**
  * Parses Youtube audio data
- * @param data the data to parse
- * @returns parsed Youtube audio data
+ * @param data The data to parse
+ * @returns Parsed Youtube audio data
  */
-function parseResolvedData(data: YoutubeResolveResult[]): YoutubeAudioData[] {
-	return data.map((item) => {
-		const { url, title, duration, thumbnails } = item;
+function parseResolvedVideo(data: string): YoutubeAudioData[] {
+	return data
+		.trim()
+		.split('\n')
+		.map((result) => {
+			const [title, url, thumbnail, duration, playlistTitle] = result.trim().split(';');
 
-		const durationNumber = Number.parseInt(duration, 10);
+			const durationNumber = Number.parseInt(duration, 10);
 
-		const hour = Math.floor(durationNumber / 3600);
-		const min = Math.floor((durationNumber % 3600) / 60);
-		const sec = durationNumber % 60;
+			const hour = Math.floor(durationNumber / 3600);
+			const min = Math.floor((durationNumber % 3600) / 60);
+			const sec = durationNumber % 60;
 
-		const thumbnailsArray = JSON.parse(thumbnails.replaceAll("'", '"')) as Array<{ url: string }>;
-
-		return {
-			url,
-			title,
-			duration: `${hour > 0 ? (hour < 10 ? `0${hour}:` : `${hour}:`) : ''}${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec}`,
-			thumbnail: thumbnailsArray[0].url,
-			type: AudioTypes.YouTube,
-		};
-	});
+			return {
+				url,
+				title,
+				duration: `${hour > 0 ? (hour < 10 ? `0${hour}:` : `${hour}:`) : ''}${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec}`,
+				thumbnail,
+				playlistTitle,
+			};
+		});
 }
 
 /**
  * Creates a download stream using yt-dlp
- * @param url the url to stream from
- * @param options yt-dlp options for the stream
- * @returns the child process with the download stream
+ * @param url The url to stream from
+ * @param format The YouTube format to use
+ * @returns The child process with the download stream
  */
-export function createStream(url: string, options: { format: string }): YoutubeStream {
-	return spawn('yt-dlp', [url, '--format', options.format, '--output', '-', '--quiet'], {
+export function createStream(url: string, format: string): YoutubeStream {
+	return spawn('yt-dlp', [url, '--format', format, '--output', '-', '--quiet'], {
 		stdio: ['ignore', 'pipe', 'ignore'],
 	});
 }
 
 /**
- * Fetches information about a YouTube video
- * @param url The video url
+ * Fetches information about a YouTube video or playlist
+ * @param url The YouTube url
  * @returns A Promise that resolves to the fetched information
- * @throws The Promise is rejected if the fetch fails
+ * @throws Promise is rejected if yt-dlp fails
  */
-export async function resolve(url: string): Promise<YoutubeAudioData[]> {
+export async function resolve(url: string, playlist?: boolean): Promise<YoutubeAudioData[]> {
 	return new Promise((resolve, reject) => {
-		exec(`yt-dlp "${url}" --no-playlist --print "{${PRINT_FORMAT}}" --quiet`, (error, stdout) => {
+		execFile('yt-dlp', [url, playlist ? '--flat-playlist' : '--no-playlist', '--print', VIDEO_TEMPLATE, '--quiet'], (error, stdout) => {
 			if (error) {
 				reject(error);
 				return;
 			}
 
-			resolve(parseResolvedData([JSON.parse(stdout) as YoutubeResolveResult]));
-		});
-	});
-}
-
-/**
- * Fetches information about a YouTube playlist
- * @param url The playlsit url
- * @returns A Promise that resolves to the fetched information
- * @throws The Promise is rejected if the fetch fails
- */
-export async function resolvePlaylist(url: string): Promise<YoutubePlaylistResolveResult> {
-	return new Promise((resolve, reject) => {
-		exec(`yt-dlp "${url}" --flat-playlist --print "{${PLAYLIST_PRINT_FORMAT}}" --quiet`, (error, stdout) => {
-			if (error) {
-				reject(error);
-				return;
-			}
-
-			const results = stdout
-				.trim()
-				.split('\n')
-				.map((result) => {
-					return JSON.parse(result) as YoutubeResolveResult & { playlistTitle: string };
-				});
-
-			if (results.length === 0) {
-				reject();
-				return;
-			}
-
-			resolve({
-				results: parseResolvedData(results),
-				playlistTitle: results[0].playlistTitle,
-			});
-		});
-	});
-}
-
-/**
- * Downloads a video to the operating system
- * @param url The url to download from
- * @param options Yt-dlp options for the download
- * @returns A void Promise that resolves when the download is complete
- * @throws The Promise is rejected if the download fails
- */
-export async function download(url: string, options: { output: string; format: string }): Promise<void> {
-	return new Promise((resolve, reject) => {
-		exec(`yt-dlp "${url}" --output "${options.output}" --format "${options.format}"`, (error) => {
-			if (error) {
-				reject(error);
-				return;
-			}
-
-			resolve();
+			resolve(parseResolvedVideo(stdout));
 		});
 	});
 }
@@ -122,35 +81,54 @@ export async function download(url: string, options: { output: string; format: s
  * Searches Youtube for videos matching the search terms
  * @param terms The search terms to use
  * @returns A Promise that resolves to information about the fetched videos
- * @throws The Promise is rejected if the search or fetch fails
+ * @throws Promise is rejected if yt-dlp fails
  */
 export async function search(terms: string[]): Promise<YoutubeAudioData[]> {
-	return new Promise((resolve, reject) => {
-		const searchDirectives = terms
-			.map((term) => {
-				return `"ytsearch:${term}"`;
-			})
-			.join(' ');
+	const searchDirectives = terms
+		.map((term) => {
+			return `ytsearch:${term}`;
+		})
+		.join(' ');
 
-		exec(`yt-dlp ${searchDirectives} --print "{${PRINT_FORMAT}}" --quiet`, (error, stdout) => {
+	return resolve(searchDirectives);
+}
+
+/**
+ * Fetches metadata for what would be downloaded from a YouTube url
+ * @param url The YouTube url
+ * @param format The video format to use
+ * @returns A Promise that resolves to the metadata
+ * @throws Promise is rejected if yt-dlp fails
+ */
+export async function selectFormat(url: string, format: string): Promise<YoutubeMetadata> {
+	return new Promise((resolve, reject) => {
+		execFile('yt-dlp', [url, '--format', format, '--print', FORMAT_TEMPLATE, '--quiet'], (error, stdout) => {
 			if (error) {
 				reject(error);
 				return;
 			}
 
-			const results = stdout
-				.trim()
-				.split('\n')
-				.map((result) => {
-					return JSON.parse(result) as YoutubeResolveResult;
-				});
+			resolve(parseResolvedFormat(stdout));
+		});
+	});
+}
 
-			if (results.length === 0) {
-				reject();
+/**
+ * Downloads a video to a buffer
+ * @param url The url to download from
+ * @param format The YouTube format to use
+ * @returns A Promise that resolves to the downloaded buffer
+ * @throws Promise is rejected if download fails
+ */
+export async function download(url: string, format: string): Promise<Buffer> {
+	return new Promise((resolve, reject) => {
+		execFile('yt-dlp', [url, '--format', format, '--output', '-', '--quiet'], { encoding: 'buffer', maxBuffer: MAX_DOWNLOAD_SIZE }, (error, stdout) => {
+			if (error) {
+				reject(error);
 				return;
 			}
 
-			resolve(parseResolvedData(results));
+			resolve(stdout);
 		});
 	});
 }

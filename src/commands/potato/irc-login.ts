@@ -1,16 +1,16 @@
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
+import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { responseOptions, responseEmbed, EmbedType, messageOptions } from '../../util/builders.js';
 import { fetchCourseData } from '../../util/irc.js';
 
 export const command: PotatoChatCommand<'Global'> = {
 	data: {
-		name: 'irclogin',
+		name: 'irc-login',
 		description: 'Log in to IRC to recieve grade updates',
 		options: [
 			{
 				name: 'session_token',
-				description: 'Use /irchelp to see how to aquire this',
+				description: 'Use "/irchelp" to see how to aquire this',
 				type: ApplicationCommandOptionType.String,
 				required: true,
 			},
@@ -21,7 +21,7 @@ export const command: PotatoChatCommand<'Global'> = {
 
 		const courseData = await fetchCourseData(token);
 		if (!courseData) {
-			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Those credentials seem to be invalid. Use /irchelp to see how to aquire them.'));
+			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Those credentials seem to be invalid. Use "/irchelp" to see how to aquire them.'));
 			return;
 		}
 

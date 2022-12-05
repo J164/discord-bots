@@ -1,29 +1,14 @@
-import type { Db } from 'mongodb';
-import type { Logger } from 'pino';
-import type { QueueManager } from '../../voice/queue-manager.js';
-import type { ChatCommand, CommandType } from '../client.js';
-
-/** Config options for Potato Bot */
-type Config = {
-	readonly logger: Logger;
-	readonly mongodbUrl: string;
-	readonly announcementTime: string;
-	readonly announcementChannel: string;
-	readonly databaseName: string;
-	readonly gradeUpdateInterval: string;
-	readonly weatherKey: string;
-	readonly abstractKey: string;
-	readonly downloadDirectory: string;
-	readonly spotifyToken: string;
-};
+import { type Db } from 'mongodb';
+import { type Logger } from 'pino';
+import { type QueueManager } from '../../voice/queue-manager.js';
+import { type ChatCommand, type CommandType } from '../client.js';
 
 /** Global bot info used to respond to interactions recieved by Potato Bot */
 type GlobalInfo = {
 	readonly database: Db;
 	readonly logger: Logger;
-	readonly downloadDirectory: string;
 	readonly spotifyToken: string;
-	readonly weather?: WeatherResponse;
+	readonly weather: WeatherResponse | undefined;
 };
 
 /** Guild-specific info used to respond to interactions recieved by Potato Bot */

@@ -1,9 +1,9 @@
-import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
+import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 
 export const command: PotatoChatCommand<'Guild'> = {
 	data: {
-		name: 'np',
+		name: 'now-playing',
 		description: 'Get information on the song currently playing',
 	},
 	async respond(response, guildInfo) {
@@ -17,12 +17,13 @@ export const command: PotatoChatCommand<'Guild'> = {
 							},
 						],
 						image: { url: guildInfo.queueManager.nowPlaying.thumbnail },
-						footer: guildInfo.queueManager.nowPlaying.looping
+						footer: guildInfo.queueManager.nowPlaying.audio.looping
 							? {
-									text: 'Looping',
-									icon_url: 'https://www.clipartmax.com/png/middle/353-3539119_arrow-repeat-icon-cycle-loop.png',
+									text: '\uD83D\uDD01\tLooping',
 							  }
-							: undefined,
+							: {
+									text: 'Use "/loop-current" to loop',
+							  },
 				  })
 				: responseOptions(EmbedType.Error, 'Nothing has played yet!'),
 		);

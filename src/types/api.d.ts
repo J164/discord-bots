@@ -1,7 +1,5 @@
 // Scryfall API (https://scryfall.com/docs/api)
 
-import type { AudioTypes } from './voice.js';
-
 /** Response data from Scryfall */
 type ScryfallResponse = {
 	readonly status?: string;
@@ -138,25 +136,19 @@ type WeatherResponse = {
 
 // Yt-dlp (https://github.com/yt-dlp/yt-dlp)
 
-/** Data returned from yt-dlp about a YouTube video */
-type YoutubeResolveResult = {
-	readonly url: string;
-	readonly title: string;
-	readonly thumbnails: string;
-	readonly duration: string;
-};
-
+/** Metadata about a YouTube video */
 type YoutubeAudioData = {
 	readonly url: string;
 	readonly title: string;
 	readonly thumbnail: string;
 	readonly duration: string;
-	readonly type: AudioTypes.YouTube;
+	readonly playlistTitle: string;
 };
 
-type YoutubePlaylistResolveResult = {
-	readonly results: YoutubeAudioData[];
-	readonly playlistTitle: string;
+/** Metadata from downloading a Youtube video */
+type YoutubeMetadata = {
+	id: string;
+	ext: string;
 };
 
 // Tenor API

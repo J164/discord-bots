@@ -1,10 +1,10 @@
 import { ApplicationCommandOptionType } from 'discord.js';
-import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
+import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 
 export const command: PotatoChatCommand<'Global'> = {
 	data: {
-		name: 'addbirthday',
+		name: 'add-birthday',
 		description: 'Add your birthday to get a special message!',
 		options: [
 			{
@@ -26,21 +26,18 @@ export const command: PotatoChatCommand<'Global'> = {
 		],
 	},
 	async respond(response, globalInfo) {
-		const existing = (await globalInfo.database.collection('birthdays').findOne({ id: response.interaction.user.id })) as unknown as {
-			id: string;
-			month: number;
-			day: number;
-		};
+		const collection = globalInfo.database.collection<Birthday>('birthdays');
+		const existing = await collection.findOne({ id: response.interaction.user.id });
 		if (existing && existing.month === response.interaction.options.getInteger('month') && existing.day === response.interaction.options.getInteger('day')) {
 			await response.interaction.editReply(responseOptions(EmbedType.Error, 'Your birthday is already registered!'));
 			return;
 		}
 
-		await globalInfo.database.collection('birthdays').deleteMany({ id: response.interaction.user.id });
-		await globalInfo.database.collection('birthdays').insertOne({
+		await collection.deleteMany({ id: response.interaction.user.id });
+		await collection.insertOne({
 			id: response.interaction.user.id,
-			month: response.interaction.options.getInteger('month'),
-			day: response.interaction.options.getInteger('day'),
+			month: response.interaction.options.getInteger('month', true),
+			day: response.interaction.options.getInteger('day', true),
 		});
 
 		await response.interaction.editReply(responseOptions(EmbedType.Success, 'Birthday Added!'));

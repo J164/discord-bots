@@ -1,11 +1,20 @@
 import { setTimeout } from 'node:timers';
-import type { APISelectMenuOption, ButtonBuilder, ButtonInteraction, SelectMenuInteraction, ThreadChannel, User, SelectMenuBuilder } from 'discord.js';
-import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import {
+	type APISelectMenuOption,
+	type ButtonBuilder,
+	type ButtonInteraction,
+	type ThreadChannel,
+	type User,
+	ActionRowBuilder,
+	ButtonStyle,
+	ComponentType,
+	type StringSelectMenuBuilder,
+	type StringSelectMenuInteraction,
+} from 'discord.js';
 import { CardRank, CardSuit } from '../../types/card.js';
-import type { EuchrePlayer, EuchreTeam, GameInfo } from '../../types/games.js';
+import { type EuchrePlayer, type EuchreTeam, type GameInfo } from '../../types/games.js';
 import { EmbedType, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
-import type { Card } from '../../util/card-utils.js';
-import { Deck, multicardMessage } from '../../util/card-utils.js';
+import { type Card, Deck, multicardMessage } from '../../util/card-utils.js';
 
 export function playEuchre(playerlist: User[], gameChannel: ThreadChannel): void {
 	const team1: EuchreTeam = { tricks: 0, score: 0, name: 'Team 1' };
@@ -149,10 +158,10 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 				embeds,
 				files,
 				components: [
-					new ActionRowBuilder<SelectMenuBuilder>({
+					new ActionRowBuilder<StringSelectMenuBuilder>({
 						components: [
 							{
-								type: ComponentType.SelectMenu,
+								type: ComponentType.StringSelect,
 								customId: 'suit',
 								placeholder: 'Select a Suit',
 								options: [
@@ -194,7 +203,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 		try {
 			component = (await message.awaitMessageComponent({
 				time: 300_000,
-			})) as ButtonInteraction | SelectMenuInteraction;
+			})) as ButtonInteraction | StringSelectMenuInteraction;
 		} catch {
 			await message.edit(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [], files: [] }));
 
@@ -209,7 +218,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 
 		await component.update(messageOptions({ embeds: [responseEmbed(EmbedType.Success, 'Success!')], components: [], files: [] }));
 
-		if (component.isSelectMenu()) {
+		if (component.isStringSelectMenu()) {
 			gameInfo.trump = Number.parseInt(component.values[0], 10) as CardSuit;
 			void promptThree(index);
 			return;
@@ -226,10 +235,10 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 				embeds,
 				files,
 				components: [
-					new ActionRowBuilder<SelectMenuBuilder>({
+					new ActionRowBuilder<StringSelectMenuBuilder>({
 						components: [
 							{
-								type: ComponentType.SelectMenu,
+								type: ComponentType.StringSelect,
 								customId: 'replace',
 								placeholder: 'Select a Card',
 								options: gameInfo.players[3].hand.map((card, index) => {
@@ -247,7 +256,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 		let position;
 		try {
 			const component = await message.awaitMessageComponent({
-				componentType: ComponentType.SelectMenu,
+				componentType: ComponentType.StringSelect,
 				time: 300_000,
 			});
 			position = Number.parseInt(component.values[0], 10);
@@ -364,10 +373,10 @@ async function round(options: { gameInfo: GameInfo; leader: number; solo: boolea
 			embeds,
 			files,
 			components: [
-				new ActionRowBuilder<SelectMenuBuilder>({
+				new ActionRowBuilder<StringSelectMenuBuilder>({
 					components: [
 						{
-							type: ComponentType.SelectMenu,
+							type: ComponentType.StringSelect,
 							customId: 'play',
 							placeholder: 'Select a Card',
 							options: legalPlays,
@@ -379,7 +388,7 @@ async function round(options: { gameInfo: GameInfo; leader: number; solo: boolea
 	);
 	try {
 		const component = await message.awaitMessageComponent({
-			componentType: ComponentType.SelectMenu,
+			componentType: ComponentType.StringSelect,
 			time: 300_000,
 		});
 
@@ -477,49 +486,75 @@ async function determineTrick(options: { gameInfo: GameInfo; leader: number; sol
 			score = 12;
 		} else if (card.suit === options.gameInfo.trump) {
 			switch (card.rank) {
-				case CardRank.Nine:
+				case CardRank.Nine: {
 					score = 7;
 					break;
-				case CardRank.Ten:
+				}
+
+				case CardRank.Ten: {
 					score = 8;
 					break;
-				case CardRank.Queen:
+				}
+
+				case CardRank.Queen: {
 					score = 9;
 					break;
-				case CardRank.King:
+				}
+
+				case CardRank.King: {
 					score = 10;
 					break;
-				case CardRank.Ace:
+				}
+
+				case CardRank.Ace: {
 					score = 11;
 					break;
-				case CardRank.Jack:
+				}
+
+				case CardRank.Jack: {
 					score = 13;
 					break;
-				default:
+				}
+
+				default: {
 					throw new Error('Invalid card value');
+				}
 			}
 		} else {
 			switch (card.rank) {
-				case CardRank.Nine:
+				case CardRank.Nine: {
 					score = 1;
 					break;
-				case CardRank.Ten:
+				}
+
+				case CardRank.Ten: {
 					score = 2;
 					break;
-				case CardRank.Jack:
+				}
+
+				case CardRank.Jack: {
 					score = 3;
 					break;
-				case CardRank.Queen:
+				}
+
+				case CardRank.Queen: {
 					score = 4;
 					break;
-				case CardRank.King:
+				}
+
+				case CardRank.King: {
 					score = 5;
 					break;
-				case CardRank.Ace:
+				}
+
+				case CardRank.Ace: {
 					score = 6;
 					break;
-				default:
+				}
+
+				default: {
 					throw new Error('Invalid card value');
+				}
 			}
 		}
 
@@ -553,14 +588,21 @@ async function determineTrick(options: { gameInfo: GameInfo; leader: number; sol
 
 function invertSuit(suit: CardSuit): CardSuit {
 	switch (suit) {
-		case CardSuit.Spades:
+		case CardSuit.Spades: {
 			return CardSuit.Clubs;
-		case CardSuit.Clubs:
+		}
+
+		case CardSuit.Clubs: {
 			return CardSuit.Spades;
-		case CardSuit.Hearts:
+		}
+
+		case CardSuit.Hearts: {
 			return CardSuit.Diamonds;
-		case CardSuit.Diamonds:
+		}
+
+		case CardSuit.Diamonds: {
 			return CardSuit.Hearts;
+		}
 	}
 }
 

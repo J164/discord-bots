@@ -1,8 +1,7 @@
-import type { ButtonBuilder, ButtonInteraction } from 'discord.js';
-import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
-import type { GuildChatCommandResponse } from '../../types/client.js';
-import type { PotatoChatCommand } from '../../types/bot-types/potato.js';
-import type { QueueItem } from '../../types/voice.js';
+import { type ButtonBuilder, type ButtonInteraction, ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import { type GuildChatCommandResponse } from '../../types/client.js';
+import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
+import { type QueueItem } from '../../types/voice.js';
 import { EmbedType, Emojis, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
 
 async function updateResponse(response: GuildChatCommandResponse, queue: QueueItem[], page: number, component?: ButtonInteraction): Promise<void> {
@@ -76,18 +75,25 @@ async function promptUser(response: GuildChatCommandResponse, queue: QueueItem[]
 	}
 
 	switch (component.customId) {
-		case 'jumpleft':
+		case 'jumpleft': {
 			await updateResponse(response, queue, 0, component);
 			break;
-		case 'left':
+		}
+
+		case 'left': {
 			await updateResponse(response, queue, page - 1, component);
 			break;
-		case 'right':
+		}
+
+		case 'right': {
 			await updateResponse(response, queue, page + 1, component);
 			break;
-		case 'jumpright':
+		}
+
+		case 'jumpright': {
 			await updateResponse(response, queue, Math.floor(queue.length / 25), component);
 			break;
+		}
 	}
 }
 

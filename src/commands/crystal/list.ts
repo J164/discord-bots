@@ -1,9 +1,16 @@
 import { readdirSync } from 'node:fs';
-import type { ButtonBuilder, ButtonInteraction, EmbedBuilder } from 'discord.js';
-import { ActionRowBuilder, ApplicationCommandOptionType, ButtonStyle, ComponentType } from 'discord.js';
+import {
+	type ButtonBuilder,
+	type ButtonInteraction,
+	type EmbedBuilder,
+	ActionRowBuilder,
+	ApplicationCommandOptionType,
+	ButtonStyle,
+	ComponentType,
+} from 'discord.js';
 import { EmbedType, messageOptions, responseEmbed } from '../../util/builders.js';
-import type { CrystalChatCommand } from '../../types/bot-types/crystal.js';
-import type { GlobalChatCommandResponse } from '../../types/client.js';
+import { type CrystalChatCommand } from '../../types/bot-types/crystal.js';
+import { type GlobalChatCommandResponse } from '../../types/client.js';
 
 function songEmbed(songs: string[], index: number): EmbedBuilder {
 	const embed = responseEmbed(EmbedType.Info, 'Naruto Songs', {
@@ -82,18 +89,25 @@ async function promptUser(response: GlobalChatCommandResponse, songs: string[], 
 	}
 
 	switch (component.customId) {
-		case 'list-doublearrowleft':
+		case 'list-doublearrowleft': {
 			await updateResponse(response, songs, 0, component);
 			break;
-		case 'list-arrowleft':
+		}
+
+		case 'list-arrowleft': {
 			await updateResponse(response, songs, index - 1, component);
 			break;
-		case 'list-arrowright':
+		}
+
+		case 'list-arrowright': {
 			await updateResponse(response, songs, index + 1, component);
 			break;
-		case 'list-doublearrowright':
+		}
+
+		case 'list-doublearrowright': {
 			await updateResponse(response, songs, songs.length - 1, component);
 			break;
+		}
 	}
 }
 
@@ -124,8 +138,8 @@ export const command: CrystalChatCommand<'Global'> = {
 			},
 		],
 	},
-	async respond(response, globalInfo) {
-		const songs = readdirSync(`${globalInfo.ostDirectory}/${response.interaction.options.getSubcommand()}_ost`).map((value) => {
+	async respond(response) {
+		const songs = readdirSync(`./music_files/ost/${response.interaction.options.getSubcommand()}_ost`).map((value) => {
 			return value.split('.').slice(0, -1).join('.');
 		});
 

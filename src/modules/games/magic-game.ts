@@ -1,14 +1,16 @@
-import { ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
-import type {
-	APISelectMenuOption,
-	ButtonBuilder,
-	ButtonInteraction,
-	EmbedBuilder,
-	InteractionUpdateOptions,
-	SelectMenuBuilder,
-	ThreadChannel,
+import {
+	ActionRowBuilder,
+	ButtonStyle,
+	ComponentType,
+	type StringSelectMenuBuilder,
+	type APISelectMenuOption,
+	type ButtonBuilder,
+	type ButtonInteraction,
+	type EmbedBuilder,
+	type InteractionUpdateOptions,
+	type ThreadChannel,
 } from 'discord.js';
-import type { MagicPlayer } from '../../types/games.js';
+import { type MagicPlayer } from '../../types/games.js';
 import { EmbedType, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
 
 export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadChannel): Promise<void> {
@@ -50,13 +52,17 @@ export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadCh
 	await component.update(messageOptions({ components: [] }));
 
 	switch (component.customId) {
-		case 'damage':
+		case 'damage': {
 			await prompt(playerData, gameChannel, component);
 			break;
-		case 'heal':
+		}
+
+		case 'heal': {
 			await heal(playerData, gameChannel, component);
 			break;
-		case 'end':
+		}
+
+		case 'end': {
 			await component.update(messageOptions({ embeds: [printStandings(playerData)] }));
 			try {
 				await gameChannel.setArchived(true);
@@ -65,16 +71,17 @@ export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadCh
 			}
 
 			break;
+		}
 	}
 }
 
 function healPrompt(players: APISelectMenuOption[], playerResponse: boolean, amountResponse: boolean): InteractionUpdateOptions {
 	return messageOptions({
 		components: [
-			new ActionRowBuilder<SelectMenuBuilder>({
+			new ActionRowBuilder<StringSelectMenuBuilder>({
 				components: [
 					{
-						type: ComponentType.SelectMenu,
+						type: ComponentType.StringSelect,
 						customId: 'player_select',
 						options: players,
 						disabled: playerResponse,
@@ -135,17 +142,17 @@ async function heal(playerData: MagicPlayer[], gameChannel: ThreadChannel, inter
 	const response = await interaction.update(healPrompt(players, playerResponse, amountResponse));
 	let responses: [string, number];
 	try {
-		responses = (await Promise.all([
+		responses = await Promise.all([
 			(async () => {
 				const component = await response.awaitMessageComponent({
-					componentType: ComponentType.SelectMenu,
+					componentType: ComponentType.StringSelect,
 					time: 300_000,
 				});
 				playerResponse = true;
 				await component.update(healPrompt(players, playerResponse, amountResponse));
 				return component.values[0];
 			})(),
-			new Promise((resolve, reject) => {
+			new Promise<number>((resolve, reject) => {
 				let amount = 0;
 				const collector = response
 					.createMessageComponentCollector({
@@ -162,18 +169,25 @@ async function heal(playerData: MagicPlayer[], gameChannel: ThreadChannel, inter
 						}
 
 						switch (b.customId.split('_')[1]) {
-							case '1':
+							case '1': {
 								amount++;
 								break;
-							case '2':
+							}
+
+							case '2': {
 								amount += 2;
 								break;
-							case '5':
+							}
+
+							case '5': {
 								amount += 5;
 								break;
-							case '10':
+							}
+
+							case '10': {
 								amount += 10;
 								break;
+							}
 						}
 
 						await b.update(messageOptions({ embeds: [printStandings(playerData), responseEmbed(EmbedType.Info, `Current Amount: ${amount}`)] }));
@@ -190,7 +204,7 @@ async function heal(playerData: MagicPlayer[], gameChannel: ThreadChannel, inter
 						resolve(Number.parseInt(interaction.customId.split('-')[2], 10));
 					});
 			}),
-		])) as [string, number];
+		]);
 	} catch {
 		await playMagic(playerData, gameChannel);
 		return;
@@ -203,20 +217,20 @@ async function heal(playerData: MagicPlayer[], gameChannel: ThreadChannel, inter
 function damagePrompt(players: APISelectMenuOption[], playerResponse: boolean, modifierResponse: boolean, amountResponse: boolean): InteractionUpdateOptions {
 	return messageOptions({
 		components: [
-			new ActionRowBuilder<SelectMenuBuilder>({
+			new ActionRowBuilder<StringSelectMenuBuilder>({
 				components: [
 					{
-						type: ComponentType.SelectMenu,
+						type: ComponentType.StringSelect,
 						customId: 'player_select',
 						options: players,
 						disabled: playerResponse,
 					},
 				],
 			}),
-			new ActionRowBuilder<SelectMenuBuilder>({
+			new ActionRowBuilder<StringSelectMenuBuilder>({
 				components: [
 					{
-						type: ComponentType.SelectMenu,
+						type: ComponentType.StringSelect,
 						customId: 'modifiers',
 						maxValues: 2,
 						options: [
@@ -295,11 +309,11 @@ async function prompt(playerData: MagicPlayer[], gameChannel: ThreadChannel, int
 	const response = await interaction.update(damagePrompt(players, playerResponse, modifierResponse, amountResponse));
 	let responses: [{ target: string; selector: string }, string[], number];
 	try {
-		responses = (await Promise.all([
+		responses = await Promise.all([
 			(async () => {
 				const component = await response.awaitMessageComponent({
 					filter: (s) => s.customId === 'player_select',
-					componentType: ComponentType.SelectMenu,
+					componentType: ComponentType.StringSelect,
 					time: 300_000,
 				});
 				playerResponse = true;
@@ -312,14 +326,14 @@ async function prompt(playerData: MagicPlayer[], gameChannel: ThreadChannel, int
 			(async () => {
 				const component = await response.awaitMessageComponent({
 					filter: (s) => s.customId === 'modifiers',
-					componentType: ComponentType.SelectMenu,
+					componentType: ComponentType.StringSelect,
 					time: 300_000,
 				});
 				modifierResponse = true;
 				await component.update(damagePrompt(players, playerResponse, modifierResponse, amountResponse));
 				return component.values;
 			})(),
-			new Promise((resolve) => {
+			new Promise<number>((resolve) => {
 				let amount = 0;
 				const collector = response
 					.createMessageComponentCollector({
@@ -336,24 +350,31 @@ async function prompt(playerData: MagicPlayer[], gameChannel: ThreadChannel, int
 						}
 
 						switch (b.customId.split('_')[1]) {
-							case '1':
+							case '1': {
 								amount++;
 								break;
-							case '2':
+							}
+
+							case '2': {
 								amount += 2;
 								break;
-							case '5':
+							}
+
+							case '5': {
 								amount += 5;
 								break;
-							case '10':
+							}
+
+							case '10': {
 								amount += 10;
 								break;
+							}
 						}
 
 						await b.update(messageOptions({ embeds: [printStandings(playerData), responseEmbed(EmbedType.Info, `Current Amount: ${amount}`)] }));
 					});
 			}),
-		])) as [{ target: string; selector: string }, string[], number];
+		]);
 	} catch {
 		await playMagic(playerData, gameChannel);
 		return;

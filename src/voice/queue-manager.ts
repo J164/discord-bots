@@ -1,5 +1,5 @@
-import type { InteractionReplyOptions, VoiceChannel } from 'discord.js';
-import type { QueueItem } from '../types/voice.js';
+import { type InteractionReplyOptions, type VoiceChannel } from 'discord.js';
+import { type QueueItem } from '../types/voice.js';
 import { EmbedType, responseOptions } from '../util/builders.js';
 import { Player } from './player.js';
 
@@ -7,7 +7,7 @@ import { Player } from './player.js';
 export class QueueManager {
 	private _player: Player;
 	private _queue: QueueItem[];
-	private _nowPlaying?: QueueItem;
+	private _nowPlaying: QueueItem | undefined;
 	private _queueLoop: boolean;
 
 	public constructor(voiceChannel: VoiceChannel) {
@@ -80,13 +80,13 @@ export class QueueManager {
 			return;
 		}
 
-		if (this._nowPlaying.looping) {
-			this._nowPlaying.looping = false;
+		if (this._nowPlaying.audio.looping) {
+			this._nowPlaying.audio.looping = false;
 			return responseOptions(EmbedType.Success, 'No longer looping');
 		}
 
 		this._queueLoop = false;
-		this._nowPlaying.looping = true;
+		this._nowPlaying.audio.looping = true;
 		return responseOptions(EmbedType.Success, 'Now Looping');
 	}
 
@@ -105,7 +105,7 @@ export class QueueManager {
 		}
 
 		if (this._nowPlaying) {
-			this._nowPlaying.looping = false;
+			this._nowPlaying.audio.looping = false;
 		}
 
 		this._queueLoop = true;
@@ -124,7 +124,7 @@ export class QueueManager {
 	 */
 	public skip(): boolean {
 		if (this._nowPlaying) {
-			this._nowPlaying.looping = false;
+			this._nowPlaying.audio.looping = false;
 		}
 
 		return this._player.stop();
@@ -207,7 +207,7 @@ export class QueueManager {
 			return;
 		}
 
-		const success = await this._player.play(this._nowPlaying, async () => {
+		const success = await this._player.play(this._nowPlaying.audio, async () => {
 			if (this._queueLoop && this._nowPlaying) {
 				this._queue.push(this._nowPlaying);
 			}
