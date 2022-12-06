@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import { type CrystalChatCommand } from '../../types/bot-types/crystal.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
@@ -122,7 +122,8 @@ export const command: CrystalChatCommand<'Guild'> = {
 
 		const path = `./music_files/ost/${response.interaction.options.getSubcommand()}_ost`;
 
-		const songs = readdirSync(path).map((value) => {
+		const songDir = await readdir(path);
+		const songs = songDir.map((value) => {
 			return value.split('.').slice(0, -1).join('.');
 		});
 
@@ -139,7 +140,8 @@ export const command: CrystalChatCommand<'Guild'> = {
 		}
 
 		const path = `./music_files/ost/${interaction.options.getSubcommand(true)}_ost`;
-		const songs = readdirSync(path).map((value) => {
+		const songDir = await readdir(path);
+		const songs = songDir.map((value) => {
 			return value.split('.').slice(0, -1).join('.');
 		});
 

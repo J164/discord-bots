@@ -1,5 +1,4 @@
-import { readdirSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
+import { readdir, writeFile } from 'node:fs/promises';
 import { ApplicationCommandOptionType } from 'discord.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { download, selectFormat } from '../../voice/ytdl.js';
@@ -31,7 +30,7 @@ export const command: SwearChatCommand<'Global'> = {
 		}
 
 		await response.interaction.editReply(responseOptions(EmbedType.Info, 'Downloading...'));
-		const songs = readdirSync('./swear_songs');
+		const songs = await readdir('./swear_songs');
 
 		const url = response.interaction.options.getString('url', true);
 		const format = 'bestaudio[ext=webm][acodec=opus]';

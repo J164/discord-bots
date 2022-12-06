@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import { EmbedType, responseOptions } from '../../util/builders.js';
 import { type SwearChatCommand } from '../../types/bot-types/swear.js';
@@ -26,7 +26,7 @@ export const command: SwearChatCommand<'Guild'> = {
 			return;
 		}
 
-		const songs = readdirSync('./swear_songs');
+		const songs = await readdir('./swear_songs');
 
 		await (guildInfo.player?.voiceChannel.id === voiceChannel.id ? guildInfo.player : (guildInfo.player = new Player(voiceChannel))).subscribe();
 		await guildInfo.player.play(

@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
 import {
 	type ButtonBuilder,
 	type ButtonInteraction,
@@ -139,7 +139,8 @@ export const command: CrystalChatCommand<'Global'> = {
 		],
 	},
 	async respond(response) {
-		const songs = readdirSync(`./music_files/ost/${response.interaction.options.getSubcommand()}_ost`).map((value) => {
+		const songDir = await readdir(`./music_files/ost/${response.interaction.options.getSubcommand()}_ost`);
+		const songs = songDir.map((value) => {
 			return value.split('.').slice(0, -1).join('.');
 		});
 

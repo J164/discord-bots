@@ -5,16 +5,14 @@
  * @returns An array of the items from most similar to the filter to least
  */
 export function search(items: string[], filter: string): Array<{ item: string; score: number; index: number }> {
-	const cleanItems = items.map((item) => {
-		return item.trim().toLowerCase();
-	});
-
 	const cleanFilter = filter.trim().toLowerCase();
 
-	return cleanItems
+	return items
 		.map((item, index) => {
-			if (item === filter) {
-				return { item, score: Number.MAX_VALUE, index };
+			const cleanItem = item.trim().toLowerCase();
+
+			if (cleanItem === cleanFilter) {
+				return { item: cleanItem, score: Number.MAX_VALUE, index };
 			}
 
 			let score = 0;
@@ -26,8 +24,8 @@ export function search(items: string[], filter: string): Array<{ item: string; s
 				let bestItemIndex = -1;
 
 				// eslint-disable-next-line unicorn/no-for-loop
-				for (let i = 0; i < item.length; i++) {
-					if (item[i] === cleanFilter[filterIndex] && filterIndex < cleanFilter.length) {
+				for (let i = 0; i < cleanItem.length; i++) {
+					if (cleanItem[i] === cleanFilter[filterIndex] && filterIndex < cleanFilter.length) {
 						if (currentMatchLength === 0) {
 							currentItemIndex = i;
 						}
@@ -50,7 +48,7 @@ export function search(items: string[], filter: string): Array<{ item: string; s
 					bestItemIndex = currentItemIndex;
 				}
 
-				score += ((bestItemIndex === 0 ? 2 : 0) + (bestItemIndex + bestMatchLength === item.length ? 1 : 0) + bestMatchLength) * bestMatchLength;
+				score += ((bestItemIndex === 0 ? 2 : 0) + (bestItemIndex + bestMatchLength === cleanItem.length ? 1 : 0) + bestMatchLength) * bestMatchLength;
 				f += bestMatchLength > 0 ? bestMatchLength - 1 : 0;
 			}
 
