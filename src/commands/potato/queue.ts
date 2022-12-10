@@ -2,7 +2,7 @@ import { type ButtonBuilder, type ButtonInteraction, ActionRowBuilder, ButtonSty
 import { type GuildChatCommandResponse } from '../../types/client.js';
 import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { type QueueItem } from '../../types/voice.js';
-import { EmbedType, Emojis, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
+import { EmbedType, Emojis, messageOptions, responseEmbed, responseOptions } from '../../util/helpers.js';
 
 async function updateResponse(response: GuildChatCommandResponse, queue: QueueItem[], page: number, component?: ButtonInteraction): Promise<void> {
 	const reply = messageOptions({

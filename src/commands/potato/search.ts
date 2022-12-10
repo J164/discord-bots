@@ -12,7 +12,7 @@ import {
 } from 'discord.js';
 import { type GlobalChatCommandResponse } from '../../types/client.js';
 import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
-import { EmbedType, Emojis, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
+import { EmbedType, Emojis, messageOptions, responseEmbed, responseOptions } from '../../util/helpers.js';
 import { mergeImages } from '../../util/image-utils.js';
 
 function formatResponse(response: ScryfallResponse): ScryfallMagicCard[][] {

@@ -11,7 +11,7 @@ import { gradeReport } from '../modules/grade-report.js';
 
 const logger = pino({ name: 'Potato Bot' });
 const databaseClient = new MongoClient(env.MONGODB_URL ?? '');
-let weather = await getWeatherReport(env.WEATHER_KEY ?? '');
+let [weather] = await Promise.all([getWeatherReport(env.WEATHER_KEY ?? ''), databaseClient.connect()]);
 
 const config = {
 	abstractKey: env.ABSTRACT_KEY ?? '',
@@ -55,9 +55,9 @@ const potatoClient = new BotClient<GlobalInfo, GuildInfo>(
 	},
 );
 
-await databaseClient.connect();
+cron.schedule('0 0 * * *', async (now) => {
+	logger.info(now, 'weather');
 
-cron.schedule('0 0 * * *', async () => {
 	try {
 		weather = await getWeatherReport(config.weatherKey);
 	} catch (error) {
@@ -65,7 +65,9 @@ cron.schedule('0 0 * * *', async () => {
 	}
 });
 
-cron.schedule(config.announcementTime, async () => {
+cron.schedule(config.announcementTime, async (now) => {
+	logger.info(now, 'announcement');
+
 	try {
 		const channel = (await potatoClient.channels.fetch(config.announcementChannel)) as TextChannel;
 		await channel.send(await getDailyReport(config.abstractKey, databaseClient.db(config.databaseName), weather));
@@ -74,7 +76,9 @@ cron.schedule(config.announcementTime, async () => {
 	}
 });
 
-cron.schedule(config.gradeUpdateInterval, async () => {
+cron.schedule(config.gradeUpdateInterval, async (now) => {
+	logger.info(now, 'grades');
+
 	try {
 		await gradeReport(databaseClient.db(config.databaseName), potatoClient.users, (await potatoClient.channels.fetch(config.ircDebugChannel)) as TextChannel);
 	} catch (error) {

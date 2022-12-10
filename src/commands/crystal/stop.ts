@@ -1,5 +1,5 @@
 import { type CrystalChatCommand } from '../../types/bot-types/crystal.js';
-import { EmbedType, responseOptions } from '../../util/builders.js';
+import { EmbedType, responseOptions } from '../../util/helpers.js';
 
 export const command: CrystalChatCommand<'Guild'> = {
 	data: {

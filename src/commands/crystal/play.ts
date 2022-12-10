@@ -1,7 +1,7 @@
 import { readdir } from 'node:fs/promises';
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import { type CrystalChatCommand } from '../../types/bot-types/crystal.js';
-import { EmbedType, responseOptions } from '../../util/builders.js';
+import { EmbedType, responseOptions } from '../../util/helpers.js';
 import { Player } from '../../voice/player.js';
 import { search } from '../../util/search.js';
 import { LocalAudio } from '../../voice/audio-resource.js';

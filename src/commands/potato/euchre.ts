@@ -1,7 +1,7 @@
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import { playEuchre } from '../../modules/games/euchre.js';
 import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
-import { EmbedType, responseOptions } from '../../util/builders.js';
+import { EmbedType, responseOptions } from '../../util/helpers.js';
 
 export const command: PotatoChatCommand<'Guild'> = {
 	data: {

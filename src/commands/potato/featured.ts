@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
 import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
-import { EmbedType, responseOptions } from '../../util/builders.js';
+import { EmbedType, responseOptions } from '../../util/helpers.js';
 import { YoutubeAudio } from '../../voice/audio-resource.js';
 import { QueueManager } from '../../voice/queue-manager.js';
 import { resolve } from '../../voice/ytdl.js';

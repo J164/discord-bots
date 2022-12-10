@@ -1,5 +1,5 @@
 import { type YeetChatCommand } from '../../types/bot-types/yeet.js';
-import { EmbedType, messageOptions, responseOptions } from '../../util/builders.js';
+import { EmbedType, messageOptions, responseOptions } from '../../util/helpers.js';
 
 export const command: YeetChatCommand<'Global'> = {
 	data: {

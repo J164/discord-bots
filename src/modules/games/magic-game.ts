@@ -11,7 +11,7 @@ import {
 	type ThreadChannel,
 } from 'discord.js';
 import { type MagicPlayer } from '../../types/games.js';
-import { EmbedType, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
+import { EmbedType, messageOptions, responseEmbed, responseOptions } from '../../util/helpers.js';
 
 export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadChannel): Promise<void> {
 	const message = await gameChannel.send(

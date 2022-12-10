@@ -2,7 +2,7 @@ import { readdir } from 'node:fs/promises';
 import { type AutocompleteInteraction, type CacheType, type ChatInputCommandInteraction, type ClientOptions, Client, InteractionType } from 'discord.js';
 import { type Logger } from 'pino';
 import { type BaseGlobalInfo, type BaseGuildInfo, type ChatCommand, type ChatCommandResponse, type CommandType } from '../types/client.js';
-import { EmbedType, responseOptions } from './builders.js';
+import { EmbedType, responseOptions } from './helpers.js';
 
 /**
  * Verifies all required config options have been defined

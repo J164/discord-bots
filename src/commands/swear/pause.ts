@@ -1,5 +1,5 @@
 import { type SwearChatCommand } from '../../types/bot-types/swear.js';
-import { EmbedType, responseOptions } from '../../util/builders.js';
+import { EmbedType, responseOptions } from '../../util/helpers.js';
 
 export const command: SwearChatCommand<'Guild'> = {
 	data: {

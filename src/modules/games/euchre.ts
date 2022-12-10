@@ -13,7 +13,7 @@ import {
 } from 'discord.js';
 import { CardRank, CardSuit } from '../../types/card.js';
 import { type EuchrePlayer, type EuchreTeam, type GameInfo } from '../../types/games.js';
-import { EmbedType, messageOptions, responseEmbed, responseOptions } from '../../util/builders.js';
+import { EmbedType, messageOptions, responseEmbed, responseOptions } from '../../util/helpers.js';
 import { type Card, Deck, multicardMessage } from '../../util/card-utils.js';
 
 export function playEuchre(playerlist: User[], gameChannel: ThreadChannel): void {

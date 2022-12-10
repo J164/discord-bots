@@ -1,6 +1,6 @@
 import { readdir } from 'node:fs/promises';
 import { ApplicationCommandOptionType, ChannelType } from 'discord.js';
-import { EmbedType, responseOptions } from '../../util/builders.js';
+import { EmbedType, responseOptions } from '../../util/helpers.js';
 import { type SwearChatCommand } from '../../types/bot-types/swear.js';
 import { Player } from '../../voice/player.js';
 import { LocalAudio } from '../../voice/audio-resource.js';

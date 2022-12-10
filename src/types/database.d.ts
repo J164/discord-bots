@@ -1,6 +1,7 @@
 /** Type for Documents in the "grades" collection */
 type IrcUser = {
 	readonly discordId: string;
+	readonly username: string;
 	readonly token: string;
 	readonly grades: Grades;
 	readonly tokenReset: boolean;

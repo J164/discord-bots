@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType } from 'discord.js';
 import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
-import { responseOptions, responseEmbed, EmbedType, messageOptions } from '../../util/builders.js';
+import { responseOptions, responseEmbed, EmbedType, messageOptions } from '../../util/helpers.js';
 import { fetchCourseData } from '../../util/irc.js';
 
 export const command: PotatoChatCommand<'Global'> = {
@@ -35,6 +35,7 @@ export const command: PotatoChatCommand<'Global'> = {
 				},
 				{
 					discordId: response.interaction.user.id,
+					username: response.interaction.user.username,
 					grades: courseData,
 					token,
 					tokenReset: false,
@@ -43,6 +44,7 @@ export const command: PotatoChatCommand<'Global'> = {
 		} else {
 			await gradeCollection.insertOne({
 				discordId: response.interaction.user.id,
+				username: response.interaction.user.username,
 				grades: courseData,
 				token,
 				tokenReset: false,

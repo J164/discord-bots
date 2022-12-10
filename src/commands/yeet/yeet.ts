@@ -1,6 +1,6 @@
 import { ApplicationCommandOptionType } from 'discord.js';
 import { type YeetChatCommand } from '../../types/bot-types/yeet.js';
-import { messageOptions } from '../../util/builders.js';
+import { messageOptions } from '../../util/helpers.js';
 
 export const command: YeetChatCommand<'Global'> = {
 	data: {

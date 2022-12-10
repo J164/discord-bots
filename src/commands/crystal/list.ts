@@ -8,7 +8,7 @@ import {
 	ButtonStyle,
 	ComponentType,
 } from 'discord.js';
-import { EmbedType, messageOptions, responseEmbed } from '../../util/builders.js';
+import { EmbedType, messageOptions, responseEmbed } from '../../util/helpers.js';
 import { type CrystalChatCommand } from '../../types/bot-types/crystal.js';
 import { type GlobalChatCommandResponse } from '../../types/client.js';
 

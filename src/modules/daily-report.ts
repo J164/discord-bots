@@ -1,6 +1,6 @@
 import { type MessageCreateOptions } from 'discord.js';
 import { type Db } from 'mongodb';
-import { EmbedType, Emojis, messageOptions, responseEmbed } from '../util/builders.js';
+import { EmbedType, Emojis, messageOptions, responseEmbed } from '../util/helpers.js';
 
 type MonthNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 type DayNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -241,7 +241,11 @@ async function getQuoteData(): Promise<ZenQuotesResponse[]> {
  */
 export async function getDailyReport(abstractKey: string, database: Db, weather?: WeatherResponse): Promise<MessageCreateOptions> {
 	const date = new Date();
-	const [holiday, quote] = await Promise.all([getHolidayData(abstractKey, date), getQuoteData()]);
+	const [holiday, quote, birthday] = await Promise.all([
+		getHolidayData(abstractKey, date),
+		getQuoteData(),
+		database.collection<Birthday>('birthdays').findOne({ month: date.getMonth() + 1, day: date.getDate() }),
+	]);
 
 	const embeds = [];
 
@@ -275,7 +279,6 @@ export async function getDailyReport(abstractKey: string, database: Db, weather?
 		}
 	}
 
-	const birthday = await database.collection<Birthday>('birthdays').findOne({ month: date.getMonth() + 1, day: date.getDate() });
 	if (birthday) {
 		embeds.push(responseEmbed(EmbedType.None, '\uD83C\uDF89\tHave an amazing birthday!', {}, 0x99_00_ff));
 		return messageOptions({ embeds, components: [], content: `\uD83C\uDF89\tHappy Birthday <@${birthday.id}>!!!\t\uD83C\uDF89` });

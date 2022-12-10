@@ -5,7 +5,9 @@ import {
 	type ColorResolvable,
 	type MessageActionRowComponentBuilder,
 	EmbedBuilder,
+	type UserManager,
 } from 'discord.js';
+import { type UserWithDM } from '../types/helper.js';
 
 /** Enum representing commonly used emojis */
 export const enum Emojis {
@@ -34,6 +36,18 @@ export const enum EmbedType {
 	Success,
 	Prompt,
 	None,
+}
+
+/**
+ * Fetches a user and creates a DM channel with them
+ * @param userId The ID of the user
+ * @param userManager The UserManager for the Client
+ * @returns A Promise that resolves to the User object and DM channel
+ */
+export async function fetchUser(userId: string, userManager: UserManager): Promise<UserWithDM> {
+	const user = await userManager.fetch(userId);
+	const dm = await user.createDM();
+	return { user, dm };
 }
 
 /**
