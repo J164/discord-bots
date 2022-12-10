@@ -13,7 +13,7 @@ export async function gradeReport(database: Db, userManager: UserManager, debugC
 	const collection = database.collection<IrcUser>('grades');
 	const users = await collection.find().toArray();
 
-	await Promise.allSettled(
+	const ircResults = await Promise.allSettled(
 		users.map(async (user): Promise<void> => {
 			if (user.tokenReset) {
 				return;
@@ -42,6 +42,10 @@ export async function gradeReport(database: Db, userManager: UserManager, debugC
 
 			if (diff.termName) {
 				await userDm.send(responseOptions(EmbedType.Info, `New IRC Term! (${diff.termName.oldName} -> ${diff.termName.newName})`));
+				await debugChannel.send({
+					content: userObject.username,
+					embeds: [responseEmbed(EmbedType.Info, `New IRC Term! (${diff.termName.oldName} -> ${diff.termName.newName})`)],
+				});
 				return;
 			}
 
@@ -93,7 +97,15 @@ export async function gradeReport(database: Db, userManager: UserManager, debugC
 			];
 
 			await userDm.send(messageOptions({ embeds }));
-			await debugChannel.send(messageOptions({ embeds }));
+			await debugChannel.send(messageOptions({ content: userObject.username, embeds }));
 		}),
 	);
+
+	if (
+		ircResults.some((result) => {
+			return result.status === 'rejected';
+		})
+	) {
+		await debugChannel.send(responseOptions(EmbedType.Error, 'Something went wrong for at least one user'));
+	}
 }
