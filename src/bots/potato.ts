@@ -22,6 +22,7 @@ const config = {
 	mongodbUrl: env.MONGODB_URL ?? '',
 	spotifyToken: env.SPOTIFY_TOKEN ?? '',
 	weatherKey: env.WEATHER_KEY ?? '',
+	ircDebugChannel: env.IRC_DEBUG_CHANNEL ?? '',
 };
 
 verifyConfig(config);
@@ -75,7 +76,7 @@ cron.schedule(config.announcementTime, async () => {
 
 cron.schedule(config.gradeUpdateInterval, async () => {
 	try {
-		await gradeReport(databaseClient.db(config.databaseName), potatoClient.users);
+		await gradeReport(databaseClient.db(config.databaseName), potatoClient.users, (await potatoClient.channels.fetch(config.ircDebugChannel)) as TextChannel);
 	} catch (error) {
 		logger.error(error, 'Grade Monitor threw an error');
 	}

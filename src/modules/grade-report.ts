@@ -1,4 +1,4 @@
-import { type UserManager } from 'discord.js';
+import { type TextChannel, type UserManager } from 'discord.js';
 import { type Db } from 'mongodb';
 import { EmbedType, messageOptions, responseEmbed, responseOptions } from '../util/builders.js';
 import { checkUpdates, fetchCourseData } from '../util/irc.js';
@@ -6,10 +6,10 @@ import { checkUpdates, fetchCourseData } from '../util/irc.js';
 /**
  * Compares current grade data with previously stored data and sends updates to relevant users
  * @param database MongoDB database connection object
- * @param userObjects The UserManager for the PotatoClient
+ * @param userManager The UserManager for the PotatoClient
  * @returns A Promise that resolves when all the updates have been sent
  */
-export async function gradeReport(database: Db, userObjects: UserManager): Promise<void> {
+export async function gradeReport(database: Db, userManager: UserManager, debugChannel: TextChannel): Promise<void> {
 	const collection = database.collection<IrcUser>('grades');
 	const users = await collection.find().toArray();
 
@@ -19,13 +19,13 @@ export async function gradeReport(database: Db, userObjects: UserManager): Promi
 				return;
 			}
 
-			const userObject = await userObjects.fetch(user.discordId);
-			const dm = await userObject.createDM();
+			const userObject = await userManager.fetch(user.discordId);
+			const userDm = await userObject.createDM();
 
 			const newGrades = await fetchCourseData(user.token);
 			if (!newGrades) {
 				await collection.replaceOne({ discordId: user.discordId }, { discordId: user.discordId, grades: user.grades, token: user.token, tokenReset: true });
-				await dm.send(responseOptions(EmbedType.Error, 'Token has been reset!'));
+				await debugChannel.send(responseOptions(EmbedType.Error, `Token has been reset for ${userObject.username}!`));
 				return;
 			}
 
@@ -41,7 +41,7 @@ export async function gradeReport(database: Db, userObjects: UserManager): Promi
 			);
 
 			if (diff.termName) {
-				await dm.send(responseOptions(EmbedType.Info, `New IRC Term! (${diff.termName.oldName} -> ${diff.termName.newName})`));
+				await userDm.send(responseOptions(EmbedType.Info, `New IRC Term! (${diff.termName.oldName} -> ${diff.termName.newName})`));
 				return;
 			}
 
@@ -92,7 +92,8 @@ export async function gradeReport(database: Db, userObjects: UserManager): Promi
 				}),
 			];
 
-			await dm.send(messageOptions({ embeds }));
+			await userDm.send(messageOptions({ embeds }));
+			await debugChannel.send(messageOptions({ embeds }));
 		}),
 	);
 }
