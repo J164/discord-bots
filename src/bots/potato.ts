@@ -55,8 +55,8 @@ const potatoClient = new BotClient<GlobalInfo, GuildInfo>(
 	},
 );
 
-cron.schedule('0 0 * * *', async (now) => {
-	logger.info(now, 'weather');
+cron.schedule('0 0 * * *', async () => {
+	logger.info(new Date(), 'weather');
 
 	try {
 		weather = await getWeatherReport(config.weatherKey);
@@ -65,8 +65,8 @@ cron.schedule('0 0 * * *', async (now) => {
 	}
 });
 
-cron.schedule(config.announcementTime, async (now) => {
-	logger.info(now, 'announcement');
+cron.schedule(config.announcementTime, async () => {
+	logger.info(new Date(), 'announcement');
 
 	try {
 		const channel = (await potatoClient.channels.fetch(config.announcementChannel)) as TextChannel;
@@ -76,8 +76,8 @@ cron.schedule(config.announcementTime, async (now) => {
 	}
 });
 
-cron.schedule(config.gradeUpdateInterval, async (now) => {
-	logger.info(now, 'grades');
+cron.schedule(config.gradeUpdateInterval, async () => {
+	logger.info(new Date(), 'grades');
 
 	try {
 		await gradeReport(databaseClient.db(config.databaseName), potatoClient.users, (await potatoClient.channels.fetch(config.ircDebugChannel)) as TextChannel);
