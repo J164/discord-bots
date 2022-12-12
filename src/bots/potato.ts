@@ -3,7 +3,6 @@ import { MongoClient } from 'mongodb';
 import { pino } from 'pino';
 import cron from 'node-cron';
 import { ActivityType, GatewayIntentBits, Partials, type TextChannel } from 'discord.js';
-import { getWeatherReport } from '../modules/weather-report.js';
 import { type GlobalInfo, type GuildInfo } from '../types/bot-types/potato.js';
 import { BotClient, verifyConfig } from '../util/bot-client.js';
 import { getDailyReport } from '../modules/daily-report.js';
@@ -11,7 +10,8 @@ import { gradeReport } from '../modules/grade-report.js';
 
 const logger = pino({ name: 'Potato Bot' });
 const databaseClient = new MongoClient(env.MONGODB_URL ?? '');
-let [weather] = await Promise.all([getWeatherReport(env.WEATHER_KEY ?? ''), databaseClient.connect()]);
+
+await databaseClient.connect();
 
 const config = {
 	abstractKey: env.ABSTRACT_KEY ?? '',
@@ -47,7 +47,6 @@ const potatoClient = new BotClient<GlobalInfo, GuildInfo>(
 			logger,
 			database: databaseClient.db(config.databaseName),
 			spotifyToken: config.spotifyToken,
-			weather,
 		};
 	},
 	() => {
@@ -55,18 +54,10 @@ const potatoClient = new BotClient<GlobalInfo, GuildInfo>(
 	},
 );
 
-cron.schedule('0 0 * * *', async () => {
-	try {
-		weather = await getWeatherReport(config.weatherKey);
-	} catch (error) {
-		logger.error(error, 'Weather Report threw an error');
-	}
-});
-
 cron.schedule(config.announcementTime, async () => {
 	try {
 		const channel = (await potatoClient.channels.fetch(config.announcementChannel)) as TextChannel;
-		await channel.send(await getDailyReport(config.abstractKey, databaseClient.db(config.databaseName), weather));
+		await channel.send(await getDailyReport(config.abstractKey, databaseClient.db(config.databaseName), config.weatherKey));
 	} catch (error) {
 		logger.error(error, 'Daily Announcement threw an error');
 	}

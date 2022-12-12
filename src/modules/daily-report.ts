@@ -1,6 +1,7 @@
 import { type MessageCreateOptions } from 'discord.js';
 import { type Db } from 'mongodb';
 import { EmbedType, Emojis, messageOptions, responseEmbed } from '../util/helpers.js';
+import { getWeatherReport } from './weather-report.js';
 
 type MonthNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 type DayNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -239,11 +240,12 @@ async function getQuoteData(): Promise<ZenQuotesResponse[]> {
  * @param weather The weather report used to generate the report
  * @returns A Promise that resolves to the daily report message
  */
-export async function getDailyReport(abstractKey: string, database: Db, weather?: WeatherResponse): Promise<MessageCreateOptions> {
+export async function getDailyReport(abstractKey: string, database: Db, weatherKey: string): Promise<MessageCreateOptions> {
 	const date = new Date();
-	const [holiday, quote, birthday] = await Promise.all([
+	const [holiday, quote, weather, birthday] = await Promise.all([
 		getHolidayData(abstractKey, date),
 		getQuoteData(),
+		getWeatherReport(weatherKey),
 		database.collection<Birthday>('birthdays').findOne({ month: date.getMonth() + 1, day: date.getDate() }),
 	]);
 

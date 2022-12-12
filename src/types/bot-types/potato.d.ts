@@ -8,7 +8,6 @@ type GlobalInfo = {
 	readonly database: Db;
 	readonly logger: Logger;
 	readonly spotifyToken: string;
-	readonly weather: WeatherResponse | undefined;
 };
 
 /** Guild-specific info used to respond to interactions recieved by Potato Bot */
