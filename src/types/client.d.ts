@@ -37,16 +37,19 @@ type GuildChatCommandResponse = ChatCommandResponse<'cached'>;
 /** Discord command types */
 type CommandType = 'Global' | 'Guild';
 
+/** Object with a logger child */
+type WithLogger<T> = T & { logger: Logger };
+
 /** Object that defines how the bot handles a Chat Command */
 type ChatCommand<T extends CommandType, GlobalInfo, GuildInfo> = (T extends 'Global'
 	? {
-			readonly respond: GlobalChatCommandResponseFunction<GlobalInfo>;
-			readonly autocomplete?: GlobalAutocompleteFunction<GlobalInfo>;
+			readonly respond: GlobalChatCommandResponseFunction<WithLogger<GlobalInfo>>;
+			readonly autocomplete?: GlobalAutocompleteFunction<WithLogger<GlobalInfo>>;
 			readonly type: T;
 	  }
 	: {
-			readonly respond: GuildChatCommandResponseFunction<GlobalInfo, GuildInfo>;
-			readonly autocomplete?: GuildAutocompleteFunction<GlobalInfo, GuildInfo>;
+			readonly respond: GuildChatCommandResponseFunction<WithLogger<GlobalInfo>, GuildInfo>;
+			readonly autocomplete?: GuildAutocompleteFunction<WithLogger<GlobalInfo>, GuildInfo>;
 			readonly type: T;
 	  }) & {
 	readonly data: ChatInputApplicationCommandData;
@@ -54,10 +57,4 @@ type ChatCommand<T extends CommandType, GlobalInfo, GuildInfo> = (T extends 'Glo
 	readonly allowedUsers?: string[];
 };
 
-/** Essential global info properties */
-type BaseGlobalInfo = {
-	readonly logger: Logger;
-};
-
-/** Essential guild info properties */
-type BaseGuildInfo = Record<string, unknown>;
+type BaseGuildInfo = Partial<Record<string, unknown>>;

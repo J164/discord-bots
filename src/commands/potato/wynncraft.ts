@@ -25,30 +25,26 @@ export const command: PotatoChatCommand<'Global'> = {
 		const playerData = (await wynncraftResponse.json()) as WynncraftResponse;
 
 		await response.interaction.editReply(
-			responseOptions(
-				EmbedType.Info,
-				playerData.data[0].username,
-				{
-					fields: [
-						{
-							name: 'Current Status',
-							value: playerData.data[0].meta.location.online ? `Online at: ${playerData.data[0].meta.location.server}` : 'Offline',
-						},
-						...playerData.data[0].classes.map((profile, index) => {
-							const { playtime, name, professions } = profile;
-							const playHours = Math.floor(playtime / 60);
-							const playMins = playtime % 60;
-							return {
-								name: `Profile ${index + 1}`,
-								value: `Class: ${name}\nPlaytime: ${playHours < 10 ? `0${playHours}` : playHours}:${playMins < 10 ? `0${playMins}` : playMins}\nCombat Level: ${
-									professions.combat.level
-								}`,
-							};
-						}),
-					],
-				},
-				playerData.data[0].meta.location.online ? 0x33_cc_33 : 0xff_00_00,
-			),
+			responseOptions(EmbedType.Info, playerData.data[0].username, {
+				fields: [
+					{
+						name: 'Current Status',
+						value: playerData.data[0].meta.location.online ? `Online at: ${playerData.data[0].meta.location.server}` : 'Offline',
+					},
+					...playerData.data[0].classes.map((profile, index) => {
+						const { playtime, name, professions } = profile;
+						const playHours = Math.floor(playtime / 60);
+						const playMins = playtime % 60;
+						return {
+							name: `Profile ${index + 1}`,
+							value: `Class: ${name}\nPlaytime: ${playHours < 10 ? `0${playHours}` : playHours}:${playMins < 10 ? `0${playMins}` : playMins}\nCombat Level: ${
+								professions.combat.level
+							}`,
+						};
+					}),
+				],
+				color: playerData.data[0].meta.location.online ? 0x33_cc_33 : 0xff_00_00,
+			}),
 		);
 	},
 	type: 'Global',

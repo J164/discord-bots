@@ -1,4 +1,4 @@
-import { createReadStream } from 'node:fs';
+import { createReadStream, type ReadStream } from 'node:fs';
 import { type Readable } from 'node:stream';
 import { type YoutubeStream, type Audio } from '../types/voice.js';
 import { createStream } from './ytdl.js';
@@ -23,12 +23,16 @@ export class YoutubeAudio implements Audio {
 
 /** Audio fetched from the file system */
 export class LocalAudio implements Audio {
+	private _fileStream: ReadStream | undefined;
+
 	public constructor(private readonly _path: string, public looping = false) {}
 
 	public resolve(): Readable {
-		return createReadStream(this._path);
+		this._fileStream = createReadStream(this._path);
+		return this._fileStream;
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	public destroy(): void {}
+	public destroy(): void {
+		this._fileStream?.destroy();
+	}
 }

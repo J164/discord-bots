@@ -1,4 +1,4 @@
-import { type ButtonBuilder, type ButtonInteraction, ActionRowBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import { type ButtonInteraction, ButtonStyle, ComponentType } from 'discord.js';
 import { type GuildChatCommandResponse } from '../../types/client.js';
 import { type PotatoChatCommand } from '../../types/bot-types/potato.js';
 import { type QueueItem } from '../../types/voice.js';
@@ -18,42 +18,43 @@ async function updateResponse(response: GuildChatCommandResponse, queue: QueueIt
 			}),
 		],
 		components: [
-			new ActionRowBuilder<ButtonBuilder>({
+			{
+				type: ComponentType.ActionRow,
 				components: [
 					{
 						type: ComponentType.Button,
-						customId: 'jumpleft',
-						emoji: Emojis.DoubleArrowLeft,
+						custom_id: 'jumpleft',
+						emoji: { name: Emojis.DoubleArrowLeft },
 						label: 'Return to Beginning',
 						style: ButtonStyle.Secondary,
 						disabled: page === 0,
 					},
 					{
 						type: ComponentType.Button,
-						customId: 'left',
-						emoji: Emojis.ArrowLeft,
+						custom_id: 'left',
+						emoji: { name: Emojis.ArrowLeft },
 						label: 'Previous Page',
 						style: ButtonStyle.Secondary,
 						disabled: page === 0,
 					},
 					{
 						type: ComponentType.Button,
-						customId: 'right',
-						emoji: Emojis.ArrowRight,
+						custom_id: 'right',
+						emoji: { name: Emojis.ArrowRight },
 						label: 'Next Page',
 						style: ButtonStyle.Secondary,
 						disabled: page === Math.floor(queue.length / 25),
 					},
 					{
 						type: ComponentType.Button,
-						customId: 'jumpright',
-						emoji: Emojis.DoubleArrowRight,
+						custom_id: 'jumpright',
+						emoji: { name: Emojis.DoubleArrowRight },
 						label: 'Jump to End',
 						style: ButtonStyle.Secondary,
 						disabled: page === Math.floor(queue.length / 25),
 					},
 				],
-			}),
+			},
 		],
 	});
 

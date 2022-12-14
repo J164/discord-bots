@@ -1,11 +1,8 @@
-import { type Logger } from 'pino';
 import { type Player } from '../../voice/player.js';
 import { type ChatCommand, type CommandType } from '../client.js';
 
 /** Global bot info used to respond to interactions recieved by Potato Bot */
-type GlobalInfo = {
-	readonly logger: Logger;
-};
+type GlobalInfo = unknown;
 
 /** Guild-specific info used to respond to interactions recieved by Potato Bot */
 type GuildInfo = {

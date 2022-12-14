@@ -1,12 +1,10 @@
 import { type Db } from 'mongodb';
-import { type Logger } from 'pino';
 import { type QueueManager } from '../../voice/queue-manager.js';
 import { type ChatCommand, type CommandType } from '../client.js';
 
 /** Global bot info used to respond to interactions recieved by Potato Bot */
 type GlobalInfo = {
 	readonly database: Db;
-	readonly logger: Logger;
 	readonly spotifyToken: string;
 };
 

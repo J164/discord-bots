@@ -1,7 +1,7 @@
 import { env } from 'node:process';
 import { GatewayIntentBits, Partials, ActivityType } from 'discord.js';
 import { pino } from 'pino';
-import { type GlobalInfo, type GuildInfo } from '../types/bot-types/swear.js';
+import { type GlobalInfo } from '../types/bot-types/swear.js';
 import { BotClient, verifyConfig } from '../util/bot-client.js';
 
 const logger = pino({ name: 'Swear Bot' });
@@ -13,7 +13,7 @@ const config = {
 
 verifyConfig(config);
 
-const swearClient = new BotClient<GlobalInfo, GuildInfo>(
+const swearClient = new BotClient<GlobalInfo>(
 	{
 		intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
 		partials: [Partials.Channel],
@@ -23,16 +23,9 @@ const swearClient = new BotClient<GlobalInfo, GuildInfo>(
 	},
 	'swear',
 	logger,
-
-	(logger) => {
-		return {
-			logger,
-			admin: config.admin,
-			swear: config.swear,
-		};
-	},
-	() => {
-		return {};
+	{
+		admin: config.admin,
+		swear: config.swear,
 	},
 );
 

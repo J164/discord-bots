@@ -1,13 +1,5 @@
-import {
-	type ActionRowBuilder,
-	type APIEmbed,
-	type BaseMessageOptions,
-	type ColorResolvable,
-	type MessageActionRowComponentBuilder,
-	EmbedBuilder,
-	type UserManager,
-} from 'discord.js';
-import { type UserWithDM } from '../types/helper.js';
+import { type APIEmbed, type BaseMessageOptions, type UserManager, type APIActionRowComponent, type APIMessageActionRowComponent } from 'discord.js';
+import { type UserWithDm } from '../types/helper.js';
 
 /** Enum representing commonly used emojis */
 export const enum Emojis {
@@ -44,7 +36,7 @@ export const enum EmbedType {
  * @param userManager The UserManager for the Client
  * @returns A Promise that resolves to the User object and DM channel
  */
-export async function fetchUser(userId: string, userManager: UserManager): Promise<UserWithDM> {
+export async function fetchUser(userId: string, userManager: UserManager): Promise<UserWithDm> {
 	const user = await userManager.fetch(userId);
 	const dm = await user.createDM();
 	return { user, dm };
@@ -55,41 +47,41 @@ export async function fetchUser(userId: string, userManager: UserManager): Promi
  * @param type Which type of formatting to use
  * @param title Optional title of the embed
  * @param options The embed to be formated
- * @param color Optional color of the embed
  * @returns The formated embed
  */
-export function responseEmbed(type: EmbedType, title?: string, options?: Omit<APIEmbed, 'title' | 'color'>, color?: ColorResolvable): EmbedBuilder {
+export function responseEmbed(type: EmbedType, title: string, options?: Omit<APIEmbed, 'title'>): APIEmbed {
 	options?.fields?.splice(25);
 
-	const embed = new EmbedBuilder(options);
+	const embed: APIEmbed = options ?? {};
 
 	switch (type) {
 		case EmbedType.Info: {
-			embed.setColor(color ?? BotColors.DefaultBlue).setTitle(`${Emojis.Document}\t${title ?? ''}`);
+			embed.color ??= BotColors.DefaultBlue;
+			embed.title = `${Emojis.Document}\t${title}`;
 			break;
 		}
 
 		case EmbedType.Error: {
-			embed.setColor(color ?? BotColors.ErrorRed).setTitle(`${Emojis.RedX}\t${title ?? ''}`);
+			embed.color ??= BotColors.ErrorRed;
+			embed.title = `${Emojis.RedX}\t${title}`;
 			break;
 		}
 
 		case EmbedType.Success: {
-			embed.setColor(color ?? BotColors.SuccessGreen).setTitle(`${Emojis.GreenCheckMark}\t${title ?? ''}`);
+			embed.color ??= BotColors.SuccessGreen;
+			embed.title = `${Emojis.GreenCheckMark}\t${title}`;
 			break;
 		}
 
 		case EmbedType.Prompt: {
-			embed.setColor(color ?? BotColors.QuestionOrange).setTitle(`${Emojis.QuestionMark}\t${title ?? ''}`);
+			embed.color ??= BotColors.QuestionOrange;
+			embed.title = `${Emojis.QuestionMark}\t${title}`;
 			break;
 		}
 
-		default: {
-			if (color) {
-				embed.setColor(color);
-			}
-
-			embed.setTitle(title ?? '');
+		case EmbedType.None: {
+			embed.title = title;
+			break;
 		}
 	}
 
@@ -101,11 +93,10 @@ export function responseEmbed(type: EmbedType, title?: string, options?: Omit<AP
  * @param type Which type of formatting to use
  * @param title Optional title of the embed
  * @param options The embed to be formated
- * @param color Optional color of the embed
  * @returns The formated embed wrapped as a message
  */
-export function responseOptions(type: EmbedType, title?: string, options?: APIEmbed, color?: ColorResolvable): BaseMessageOptions {
-	return { embeds: [responseEmbed(type, title, options, color)] };
+export function responseOptions(type: EmbedType, title: string, options?: APIEmbed): BaseMessageOptions {
+	return { embeds: [responseEmbed(type, title, options)] };
 }
 
 /**
@@ -114,7 +105,7 @@ export function responseOptions(type: EmbedType, title?: string, options?: APIEm
  * @returns The sanitized message
  */
 export function messageOptions(
-	options: BaseMessageOptions & { embeds?: EmbedBuilder[]; components?: Array<ActionRowBuilder<MessageActionRowComponentBuilder>> },
+	options: BaseMessageOptions & { embeds?: APIEmbed[]; components?: Array<APIActionRowComponent<APIMessageActionRowComponent>> },
 ): BaseMessageOptions {
 	options.embeds?.splice(10);
 	options.components?.splice(5);

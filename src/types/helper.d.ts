@@ -1,6 +1,6 @@
 import { type DMChannel, type User } from 'discord.js';
 
-type UserWithDM = {
+type UserWithDm = {
 	user: User;
 	dm: DMChannel;
 };

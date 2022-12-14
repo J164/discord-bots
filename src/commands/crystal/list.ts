@@ -1,18 +1,10 @@
 import { readdir } from 'node:fs/promises';
-import {
-	type ButtonBuilder,
-	type ButtonInteraction,
-	type EmbedBuilder,
-	ActionRowBuilder,
-	ApplicationCommandOptionType,
-	ButtonStyle,
-	ComponentType,
-} from 'discord.js';
+import { type ButtonInteraction, ApplicationCommandOptionType, ButtonStyle, ComponentType, type APIEmbed } from 'discord.js';
 import { EmbedType, messageOptions, responseEmbed } from '../../util/helpers.js';
 import { type CrystalChatCommand } from '../../types/bot-types/crystal.js';
 import { type GlobalChatCommandResponse } from '../../types/client.js';
 
-function songEmbed(songs: string[], index: number): EmbedBuilder {
+function songEmbed(songs: string[], index: number): APIEmbed {
 	const embed = responseEmbed(EmbedType.Info, 'Naruto Songs', {
 		footer: { text: `${index + 1}/${Math.ceil(songs.length / 25)}` },
 		fields: [],
@@ -22,7 +14,7 @@ function songEmbed(songs: string[], index: number): EmbedBuilder {
 			break;
 		}
 
-		embed.addFields({ name: `${r + 1}:`, value: songs[r] });
+		embed.fields?.push({ name: `${r + 1}:`, value: songs[r] });
 	}
 
 	return embed;
@@ -32,7 +24,8 @@ async function updateResponse(response: GlobalChatCommandResponse, songs: string
 	const reply = messageOptions({
 		embeds: [songEmbed(songs, index)],
 		components: [
-			new ActionRowBuilder<ButtonBuilder>({
+			{
+				type: ComponentType.ActionRow,
 				components: [
 					{
 						type: ComponentType.Button,
@@ -67,7 +60,7 @@ async function updateResponse(response: GlobalChatCommandResponse, songs: string
 						disabled: index === Math.ceil(songs.length / 25) - 1,
 					},
 				],
-			}),
+			},
 		],
 	});
 

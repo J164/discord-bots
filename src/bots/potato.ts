@@ -3,7 +3,7 @@ import { MongoClient } from 'mongodb';
 import { pino } from 'pino';
 import cron from 'node-cron';
 import { ActivityType, GatewayIntentBits, Partials, type TextChannel } from 'discord.js';
-import { type GlobalInfo, type GuildInfo } from '../types/bot-types/potato.js';
+import { type GlobalInfo } from '../types/bot-types/potato.js';
 import { BotClient, verifyConfig } from '../util/bot-client.js';
 import { getDailyReport } from '../modules/daily-report.js';
 import { gradeReport } from '../modules/grade-report.js';
@@ -27,7 +27,7 @@ const config = {
 
 verifyConfig(config);
 
-const potatoClient = new BotClient<GlobalInfo, GuildInfo>(
+const potatoClient = new BotClient<GlobalInfo>(
 	{
 		intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
 		partials: [Partials.Channel],
@@ -42,15 +42,9 @@ const potatoClient = new BotClient<GlobalInfo, GuildInfo>(
 	},
 	'potato',
 	logger,
-	(logger) => {
-		return {
-			logger,
-			database: databaseClient.db(config.databaseName),
-			spotifyToken: config.spotifyToken,
-		};
-	},
-	() => {
-		return {};
+	{
+		database: databaseClient.db(config.databaseName),
+		spotifyToken: config.spotifyToken,
 	},
 );
 

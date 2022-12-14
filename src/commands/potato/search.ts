@@ -1,13 +1,10 @@
 import {
 	type ButtonInteraction,
 	type InteractionUpdateOptions,
-	type MessageActionRowComponentBuilder,
 	type MessageComponentInteraction,
-	ActionRowBuilder,
 	ApplicationCommandOptionType,
 	ButtonStyle,
 	ComponentType,
-	type StringSelectMenuBuilder,
 	type StringSelectMenuInteraction,
 } from 'discord.js';
 import { type GlobalChatCommandResponse } from '../../types/client.js';
@@ -80,11 +77,12 @@ async function updateResponse(response: GlobalChatCommandResponse, results: Scry
 			}),
 		],
 		components: [
-			new ActionRowBuilder<StringSelectMenuBuilder>({
+			{
+				type: ComponentType.ActionRow,
 				components: [
 					{
 						type: ComponentType.StringSelect,
-						customId: 'options',
+						custom_id: 'options',
 						placeholder: 'Select a Card',
 						options: results[page].map((value, index) => {
 							return {
@@ -95,43 +93,44 @@ async function updateResponse(response: GlobalChatCommandResponse, results: Scry
 						}),
 					},
 				],
-			}),
-			new ActionRowBuilder<MessageActionRowComponentBuilder>({
+			},
+			{
+				type: ComponentType.ActionRow,
 				components: [
 					{
 						type: ComponentType.Button,
-						customId: 'jumpleft',
-						emoji: Emojis.DoubleArrowLeft,
+						custom_id: 'jumpleft',
+						emoji: { name: Emojis.DoubleArrowLeft },
 						label: 'Return to Beginning',
 						style: ButtonStyle.Secondary,
 						disabled: page === 0,
 					},
 					{
 						type: ComponentType.Button,
-						customId: 'left',
-						emoji: Emojis.ArrowLeft,
+						custom_id: 'left',
+						emoji: { name: Emojis.ArrowLeft },
 						label: 'Previous Page',
 						style: ButtonStyle.Secondary,
 						disabled: page === 0,
 					},
 					{
 						type: ComponentType.Button,
-						customId: 'right',
-						emoji: Emojis.ArrowRight,
+						custom_id: 'right',
+						emoji: { name: Emojis.ArrowRight },
 						label: 'Next Page',
 						style: ButtonStyle.Secondary,
 						disabled: page === results.length - 1,
 					},
 					{
 						type: ComponentType.Button,
-						customId: 'jumpright',
-						emoji: Emojis.DoubleArrowRight,
+						custom_id: 'jumpright',
+						emoji: { name: Emojis.DoubleArrowRight },
 						label: 'Jump to End',
 						style: ButtonStyle.Secondary,
 						disabled: page === results.length - 1,
 					},
 				],
-			}),
+			},
 		],
 	});
 

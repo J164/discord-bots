@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonStyle, ComponentType, type AttachmentPayload, type ButtonBuilder, type DMChannel, type EmbedBuilder } from 'discord.js';
+import { type APIEmbed, ButtonStyle, ComponentType, type AttachmentPayload, type DMChannel } from 'discord.js';
 import { CardRank } from '../../types/card.js';
 import { EmbedType, messageOptions, responseEmbed } from '../../util/helpers.js';
 import { type Card, Deck, multicardMessage } from '../../util/card-utils.js';
@@ -17,22 +17,23 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
 				embeds,
 				files,
 				components: [
-					new ActionRowBuilder<ButtonBuilder>({
+					{
+						type: ComponentType.ActionRow,
 						components: [
 							{
 								type: ComponentType.Button,
-								customId: 'hit',
+								custom_id: 'hit',
 								style: ButtonStyle.Primary,
 								label: 'Hit',
 							},
 							{
 								type: ComponentType.Button,
-								customId: 'stand',
+								custom_id: 'stand',
 								style: ButtonStyle.Secondary,
 								label: 'Stand',
 							},
 						],
-					}),
+					},
 				],
 			}),
 		);
@@ -97,22 +98,23 @@ export async function playBlackjack(channel: DMChannel): Promise<void> {
 		messageOptions({
 			embeds: [...standings.embeds],
 			components: [
-				new ActionRowBuilder<ButtonBuilder>({
+				{
+					type: ComponentType.ActionRow,
 					components: [
 						{
 							type: ComponentType.Button,
-							customId: 'continue',
+							custom_id: 'continue',
 							label: 'Play Again?',
 							style: ButtonStyle.Primary,
 						},
 						{
 							type: ComponentType.Button,
-							customId: 'end',
+							custom_id: 'end',
 							label: 'Cash Out',
 							style: ButtonStyle.Secondary,
 						},
 					],
-				}),
+				},
 			],
 			files: standings.files,
 		}),
@@ -169,7 +171,7 @@ function hit(player: Card[]): number {
 	return score;
 }
 
-async function printStandings(player: Card[], dealer: Card[], gameEnd?: boolean): Promise<{ embeds: EmbedBuilder[]; files: AttachmentPayload[] }> {
+async function printStandings(player: Card[], dealer: Card[], gameEnd?: boolean): Promise<{ embeds: APIEmbed[]; files: AttachmentPayload[] }> {
 	const { embeds: playerEmbeds, files: playerFiles } = await multicardMessage(
 		player,
 		responseEmbed(EmbedType.Info, 'Player', {

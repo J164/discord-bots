@@ -1,7 +1,7 @@
 import { readdir } from 'node:fs/promises';
 import { type AutocompleteInteraction, type CacheType, type ChatInputCommandInteraction, type ClientOptions, Client, InteractionType } from 'discord.js';
 import { type Logger } from 'pino';
-import { type BaseGlobalInfo, type BaseGuildInfo, type ChatCommand, type ChatCommandResponse, type CommandType } from '../types/client.js';
+import { type BaseGuildInfo, type ChatCommand, type ChatCommandResponse, type CommandType } from '../types/client.js';
 import { EmbedType, responseOptions } from './helpers.js';
 
 /**
@@ -23,17 +23,11 @@ export function verifyConfig(config: Record<string, string>) {
 }
 
 /** Class representing a client for a Discord bot */
-export class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo extends BaseGuildInfo> extends Client {
-	private readonly _commands: Record<string, ChatCommand<CommandType, GlobalInfo, GuildInfo>>;
-	private readonly _guildInfo: Record<string, GuildInfo | undefined>;
+export class BotClient<GlobalInfo> extends Client {
+	private readonly _commands: Record<string, ChatCommand<CommandType, GlobalInfo, BaseGuildInfo>>;
+	private readonly _guildInfo: Partial<Record<string, BaseGuildInfo>>;
 
-	public constructor(
-		options: ClientOptions,
-		botName: string,
-		private readonly _logger: Logger,
-		private readonly _getGlobalInfo: (logger: Logger) => GlobalInfo,
-		private readonly _getDefaultGuildInfo: () => GuildInfo,
-	) {
+	public constructor(options: ClientOptions, botName: string, private readonly _logger: Logger, private readonly globalInfo: GlobalInfo) {
 		super(options);
 
 		this._commands = {};
@@ -49,7 +43,7 @@ export class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo extends Base
 						return;
 					}
 
-					const { command } = (await import(`../commands/${botName}/${file}`)) as { command: ChatCommand<CommandType, GlobalInfo, GuildInfo> };
+					const { command } = (await import(`../commands/${botName}/${file}`)) as { command: ChatCommand<CommandType, GlobalInfo, BaseGuildInfo> };
 					this._commands[command.data.name] = command;
 				}),
 			);
@@ -101,13 +95,14 @@ export class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo extends Base
 
 		this._logger.info({ options: interaction.options.data }, `(${interaction.id}) /${interaction.commandName}`);
 
-		const globalData = this._getGlobalInfo(
-			this._logger.child({
+		const globalData = {
+			...this.globalInfo,
+			logger: this._logger.child({
 				id: interaction.id,
 				commandName: interaction.commandName,
 				options: interaction.options,
 			}),
-		);
+		};
 
 		if (command.type === 'Guild') {
 			if (!interaction.inCachedGuild()) {
@@ -116,11 +111,7 @@ export class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo extends Base
 			}
 
 			try {
-				await command.respond(
-					interactionResponse as ChatCommandResponse<'cached'>,
-					(this._guildInfo[interaction.guildId] ??= this._getDefaultGuildInfo()),
-					globalData,
-				);
+				await command.respond(interactionResponse as ChatCommandResponse<'cached'>, (this._guildInfo[interaction.guildId] ??= {}), globalData);
 			} catch (error) {
 				await interaction.editReply(responseOptions(EmbedType.Error, 'Something went wrong'));
 				this._logger.error(error, `Chat Command Interaction #${interaction.id} threw an error`);
@@ -156,13 +147,14 @@ export class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo extends Base
 			return;
 		}
 
-		const globalData = this._getGlobalInfo(
-			this._logger.child({
+		const globalData = {
+			...this.globalInfo,
+			logger: this._logger.child({
 				id: interaction.id,
 				commandName: interaction.commandName,
 				options: interaction.options,
 			}),
-		);
+		};
 
 		if (command.type === 'Guild') {
 			if (!interaction.inCachedGuild()) {
@@ -171,7 +163,7 @@ export class BotClient<GlobalInfo extends BaseGlobalInfo, GuildInfo extends Base
 			}
 
 			try {
-				await command.autocomplete(interaction, (this._guildInfo[interaction.guildId] ??= this._getDefaultGuildInfo()), globalData);
+				await command.autocomplete(interaction, (this._guildInfo[interaction.guildId] ??= {}), globalData);
 			} catch (error) {
 				this._logger.info({ options: interaction.options.data }, `(${interaction.id}) /${interaction.commandName}`);
 				this._logger.error(error, `Chat Command Autocomplete #${interaction.id} threw an error`);

@@ -1,9 +1,7 @@
-import { type Logger } from 'pino';
 import { type ChatCommand, type CommandType } from '../client.js';
 
 /** Global bot info used to respond to interactions recieved by Yeet Bot */
 type GlobalInfo = {
-	readonly logger: Logger;
 	readonly tenorKey: string;
 };
 

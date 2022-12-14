@@ -1,14 +1,11 @@
 import {
-	ActionRowBuilder,
 	ButtonStyle,
 	ComponentType,
-	type StringSelectMenuBuilder,
 	type APISelectMenuOption,
-	type ButtonBuilder,
 	type ButtonInteraction,
-	type EmbedBuilder,
 	type InteractionUpdateOptions,
 	type ThreadChannel,
+	type APIEmbed,
 } from 'discord.js';
 import { type MagicPlayer } from '../../types/games.js';
 import { EmbedType, messageOptions, responseEmbed, responseOptions } from '../../util/helpers.js';
@@ -18,28 +15,29 @@ export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadCh
 		messageOptions({
 			embeds: [printStandings(playerData)],
 			components: [
-				new ActionRowBuilder<ButtonBuilder>({
+				{
+					type: ComponentType.ActionRow,
 					components: [
 						{
 							type: ComponentType.Button,
 							label: 'Damage',
-							customId: 'damage',
+							custom_id: 'damage',
 							style: ButtonStyle.Primary,
 						},
 						{
 							type: ComponentType.Button,
 							label: 'Heal',
-							customId: 'heal',
+							custom_id: 'heal',
 							style: ButtonStyle.Secondary,
 						},
 						{
 							type: ComponentType.Button,
 							label: 'End',
-							customId: 'end',
+							custom_id: 'end',
 							style: ButtonStyle.Danger,
 						},
 					],
-				}),
+				},
 			],
 		}),
 	);
@@ -78,55 +76,57 @@ export async function playMagic(playerData: MagicPlayer[], gameChannel: ThreadCh
 function healPrompt(players: APISelectMenuOption[], playerResponse: boolean, amountResponse: boolean): InteractionUpdateOptions {
 	return messageOptions({
 		components: [
-			new ActionRowBuilder<StringSelectMenuBuilder>({
+			{
+				type: ComponentType.ActionRow,
 				components: [
 					{
 						type: ComponentType.StringSelect,
-						customId: 'player_select',
+						custom_id: 'player_select',
 						options: players,
 						disabled: playerResponse,
 					},
 				],
-			}),
-			new ActionRowBuilder<ButtonBuilder>({
+			},
+			{
+				type: ComponentType.ActionRow,
 				components: [
 					{
 						type: ComponentType.Button,
 						label: 'Submit',
-						customId: 'amount_submit',
+						custom_id: 'amount_submit',
 						style: ButtonStyle.Primary,
 						disabled: amountResponse,
 					},
 					{
 						type: ComponentType.Button,
 						label: '1 Life',
-						customId: 'amount_1',
+						custom_id: 'amount_1',
 						style: ButtonStyle.Secondary,
 						disabled: amountResponse,
 					},
 					{
 						type: ComponentType.Button,
 						label: '2 Life',
-						customId: 'amount_2',
+						custom_id: 'amount_2',
 						style: ButtonStyle.Secondary,
 						disabled: amountResponse,
 					},
 					{
 						type: ComponentType.Button,
 						label: '5 Life',
-						customId: 'amount_5',
+						custom_id: 'amount_5',
 						style: ButtonStyle.Secondary,
 						disabled: amountResponse,
 					},
 					{
 						type: ComponentType.Button,
 						label: '10 Life',
-						customId: 'amount_10',
+						custom_id: 'amount_10',
 						style: ButtonStyle.Secondary,
 						disabled: amountResponse,
 					},
 				],
-			}),
+			},
 		],
 	});
 }
@@ -217,22 +217,24 @@ async function heal(playerData: MagicPlayer[], gameChannel: ThreadChannel, inter
 function damagePrompt(players: APISelectMenuOption[], playerResponse: boolean, modifierResponse: boolean, amountResponse: boolean): InteractionUpdateOptions {
 	return messageOptions({
 		components: [
-			new ActionRowBuilder<StringSelectMenuBuilder>({
+			{
+				type: ComponentType.ActionRow,
 				components: [
 					{
 						type: ComponentType.StringSelect,
-						customId: 'player_select',
+						custom_id: 'player_select',
 						options: players,
 						disabled: playerResponse,
 					},
 				],
-			}),
-			new ActionRowBuilder<StringSelectMenuBuilder>({
+			},
+			{
+				type: ComponentType.ActionRow,
 				components: [
 					{
 						type: ComponentType.StringSelect,
-						customId: 'modifiers',
-						maxValues: 2,
+						custom_id: 'modifiers',
+						max_values: 2,
 						options: [
 							{
 								label: 'None',
@@ -253,46 +255,47 @@ function damagePrompt(players: APISelectMenuOption[], playerResponse: boolean, m
 						disabled: modifierResponse,
 					},
 				],
-			}),
-			new ActionRowBuilder<ButtonBuilder>({
+			},
+			{
+				type: ComponentType.ActionRow,
 				components: [
 					{
 						type: ComponentType.Button,
 						label: 'Submit',
-						customId: 'amount_submit',
+						custom_id: 'amount_submit',
 						style: ButtonStyle.Primary,
 						disabled: amountResponse,
 					},
 					{
 						type: ComponentType.Button,
 						label: '1 Damage',
-						customId: 'amount_1',
+						custom_id: 'amount_1',
 						style: ButtonStyle.Secondary,
 						disabled: amountResponse,
 					},
 					{
 						type: ComponentType.Button,
 						label: '2 Damage',
-						customId: 'amount_2',
+						custom_id: 'amount_2',
 						style: ButtonStyle.Secondary,
 						disabled: amountResponse,
 					},
 					{
 						type: ComponentType.Button,
 						label: '5 Damage',
-						customId: 'amount_5',
+						custom_id: 'amount_5',
 						style: ButtonStyle.Secondary,
 						disabled: amountResponse,
 					},
 					{
 						type: ComponentType.Button,
 						label: '10 Damage',
-						customId: 'amount_10',
+						custom_id: 'amount_10',
 						style: ButtonStyle.Secondary,
 						disabled: amountResponse,
 					},
 				],
-			}),
+			},
 		],
 	});
 }
@@ -434,21 +437,19 @@ async function endGame(playerData: MagicPlayer[], gameChannel: ThreadChannel, pl
 	}
 }
 
-function printStandings(playerData: MagicPlayer[]): EmbedBuilder {
-	const embed = responseEmbed(EmbedType.Info, 'Current Standings');
-	embed.addFields(
-		playerData.map((player) => {
-			const value = ['Commander Damage'];
-			for (const [index, damage] of player.commanderDamage.entries()) {
-				value.push(`${playerData[index].name}: ${damage}`);
-			}
+function printStandings(playerData: MagicPlayer[]): APIEmbed {
+	const embed = responseEmbed(EmbedType.Info, 'Current Standings', { fields: [] });
+	for (const player of playerData) {
+		const value = ['Commander Damage'];
+		for (const [index, damage] of player.commanderDamage.entries()) {
+			value.push(`${playerData[index].name}: ${damage}`);
+		}
 
-			return {
-				name: `${player.name}: ${player.isAlive ? `Life Total: ${player.life}\nPoison Counters: ${player.poison}` : 'ELIMINATED'}`,
-				value: value.join('\n'),
-			};
-		}),
-	);
+		embed.fields?.push({
+			name: `${player.name}: ${player.isAlive ? `Life Total: ${player.life}\nPoison Counters: ${player.poison}` : 'ELIMINATED'}`,
+			value: value.join('\n'),
+		});
+	}
 
 	return embed;
 }

@@ -2,7 +2,7 @@ import { readdir } from 'node:fs/promises';
 import { env } from 'node:process';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord.js';
-import { type BaseGlobalInfo, type BaseGuildInfo, type CommandType, type ChatCommand } from './types/client.js';
+import { type CommandType, type ChatCommand } from './types/client.js';
 
 async function getCommands(botName: string) {
 	const files = await readdir(`./dist/commands/${botName}`);
@@ -10,7 +10,7 @@ async function getCommands(botName: string) {
 		files
 			.filter((file) => file.endsWith('.js'))
 			.map(async (command) => {
-				return ((await import(`../dist/commands/${botName}/${command}`)) as { command: ChatCommand<CommandType, BaseGlobalInfo, BaseGuildInfo> }).command.data;
+				return ((await import(`../dist/commands/${botName}/${command}`)) as { command: ChatCommand<CommandType, unknown, unknown> }).command.data;
 			}),
 	);
 }

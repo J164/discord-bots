@@ -1,14 +1,11 @@
 import { setTimeout } from 'node:timers';
 import {
 	type APISelectMenuOption,
-	type ButtonBuilder,
 	type ButtonInteraction,
 	type ThreadChannel,
 	type User,
-	ActionRowBuilder,
 	ButtonStyle,
 	ComponentType,
-	type StringSelectMenuBuilder,
 	type StringSelectMenuInteraction,
 } from 'discord.js';
 import { CardRank, CardSuit } from '../../types/card.js';
@@ -105,22 +102,23 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 			messageOptions({
 				embeds: [responseEmbed(EmbedType.Prompt, 'Would you like to go alone?')],
 				components: [
-					new ActionRowBuilder<ButtonBuilder>({
+					{
+						type: ComponentType.ActionRow,
 						components: [
 							{
 								type: ComponentType.Button,
-								customId: 'yes',
+								custom_id: 'yes',
 								label: 'Yes',
 								style: ButtonStyle.Primary,
 							},
 							{
 								type: ComponentType.Button,
-								customId: 'no',
+								custom_id: 'no',
 								label: 'No',
 								style: ButtonStyle.Secondary,
 							},
 						],
-					}),
+					},
 				],
 			}),
 		);
@@ -158,44 +156,50 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 				embeds,
 				files,
 				components: [
-					new ActionRowBuilder<StringSelectMenuBuilder>({
+					{
+						type: ComponentType.ActionRow,
 						components: [
 							{
 								type: ComponentType.StringSelect,
-								customId: 'suit',
+								custom_id: 'suit',
 								placeholder: 'Select a Suit',
 								options: [
 									{
 										label: 'Spades',
 										value: '1',
-										emoji: '\u2660\uFE0F',
+										emoji: { name: '\u2660\uFE0F' },
 									},
 									{
 										label: 'Clubs',
 										value: '2',
-										emoji: '\u2663\uFE0F',
+										emoji: { name: '\u2663\uFE0F' },
 									},
 									{
 										label: 'Hearts',
 										value: '3',
-										emoji: '\u2665\uFE0F',
+										emoji: { name: '\u2665\uFE0F' },
 									},
 									{
 										label: 'Diamonds',
 										value: '4',
-										emoji: '\u2666\uFE0F',
+										emoji: { name: '\u2666\uFE0F' },
 									},
 								],
 							},
+						],
+					},
+					{
+						type: ComponentType.ActionRow,
+						components: [
 							{
 								type: ComponentType.Button,
-								customId: 'pass',
+								custom_id: 'pass',
 								label: 'Pass',
 								style: ButtonStyle.Secondary,
 								disabled: index === 3,
 							},
 						],
-					}),
+					},
 				],
 			}),
 		);
@@ -235,11 +239,12 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 				embeds,
 				files,
 				components: [
-					new ActionRowBuilder<StringSelectMenuBuilder>({
+					{
+						type: ComponentType.ActionRow,
 						components: [
 							{
 								type: ComponentType.StringSelect,
-								customId: 'replace',
+								custom_id: 'replace',
 								placeholder: 'Select a Card',
 								options: gameInfo.players[3].hand.map((card, index) => {
 									return {
@@ -249,7 +254,7 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 								}),
 							},
 						],
-					}),
+					},
 				],
 			}),
 		);
@@ -286,23 +291,23 @@ async function startRound(gameInfo: GameInfo): Promise<void> {
 					),
 				],
 				components: [
-					new ActionRowBuilder<ButtonBuilder>({
+					{
 						type: ComponentType.ActionRow,
 						components: [
 							{
 								type: ComponentType.Button,
-								customId: 'pickup',
+								custom_id: 'pickup',
 								label: 'Pick It Up',
 								style: ButtonStyle.Primary,
 							},
 							{
 								type: ComponentType.Button,
-								customId: 'pass',
+								custom_id: 'pass',
 								label: 'Pass',
 								style: ButtonStyle.Primary,
 							},
 						],
-					}),
+					},
 				],
 			}),
 		);
@@ -373,16 +378,17 @@ async function round(options: { gameInfo: GameInfo; leader: number; solo: boolea
 			embeds,
 			files,
 			components: [
-				new ActionRowBuilder<StringSelectMenuBuilder>({
+				{
+					type: ComponentType.ActionRow,
 					components: [
 						{
 							type: ComponentType.StringSelect,
-							customId: 'play',
+							custom_id: 'play',
 							placeholder: 'Select a Card',
 							options: legalPlays,
 						},
 					],
-				}),
+				},
 			],
 		}),
 	);

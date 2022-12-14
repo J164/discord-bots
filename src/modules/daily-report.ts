@@ -282,7 +282,7 @@ export async function getDailyReport(abstractKey: string, database: Db, weatherK
 	}
 
 	if (birthday) {
-		embeds.push(responseEmbed(EmbedType.None, '\uD83C\uDF89\tHave an amazing birthday!', {}, 0x99_00_ff));
+		embeds.push(responseEmbed(EmbedType.None, '\uD83C\uDF89\tHave an amazing birthday!', { color: 0x99_00_ff }));
 		return messageOptions({ embeds, components: [], content: `\uD83C\uDF89\tHappy Birthday <@${birthday.id}>!!!\t\uD83C\uDF89` });
 	}
 
