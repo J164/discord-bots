@@ -19,7 +19,7 @@
     "mongodb": "4.12.1",
     "node-cron": "3.0.2",
     "pino": "8.7.0",
-    "sharp": "0.31.2",
+    "sharp": "0.31.3",
     "sodium-native": "3.4.1"
   },
   "devDependencies": {
