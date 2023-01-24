@@ -20,7 +20,7 @@
     "node-cron": "3.0.2",
     "pino": "8.7.0",
     "sharp": "0.31.2",
-    "sodium-native": "3.4.1"
+    "sodium-native": "4.0.1"
   },
   "devDependencies": {
     "@discordjs/rest": "1.4.0",
